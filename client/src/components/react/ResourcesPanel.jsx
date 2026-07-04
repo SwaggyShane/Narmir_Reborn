@@ -498,7 +498,7 @@ const ResourcesPanel = () => {
         <div>
           <div className="card">
             <div className="card-title">Resource Stockpiles</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '12px', width: '100%' }}>
+            <div className='grid auto-fit gap-3 mt-3 w-full'>
               {resourceTypes.map(res => {
                 const raceMult = RACE_YIELD_BONUS[kingdom.race]?.[res.key] ?? 1.0;
                 let totalWorkers = 0;
@@ -517,17 +517,17 @@ const ResourcesPanel = () => {
                 const titleStr = raceMult !== 1.0 ? `${raceMult >= 1 ? '+' : ''}${Math.round((raceMult - 1) * 100)}% racial modifier` : '';
 
                 return (
-                  <div key={res.key} style={{ padding: '14px', borderRadius: '8px', background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+                  <div key={res.key} className='p-3.5 rounded-lg bg-[var(--bg2)] border border-[var(--border)]'>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '24px' }}>{res.icon}</span>
+                      <span className='text-2xl'>{res.icon}</span>
                       <div>
                         <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text3)' }}>{res.label}</div>
                         <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--green)' }} id={`res-stock-${res.key}`}>{fmt(kingdom[res.key] || 0)}</div>
                       </div>
                     </div>
                     <div className="text-[11px] text-[var(--text3)]">
-                      <div title={titleStr}>Yield: <span style={{ color: 'var(--text)' }} id={`res-yield-${res.key}`}>{strYield}</span></div>
-                      <div>Workers needed: <span style={{ color: 'var(--text)' }} id={`res-workers-${res.key}`}>{fmt(totalWorkers)}</span></div>
+                      <div title={titleStr}>Yield: <span className='text-[var(--text)]' id={`res-yield-${res.key}`}>{strYield}</span></div>
+                      <div>Workers needed: <span className='text-[var(--text)]' id={`res-workers-${res.key}`}>{fmt(totalWorkers)}</span></div>
                       <div>Status: <span id={`res-status-${res.key}`} style={{ color: freePop >= totalWorkers ? 'var(--green)' : 'var(--red)' }}>{totalWorkers === 0 ? '-' : freePop >= totalWorkers ? 'Operating' : 'Understaffed'}</span></div>
                     </div>
                   </div>
@@ -538,8 +538,8 @@ const ResourcesPanel = () => {
           <div className="card mt-3">
             <div className="card-title">Workforce</div>
             <div style={{ fontSize: '13px', color: 'var(--text3)', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div>Total population: <span id="res-pop-total" style={{ color: 'var(--text)' }}>{fmt(pop)}</span></div>
-              <div>Hired units: <span id="res-pop-hired" style={{ color: 'var(--text)' }}>{fmt(hired)}</span></div>
+              <div>Total population: <span id="res-pop-total" className='text-[var(--text)]'>{fmt(pop)}</span></div>
+              <div>Hired units: <span id="res-pop-hired" className='text-[var(--text)]'>{fmt(hired)}</span></div>
               <div>Free population: <span id="res-pop-free" style={{ color: freePop > 0 ? 'var(--green)' : 'var(--red)' }}>{fmt(freePop)}</span></div>
             </div>
           </div>
@@ -548,7 +548,7 @@ const ResourcesPanel = () => {
 
       {activeTab === 'buildings' && (
         <div>
-          <div id="buildings-guide-card" className="card" style={{ marginBottom: '12px', background: 'rgba(59, 130, 246, 0.03)', border: '1px solid rgba(59, 130, 246, 0.15)', padding: '12px 14px' }}>
+          <div id="buildings-guide-card" className="card" className='mb-3 bg-blue-950/5 border border-blue-500/15 p-3.5'>
             <div id="guide-header-toggle" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }} onClick={() => setShowGuide(!showGuide)}>
               <div style={{ fontWeight: 600, fontSize: '13px', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 💡 <span>Guide: How to build buildings &amp; produce resources</span>
@@ -560,7 +560,7 @@ const ResourcesPanel = () => {
                 <ol style={{ fontSize: '11.5px', color: 'var(--text3)', paddingLeft: '18px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px', lineHeight: 1.45 }}>
                   <li><strong>Hire Engineers:</strong> First, go hire/train Engineers in the <strong>Train/Hire</strong> panel. They do the actual physical work of construction!</li>
                   <li><strong>Assign Workers:</strong> Type the number of engineers to allocate in the <code>Eng</code> box (or click <strong>Max</strong>) beside your desired building.</li>
-                  <li><strong>Begin Construction:</strong> Click <span style={{ color: 'var(--green)', fontWeight: 600 }}>Build</span>. Note that you can only construct one active project per resource category (Wood / Stone / Iron) at a time.</li>
+                  <li><strong>Begin Construction:</strong> Click <span className='font-semibold text-[var(--green)]'>Build</span>. Note that you can only construct one active project per resource category (Wood / Stone / Iron) at a time.</li>
                   <li><strong>Advance Turns:</strong> Construction effort is applied as you play turns. Your assigned engineers will contribute work automatically on each turn until the building reaches 100% completion.</li>
                   <li><strong>Unlock Stage Upgrades:</strong> Higher tier buildings (Stage 2 &amp; 3) require purchasing Stage Upgrades with gold before they can be built. Look for purchase buttons under those panels!</li>
                 </ol>
@@ -568,8 +568,8 @@ const ResourcesPanel = () => {
             )}
           </div>
 
-          <div className="card" style={{ padding: 0, marginBottom: '12px' }}>
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '12px' }}>
+          <div className="card" className='mb-3'>
+            <div className='flex border-b border-[var(--border)] mb-3'>
               {resourceTypes.map(rtype => (
                 <button
                   key={rtype.key}
@@ -587,8 +587,8 @@ const ResourcesPanel = () => {
 
           {resourceTypes.map(rtype => activeBldTab === rtype.key && (
             <div key={rtype.key}>
-              <div className="card" style={{ marginBottom: '10px', padding: '10px 14px', fontSize: '12px', color: 'var(--text3)' }}>
-                🔧 Available engineers: <span style={{ color: 'var(--green)', fontWeight: 600 }}>{fmt(getAvailableEngineers())}</span>
+              <div className="card" className='mb-2.5 p-3.5 text-xs text-[var(--text3)]'>
+                🔧 Available engineers: <span className='font-semibold text-[var(--green)]'>{fmt(getAvailableEngineers())}</span>
                 &nbsp;&middot;&nbsp; Total: {fmt(kingdom.engineers || 0)}
                 &nbsp;&middot;&nbsp; Engaged: {fmt((kingdom.engineers || 0) - getAvailableEngineers())}
               </div>
@@ -616,15 +616,15 @@ const ResourcesPanel = () => {
                           &nbsp;&middot;&nbsp; {bld.workersPerBuilding} workers/building
                         </div>
                         {bld.stage === 2 && !s2Un && (
-                          <div style={{ fontSize: '11px', marginTop: '4px' }}>
-                            <span style={{ color: 'var(--text3)' }}>Req: stage-2 upgrade (200 {rtype.label.toLowerCase()} + 10,000 gold). </span>
-                            <span id={`s2-status-${rtype.key}`} style={{ color: 'var(--red)' }}>Locked</span>
+                          <div className='text-[11px] mt-1'>
+                            <span className='text-[var(--text3)]'>Req: stage-2 upgrade (200 {rtype.label.toLowerCase()} + 10,000 gold). </span>
+                            <span id={`s2-status-${rtype.key}`} className='text-[var(--red)]'>Locked</span>
                           </div>
                         )}
                         {bld.stage === 3 && !s3Un && (
-                          <div style={{ fontSize: '11px', marginTop: '4px' }}>
-                            <span style={{ color: 'var(--text3)' }}>Req: stage-3 upgrade (1,000 {rtype.label.toLowerCase()} + 500 {rtype.key === 'iron' ? 'stone' : 'iron'} + 100,000 gold). </span>
-                            <span id={`s3-status-${rtype.key}`} style={{ color: 'var(--red)' }}>Locked</span>
+                          <div className='text-[11px] mt-1'>
+                            <span className='text-[var(--text3)]'>Req: stage-3 upgrade (1,000 {rtype.label.toLowerCase()} + 500 {rtype.key === 'iron' ? 'stone' : 'iron'} + 100,000 gold). </span>
+                            <span id={`s3-status-${rtype.key}`} className='text-[var(--red)]'>Locked</span>
                           </div>
                         )}
                         <div id={`bracket-lock-${rtype.key}-${bld.stage}`} style={{ fontSize: '11px', color: 'var(--red)', marginTop: '3px', display: 'none' }}>
@@ -637,7 +637,7 @@ const ResourcesPanel = () => {
                           {STONE_COST[bld.key] > 0 && <span> &middot; {fmt(STONE_COST[bld.key])} stone</span>}
                           {IRON_COST[bld.key] > 0 && <span> &middot; {fmt(IRON_COST[bld.key])} iron</span>}
                           <span> &middot; {LAND_COST[bld.key]} land</span>
-                          <span style={{ color: 'var(--text2)' }}> &middot; {fmt(BUILDING_COST[bld.key])} effort ({turnsToComplete(bld)} turns)</span>
+                          <span className='text-[var(--text2)]'> &middot; {fmt(BUILDING_COST[bld.key])} effort ({turnsToComplete(bld)} turns)</span>
                         </div>
 
                         {isAct && (
@@ -658,7 +658,7 @@ const ResourcesPanel = () => {
                           <div style={{ fontSize: '11px', color: 'var(--text3)', textAlign: 'right' }}>{fmt(getBuildEngineers(bld.key))} engineers assigned</div>
                         ) : (
                           <React.Fragment>
-                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <div className='flex items-center gap-1.5'>
                               <input type="number" min="0" value={engineerAllocations[bld.key] || ''} onChange={(e) => setEngineerAllocations((prev) => ({ ...prev, [bld.key]: e.target.value }))} placeholder="Eng"
                                 disabled={disab}
                                 style={{ width: '70px', padding: '4px 6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '12px', textAlign: 'center' }} />
@@ -704,7 +704,7 @@ const ResourcesPanel = () => {
         <div>
           <div className="card mb-3">
             <div className="card-title">Scout New Nodes</div>
-            <div style={{ fontSize: '12px', color: 'var(--text3)', margin: '6px 0 10px' }}>Pay 500 gold to discover a new resource node.</div>
+            <div className='text-xs text-[var(--text3)] my-1.5 mb-2.5'>Pay 500 gold to discover a new resource node.</div>
             <button onClick={scoutNode} disabled={scouting}
               style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, background: 'var(--green)', color: '#000' }}>
               {scouting ? 'Scouting...' : '🔭 Scout Node (500 gold)'}
@@ -715,22 +715,22 @@ const ResourcesPanel = () => {
           </div>
 
           <div className="card mb-3">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className='flex justify-between items-center'>
               <div className="card-title">Discovered Nodes ({nodes.length})</div>
               <button onClick={loadNodes} style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text3)', cursor: 'pointer', fontSize: '11px' }}>Refresh</button>
             </div>
             {nodes.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No nodes discovered yet. Scout to find resource nodes!</div>}
             {nodes.map(node => (
               <div key={node.id} style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: 'var(--bg2)', border: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                <div className='flex justify-between items-start flex-wrap gap-2'>
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: '13px' }}>{node.name}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>
-                      {typeIcon(node.type)} {node.type} &nbsp;&middot;&nbsp; Richness: <span style={{ color: 'var(--gold)' }}>{'★'.repeat(node.richness)}</span>
+                    <div className='font-semibold text-sm'>{node.name}</div>
+                    <div className='text-[11px] text-[var(--text3)] mt-0.5'>
+                      {typeIcon(node.type)} {node.type} &nbsp;&middot;&nbsp; Richness: <span className='text-[var(--gold)]'>{'★'.repeat(node.richness)}</span>
                       &nbsp;&middot;&nbsp; Distance: {formatDuration(node.distance)}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <div className='flex items-center gap-1.5'>
                     <input type="number" min="10" placeholder="Pop (min 10)"
                       value={expPop[node.id] || ''} onChange={(e) => setExpPop(p => ({...p, [node.id]: parseInt(e.target.value)}))}
                       style={{ width: '100px', padding: '4px 6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '12px', textAlign: 'center' }} />
@@ -746,17 +746,17 @@ const ResourcesPanel = () => {
           </div>
 
           <div className="card mb-3">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className='flex justify-between items-center'>
               <div className="card-title">Active Expeditions ({activeExpeditions.length})</div>
               <button onClick={loadExpeditions} style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text3)', cursor: 'pointer', fontSize: '11px' }}>Refresh</button>
             </div>
             {activeExpeditions.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No active expeditions.</div>}
             {activeExpeditions.map(exp => (
               <div key={exp.id} style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: 'var(--bg2)', border: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                <div className='flex justify-between items-start flex-wrap gap-2'>
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: '13px' }}>{exp.node_name} <span className="text-[11px] text-[var(--text3)]">({typeIcon(exp.node_type)} {exp.node_type})</span></div>
-                    <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>
+                    <div className='font-semibold text-sm'>{exp.node_name} <span className="text-[11px] text-[var(--text3)]">({typeIcon(exp.node_type)} {exp.node_type})</span></div>
+                    <div className='text-[11px] text-[var(--text3)] mt-0.5'>
                       Pop: {fmt(exp.population_sent)} &middot; Status: <span style={statusColor(exp.status)}>{exp.status}</span>
                       {exp.food_taken > 0 && <span> &middot; 🍖 {fmt(exp.food_taken)} food taken</span>}
                     </div>
@@ -767,9 +767,9 @@ const ResourcesPanel = () => {
                     )}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--text3)', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    {exp.status === 'outbound' && <div>Arrives: <span style={{ color: 'var(--text)' }}>{countdown(exp.arrive_at)}</span></div>}
-                    {exp.status === 'harvesting' && <div>Done: <span style={{ color: 'var(--gold)' }}>{countdown(exp.harvest_ends_at)}</span></div>}
-                    {exp.status === 'returning' && <div>Returns: <span style={{ color: 'var(--green)' }}>{countdown(exp.return_at)}</span></div>}
+                    {exp.status === 'outbound' && <div>Arrives: <span className='text-[var(--text)]'>{countdown(exp.arrive_at)}</span></div>}
+                    {exp.status === 'harvesting' && <div>Done: <span className='text-[var(--gold)]'>{countdown(exp.harvest_ends_at)}</span></div>}
+                    {exp.status === 'returning' && <div>Returns: <span className='text-[var(--green)]'>{countdown(exp.return_at)}</span></div>}
                   </div>
                 </div>
               </div>
@@ -778,16 +778,16 @@ const ResourcesPanel = () => {
 
           {isOrc && (
             <div className="card" style={{ border: '1px solid var(--red)' }}>
-              <div className="card-title" style={{ color: 'var(--red)' }}>Orc Interception</div>
-              <div style={{ fontSize: '12px', color: 'var(--text3)', margin: '6px 0 10px' }}>Intercept other kingdoms' expeditions. Need 3x combat power of the civilians.</div>
+              <div className="card-title" className='text-[var(--red)]'>Orc Interception</div>
+              <div className='text-xs text-[var(--text3)] my-1.5 mb-2.5'>Intercept other kingdoms' expeditions. Need 3x combat power of the civilians.</div>
               <button onClick={loadVisibleExps} style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid var(--red)', background: 'transparent', color: 'var(--red)', cursor: 'pointer', fontSize: '11px', marginBottom: '8px' }}>Scan Expeditions</button>
               {visibleExps.length === 0 && <div style={{ fontSize: '12px', color: 'var(--text3)' }}>No visible expeditions.</div>}
               {visibleExps.map(vExp => (
                 <div key={vExp.id} style={{ marginTop: '8px', padding: '8px', background: 'var(--bg2)', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                  <div style={{ fontSize: '12px' }}>
-                    <span style={{ color: 'var(--text3)' }}>{vExp.kingdom_name}</span> - {typeIcon(vExp.node_type)} &middot; <span style={statusColor(vExp.status)}>{vExp.status}</span> &middot; Pop: {fmt(vExp.population_sent)}
+                  <div className='text-xs'>
+                    <span className='text-[var(--text3)]'>{vExp.kingdom_name}</span> - {typeIcon(vExp.node_type)} &middot; <span style={statusColor(vExp.status)}>{vExp.status}</span> &middot; Pop: {fmt(vExp.population_sent)}
                   </div>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <div className='flex items-center gap-1.5'>
                     <input type="number" min="1" placeholder="Fighters" value={interceptFighters[vExp.id] || ''} onChange={(e) => setInterceptFighters(p => ({...p, [vExp.id]: parseInt(e.target.value)}))}
                       style={{ width: '80px', padding: '4px 6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '12px', textAlign: 'center' }} />
                     <button onClick={() => interceptExpedition(vExp.id)} disabled={intercepting[vExp.id]}
