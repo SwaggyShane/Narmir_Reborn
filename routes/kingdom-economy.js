@@ -138,88 +138,23 @@ module.exports = function (db) {
     res.json({ routes: visibleRoutes });
   });
   router.post("/trade-routes/establish", requireAuth, requireCsrfToken, async (req, res) => {
+    const { targetId } = req.body;
+    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1", [
+      req.player.playerId,
+    ]);
+    if (!k) return res.status(404).json({ error: "Kingdom not found" });
+
+    const target = await db.get("SELECT id, turn, name FROM kingdoms WHERE id = $1", [
+      targetId,
+    ]);
+    if (!target) return res.status(404).json({ error: "Target kingdom not found" });
+
+    const distance = Math.hypot(k.x - target.x, k.y - target.y);
+    const baseCost = Math.ceil(distance * 10);
+    const cost = Math.max(baseCost, 100);
+
     try {
-      const targetId = parseInt(req.body.targetId);
-      if (isNaN(targetId))
-        return res.status(400).json({ error: "Invalid target kingdom" });
-
-      const k = await db.get("SELECT id, name, gold, market_upgrades, race, visibility FROM kingdoms WHERE player_id=$1", [
-        req.player.playerId,
-      ]);
-      if (!k) return res.status(404).json({ error: "Kingdom not found" });
-
-      // Requirement Check: Trading Post
-      const marketUpgrades = safeJsonParse(
-        k.market_upgrades,
-        {},
-        "establish:market_upgrades",
-      );
-      if (!marketUpgrades.trading_post) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Build a Trading Post in the Markets tab to establish trade routes",
-          });
-      }
-
-      if (k.id == targetId)
-        return res.status(400).json({ error: "Cannot trade with yourself" });
-
-      const target = await db.get("SELECT id, turn, race FROM kingdoms WHERE id=$1", [
-        targetId,
-      ]);
-      if (!target) return res.status(404).json({ error: "Target not found" });
-
-      // Gate: target must be visible (in seen_cells) per Phase 3
-      const vis = await getKingdomVisibility(db, k);
-      const targetCoords = getKingdomMapCoords({ id: targetId, race: target.race });
-      const targetHex = pixelToHex(targetCoords.map_x, targetCoords.map_y);
-      if (!safeBitmapHasCell(vis.seenCells, targetHex.col, targetHex.row)) {
-        return res.status(400).json({ error: "Target kingdom is not visible (scout the area first)" });
-      }
-
-      // Check caps (UNION allows index optimization vs OR)
-      const routeCount = await db.get(
-        `SELECT COUNT(*) as count FROM (
-          SELECT id FROM trade_routes WHERE kingdom_id=$1
-          UNION ALL
-          SELECT id FROM trade_routes WHERE partner_id=$2
-        ) t`,
-        [k.id, k.id],
-      );
-      if (routeCount.count >= (engine.TRADE_ROUTE_MAX || 5)) {
-        return res
-          .status(400)
-          .json({
-            error: `Maximum trade routes reached (${engine.TRADE_ROUTE_MAX || 5})`,
-          });
-      }
-
-      // Check if already exists
-      const existing = await db.get(
-        "SELECT id FROM trade_routes WHERE (kingdom_id=$1 AND partner_id=$2) OR (kingdom_id=$3 AND partner_id=$4)",
-        [k.id, targetId, targetId, k.id],
-      );
-      if (existing)
-        return res
-          .status(400)
-          .json({ error: "Trade route already exists with this kingdom" });
-
-      // Cost
-      const cost = engine.TRADE_ROUTE_ESTABLISH_COST || 10000;
-      if (k.gold < cost)
-        return res
-          .status(400)
-          .json({
-            error: `Establishing a permanent trade route costs ${cost.toLocaleString()} gold. You only have ${Math.floor(k.gold).toLocaleString()}.`,
-          });
-
-      // Simple distance calculation
-      const distance = Math.floor(Math.random() * 50) + 10;
-
-      await db.run("BEGIN TRANSACTION");
-      try {
+      await db.withTransaction(async () => {
         // Atomic balance check: verify sufficient gold within the UPDATE statement to prevent
         // concurrent requests from both bypassing the check and creating negative balances
         const goldResult = await db.run("UPDATE kingdoms SET gold = gold - $1 WHERE id = $2 AND gold >= $3", [
@@ -228,10 +163,9 @@ module.exports = function (db) {
           cost,
         ]);
         if (goldResult.changes === 0) {
-          await db.run("ROLLBACK");
-          return res.status(400).json({
-            error: `Establishing a permanent trade route costs ${cost.toLocaleString()} gold. You only have ${Math.floor(k.gold).toLocaleString()}.`,
-          });
+          const err = new Error(`Establishing a permanent trade route costs ${cost.toLocaleString()} gold. You only have ${Math.floor(k.gold).toLocaleString()}.`);
+          err.statusCode = 400;
+          throw err;
         }
         await db.run(
           "INSERT INTO trade_routes (kingdom_id, partner_id, distance, stability) VALUES ($1, $2, $3, $4)",
@@ -242,15 +176,11 @@ module.exports = function (db) {
           [
             target.id,
             "system",
-            `ðŸ¤ The merchants of ${k.name} have established a permanent trade route to your kingdom!`,
+            `🤝 The merchants of ${k.name} have established a permanent trade route to your kingdom!`,
             target.turn,
           ],
         );
-        await db.run("COMMIT");
-      } catch (txErr) {
-        await db.run("ROLLBACK");
-        throw txErr;
-      }
+      });
 
       res.json({
         ok: true,
@@ -259,9 +189,11 @@ module.exports = function (db) {
       });
     } catch (err) {
       console.error("[establishTradeRoute] error:", err);
-      res.status(500).json({ error: "Internal server error" });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
     }
   });
+
   router.post("/trade-routes/cancel", requireAuth, requireCsrfToken, async (req, res) => {
     const { routeId } = req.body;
     const k = await db.get("SELECT id FROM kingdoms WHERE player_id=$1", [
@@ -306,265 +238,268 @@ module.exports = function (db) {
     if (!qty) return res.status(400).json({ error: "Quantity required" });
 
     try {
-      await db.run("BEGIN TRANSACTION");
+      const result = await db.withTransaction(async () => {
+        const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, ballistae, land FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          const err = new Error("Kingdom not found");
+          err.statusCode = 404;
+          throw err;
+        }
 
-      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, ballistae, land FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
-        req.player.playerId,
-      ]);
-      if (!k) {
-        await db.run("ROLLBACK");
-        return res.status(404).json({ error: "Kingdom not found" });
-      }
+        const priceRow = await db.get("SELECT * FROM market_prices WHERE id = $1 FOR UPDATE", [
+          resource,
+        ]);
+        if (!priceRow || resource === "hammers") {
+          const err = new Error("Invalid resource");
+          err.statusCode = 400;
+          throw err;
+        }
 
-      const priceRow = await db.get("SELECT * FROM market_prices WHERE id = $1 FOR UPDATE", [
-        resource,
-      ]);
-      if (!priceRow || resource === "hammers") {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "Invalid resource" });
-      }
+        const basePrice = priceRow.base_price;
+        const currentPrice = priceRow.current_price;
+        const liquidity = MARKET_LIQUIDITY[resource] || 100000;
 
-      const basePrice = priceRow.base_price;
-      const currentPrice = priceRow.current_price;
-      const liquidity = MARKET_LIQUIDITY[resource] || 100000;
+        const minPrice = basePrice * 0.15;
+        const maxPrice = basePrice * 6.0;
 
-      const minPrice = basePrice * 0.15;
-      const maxPrice = basePrice * 6.0;
+        const nextPrice = currentPrice * (1 + (qty / liquidity));
+        const clampedNext = Math.max(minPrice, Math.min(maxPrice, nextPrice));
+        const avgPrice = (currentPrice + clampedNext) / 2;
+        const cost = Math.ceil(qty * avgPrice);
 
-      const nextPrice = currentPrice * (1 + (qty / liquidity));
-      const clampedNext = Math.max(minPrice, Math.min(maxPrice, nextPrice));
-      const avgPrice = (currentPrice + clampedNext) / 2;
-      const cost = Math.ceil(qty * avgPrice);
+        if (k.gold < cost) {
+          const err = new Error(`Need ${cost.toLocaleString()} GC (Avg price: ${avgPrice.toFixed(3)} GC)`);
+          err.statusCode = 400;
+          throw err;
+        }
 
-      if (k.gold < cost) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: `Need ${cost.toLocaleString()} GC (Avg price: ${avgPrice.toFixed(3)} GC)` });
-      }
+        const dbCol = getResourceColumn(resource);
+        await db.run(
+          `UPDATE kingdoms SET gold = gold - $1, ${dbCol} = ${dbCol} + $2 WHERE id = $3`,
+          [cost, qty, k.id],
+        );
 
-      const dbCol = getResourceColumn(resource);
-      await db.run(
-        `UPDATE kingdoms SET gold = gold - $1, ${dbCol} = ${dbCol} + $2 WHERE id = $3`,
-        [cost, qty, k.id],
-      );
+        // Impact market: update the price to clamped progress
+        await db.run(
+          "UPDATE market_prices SET current_price = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+          [clampedNext, resource],
+        );
 
-      // Impact market: update the price to clamped progress
-      await db.run(
-        "UPDATE market_prices SET current_price = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
-        [clampedNext, resource],
-      );
+        await db.run(
+          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
+          [
+            k.id,
+            "system",
+            `⚖️ Bought ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} from the market for ${cost.toLocaleString()} GC (Avg price: ${avgPrice.toFixed(3)} GC).`,
+            k.turn,
+          ],
+        );
 
-      await db.run(
-        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
-        [
-          k.id,
-          "system",
-          `âš–ï¸ Bought ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} from the market for ${cost.toLocaleString()} GC (Avg price: ${avgPrice.toFixed(3)} GC).`,
-          k.turn,
-        ],
-      );
-
-      await db.run("COMMIT");
-
-      res.json({
-        ok: true,
-        bought: qty,
-        cost,
-        message: `âš–ï¸ Bought ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} from the market for ${cost.toLocaleString()} GC.`,
-        updates: { gold: k.gold - cost, [dbCol]: (k[dbCol] || 0) + qty },
+        return {
+          ok: true,
+          bought: qty,
+          cost,
+          message: `⚖️ Bought ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} from the market for ${cost.toLocaleString()} GC.`,
+          updates: { gold: k.gold - cost, [dbCol]: (k[dbCol] || 0) + qty },
+        };
       });
+
+      res.json(result);
     } catch (err) {
-      try {
-        await db.run("ROLLBACK");
-      } catch (rollbackErr) {
-        console.error("[market/buy] rollback error:", rollbackErr.message);
-      }
       console.error("[market/buy] error:", err.message);
-      res.status(500).json({ error: "Purchase failed" });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
     }
   });
+
   router.post("/market/sell", requireAuth, requireCsrfToken, async (req, res) => {
     const { resource, amount } = req.body;
     const qty = Math.max(0, parseInt(amount) || 0);
     if (!qty) return res.status(400).json({ error: "Quantity required" });
 
     try {
-      await db.run("BEGIN TRANSACTION");
+      const result = await db.withTransaction(async () => {
+        const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, ballistae, land FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          const err = new Error("Kingdom not found");
+          err.statusCode = 404;
+          throw err;
+        }
 
-      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, ballistae, land FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
-        req.player.playerId,
-      ]);
-      if (!k) {
-        await db.run("ROLLBACK");
-        return res.status(404).json({ error: "Kingdom not found" });
-      }
+        const dbCol = getResourceColumn(resource);
+        if (!dbCol) {
+          const err = new Error("Invalid resource");
+          err.statusCode = 400;
+          throw err;
+        }
+        if ((k[dbCol] || 0) < qty) {
+          const err = new Error("Not enough resource");
+          err.statusCode = 400;
+          throw err;
+        }
 
-      const dbCol = getResourceColumn(resource);
-      if (!dbCol) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "Invalid resource" });
-      }
-      if ((k[dbCol] || 0) < qty) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "Not enough resource" });
-      }
+        const priceRow = await db.get("SELECT * FROM market_prices WHERE id = $1 FOR UPDATE", [
+          resource,
+        ]);
+        if (!priceRow || resource === "hammers") {
+          const err = new Error("Invalid resource");
+          err.statusCode = 400;
+          throw err;
+        }
 
-      const priceRow = await db.get("SELECT * FROM market_prices WHERE id = $1 FOR UPDATE", [
-        resource,
-      ]);
-      if (!priceRow || resource === "hammers") {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "Invalid resource" });
-      }
+        const basePrice = priceRow.base_price;
+        const currentPrice = priceRow.current_price;
+        const liquidity = MARKET_LIQUIDITY[resource] || 100000;
 
-      const basePrice = priceRow.base_price;
-      const currentPrice = priceRow.current_price;
-      const liquidity = MARKET_LIQUIDITY[resource] || 100000;
+        const minPrice = basePrice * 0.15;
+        const maxPrice = basePrice * 6.0;
 
-      const minPrice = basePrice * 0.15;
-      const maxPrice = basePrice * 6.0;
+        const nextPrice = currentPrice * (1 - (qty / liquidity));
+        const clampedNext = Math.max(minPrice, Math.min(maxPrice, nextPrice));
+        const avgPrice = (currentPrice + clampedNext) / 2;
 
-      const nextPrice = currentPrice * (1 - (qty / liquidity));
-      const clampedNext = Math.max(minPrice, Math.min(maxPrice, nextPrice));
-      const avgPrice = (currentPrice + clampedNext) / 2;
+        let sellMultiplier = 0.7; // 30% base spread
+        if (k.prestige_level && k.prestige_level > 0) {
+          sellMultiplier += Math.min(0.1, k.prestige_level * 0.02); // Up to +10% sell value (0.8 max modifier)
+        }
+        const gain = Math.floor(qty * avgPrice * sellMultiplier);
 
-      let sellMultiplier = 0.7; // 30% base spread
-      if (k.prestige_level && k.prestige_level > 0) {
-        sellMultiplier += Math.min(0.1, k.prestige_level * 0.02); // Up to +10% sell value (0.8 max modifier)
-      }
-      const gain = Math.floor(qty * avgPrice * sellMultiplier);
+        await db.run(
+          `UPDATE kingdoms SET gold = gold + $1, ${dbCol} = ${dbCol} - $2 WHERE id = $3`,
+          [gain, qty, k.id],
+        );
 
-      await db.run(
-        `UPDATE kingdoms SET gold = gold + $1, ${dbCol} = ${dbCol} - $2 WHERE id = $3`,
-        [gain, qty, k.id],
-      );
+        // Impact market: update the price to clamped progress
+        await db.run(
+          "UPDATE market_prices SET current_price = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+          [clampedNext, resource],
+        );
 
-      // Impact market: update the price to clamped progress
-      await db.run(
-        "UPDATE market_prices SET current_price = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
-        [clampedNext, resource],
-      );
+        await db.run(
+          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
+          [
+            k.id,
+            "system",
+            `⚖️ Sold ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} to the market for ${gain.toLocaleString()} GC (Avg price: ${avgPrice.toFixed(3)} GC).`,
+            k.turn,
+          ],
+        );
 
-      await db.run(
-        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
-        [
-          k.id,
-          "system",
-          `âš–ï¸ Sold ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} to the market for ${gain.toLocaleString()} GC (Avg price: ${avgPrice.toFixed(3)} GC).`,
-          k.turn,
-        ],
-      );
-
-      await db.run("COMMIT");
-
-      res.json({
-        ok: true,
-        sold: qty,
-        gain,
-        message: `âš–ï¸ Sold ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} to the market for ${gain.toLocaleString()} GC.`,
-        updates: { gold: k.gold + gain, [dbCol]: (k[dbCol] || 0) - qty },
+        return {
+          ok: true,
+          sold: qty,
+          gain,
+          message: `⚖️ Sold ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} to the market for ${gain.toLocaleString()} GC.`,
+          updates: { gold: k.gold + gain, [dbCol]: (k[dbCol] || 0) - qty },
+        };
       });
+
+      res.json(result);
     } catch (err) {
-      try {
-        await db.run("ROLLBACK");
-      } catch (rollbackErr) {
-        console.error("[market/sell] rollback error:", rollbackErr.message);
-      }
       console.error("[market/sell] error:", err.message);
-      res.status(500).json({ error: "Sale failed" });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
     }
   });
+
   router.post("/economy/bank-deposit", requireAuth, requireCsrfToken, async (req, res) => {
     const { amount, termIndex } = req.body;
     if (!amount || amount <= 0)
       return res.status(400).json({ error: "Invalid amount." });
 
     try {
-      await db.run("BEGIN TRANSACTION");
+      const result = await db.withTransaction(async () => {
+        const k = await db.get("SELECT id, turn, gold, bld_vaults, bank_upgrades, bank_deposits FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          const err = new Error("Kingdom not found");
+          err.statusCode = 404;
+          throw err;
+        }
 
-      const k = await db.get("SELECT id, turn, gold, bld_vaults, bank_upgrades, bank_deposits FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
-        req.player.playerId,
-      ]);
-      if (!k) {
-        await db.run("ROLLBACK");
-        return res.status(404).json({ error: "Kingdom not found" });
-      }
+        if (k.bld_vaults < 5) {
+          const err = new Error("Bank access requires at least 5 Vaults.");
+          err.statusCode = 400;
+          throw err;
+        }
+        if (k.gold < amount) {
+          const err = new Error("Not enough gold.");
+          err.statusCode = 400;
+          throw err;
+        }
 
-      if (k.bld_vaults < 5) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "Bank access requires at least 5 Vaults." });
-      }
-      if (k.gold < amount) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "Not enough gold." });
-      }
+        const bankUpgrades = safeJsonParse(k.bank_upgrades, {}, "auto:bank_upgrades");
+        let interestBonus = 0;
+        if (bankUpgrades.trade_guild) interestBonus += 0.03;
 
-      const bankUpgrades = safeJsonParse(k.bank_upgrades, {}, "auto:bank_upgrades");
-      let interestBonus = 0;
-      if (bankUpgrades.trade_guild) interestBonus += 0.03;
+        const availableTerms = [
+          { turns: 10, interest: 0.02, reqUpgrade: null },
+          { turns: 25, interest: 0.07, reqUpgrade: null },
+          { turns: 50, interest: 0.15, reqUpgrade: null },
+          { turns: 150, interest: 0.25, reqUpgrade: null },
+          { turns: 300, interest: 0.6, reqUpgrade: "iron_treasury" },
+        ];
 
-      const availableTerms = [
-        { turns: 10, interest: 0.02, reqUpgrade: null },
-        { turns: 25, interest: 0.07, reqUpgrade: null },
-        { turns: 50, interest: 0.15, reqUpgrade: null },
-        { turns: 150, interest: 0.25, reqUpgrade: null },
-        { turns: 300, interest: 0.6, reqUpgrade: "iron_treasury" },
-      ];
+        const termDef = availableTerms[termIndex];
+        if (!termDef) {
+          const err = new Error("Invalid term.");
+          err.statusCode = 400;
+          throw err;
+        }
 
-      const termDef = availableTerms[termIndex];
-      if (!termDef) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "Invalid term." });
-      }
+        if (termDef.reqUpgrade && !bankUpgrades[termDef.reqUpgrade]) {
+          const err = new Error("This term requires a bank upgrade.");
+          err.statusCode = 400;
+          throw err;
+        }
 
-      if (termDef.reqUpgrade && !bankUpgrades[termDef.reqUpgrade]) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "This term requires a bank upgrade." });
-      }
+        const deposits = safeJsonParse(k.bank_deposits, [], "auto:bank_deposits");
+        const startTurn = k.turn;
+        const targetTurn = startTurn + termDef.turns;
+        const finalInterest = termDef.interest + interestBonus;
+        const returnAmount = Math.floor(amount * (1 + finalInterest));
 
-      const deposits = safeJsonParse(k.bank_deposits, [], "auto:bank_deposits");
-      const startTurn = k.turn;
-      const targetTurn = startTurn + termDef.turns;
-      const finalInterest = termDef.interest + interestBonus;
-      const returnAmount = Math.floor(amount * (1 + finalInterest));
+        deposits.push({
+          id: Math.random().toString(36).substring(7),
+          amount: parseInt(amount, 10),
+          startTurn,
+          targetTurn,
+          returnAmount,
+          termTurns: termDef.turns,
+          interest: finalInterest,
+          status: "active",
+        });
 
-      deposits.push({
-        id: Math.random().toString(36).substring(7),
-        amount: parseInt(amount, 10),
-        startTurn,
-        targetTurn,
-        returnAmount,
-        termTurns: termDef.turns,
-        interest: finalInterest,
-        status: "active",
+        await db.run(
+          "UPDATE kingdoms SET gold = gold - $1, bank_deposits = $2 WHERE id = $3",
+          [amount, JSON.stringify(deposits), k.id],
+        );
+        await db.run(
+          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
+          [
+            k.id,
+            "system",
+            `🏦 Deposited ${parseInt(amount).toLocaleString()} gold for ${termDef.turns} turns. Expected payout: ${returnAmount.toLocaleString()} gold.`,
+            k.turn,
+          ],
+        );
+
+        return { message: "Deposit successful.", updates: { gold: k.gold - amount, bank_deposits: JSON.stringify(deposits) } };
       });
 
-      await db.run(
-        "UPDATE kingdoms SET gold = gold - $1, bank_deposits = $2 WHERE id = $3",
-        [amount, JSON.stringify(deposits), k.id],
-      );
-      await db.run(
-        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
-        [
-          k.id,
-          "system",
-          `🏦 Deposited ${parseInt(amount).toLocaleString()} gold for ${termDef.turns} turns. Expected payout: ${returnAmount.toLocaleString()} gold.`,
-          k.turn,
-        ],
-      );
-
-      await db.run("COMMIT");
-
-      res.json({ message: "Deposit successful.", updates: { gold: k.gold - amount, bank_deposits: JSON.stringify(deposits) } });
+      res.json(result);
     } catch (err) {
-      try {
-        await db.run("ROLLBACK");
-      } catch (rollbackErr) {
-        console.error("[bank-deposit] rollback error:", rollbackErr.message);
-      }
       console.error("[bank-deposit] error:", err.message);
-      res.status(500).json({ error: "Deposit failed" });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
     }
   });
+
   router.post("/economy/bank-withdraw", requireAuth, requireCsrfToken, async (req, res) => {
     const { depositId } = req.body;
 
