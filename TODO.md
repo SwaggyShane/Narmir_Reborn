@@ -87,11 +87,11 @@ _None currently — see Known Technical Debt below for post-beta cleanup items._
 
 ## Known Technical Debt (Post-Beta)
 
-- **Admin inline CSS consolidation** — Progress: Phase 1-3 complete (101 styles converted, PR #793 merged); Phase 4 complete (TestingPanel: 146/177 static styles converted, PR #795 merged 2026-07-04).
+- **Admin inline CSS consolidation** — Progress: Phase 1-3 complete (101 styles converted, PR #793 merged); Phase 4 complete (TestingPanel: 146/177 static styles converted, PR #795 merged 2026-07-04); Phase 4B complete (RankingsPanel: 105 static styles converted, PR #796 merged 2026-07-04).
   - **ProgressBar component extraction** (PR #794, merged 2026-07-04) — Architectural solution eliminates 200+ individual progress bar div pairs across TrainingPanel, StatusPanel, BuildPanel. No longer counted in individual style consolidation backlog.
   - **Phase 4 (TestingPanel):** 146 conversions, 17 dynamic, 14 edge cases. Gemini review feedback applied and fixes merged.
-  - **Phase 4B (Next):** RankingsPanel (105 static styles, 0 dynamic — high-ROI follow-up).
-  - **Remaining:** ~220 styles across 22 panels (Tier 2-3). ~398 original total; ~180 remain after phases 1-4B.
+  - **Phase 4B (RankingsPanel):** 105 static styles converted, 0 dynamic, 0 unmapped. Gemini review feedback (10 items) applied and fixes merged.
+  - **Remaining:** ~115 styles across 22 panels (Tier 2-3). ~398 original total; ~75 remain after phases 1-4B.
   - **Approach:** Python automation script with 95+ STYLE_MAPPINGS, batch conversion, clsx for conditional styling.
 - **Component test coverage expansion** — 57+ component tests exist; gaps remain in some panels
 
