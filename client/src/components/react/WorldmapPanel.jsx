@@ -426,7 +426,7 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                   {mapCard.kingdom.is_ai && <span className="text-[10px] text-[var(--text3)]"> AI</span>}
                 </div>
                 <div className="text-[12px] text-[var(--text3)] mb-2">
-                  <span style={{ color: mapCard.meta.stroke || '#fff' }}>
+                  <span style={{ color: REGION_META[mapCard.kingdom.region]?.stroke || '#fff' }}>
                     {mapCard.meta.name || mapCard.kingdom.region || '—'}
                   </span>{' '}
                   | Level {mapCard.kingdom.level || 1} | Turn {mapCard.kingdom.turn || 0}
