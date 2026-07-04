@@ -44,9 +44,15 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 ## Upcoming: Exploration System Redesign (4 Phases)
 
-**Status:** Design locked & merged (PR #778, 2026-07-04), awaiting Phase 1 implementation
+**Status:** Phase 0 spike complete (PR #779, merged 2026-07-04); ready for Phase 1
 
 **Overview:** Transform instant single-turn searches + generic expeditions into turn-based, progression-gated exploration system (Scout allocation-based rings, Epic Trek point-and-go targeting, Hunting/Prospecting/Land Expansion resource gathering, regional Dungeon/Mountain locations).
+
+**Phase 0: Hex Foundation Validation** — ✅ COMPLETE (PR #779, merged 2026-07-04)
+- ✅ Verified pixelToHex, hexUnitDistance, getHexesInRadius functions exist and work
+- ✅ Verified visibility-cells bitmap functions (cellIndex, encodeCellSet, decodeCellSet, etc.)
+- ✅ Performance: Ring 1-11 <1ms, Ring 12-17 <5ms (acceptable for turn-based)
+- ✅ Fixed blueprint code bugs identified by Gemini (ring formula, object reference equality, function signatures)
 
 **Phase 1:** Refactor instant searches (land/gold/food) → turn-based actions (est. 8-10 files)
 **Phase 2:** Scout allocation system with ring progression (est. 10-12 files)
