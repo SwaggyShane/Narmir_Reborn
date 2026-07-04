@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import { toast } from '../../utils/toast.js';
+import ProgressBar from './ProgressBar';
 import { useRace, useTroopLevels, useTrainingAllocation, useBuildTraining, useWeaponsStockpile, useArmorStockpile, useEngineers, useScribes, useResearchers, useFighters, useRangers, useClerics, useMages, useThieves, useNinjas, useEconomyStore } from '../../stores';
 
 const TROOP_TYPES = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas'];
@@ -159,27 +160,21 @@ const TrainingPanel = () => {
             <div className="text-[11px] text-[var(--text3)] mb-0.75">ENGINEERS</div>
             <div className="text-[18px] font-bold text-text">{fmt(engineers)}</div>
             <div className="text-[13px] font-semibold text-[var(--text3)] mt-0.5">Lv {engineerXpView.level}</div>
-            <div className="prog-wrap mx-auto mt-2 max-w-[120px]">
-              <div className="prog-bar bg-blue" style={{ width: engineerXpView.barWidth }} />
-            </div>
+            <ProgressBar percent={parseFloat(engineerXpView.barWidth)} variant="arm" />
             <div className="text-[10px] text-[var(--text3)] mt-0.5">{engineerXpView.xpText}</div>
           </div>
           <div className="bg-bg3 rounded-lg p-2.5 text-center">
             <div className="text-[11px] text-[var(--text3)] mb-0.75">SCRIBES</div>
             <div className="text-[18px] font-bold text-text">{fmt(scribes)}</div>
             <div className="text-[13px] font-semibold text-[var(--text3)] mt-0.5">Lv {scribeXpView.level}</div>
-            <div className="prog-wrap mx-auto mt-2 max-w-[120px]">
-              <div className="prog-bar bg-blue" style={{ width: scribeXpView.barWidth }} />
-            </div>
+            <ProgressBar percent={parseFloat(scribeXpView.barWidth)} variant="arm" />
             <div className="text-[10px] text-[var(--text3)] mt-0.5">{scribeXpView.xpText}</div>
           </div>
           <div className="bg-bg3 rounded-lg p-2.5 text-center">
             <div className="text-[11px] text-[var(--text3)] mb-0.75">RESEARCHERS</div>
             <div className="text-[18px] font-bold text-text">{fmt(researchers)}</div>
             <div className="text-[13px] font-semibold text-[var(--text3)] mt-0.5">Lv {researcherXpView.level}</div>
-            <div className="prog-wrap mx-auto mt-2 max-w-[120px]">
-              <div className="prog-bar bg-blue" style={{ width: researcherXpView.barWidth }} />
-            </div>
+            <ProgressBar percent={parseFloat(researcherXpView.barWidth)} variant="arm" />
             <div className="text-[10px] text-[var(--text3)] mt-0.5">{researcherXpView.xpText}</div>
           </div>
         </div>
@@ -218,9 +213,7 @@ const TrainingPanel = () => {
         {/* Training Rows */}
         <div className="trow">
           <span className="name">Fighters</span>
-          <div className="prog-wrap">
-            <div className="prog-bar mil" style={{ width: fighterXpView.barWidth }}></div>
-          </div>
+          <ProgressBar percent={parseFloat(fighterXpView.barWidth)} variant="mil" />
           <span className="count min-w-[70px]">Lv {fighterXpView.level}</span>
           <span className="text-[11px] text-[var(--text3)] min-w-[80px]">{fighterXpView.xpText}</span>
           <div className="flex items-center mb-1">
@@ -231,9 +224,7 @@ const TrainingPanel = () => {
 
         <div className="trow">
           <span className="name">Rangers</span>
-          <div className="prog-wrap">
-            <div className="prog-bar bg-[var(--blue)]" style={{ width: rangerXpView.barWidth }}></div>
-          </div>
+          <ProgressBar percent={parseFloat(rangerXpView.barWidth)} variant="arm" />
           <span className="count min-w-[70px]">Lv {rangerXpView.level}</span>
           <span className="text-[11px] text-[var(--text3)] min-w-[80px]">{rangerXpView.xpText}</span>
           <div className="flex items-center mb-1">
@@ -244,9 +235,7 @@ const TrainingPanel = () => {
 
         <div className={clsx('trow', isVampire && 'hidden')}>
           <span className="name">Clerics</span>
-          <div className="prog-wrap">
-            <div className="prog-bar bg-[var(--green)]" style={{ width: clericXpView.barWidth }}></div>
-          </div>
+          <ProgressBar percent={parseFloat(clericXpView.barWidth)} variant="mana" />
           <span className="count min-w-[70px]">Lv {clericXpView.level}</span>
           <span className="text-[11px] text-[var(--text3)] min-w-[80px]">{clericXpView.xpText}</span>
           <div className="flex items-center mb-1">
@@ -257,9 +246,7 @@ const TrainingPanel = () => {
 
         <div className="trow">
           <span className="name">Mages</span>
-          <div className="prog-wrap">
-            <div className="prog-bar spell" style={{ width: mageXpView.barWidth }}></div>
-          </div>
+          <ProgressBar percent={parseFloat(mageXpView.barWidth)} variant="spell" />
           <span className="count min-w-[70px]">Lv {mageXpView.level}</span>
           <span className="text-[11px] text-[var(--text3)] min-w-[80px]">{mageXpView.xpText}</span>
           <div className="flex items-center mb-1">
@@ -270,9 +257,7 @@ const TrainingPanel = () => {
 
         <div className="trow">
           <span className="name">Thieves</span>
-          <div className="prog-wrap">
-            <div className="prog-bar bg-[var(--amber)]" style={{ width: thiefXpView.barWidth }}></div>
-          </div>
+          <ProgressBar percent={parseFloat(thiefXpView.barWidth)} variant="mil" />
           <span className="count min-w-[70px]">Lv {thiefXpView.level}</span>
           <span className="text-[11px] text-[var(--text3)] min-w-[80px]">{thiefXpView.xpText}</span>
           <div className="flex items-center mb-1">
@@ -283,9 +268,7 @@ const TrainingPanel = () => {
 
         <div className="trow border-b-0">
           <span className="name">Ninjas</span>
-          <div className="prog-wrap">
-            <div className="prog-bar bg-[var(--red)]" style={{ width: ninjaXpView.barWidth }}></div>
-          </div>
+          <ProgressBar percent={parseFloat(ninjaXpView.barWidth)} variant="wep" />
           <span className="count min-w-[70px]">Lv {ninjaXpView.level}</span>
           <span className="text-[11px] text-[var(--text3)] min-w-[80px]">{ninjaXpView.xpText}</span>
           <div className="flex items-center mb-1">

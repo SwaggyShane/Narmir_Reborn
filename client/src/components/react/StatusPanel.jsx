@@ -5,6 +5,7 @@ import { repairMojibake } from '../../utils/repairMojibake';
 import { toast as showToast } from '../../utils/toast.js';
 import { openRaceLore } from '../../utils/openRaceLore.js';
 import RaceLorePortrait from './RaceLorePortrait.jsx';
+import ProgressBar from './ProgressBar';
 import {
   useRace,
   useTroopLevels,
@@ -452,13 +453,7 @@ const StatusPanel = () => {
                 className={clsx('trow', index === RESEARCH_ROWS.length - 1 && 'border-b-0')}
               >
                 <span className="name">{row.label}</span>
-                <div className="prog-wrap">
-                  <div
-                    id={barDomId}
-                    className={clsx('prog-bar', row.barClass)}
-                    style={{ width }}
-                  />
-                </div>
+                <ProgressBar percent={parseFloat(width)} variant={row.barClass.replace('bg-', '')} />
               </div>
             );
           })}
