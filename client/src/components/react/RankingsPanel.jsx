@@ -144,7 +144,7 @@ const RankingsPanel = () => {
     const nameStyle = isMe
       ? { color: 'var(--accent1)', fontWeight: 700 }
       : { color: 'var(--text)', fontWeight: 600 };
-    const meTag = isMe ? <span className="text-[10px] font-normal" style={{color: 'var(--accent1)'}}> (you)</span> : null;
+    const meTag = isMe ? <span className="text-[10px] font-normal text-[var(--accent1)]"> (you)</span> : null;
     const aiTag = row.is_ai ? <span className="text-[10px] text-text3"> 🤖</span> : null;
     const protTag = !isMe && (row.turn || 0) < 400
       ? <span className="text-[10px] text-green" title="Newbie protection — cannot be attacked until Turn 400"> 🛡️</span>
@@ -177,15 +177,15 @@ const RankingsPanel = () => {
         );
 
     return (
-      <tr key={row.id} className="border-b border-b-border">
+      <tr key={row.id} className={clsx("border-b border-b-border transition-colors duration-150", isMe && "bg-[rgba(180,60,0,0.08)]")}>
         <td style={{ padding: '10px 6px', ...rankColor }}>{rankBadge || row.rank}</td>
         <td className="px-1.5 py-2.5 text-text2">{row.username || '—'}</td>
         <td className="px-1.5 py-2.5">
           <div className="flex items-center gap-2">
-            <span className="text-xl flex-shrink-0">{raceIcon}</span>
+            <span className="text-lg flex-shrink-0">{raceIcon}</span>
             <div>
               <div style={nameStyle}>{repairText(row.name || 'Unknown')}{meTag}{aiTag}{protTag}</div>
-              <div className="text-[11px] text-text3 capitalize" style={{marginTop: '1px'}}>{repairText(raceKey).replace(/_/g, ' ')}</div>
+              <div className="text-[11px] text-text3 capitalize mt-[1px]">{repairText(raceKey).replace(/_/g, ' ')}</div>
             </div>
           </div>
         </td>
@@ -193,7 +193,7 @@ const RankingsPanel = () => {
         <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{row.level || 1}</td>
         <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{fmt(row.turn || 0)}</td>
         <td className="px-1.5 py-2.5 text-center text-text3 text-[11px]">{row.last_combat_at ? timeAgo(row.last_combat_at) : '—'}</td>
-        <td className="text-center" style={{padding: '10px 8px'}}>{actionBtns}</td>
+        <td className="px-2 py-2.5 text-center">{actionBtns}</td>
       </tr>
     );
   };
@@ -215,9 +215,9 @@ const RankingsPanel = () => {
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-4">
             <div id="rankings-title" className="card-title m-0">Rankings</div>
-            <div className="flex gap-1 p-1 rounded-lg" style={{background: 'var(--bg3)'}}>
-              <button id="rank-tab-kingdoms" className={`base-btn ${activeTab === 'kingdoms' ? 'active' : ''} text-[11px] h-auto`} style={{padding: '4px 12px'}} onClick={() => handleSetRankType('kingdoms')}>Kingdoms</button>
-              <button id="rank-tab-alliances" className={`base-btn ${activeTab === 'alliances' ? 'active' : ''} text-[11px] h-auto`} style={{padding: '4px 12px'}} onClick={() => handleSetRankType('alliances')}>Alliance</button>
+            <div className="flex gap-1 p-1 rounded-lg bg-[var(--bg3)]">
+              <button id="rank-tab-kingdoms" className={`base-btn ${activeTab === 'kingdoms' ? 'active' : ''} text-[11px] h-auto px-3 py-1`} onClick={() => handleSetRankType('kingdoms')}>Kingdoms</button>
+              <button id="rank-tab-alliances" className={`base-btn ${activeTab === 'alliances' ? 'active' : ''} text-[11px] h-auto px-3 py-1`} onClick={() => handleSetRankType('alliances')}>Alliance</button>
             </div>
           </div>
           <div className="flex gap-2 items-center">
@@ -227,9 +227,9 @@ const RankingsPanel = () => {
         </div>
 
         <div id="rank-view-kingdoms" className={clsx('overflow-x-auto', activeTab === 'kingdoms' ? 'block' : 'hidden')}>
-          <table className="w-full text-[13px]" style={{borderCollapse: 'collapse'}}>
+          <table className="w-full text-[13px] border-collapse">
             <thead>
-              <tr className="text-text3 text-[11px] uppercase border-b-2 border-b-border2" style={{letterSpacing: '0.5px'}}>
+              <tr className="text-text3 text-[11px] uppercase border-b-2 border-b-border2 tracking-[0.5px]">
                 <th className="px-1.5 py-2 text-left w-[32px]">#</th>
                 <th className="px-[6px] py-2 text-left">Player</th>
                 <th className="px-[6px] py-2 text-left">Kingdom</th>
@@ -253,9 +253,9 @@ const RankingsPanel = () => {
         </div>
 
         <div id="rank-view-alliances" className={clsx('overflow-x-auto', activeTab === 'alliances' ? 'block' : 'hidden')}>
-          <table className="w-full text-[13px]" style={{borderCollapse: 'collapse'}}>
+          <table className="w-full text-[13px] border-collapse">
             <thead>
-              <tr className="text-text3 text-[11px] uppercase border-b-2 border-b-border2" style={{letterSpacing: '0.5px'}}>
+              <tr className="text-text3 text-[11px] uppercase border-b-2 border-b-border2 tracking-[0.5px]">
                 <th className="px-1.5 py-2 text-left w-[32px]">#</th>
                 <th className="px-[6px] py-2 text-left">Alliance</th>
                 <th className="px-[6px] py-2 text-right">Members</th>
