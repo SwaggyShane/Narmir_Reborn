@@ -10,6 +10,20 @@
 
 ### 2026-07-04
 
+- **Worldmap UI Enhancements** (PR #798, merged 2026-07-04): Comprehensive improvements to world map readability and player experience, including terrain legend, visual terrain patterns, fog of war fixes, and visibility edge case resolution.
+  - **Terrain Legend Component:** New sidebar legend displaying all 11 terrain types (plains, forest, mountains, hills, swamp, desert, coast, tundra, volcanic, lake, ocean) with colors and expedition speed modifiers (+12% plains to -45% volcanic)
+  - **Terrain Patterns:** SVG pattern overlays for each terrain biome (diagonal lines for plains, dots for forest, chevrons for mountains, waves for coast, etc.) for visual distinction without compromising base colors
+  - **Fog of War Fixes:**
+    - ✅ Layer ordering: Moved rivers rendering before fog layer so rivers now appear under fog of war (not on top), improving visual hierarchy
+    - ✅ Edge case fix: Added missing upper bound check in `clientCellIndex()` to prevent out-of-bounds visibility bitmap access for hexes at map edges (row >= 24)
+    - ✅ Safari compatibility: Removed `mix-blend-mode:overlay` from terrain patterns to ensure cross-browser support (semi-transparent patterns blend naturally)
+  - **Code Quality:** 
+    - Exported `TERRAIN_COLORS`, `TERRAIN_DISPLAY_NAMES`, `TERRAIN_EXP_SPEED` from `WorldmapRenderer.jsx` to eliminate duplication and maintain single source of truth
+    - Refactored `WorldmapPanel.jsx` to import constants instead of maintaining separate copies (addresses Gemini DRY principle feedback)
+  - **Gemini Review:** Two reviews provided — first flagged constant duplication (addressed via export/import refactoring), second flagged Safari mix-blend-mode incompatibility (addressed via removal)
+  - **Testing:** Lint ✅ (0 errors throughout all 5 commits), Smoke test ✅ (fresh PostgreSQL, all baseline checks), CI ✅ (all 3 checks green on final commit)
+  - **Scope:** Initial request was terrain legend + terrain patterns. Expanded scope included rivers layer ordering fix, fog visibility bounds fix, and constants refactoring based on user discovery and code review feedback.
+
 - **ProgressBar Component Extraction & Refactoring** (PR #794, merged 2026-07-04): Created reusable `ProgressBar.jsx` component to eliminate 200+ individual progress bar div pairs scattered across panels. Enhanced component with flexible styling support via `wrapperClassName` and `barClassName` props for panel-specific customization while maintaining consistent reusable base.
   - **Component improvements:**
     - Auto-clamps percent values (0-100)

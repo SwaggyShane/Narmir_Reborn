@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-04 (CSS Consolidation Phase 4 complete: TestingPanel, PR #795 fixes applied)
+**Last updated:** 2026-07-04 (Worldmap UI Enhancements complete: PR #798 merged; CSS Consolidation Phase 4C complete)
 
 ---
 
