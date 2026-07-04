@@ -58,6 +58,10 @@ export const useProfileStore = create(
       milestone_bonuses: {},
       milestone_title: 'Fledgling',
 
+      // Scout allocation and progression
+      scout_allocation: 0,
+      scout_progress: 0,
+
       // ===== ACTIONS =====
 
       /**
@@ -98,6 +102,8 @@ export const useProfileStore = create(
         if (data?.xp_sources !== undefined) state.xp_sources = data.xp_sources;
         if (data?.milestone_bonuses !== undefined) state.milestone_bonuses = data.milestone_bonuses;
         if (data?.milestone_title !== undefined) state.milestone_title = data.milestone_title;
+        if (data?.scout_allocation !== undefined) state.scout_allocation = data.scout_allocation;
+        if (data?.scout_progress !== undefined) state.scout_progress = data.scout_progress;
       }),
 
       /**
