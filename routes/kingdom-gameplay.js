@@ -3562,7 +3562,11 @@ module.exports = function (db) {
         const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
           req.player.playerId,
         ]);
-        if (!k) throw new Error('Kingdom not found');
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
 
         // Gating: Ring 2 completion check
         const parsedVis = safeJsonParse(k.visibility || '{}', {}, 'auto:visibility');
@@ -3588,7 +3592,7 @@ module.exports = function (db) {
         const pathHexes = getPathHexes(map_x, map_y, target_x, target_y);
         const DEEP_EXP_FOOD_COST_PER_HEX = 50;
         const rangerCount = k.rangers || 0;
-        const rangerLevel = k.ranger_level || 1;
+        const rangerLevel = parseTroopLevel(k.troop_levels || {}, 'rangers') || 1;
         const levelMult = 1 + (rangerLevel - 1) * 0.05;
         const foodNeeded = Math.ceil(pathHexes.length * DEEP_EXP_FOOD_COST_PER_HEX * levelMult);
 

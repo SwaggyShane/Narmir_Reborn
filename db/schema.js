@@ -1438,6 +1438,12 @@ async function initDb(options = {}) {
     await addColumn('expeditions', 'rewards_claimed', 'INTEGER NOT NULL DEFAULT 0');
   }
 
+  // Expeditions — extra_data column (for Phase 3 Epic Trek path storage)
+  const expCols3 = await getTableColumns('expeditions');
+  if (expCols3.length > 0 && !expCols3.includes('extra_data')) {
+    await addColumn('expeditions', 'extra_data', 'TEXT');
+  }
+
   // Resource expeditions — food_taken column
   const resExpCols = await getTableColumns('resource_expeditions');
   if (resExpCols.length > 0 && !resExpCols.includes('food_taken')) {

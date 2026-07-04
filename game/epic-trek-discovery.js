@@ -21,11 +21,11 @@
  * @returns {object|null} Discovery object or null if no discovery
  */
 function rollKingdomDiscovery(hexCol, hexRow, kingdom) {
-  if (!kingdom || !kingdom.kingdom_id) return null;
+  if (!kingdom || !kingdom.id) return null;
 
   // Simple seeded random: hash hex position + kingdom_id
   // In production, use a seeded RNG for determinism
-  const seed = (hexCol * 1000 + hexRow) ^ kingdom.kingdom_id;
+  const seed = (hexCol * 1000 + hexRow) ^ kingdom.id;
   const pseudo = Math.sin(seed) * 10000;
   const rand = pseudo - Math.floor(pseudo);
 
@@ -51,9 +51,9 @@ function rollKingdomDiscovery(hexCol, hexRow, kingdom) {
  * @returns {object|null} Discovery object or null if no discovery
  */
 function rollLocationDiscovery(hexCol, hexRow, kingdom) {
-  if (!kingdom || !kingdom.kingdom_id) return null;
+  if (!kingdom || !kingdom.id) return null;
 
-  const seed = (hexCol * 2000 + hexRow + 7) ^ (kingdom.kingdom_id * 13);
+  const seed = (hexCol * 2000 + hexRow + 7) ^ (kingdom.id * 13);
   const pseudo = Math.cos(seed * 0.5) * 10000;
   const rand = pseudo - Math.floor(pseudo);
 

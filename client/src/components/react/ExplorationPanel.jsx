@@ -109,6 +109,9 @@ const ExplorationPanel = () => {
   const [landExpansionTerrain, setLandExpansionTerrain] = useState('grassland');
   // Phase 2E: Scout allocation UI
   const [scoutAllocationInput, setScoutAllocationInput] = useState(0);
+  // Phase 3: Epic Trek point-and-go
+  const [epicTrekTargetX, setEpicTrekTargetX] = useState('');
+  const [epicTrekTargetY, setEpicTrekTargetY] = useState('');
 
   const refreshInventory = useCallback(async () => {
     try {
