@@ -18,6 +18,7 @@ const {
 
 const fragmentBonusManager = require("./fragment-bonus-manager");
 const effectsProcessor = require("./synergy-effects-processor");
+const { processScoutProgress } = require("./scout-progress");
 const { safeJsonParse, clearParseCache } = require('../utils/helpers');
 const { EPOCH_NOW } = require('../lib/db-sql');
 const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
@@ -550,6 +551,20 @@ function processTurn(k, db = null) {
     changed = true;
   }
   if (changed) updates.active_event = JSON.stringify(activeEv2);
+
+  // ── 4e-i. Scout ring progression ──────────────────────────────────────────────
+  {
+    const scoutResult = processScoutProgress({ ...k, ...updates });
+    if (scoutResult.progress_gained > 0) {
+      updates.scout_progress = scoutResult.new_total;
+      if (scoutResult.ring_completed) {
+        events.push({
+          type: "system",
+          message: `🔍 Scouts have completed Ring ${scoutResult.completed_ring_number}! ${scoutResult.new_total - scoutResult.progress_gained} → ${scoutResult.new_total} scout-turns.`,
+        });
+      }
+    }
+  }
 
   // ── 5. Lore Events ────────────────────────────────────────────────────────────
   // 0.1% chance ~ 24000 turns needed for 24 drops

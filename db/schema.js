@@ -19,7 +19,7 @@ const NUMERIC_FIELDS = [
   'fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas',
   'researchers', 'engineers', 'engineer_level', 'engineer_xp', 'scribes', 'thralls',
   // Allocations
-  'scout_allocation',
+  'scout_allocation', 'scout_progress',
   // Military equipment
   'war_machines', 'ballistae', 'weapons_stockpile', 'armor_stockpile', 'ladders',
   // Research
@@ -1590,6 +1590,8 @@ async function initDb(options = {}) {
   if (!kingdomsCols.includes('visibility'))            await addColumn('kingdoms', 'visibility',            "TEXT NOT NULL DEFAULT '{\"seen_cells\":\"0\",\"current_cells\":\"0\",\"version\":1}'", kingdomsCols);
   // Exploration Phase 2: Scout allocation pool for ring progression
   if (!kingdomsCols.includes('scout_allocation'))      await addColumn('kingdoms', 'scout_allocation',      'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  // Exploration Phase 2C: Scout progress toward current ring (cumulative turns across all rings)
+  if (!kingdomsCols.includes('scout_progress'))        await addColumn('kingdoms', 'scout_progress',        'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
 
   // Market Prices table procedural check
   await _db.exec(`
