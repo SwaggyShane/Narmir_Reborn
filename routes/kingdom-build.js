@@ -94,46 +94,43 @@ module.exports = function (db) {
     }
 
     try {
-      await db.run('BEGIN TRANSACTION');
-
-      const k = await db.get(
-        'SELECT id, bld_training, fighters, rangers, mages, clerics, thieves, ninjas FROM kingdoms WHERE player_id = $1 FOR UPDATE',
-        [req.player.playerId],
-      );
-      if (!k) {
-        await db.run('ROLLBACK');
-        return res.status(404).json({ error: 'Kingdom not found' });
-      }
-
-      const capacity = k.bld_training * 100;
-      const clean_alloc = allocValidation.values;
-
-      for (const [unit, amount] of Object.entries(clean_alloc)) {
-        if (amount > (k[unit] || 0)) {
-          await db.run('ROLLBACK');
-          return res.status(400).json({ error: `Not enough ${unit}` });
+      await db.withTransaction(async () => {
+        const k = await db.get(
+          'SELECT id, bld_training, fighters, rangers, mages, clerics, thieves, ninjas FROM kingdoms WHERE player_id = $1 FOR UPDATE',
+          [req.player.playerId],
+        );
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
         }
-      }
-      if (allocValidation.total > capacity) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: `Exceeds training capacity (${capacity})` });
-      }
 
-      await db.run('UPDATE kingdoms SET training_allocation = $1 WHERE id = $2', [
-        JSON.stringify(clean_alloc),
-        k.id,
-      ]);
+        const capacity = k.bld_training * 100;
+        const clean_alloc = allocValidation.values;
 
-      await db.run('COMMIT');
+        for (const [unit, amount] of Object.entries(clean_alloc)) {
+          if (amount > (k[unit] || 0)) {
+            const err = new Error(`Not enough ${unit}`);
+            err.statusCode = 400;
+            throw err;
+          }
+        }
+        if (allocValidation.total > capacity) {
+          const err = new Error(`Exceeds training capacity (${capacity})`);
+          err.statusCode = 400;
+          throw err;
+        }
+
+        await db.run('UPDATE kingdoms SET training_allocation = $1 WHERE id = $2', [
+          JSON.stringify(clean_alloc),
+          k.id,
+        ]);
+      });
       res.json({ ok: true });
     } catch (err) {
-      try {
-        await db.run('ROLLBACK');
-      } catch (rollbackErr) {
-        console.error('[training-allocation] rollback error:', rollbackErr.message);
-      }
       console.error('[training-allocation] error:', err.message);
-      res.status(500).json({ error: 'Failed to set training allocation' });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
     }
   });
 
@@ -151,42 +148,36 @@ module.exports = function (db) {
     }
 
     try {
-      await db.run('BEGIN TRANSACTION');
+      await db.withTransaction(async () => {
+        const k = await db.get(
+          'SELECT id, engineers, resource_build_allocation FROM kingdoms WHERE player_id = $1 FOR UPDATE',
+          [req.player.playerId],
+        );
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
 
-      const k = await db.get(
-        'SELECT id, engineers, resource_build_allocation FROM kingdoms WHERE player_id = $1 FOR UPDATE',
-        [req.player.playerId],
-      );
-      if (!k) {
-        await db.run('ROLLBACK');
-        return res.status(404).json({ error: 'Kingdom not found' });
-      }
+        const resourceAlloc = safeJsonParse(k.resource_build_allocation, {}, 'build-allocation:resource_build_allocation');
+        const resourceTotal = Object.values(resourceAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
 
-      const resourceAlloc = safeJsonParse(k.resource_build_allocation, {}, 'build-allocation:resource_build_allocation');
-      const resourceTotal = Object.values(resourceAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
+        if (allocValidation.total + resourceTotal > k.engineers) {
+          const err = new Error(`Allocated ${allocValidation.total.toLocaleString()} build engineers and ${resourceTotal.toLocaleString()} resource engineers, but only have ${k.engineers.toLocaleString()} engineers total`);
+          err.statusCode = 400;
+          throw err;
+        }
 
-      if (allocValidation.total + resourceTotal > k.engineers) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({
-          error: `Allocated ${allocValidation.total.toLocaleString()} build engineers and ${resourceTotal.toLocaleString()} resource engineers, but only have ${k.engineers.toLocaleString()} engineers total`,
-        });
-      }
-
-      await db.run('UPDATE kingdoms SET build_allocation = $1 WHERE id = $2', [
-        JSON.stringify(allocValidation.values),
-        k.id,
-      ]);
-
-      await db.run('COMMIT');
+        await db.run('UPDATE kingdoms SET build_allocation = $1 WHERE id = $2', [
+          JSON.stringify(allocValidation.values),
+          k.id,
+        ]);
+      });
       res.json({ ok: true });
     } catch (err) {
-      try {
-        await db.run('ROLLBACK');
-      } catch (rollbackErr) {
-        console.error('[build-allocation] rollback error:', rollbackErr.message);
-      }
       console.error('[build-allocation] error:', err.message);
-      res.status(500).json({ error: 'Failed to set build allocation' });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
     }
   });
 
@@ -298,37 +289,39 @@ module.exports = function (db) {
     }
 
     try {
-      await db.run('BEGIN TRANSACTION');
+      const { updates, message } = await db.withTransaction(async () => {
+        const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = $1 FOR UPDATE`, [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
 
-      const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = $1 FOR UPDATE`, [
-        req.player.playerId,
-      ]);
-      if (!k) {
-        await db.run('ROLLBACK');
-        return res.status(404).json({ error: 'Kingdom not found' });
-      }
+        const result = engine.demolishBuilding(k, building, amountValidation.value);
+        if (result.error) {
+          const err = new Error(result.error);
+          err.statusCode = 400;
+          throw err;
+        }
 
-      const result = engine.demolishBuilding(k, building, amountValidation.value);
-      if (result.error) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: result.error });
-      }
+        await applyUpdates(db, k.id, result.updates);
+        const msg = `🗑️ Demolished ${result.refund.count} ${building.replace(/_/g, ' ')}. Refunded ${result.refund.gold.toLocaleString()} gold and ${result.refund.land} acres.`;
+        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [
+          k.id,
+          'system',
+          msg,
+          k.turn,
+        ]);
 
-      await applyUpdates(db, k.id, result.updates);
-      const msg = `🗑️ Demolished ${result.refund.count} ${building.replace(/_/g, ' ')}. Refunded ${result.refund.gold.toLocaleString()} gold and ${result.refund.land} acres.`;
-      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [
-        k.id,
-        'system',
-        msg,
-        k.turn,
-      ]);
-
-      await db.run('COMMIT');
-      res.json({ ok: true, updates: result.updates, message: msg });
+        return { updates: result.updates, message: msg };
+      });
+      res.json({ ok: true, updates, message });
     } catch (err) {
-      await db.run('ROLLBACK').catch(() => {});
       console.error('[demolish] error:', err.message);
-      res.status(500).json({ error: 'Demolish failed' });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
     }
   });
 
@@ -340,76 +333,82 @@ module.exports = function (db) {
     }
 
     try {
-      await db.run('BEGIN TRANSACTION');
+      const { updates, message, buildTime, cost } = await db.withTransaction(async () => {
+        const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = $1 FOR UPDATE`, [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
 
-      const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = $1 FOR UPDATE`, [
-        req.player.playerId,
-      ]);
-      if (!k) {
-        await db.run('ROLLBACK');
-        return res.status(404).json({ error: 'Kingdom not found' });
-      }
+        const buildingId = building.startsWith('bld_') ? building : `bld_${building}`;
 
-      const buildingId = building.startsWith('bld_') ? building : `bld_${building}`;
+        const tier = config.BUILDING_TIERS[buildingId];
+        if (!tier) {
+          const err = new Error('Invalid building');
+          err.statusCode = 400;
+          throw err;
+        }
 
-      const tier = config.BUILDING_TIERS[buildingId];
-      if (!tier) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: 'Invalid building' });
-      }
+        const buildTime = engine.calculateBuildTime(k, tier);
+        const cost = engine.calculateBuildCost(k, tier);
 
-      const buildTime = engine.calculateBuildTime(k, tier);
-      const cost = engine.calculateBuildCost(k, tier);
+        if (k.land < cost.land) {
+          const err = new Error('Insufficient land');
+          err.statusCode = 400;
+          throw err;
+        }
+        if (k.wood < cost.wood) {
+          const err = new Error('Insufficient wood');
+          err.statusCode = 400;
+          throw err;
+        }
+        if (k.stone < cost.stone) {
+          const err = new Error('Insufficient stone');
+          err.statusCode = 400;
+          throw err;
+        }
+        if (k.iron < cost.iron) {
+          const err = new Error('Insufficient iron');
+          err.statusCode = 400;
+          throw err;
+        }
 
-      if (k.land < cost.land) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: 'Insufficient land' });
-      }
-      if (k.wood < cost.wood) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: 'Insufficient wood' });
-      }
-      if (k.stone < cost.stone) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: 'Insufficient stone' });
-      }
-      if (k.iron < cost.iron) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: 'Insufficient iron' });
-      }
+        const buildQueue = safeJsonParse(k.build_queue, {}, 'build:existing_queue');
+        const queueId = `${buildingId}_${Date.now()}`;
+        buildQueue[queueId] = {
+          building: buildingId,
+          started_at: k.turn,
+          turns_needed: buildTime,
+          turns_remaining: buildTime,
+          cost,
+        };
 
-      const buildQueue = safeJsonParse(k.build_queue, {}, 'build:existing_queue');
-      const queueId = `${buildingId}_${Date.now()}`;
-      buildQueue[queueId] = {
-        building: buildingId,
-        started_at: k.turn,
-        turns_needed: buildTime,
-        turns_remaining: buildTime,
-        cost,
-      };
+        const updates = {
+          wood: k.wood - cost.wood,
+          stone: k.stone - cost.stone,
+          iron: k.iron - cost.iron,
+          build_queue: JSON.stringify(buildQueue),
+        };
 
-      const updates = {
-        wood: k.wood - cost.wood,
-        stone: k.stone - cost.stone,
-        iron: k.iron - cost.iron,
-        build_queue: JSON.stringify(buildQueue),
-      };
+        await applyUpdates(db, k.id, updates);
+        const msg = `🗑️ Construction started: ${buildingId.replace(/^bld_/, '').replace(/_/g, ' ')}. Estimated completion: ${buildTime} turns.`;
+        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [
+          k.id,
+          'system',
+          msg,
+          k.turn,
+        ]);
 
-      await applyUpdates(db, k.id, updates);
-      const msg = `🗑️ Construction started: ${buildingId.replace(/^bld_/, '').replace(/_/g, ' ')}. Estimated completion: ${buildTime} turns.`;
-      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [
-        k.id,
-        'system',
-        msg,
-        k.turn,
-      ]);
-
-      await db.run('COMMIT');
-      res.json({ ok: true, updates, message: msg, buildTime, cost });
+        return { updates, message: msg, buildTime, cost };
+      });
+      res.json({ ok: true, updates, message, buildTime, cost });
     } catch (err) {
-      await db.run('ROLLBACK').catch(() => {});
       console.error('[build] error:', err.message);
-      res.status(500).json({ error: 'Build failed' });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
     }
   });
 
@@ -421,49 +420,51 @@ module.exports = function (db) {
     }
 
     try {
-      await db.run('BEGIN TRANSACTION');
+      const { updates, message } = await db.withTransaction(async () => {
+        const k = await db.get(
+          'SELECT id, build_queue, land, wood, stone, iron, turn FROM kingdoms WHERE player_id = $1 FOR UPDATE',
+          [req.player.playerId],
+        );
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
 
-      const k = await db.get(
-        'SELECT id, build_queue, land, wood, stone, iron, turn FROM kingdoms WHERE player_id = $1 FOR UPDATE',
-        [req.player.playerId],
-      );
-      if (!k) {
-        await db.run('ROLLBACK');
-        return res.status(404).json({ error: 'Kingdom not found' });
-      }
+        const buildQueue = safeJsonParse(k.build_queue, {}, 'build:cancel_queue');
+        if (!buildQueue[queueId]) {
+          const err = new Error('Building not found in queue');
+          err.statusCode = 404;
+          throw err;
+        }
 
-      const buildQueue = safeJsonParse(k.build_queue, {}, 'build:cancel_queue');
-      if (!buildQueue[queueId]) {
-        await db.run('ROLLBACK');
-        return res.status(404).json({ error: 'Building not found in queue' });
-      }
+        const buildJob = buildQueue[queueId];
+        delete buildQueue[queueId];
 
-      const buildJob = buildQueue[queueId];
-      delete buildQueue[queueId];
+        const updates = {
+          land: k.land + buildJob.cost.land,
+          wood: k.wood + buildJob.cost.wood,
+          stone: k.stone + buildJob.cost.stone,
+          iron: k.iron + buildJob.cost.iron,
+          build_queue: JSON.stringify(buildQueue),
+        };
 
-      const updates = {
-        land: k.land + buildJob.cost.land,
-        wood: k.wood + buildJob.cost.wood,
-        stone: k.stone + buildJob.cost.stone,
-        iron: k.iron + buildJob.cost.iron,
-        build_queue: JSON.stringify(buildQueue),
-      };
+        await applyUpdates(db, k.id, updates);
+        const msg = `🗑️ Construction cancelled: ${buildJob.building.replace(/_/g, ' ')}. Resources refunded.`;
+        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [
+          k.id,
+          'system',
+          msg,
+          k.turn,
+        ]);
 
-      await applyUpdates(db, k.id, updates);
-      const msg = `🗑️ Construction cancelled: ${buildJob.building.replace(/_/g, ' ')}. Resources refunded.`;
-      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [
-        k.id,
-        'system',
-        msg,
-        k.turn,
-      ]);
-
-      await db.run('COMMIT');
-      res.json({ ok: true, updates, message: msg });
+        return { updates, message: msg };
+      });
+      res.json({ ok: true, updates, message });
     } catch (err) {
-      await db.run('ROLLBACK').catch(() => {});
       console.error('[cancel-building] error:', err.message);
-      res.status(500).json({ error: 'Cancellation failed' });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
     }
   });
 
@@ -472,53 +473,54 @@ module.exports = function (db) {
     const amount = Math.max(1, parseInt(req.body.amount) || 1);
 
     try {
-      await db.run('BEGIN TRANSACTION');
+      const { bought, actualCost, newHammers, newGold } = await db.withTransaction(async () => {
+        const k = await db.get(`SELECT ${KINGDOM_SMITHY} FROM kingdoms WHERE player_id=$1 FOR UPDATE`, [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
+        if (!(k.bld_smithies > 0)) {
+          const err = new Error('Need at least 1 smithy');
+          err.statusCode = 400;
+          throw err;
+        }
 
-      const k = await db.get(`SELECT ${KINGDOM_SMITHY} FROM kingdoms WHERE player_id=$1 FOR UPDATE`, [
-        req.player.playerId,
-      ]);
-      if (!k) {
-        await db.run('ROLLBACK');
-        return res.status(404).json({ error: 'Kingdom not found' });
-      }
-      if (!(k.bld_smithies > 0)) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: 'Need at least 1 smithy' });
-      }
+        const cost = amount * 25;
+        if (k.gold < cost) {
+          const err = new Error(`Need ${cost.toLocaleString()} gold`);
+          err.statusCode = 400;
+          throw err;
+        }
 
-      const cost = amount * 25;
-      if (k.gold < cost) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: `Need ${cost.toLocaleString()} gold` });
-      }
+        const cap = k.bld_smithies * 25;
+        const newHammers = Math.min(cap, k.hammers_stored + amount);
+        const bought = newHammers - k.hammers_stored;
+        if (bought <= 0) {
+          const err = new Error('Hammer storage full');
+          err.statusCode = 400;
+          throw err;
+        }
 
-      const cap = k.bld_smithies * 25;
-      const newHammers = Math.min(cap, k.hammers_stored + amount);
-      const bought = newHammers - k.hammers_stored;
-      if (bought <= 0) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: 'Hammer storage full' });
-      }
+        const actualCost = bought * 25;
+        await db.run('UPDATE kingdoms SET gold=gold-$1, hammers_stored=$2 WHERE id=$3', [actualCost, newHammers, k.id]);
 
-      const actualCost = bought * 25;
-      await db.run('UPDATE kingdoms SET gold=gold-$1, hammers_stored=$2 WHERE id=$3', [actualCost, newHammers, k.id]);
-      await db.run('COMMIT');
+        return { bought, actualCost, newHammers, newGold: k.gold - actualCost };
+      });
 
       res.json({
         ok: true,
         bought,
         cost: actualCost,
         hammers_stored: newHammers,
-        gold: k.gold - actualCost,
+        gold: newGold,
       });
     } catch (err) {
-      try {
-        await db.run('ROLLBACK');
-      } catch (rollbackErr) {
-        console.error('[smithy/buy-hammers] rollback error:', rollbackErr.message);
-      }
       console.error('[smithy/buy-hammers] error:', err.message);
-      res.status(500).json({ error: 'Purchase failed' });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
     }
   });
 
@@ -527,60 +529,60 @@ module.exports = function (db) {
     const amount = Math.max(1, parseInt(req.body.amount) || 1);
 
     try {
-      await db.run('BEGIN TRANSACTION');
+      const { bought, actualCost, newScaff, newGold, hasSmithy } = await db.withTransaction(async () => {
+        const k = await db.get(`SELECT ${KINGDOM_SMITHY} FROM kingdoms WHERE player_id=$1 FOR UPDATE`, [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
 
-      const k = await db.get(`SELECT ${KINGDOM_SMITHY} FROM kingdoms WHERE player_id=$1 FOR UPDATE`, [
-        req.player.playerId,
-      ]);
-      if (!k) {
-        await db.run('ROLLBACK');
-        return res.status(404).json({ error: 'Kingdom not found' });
-      }
+        const baseCost = 2500;
+        const hasSmithy = k.bld_smithies > 0;
+        const unitPrice = hasSmithy ? baseCost : Math.floor(baseCost * 1.25);
+        const cost = amount * unitPrice;
 
-      const baseCost = 2500;
-      const hasSmithy = k.bld_smithies > 0;
-      const unitPrice = hasSmithy ? baseCost : Math.floor(baseCost * 1.25);
-      const cost = amount * unitPrice;
+        if (k.gold < cost) {
+          const err = new Error(`Need ${cost.toLocaleString()} gold`);
+          err.statusCode = 400;
+          throw err;
+        }
 
-      if (k.gold < cost) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: `Need ${cost.toLocaleString()} gold` });
-      }
+        const cap = Math.max(10, k.bld_smithies * 10);
+        const currentScaff = k.scaffolding_stored;
+        const newScaff = Math.min(cap, currentScaff + amount);
+        const bought = newScaff - currentScaff;
 
-      const cap = Math.max(10, k.bld_smithies * 10);
-      const currentScaff = k.scaffolding_stored;
-      const newScaff = Math.min(cap, currentScaff + amount);
-      const bought = newScaff - currentScaff;
+        if (bought <= 0) {
+          const err = new Error('Scaffolding storage full');
+          err.statusCode = 400;
+          throw err;
+        }
 
-      if (bought <= 0) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: 'Scaffolding storage full' });
-      }
+        const actualCost = bought * unitPrice;
+        await db.run('UPDATE kingdoms SET gold=gold-$1, scaffolding_stored=$2 WHERE id=$3', [
+          actualCost,
+          newScaff,
+          k.id,
+        ]);
 
-      const actualCost = bought * unitPrice;
-      await db.run('UPDATE kingdoms SET gold=gold-$1, scaffolding_stored=$2 WHERE id=$3', [
-        actualCost,
-        newScaff,
-        k.id,
-      ]);
-      await db.run('COMMIT');
+        return { bought, actualCost, newScaff, newGold: k.gold - actualCost, hasSmithy };
+      });
 
       res.json({
         ok: true,
         bought,
         cost: actualCost,
         scaffolding_stored: newScaff,
-        gold: k.gold - actualCost,
+        gold: newGold,
         markup: !hasSmithy,
       });
     } catch (err) {
-      try {
-        await db.run('ROLLBACK');
-      } catch (rollbackErr) {
-        console.error('[smithy/buy-scaffolding] rollback error:', rollbackErr.message);
-      }
       console.error('[smithy/buy-scaffolding] error:', err.message);
-      res.status(500).json({ error: 'Purchase failed' });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
     }
   });
 
@@ -604,40 +606,43 @@ module.exports = function (db) {
     }
 
     try {
-      await db.run('BEGIN TRANSACTION');
+      const { allocation } = await db.withTransaction(async () => {
+        const k = await db.get(
+          'SELECT id, bld_mage_towers, mage_tower_allocation FROM kingdoms WHERE player_id = $1 FOR UPDATE',
+          [req.player.playerId],
+        );
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
+        if (k.bld_mage_towers === 0) {
+          const err = new Error('You need at least 1 Mage Tower first');
+          err.statusCode = 400;
+          throw err;
+        }
 
-      const k = await db.get(
-        'SELECT id, bld_mage_towers, mage_tower_allocation FROM kingdoms WHERE player_id = $1 FOR UPDATE',
-        [req.player.playerId],
-      );
-      if (!k) {
-        await db.run('ROLLBACK');
-        return res.status(404).json({ error: 'Kingdom not found' });
-      }
-      if (k.bld_mage_towers === 0) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: 'You need at least 1 Mage Tower first' });
-      }
+        let alloc = {};
+        try {
+          alloc = safeJsonParse(k.mage_tower_allocation, {}, 'auto:mage_tower_allocation');
+        } catch {}
+        if (alloc.scroll_craft) {
+          alloc[alloc.scroll_craft] = alloc.scroll_target || 999;
+          delete alloc.scroll_craft;
+          delete alloc.scroll_target;
+        }
 
-      let alloc = {};
-      try {
-        alloc = safeJsonParse(k.mage_tower_allocation, {}, 'auto:mage_tower_allocation');
-      } catch {}
-      if (alloc.scroll_craft) {
-        alloc[alloc.scroll_craft] = alloc.scroll_target || 999;
-        delete alloc.scroll_craft;
-        delete alloc.scroll_target;
-      }
+        alloc[item] = (alloc[item] || 0) + qtyValidation.value;
+        await db.run('UPDATE kingdoms SET mage_tower_allocation = $1 WHERE id = $2', [JSON.stringify(alloc), k.id]);
 
-      alloc[item] = (alloc[item] || 0) + qtyValidation.value;
-      await db.run('UPDATE kingdoms SET mage_tower_allocation = $1 WHERE id = $2', [JSON.stringify(alloc), k.id]);
-      await db.run('COMMIT');
+        return { allocation: JSON.stringify(alloc) };
+      });
 
-      res.json({ ok: true, allocation: JSON.stringify(alloc) });
+      res.json({ ok: true, allocation });
     } catch (err) {
-      await db.run('ROLLBACK').catch(() => {});
       console.error('[tower-craft] error:', err.message);
-      res.status(500).json({ error: 'Crafting failed' });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
     }
   });
 
