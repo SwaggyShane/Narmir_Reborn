@@ -82,6 +82,21 @@
   - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all baseline checks), Sanity ✅ (no logic changes, all CSS variables mapped to valid Tailwind classes)
   - **Code Quality:** All changes lint ✅. No functional regressions. Clean refactoring with improved maintainability via class-name-based styling.
 
+- **Admin CSS Consolidation: Phase 4D (EconomyPanel)** (PR #800, merged 2026-07-04): Refactoring EconomyPanel component to convert 10 inline style instances to Tailwind CSS utility classes and direct className expressions. Economy management UI with commodity markets, trade offers, bank deposits, and trade routes.
+  - **Conversion Results:** 10 static/conditional styles converted (100% success), 0 dynamic styles remaining inline, 0 unmapped edge cases. Patterns: conditional text colors (4 instances), static text colors (2 instances), font-weight (1 instance), conditional display (2 instances), extracted dtColorClass and statusColorClass for computed class names.
+  - **Key Improvements:**
+    - Conditional colors: Replaced `style={{color: ...}}` with className ternaries for net income (2 instances), food balance (1 instance), trade status (1 instance)
+    - Static colors: Converted spoilage and market income to direct text-[var(...)] classes
+    - Font weight: Changed `fontWeight: 700` to `font-bold` class
+    - Display states: Replaced `display: none/block` with `hidden`/`block` classes via conditional className
+    - Class name computation: Extracted dtColor and statusColor variables to dtColorClass and statusColorClass for ternary-based class generation
+  - **Gemini Review:** 6 feedback items on first review: Simplify redundant clsx() wrappers and replace with direct ternaries or string concatenation. All addressed in follow-up commit:
+    - ✅ Lines 348, 401, 735: Removed clsx wrapper from single ternary expressions
+    - ✅ Lines 436, 478, 515, 730: Replaced clsx with string concatenation for multiple classes
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks: forum, auth, portal, game), Sanity ✅ (no logic changes, no new CSS variables)
+  - **CI Status:** All 3 checks passed ✅ (Validate Security Configuration, Validate Text Encoding, Lint/Test/Build)
+  - **Code Quality:** All changes lint ✅. No functional regressions. Simplified className expressions per Gemini feedback.
+
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.
   - **Routes removed:**
     - `kingdom-gameplay.js`: POST /build-queue, GET/POST /training-allocation, POST /build-allocation, POST /resource-build-allocation, POST /demolish, POST /build, POST /cancel-building, POST /smithy/buy-hammers, POST /smithy/buy-scaffolding, POST /smithy-allocation, POST /tower-craft, POST /tower-cancel, POST /shrine-allocation, POST /mausoleum-allocation, POST /buy-mausoleum-upgrade (16 total)
