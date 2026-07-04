@@ -294,42 +294,30 @@ const TestingPanel = () => {
   return (
     <div id="testing" className="panel">
       <div className="card mt-0">
-        <div style={{ marginBottom: '16px' }}>
-          <h2 style={{ margin: 0, marginBottom: '8px' }}>🧪 Testing Dashboard</h2>
-          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text2)' }}>
+        <div className="mb-4">
+          <h2 className="m-0 mb-2">🧪 Testing Dashboard</h2>
+          <p className="m-0 text-sm text-text2">
             Track testing progress across all game systems. Check off tests as completed and mark pass/fail.
           </p>
         </div>
 
         {/* Tab Navigation */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+        <div className="flex gap-2 mb-4 border-b pb-3">
           <button
             onClick={() => setActiveTab('individual')}
-            style={{
-              padding: '8px 16px',
-              fontSize: '12px',
-              fontWeight: activeTab === 'individual' ? 'bold' : 'normal',
-              backgroundColor: activeTab === 'individual' ? 'var(--accent)' : 'transparent',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: activeTab === 'individual' ? '#000' : 'inherit',
-            }}
+            className={clsx(
+              "px-4 py-2 text-sm border-none rounded-sm cursor-pointer",
+              activeTab === 'individual' ? "font-bold bg-[var(--accent)] text-black" : "font-normal bg-transparent text-inherit"
+            )}
           >
             Individual Tests
           </button>
           <button
             onClick={() => setActiveTab('collaborative')}
-            style={{
-              padding: '8px 16px',
-              fontSize: '12px',
-              fontWeight: activeTab === 'collaborative' ? 'bold' : 'normal',
-              backgroundColor: activeTab === 'collaborative' ? 'var(--accent)' : 'transparent',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: activeTab === 'collaborative' ? '#000' : 'inherit',
-            }}
+            className={clsx(
+              "px-4 py-2 text-sm border-none rounded-sm cursor-pointer",
+              activeTab === 'collaborative' ? "font-bold bg-[var(--accent)] text-black" : "font-normal bg-transparent text-inherit"
+            )}
           >
             Collaborative Results {testSummary.length > 0 && `(${testSummary.length})`}
           </button>
@@ -339,21 +327,21 @@ const TestingPanel = () => {
         {activeTab === 'collaborative' && (
           <div>
             {/* Summary Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+            <div className="grid grid-cols-4 gap-3 mb-5">
               <div className="p-3 bg-[var(--bg2)] rounded text-center">
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#4ade80' }}>{stats.passed}</div>
+                <div className="text-3xl font-bold text-[#4ade80]">{stats.passed}</div>
                 <div className="text-[11px] text-[var(--text2)] mt-1">Tests Passed</div>
               </div>
               <div className="p-3 bg-[var(--bg2)] rounded text-center">
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>{stats.failed}</div>
+                <div className="text-3xl font-bold text-[#ef4444]">{stats.failed}</div>
                 <div className="text-[11px] text-[var(--text2)] mt-1">Tests Failed</div>
               </div>
               <div className="p-3 bg-[var(--bg2)] rounded text-center">
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fbbf24' }}>{stats.pending}</div>
+                <div className="text-3xl font-bold text-[#fbbf24]">{stats.pending}</div>
                 <div className="text-[11px] text-[var(--text2)] mt-1">Pending</div>
               </div>
               <div className="p-3 bg-[var(--bg2)] rounded text-center">
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#60a5fa' }}>{stats.totalTesters}</div>
+                <div className="text-3xl font-bold text-[#60a5fa]">{stats.totalTesters}</div>
                 <div className="text-[11px] text-[var(--text2)] mt-1">Testers</div>
               </div>
             </div>
@@ -368,71 +356,45 @@ const TestingPanel = () => {
               return (
                 <div
                   key={group.id}
-                  style={{
-                    marginBottom: '12px',
-                    border: '1px solid var(--border)',
-                    borderRadius: '6px',
-                    overflow: 'hidden',
-                  }}
+                  className="mb-3 border rounded-md"
                 >
                   <div
-                    style={{
-                      padding: '12px',
-                      backgroundColor: 'var(--bg2)',
-                      fontWeight: 'bold',
-                      fontSize: '13px',
-                    }}
+                    className="p-3 bg-bg2 cursor-pointer flex justify-between items-center font-bold"
                   >
                     {group.name}
                   </div>
-                  <div style={{ padding: '12px', backgroundColor: 'var(--bg1)' }}>
+                  <div className="p-3 bg-bg">
                     {groupTests.map((testStat) => {
                       const total = (testStat.passed_count || 0) + (testStat.failed_count || 0) + (testStat.pending_count || 0);
                       const failureComments = getFailureComments(testStat.test_key);
 
                       return (
-                        <div key={testStat.test_key} style={{ marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid var(--border)' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                            <span style={{ fontWeight: 500, flex: 1 }}>{testStat.test_name}</span>
-                            <div style={{ fontSize: '11px', color: 'var(--text2)', marginRight: '8px' }}>
+                        <div key={testStat.test_key} className="border-b mb-2.5 pb-2.5">
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="font-medium flex-1">{testStat.test_name}</span>
+                            <div className="text-sm text-text2 mr-2">
                               {total > 0 ? `${testStat.unique_testers} tester${testStat.unique_testers !== 1 ? 's' : ''}` : 'No results'}
                             </div>
                           </div>
 
                           {/* Result Breakdown */}
                           {total > 0 ? (
-                            <div style={{ display: 'flex', gap: '4px', marginBottom: '6px', height: '20px' }}>
+                            <div className="flex gap-1 h-5 mb-1.5">
                               {testStat.passed_count > 0 && (
                                 <div
-                                  style={{
-                                    flex: testStat.passed_count,
-                                    backgroundColor: '#4ade80',
-                                    borderRadius: '3px',
-                                    minWidth: '20px',
-                                    title: `${testStat.passed_count} passed`
-                                  }}
+                                  className="bg-[#4ade80] rounded-[3px] min-w-[20px]" style={{flex: testStat.passed_count}}
                                   title={`${testStat.passed_count} passed`}
                                 />
                               )}
                               {testStat.failed_count > 0 && (
                                 <div
-                                  style={{
-                                    flex: testStat.failed_count,
-                                    backgroundColor: '#ef4444',
-                                    borderRadius: '3px',
-                                    minWidth: '20px'
-                                  }}
+                                  className="bg-[#ef4444] rounded-[3px] min-w-[20px]" style={{flex: testStat.failed_count}}
                                   title={`${testStat.failed_count} failed`}
                                 />
                               )}
                               {testStat.pending_count > 0 && (
                                 <div
-                                  style={{
-                                    flex: testStat.pending_count,
-                                    backgroundColor: '#fbbf24',
-                                    borderRadius: '3px',
-                                    minWidth: '20px'
-                                  }}
+                                  className="bg-[#fbbf24] rounded-[3px] min-w-[20px]" style={{flex: testStat.pending_count}}
                                   title={`${testStat.pending_count} pending`}
                                 />
                               )}
@@ -440,15 +402,15 @@ const TestingPanel = () => {
                           ) : null}
 
                           {/* Result Stats */}
-                          <div style={{ fontSize: '11px', color: 'var(--text2)', marginBottom: failureComments.length > 0 ? '8px' : '0' }}>
+                          <div className={clsx("text-sm text-text2", failureComments.length > 0 ? "mb-2" : "mb-0")}>
                             ✅ {testStat.passed_count || 0} | ❌ {testStat.failed_count || 0} | ⏳ {testStat.pending_count || 0}
                           </div>
 
                           {/* Failure Comments */}
                           {failureComments.length > 0 && (
-                            <div style={{ marginLeft: '8px', fontSize: '10px', color: '#ef4444' }}>
+                            <div className="ml-2 text-[10px] text-[#ef4444]">
                               {failureComments.map((fc, i) => (
-                                <div key={i} style={{ marginBottom: '4px', padding: '4px 6px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '3px' }}>
+                                <div key={i} className="mb-1 rounded-[3px] px-1.5 py-1 bg-red/10">
                                   <strong>{fc.player}:</strong> {fc.comment}
                                 </div>
                               ))}
@@ -475,54 +437,37 @@ const TestingPanel = () => {
           return (
             <div
               key={group.id}
-              style={{
-                marginBottom: '12px',
-                border: '1px solid var(--border)',
-                borderRadius: '6px',
-                overflow: 'hidden',
-              }}
+              className="mb-3 border rounded-md"
             >
               {/* Group Header */}
               <div
                 onClick={() => setExpandedGroup(isExpanded ? null : group.id)}
-                style={{
-                  padding: '12px',
-                  backgroundColor: 'var(--bg2)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
+                className="p-3 bg-bg2 cursor-pointer flex justify-between items-center"
               >
                 <div>
-                  <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{group.name}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text2)' }}>
+                  <div className="font-bold mb-1">{group.name}</div>
+                  <div className="text-sm text-text2">
                     ✓ {stats.finished}/{stats.total} | ✅ {stats.passed} | ❌ {stats.failed}
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: progressPercent === 100 ? '#4ade80' : '#fbbf24' }}>
+                <div className="text-right">
+                  <div className="text-sm font-bold" style={{color: progressPercent === 100 ? '#4ade80' : '#fbbf24'}}>
                     {progressPercent}%
                   </div>
-                  <div style={{ fontSize: '10px' }}>{isExpanded ? '▼' : '▶'}</div>
+                  <div className="text-[10px]">{isExpanded ? '▼' : '▶'}</div>
                 </div>
               </div>
 
               {/* Progress Bar */}
-              <div style={{ height: '4px', backgroundColor: 'var(--border)' }}>
+              <div className="h-1 bg-[var(--border)]">
                 <div
-                  style={{
-                    height: '100%',
-                    width: `${progressPercent}%`,
-                    backgroundColor: progressPercent === 100 ? '#4ade80' : '#fbbf24',
-                    transition: 'width 0.3s ease',
-                  }}
+                  className="h-full transition-all duration-300 ease-in-out" style={{width: `${progressPercent}%`, backgroundColor: progressPercent === 100 ? '#4ade80' : '#fbbf24'}}
                 />
               </div>
 
               {/* Tests List */}
               {isExpanded && (
-                <div style={{ padding: '12px', backgroundColor: 'var(--bg1)' }}>
+                <div className="p-3 bg-bg">
                   {group.tests.map((testName) => {
                     const key = getTestKey(group.id, testName);
                     const test = testStatus[key] || {};
@@ -532,41 +477,29 @@ const TestingPanel = () => {
                     return (
                       <div
                         key={key}
-                        style={{
-                          marginBottom: '10px',
-                          padding: '8px',
-                          backgroundColor: isFailing ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
-                          borderRadius: '4px',
-                          borderLeft: isFailing ? '3px solid #ef4444' : 'none',
-                          paddingLeft: isFailing ? '6px' : '8px',
-                        }}
+                        className={clsx(
+                          "rounded-sm mb-2.5",
+                          isFailing ? "p-2 pl-1.5 bg-[#ef4444]/10 border-l-[3px] border-l-[#ef4444]" : "p-2 bg-transparent border-l-0"
+                        )}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: (TEST_DESCRIPTIONS[key] || isFailing) ? '6px' : '0' }}>
+                        <div className="flex items-center gap-2" style={{marginBottom: (TEST_DESCRIPTIONS[key] || isFailing) ? '6px' : '0'}}>
                           {/* Finished Checkbox */}
                           <input
                             type="checkbox"
                             checked={test.finished || false}
                             onChange={() => toggleTestFinished(group.id, testName)}
-                            style={{ cursor: 'pointer', marginRight: '4px' }}
+                            className="cursor-pointer mr-1"
                           />
 
                           {/* Test Name */}
-                          <span style={{ flex: 1, textDecoration: test.finished ? 'line-through' : 'none', color: test.finished ? 'var(--text2)' : 'inherit', fontWeight: 500 }}>
+                          <span className="flex-1 font-medium" style={{textDecoration: test.finished ? 'line-through' : 'none', color: test.finished ? 'var(--text2)' : 'inherit'}}>
                             {testName}
                           </span>
 
                           {/* Pass/Fail Buttons */}
                           <button
                             onClick={() => setTestPassed(group.id, testName, true)}
-                            style={{
-                              padding: '4px 8px',
-                              fontSize: '12px',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              backgroundColor: test.passed === true ? '#4ade80' : 'var(--border)',
-                              color: test.passed === true ? '#000' : 'inherit',
-                            }}
+                            className="px-2 py-1 text-sm border-none rounded-sm cursor-pointer" style={{backgroundColor: test.passed === true ? '#4ade80' : 'var(--border)'}}
                             title="Mark as passed"
                           >
                             👍
@@ -578,15 +511,7 @@ const TestingPanel = () => {
                               setFailureComment(test.comment || '');
                               setCommentingTest(key);
                             }}
-                            style={{
-                              padding: '4px 8px',
-                              fontSize: '12px',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              backgroundColor: test.passed === false ? '#ef4444' : 'var(--border)',
-                              color: test.passed === false ? '#fff' : 'inherit',
-                            }}
+                            className="px-2 py-1 text-sm border-none rounded-sm cursor-pointer" style={{backgroundColor: test.passed === false ? '#ef4444' : 'var(--border)'}}
                             title="Mark as failed"
                           >
                             👎
@@ -595,54 +520,26 @@ const TestingPanel = () => {
 
                         {/* Test Description */}
                         {TEST_DESCRIPTIONS[key] && (
-                          <div style={{
-                            fontSize: '11px',
-                            color: 'var(--text2)',
-                            marginBottom: '8px',
-                            padding: '6px 8px',
-                            backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                            borderRadius: '3px',
-                            lineHeight: '1.4',
-                            fontStyle: 'italic'
-                          }}>
+                          <div className="text-sm text-text2 mb-2 rounded-[3px] italic px-2 py-1.5 bg-white/[0.03] leading-[1.4]">
                             📋 {TEST_DESCRIPTIONS[key]}
                           </div>
                         )}
 
                         {/* Failure Comment Section */}
                         {isFailing && (
-                          <div style={{ marginLeft: '28px', fontSize: '12px' }}>
+                          <div className="text-sm" style={{marginLeft: '28px'}}>
                             {isCommentingThis ? (
-                              <div style={{ display: 'flex', gap: '4px' }}>
+                              <div className="flex gap-1">
                                 <textarea
                                   value={failureComment}
                                   onChange={(e) => setFailureComment(e.target.value)}
                                   placeholder="Add failure notes..."
-                                  style={{
-                                    flex: 1,
-                                    padding: '6px',
-                                    fontSize: '11px',
-                                    borderRadius: '4px',
-                                    border: '1px solid var(--border)',
-                                    backgroundColor: 'var(--bg2)',
-                                    color: 'inherit',
-                                    minHeight: '60px',
-                                    fontFamily: 'inherit',
-                                    resize: 'vertical',
-                                  }}
+                                  className="flex-1 p-1.5 text-sm rounded-sm border bg-bg2 text-inherit min-h-[60px] font-inherit resize-y"
                                 />
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div className="flex flex-col gap-1">
                                   <button
                                     onClick={() => handleCommentSubmit(group.id, testName)}
-                                    style={{
-                                      padding: '4px 8px',
-                                      fontSize: '11px',
-                                      backgroundColor: '#4ade80',
-                                      color: '#000',
-                                      border: 'none',
-                                      borderRadius: '4px',
-                                      cursor: 'pointer',
-                                    }}
+                                    className="px-2 py-1 text-[11px] bg-[#4ade80] text-black border-none rounded-sm"
                                   >
                                     Save
                                   </button>
@@ -651,14 +548,7 @@ const TestingPanel = () => {
                                       setCommentingTest(null);
                                       setFailureComment('');
                                     }}
-                                    style={{
-                                      padding: '4px 8px',
-                                      fontSize: '11px',
-                                      backgroundColor: 'var(--border)',
-                                      border: 'none',
-                                      borderRadius: '4px',
-                                      cursor: 'pointer',
-                                    }}
+                                    className="px-2 py-1 text-[11px] bg-border border-none rounded-sm"
                                   >
                                     Cancel
                                   </button>
@@ -666,12 +556,7 @@ const TestingPanel = () => {
                               </div>
                             ) : test.comment ? (
                               <div
-                                style={{
-                                  padding: '6px',
-                                  backgroundColor: 'var(--bg2)',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                }}
+                                className="p-1.5 bg-bg2 rounded-sm cursor-pointer"
                                 onClick={() => {
                                   setFailureComment(test.comment);
                                   setCommentingTest(key);
@@ -686,15 +571,7 @@ const TestingPanel = () => {
                                   setCommentingTest(key);
                                   setFailureComment('');
                                 }}
-                                style={{
-                                  padding: '4px 8px',
-                                  fontSize: '11px',
-                                  backgroundColor: 'var(--border)',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                  color: 'var(--text2)',
-                                }}
+                                className="px-2 py-1 text-sm bg-[var(--border)] text-text2 border-none rounded-sm cursor-pointer"
                               >
                                 + Add failure notes
                               </button>
