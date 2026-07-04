@@ -345,7 +345,7 @@ const EconomyPanel = () => {
           <div id="tax-metrics" className="text-[12px] text-[var(--text3)] flex gap-3">
             <span>Income: <strong className="text-[var(--green)]">+{fmt(econData?.totalIncome || 0)}</strong></span>
             <span>Upkeep: <strong className="text-[var(--red)]">-{fmt(econData?.troopUpkeep || 0)}</strong></span>
-            <span>Net: <strong className={clsx((econData?.netIncome || 0) >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]')}>{(econData?.netIncome || 0) >= 0 ? '+' : ''}{fmt(econData?.netIncome || 0)}</strong></span>
+            <span>Net: <strong className={(econData?.netIncome || 0) >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}>{(econData?.netIncome || 0) >= 0 ? '+' : ''}{fmt(econData?.netIncome || 0)}</strong></span>
           </div>
         </div>
         <div className="flex items-center gap-3.5 my-3 tax-slider-container">
@@ -398,7 +398,7 @@ const EconomyPanel = () => {
           </div>
         </div>
         <div className="mt-2 text-center font-bold p-1 bg-bg2 rounded-sm">
-          Net Balance: <span className={clsx((econData?.netIncome || 0) >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]')}>{(econData?.netIncome || 0) >= 0 ? '+' : ''}{fmt(econData?.netIncome || 0)}</span>
+          Net Balance: <span className={(econData?.netIncome || 0) >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}>{(econData?.netIncome || 0) >= 0 ? '+' : ''}{fmt(econData?.netIncome || 0)}</span>
         </div>
       </div>
 
@@ -433,7 +433,7 @@ const EconomyPanel = () => {
             <div className="trow"><span className="name">Consumption</span><span className="count text-[var(--red)]">-{fmt(econData?.foodConsumption || 0)}</span></div>
             <div className="trow border-t border-[var(--border2)]">
               <span className="name">Balance</span>
-              <span className={clsx('count', 'font-bold', bal >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]')}>
+              <span className={'count font-bold ' + (bal >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]')}>
                 {(bal >= 0 ? '+' : '') + fmt(bal)}
               </span>
             </div>
@@ -475,7 +475,7 @@ const EconomyPanel = () => {
                 {fmt(econData?.foodSpoilageAmount || 0)} ({((econData?.foodSpoilageRate || 0) * 100).toFixed(1)}%)
               </span>
             </div>
-            <div className="trow"><span className="name">Time to degrade</span><span className={clsx('count', dtColorClass)}>{dtLabel}</span></div>
+            <div className="trow"><span className="name">Time to degrade</span><span className={'count ' + dtColorClass}>{dtLabel}</span></div>
           </div>
           <div className="card m-0">
             <div className="card-title !mb-2.5">Granary upgrades</div>
@@ -512,7 +512,7 @@ const EconomyPanel = () => {
             <div className="trow"><span className="name">Trade routes</span><span className="count">{fmt(econData?.activeTradeRouteCount || 0)}</span></div>
             <div className="trow">
               <span className="name">Trading unlocked</span>
-              <span className={clsx('count', tradeLocked ? 'text-[var(--red)]' : 'text-[var(--green)]')}>
+              <span className={'count ' + (tradeLocked ? 'text-[var(--red)]' : 'text-[var(--green)]')}>
                 {tradeLocked ? 'No' : 'Yes'}
               </span>
             </div>
@@ -727,12 +727,12 @@ const EconomyPanel = () => {
 
       {/* BANK TAB */}
       <div className={clsx(activeTab === 'bank' ? 'block' : 'hidden')}>
-        <div id="bank-locked-msg" className={clsx(BANK_LOCKED_PANEL_CLASS, (vaults || 0) >= 25 ? 'hidden' : 'block')}>
+        <div id="bank-locked-msg" className={BANK_LOCKED_PANEL_CLASS + ' ' + ((vaults || 0) >= 25 ? 'hidden' : 'block')}>
           <div className="mb-3 text-[32px]">🏦</div>
           <div className="mb-2 text-[16px] font-bold">Bank Locked</div>
           <div className="text-[14px]">Construct at least 25 Vaults to access the Royal Bank.</div>
         </div>
-        <div id="bank-content" className={clsx((vaults || 0) >= 25 ? 'block' : 'hidden')}>
+        <div id="bank-content" className={(vaults || 0) >= 25 ? 'block' : 'hidden'}>
           <div className={TWO_COL_PANEL_CLASS}>
             <div className="card m-0">
               <div className="card-title !mb-2.5">Fixed-Term Deposits</div>
