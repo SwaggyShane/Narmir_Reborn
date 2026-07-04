@@ -93,6 +93,22 @@
   - **Result:** Ring hexes now properly revealed on ring completion. No hexes lost to invalid filtering.
   - **CI:** All checks green after fixes. Ready for Phase 2E (UI integration).
 
+- **Exploration System Phase 2E: Scout Allocation UI & Progression Display** (PR #787, ready to merge 2026-07-04): Scout allocation interface and ring progress display in ExplorationPanel. Enables players to manage scout allocation from game UI.
+  - **Client Store:** Added scout_allocation and scout_progress state to profileStore with server sync
+  - **UI Card:** New Scout Allocation card in ExplorationPanel with:
+    - Ranger allocation slider with Min/Max controls
+    - Allocate and Release All button handlers calling /scout/allocate and /scout/release-all
+    - Ring progress display showing allocated rangers and cumulative turns
+    - Status badge indicating passive ring progression
+  - **Gemini Review:** 4 actionable comments (high/medium priority); all addressed:
+    - ✅ Removed unused kingdom_level/race selectors (prevent unnecessary re-renders)
+    - ✅ Fixed availableRangers calculation to subtract scout_allocation (allocated rangers unavailable)
+    - ✅ Enforce r > 0 in handleScoutAllocate (backend endpoint only adds rangers)
+    - ✅ Updated UI labels to clarify additive behavior ('Rangers to add', 'Add to Allocation')
+  - **Backend Integration:** Endpoints /scout/allocate and /scout/release-all already exist (Phase 2A implementation)
+  - **CI:** All 3 checks passed (Lint/Test/Build, Text Encoding, Security Config)
+  - **Status:** Phase 2E complete. Scout allocation system now fully integrated (Phases 2A-2E). Ready for Phase 3 (Epic Trek point-and-go exploration).
+
 - **Exploration System Redesign — Design Phase Complete** (PR #778, merged `977c712`): Complete locked specification and 4-phase implementation plan for exploration system transformation. Replaces instant single-turn searches + generic expeditions with turn-based, progression-gated actions:
   - **Scout (allocation-based):** Ring progression (Ring N = 20 + (N-1) × 5 turns), auto-advances through 17 rings, discovers locations/lore/junk, no food cost, greyed out at Ring 17 only, no hard cap on rangers
   - **Epic Trek (point-and-go):** 1.5 turns per hex distance, reveals fog en route, random discovery per hex, food cost scales by ranger count, hidden until Ring 2 Scout complete

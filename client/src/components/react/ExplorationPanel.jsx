@@ -73,6 +73,8 @@ const ExplorationPanel = () => {
   const engineers = useMilitaryStore((state) => state.troops.engineers);
   const food = useEconomyStore((state) => state.food);
   const turns_stored = useProfileStore((state) => state.turns_stored);
+  const scout_allocation = useProfileStore((state) => state.scout_allocation);
+  const scout_progress = useProfileStore((state) => state.scout_progress);
   useGameMutationEvents();
 
   const syncKingdomData = useCallback((kingdomData) => {
@@ -105,6 +107,8 @@ const ExplorationPanel = () => {
   const [prospectingTerrain, setProspectingTerrain] = useState('mountain');
   const [landExpansionRangers, setLandExpansionRangers] = useState(0);
   const [landExpansionTerrain, setLandExpansionTerrain] = useState('grassland');
+  // Phase 2E: Scout allocation UI
+  const [scoutAllocationInput, setScoutAllocationInput] = useState(0);
 
   const refreshInventory = useCallback(async () => {
     try {
@@ -159,7 +163,7 @@ const ExplorationPanel = () => {
   );
 
   const inventoryCount = Object.keys(inventory).length;
-  const availableRangers = Number(rangers || 0);
+  const availableRangers = Math.max(0, Number(rangers || 0) - Number(scout_allocation || 0));
   const availableFighters = Number(fighters || 0);
   const availableEngineers = Number(engineers || 0);
   const availableFood = Number(food || 0);
@@ -466,6 +470,65 @@ const ExplorationPanel = () => {
     }
   }, [landExpansionRangers, landExpansionTerrain, availableRangers, applyResult, logInstantEntry, refreshAll]);
 
+  // Phase 2E: Scout allocation handlers
+  const handleScoutAllocate = useCallback(async () => {
+    const r = Number(scoutAllocationInput || 0);
+    if (r <= 0) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter a valid ranger count greater than 0', 'error');
+      return;
+    }
+
+    try {
+      const result = await apiCall('/api/kingdom/scout/allocate', {
+        method: 'POST',
+        body: { rangers: r },
+      });
+
+      if (result.error) {
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        return;
+      }
+
+      applyResult(result, 'scout-allocate');
+      if (typeof window !== 'undefined' && typeof toast === 'function') {
+        toast(`${formatNum(result.allocated || r)} rangers allocated to scouting`, 'success');
+      }
+      setScoutAllocationInput(0);
+      await refreshAll();
+    } catch (err) {
+      console.error('[scout/allocate] failed:', err);
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Allocation failed — please try again', 'error');
+    }
+  }, [scoutAllocationInput, applyResult, refreshAll]);
+
+  const handleScoutReleaseAll = useCallback(async () => {
+    if (scout_allocation === 0) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('No scouts allocated', 'warn');
+      return;
+    }
+
+    try {
+      const result = await apiCall('/api/kingdom/scout/release-all', {
+        method: 'POST',
+      });
+
+      if (result.error) {
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        return;
+      }
+
+      applyResult(result, 'scout-release-all');
+      if (typeof window !== 'undefined' && typeof toast === 'function') {
+        toast(`${formatNum(result.released || scout_allocation)} rangers released from scouting`, 'success');
+      }
+      setScoutAllocationInput(0);
+      await refreshAll();
+    } catch (err) {
+      console.error('[scout/release-all] failed:', err);
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Release failed — please try again', 'error');
+    }
+  }, [scout_allocation, applyResult, refreshAll]);
+
   const renderRow = (entry, isCompleted = false) => {
     const rewards = isCompleted ? normalizeRewards(entry.rewards) : [];
     const troops = `${formatNum(entry.rangers)} rangers${entry.fighters > 0 ? `, ${formatNum(entry.fighters)} fighters` : ''}`;
@@ -753,6 +816,66 @@ const ExplorationPanel = () => {
                     Expand
                   </button>
                 </div>
+              </div>
+            </div>
+
+            <div className="card border-l-[3px] border-l-[var(--accent2)]">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div className="card-title !mb-0">🔍 Scout Allocation</div>
+                <span className="rounded-full bg-[rgba(120,120,200,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--accent2)]">
+                  Passive Rings
+                </span>
+              </div>
+              <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
+                Assign rangers to permanently scout the map. They'll automatically advance through rings, revealing new territory and discoveries over time.
+              </div>
+
+              {scout_allocation > 0 && (
+                <div className="mb-3 rounded-md border-l-[3px] border-l-[var(--accent2)] bg-[rgba(120,120,200,0.1)] p-2 text-[11px] text-[var(--text2)]">
+                  <div className="font-semibold">Ring Progress</div>
+                  <div className="mt-1">
+                    {scout_allocation > 0 && `${formatNum(scout_allocation)} rangers allocated • Ring progress: ${formatNum(scout_progress)} turns`}
+                  </div>
+                </div>
+              )}
+
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <span className="name text-[12px]">Rangers to add</span>
+                <span className="text-[11px] text-[var(--text3)]">
+                  avail: <span>{availableRangers}</span>
+                </span>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    className="input w-[80px] text-right"
+                    value={scoutAllocationInput}
+                    onChange={(e) => setScoutAllocationInput(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    min="0"
+                    placeholder="Qty"
+                  />
+                  <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setScoutAllocationInput(availableRangers)}>
+                    Max
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  className="base-btn variant-accent flex-1 bg-[var(--accent2)]"
+                  onClick={handleScoutAllocate}
+                  disabled={scoutAllocationInput === 0}
+                >
+                  {scout_allocation === 0 ? 'Start Allocation' : 'Add to Allocation'}
+                </button>
+                {scout_allocation > 0 && (
+                  <button
+                    className="base-btn px-3 text-[12px] text-[var(--text3)]"
+                    onClick={handleScoutReleaseAll}
+                    title="Release all scouts and stop ring progression"
+                  >
+                    Release All
+                  </button>
+                )}
               </div>
             </div>
 
