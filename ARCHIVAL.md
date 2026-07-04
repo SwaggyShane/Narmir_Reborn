@@ -152,7 +152,39 @@
   
   - **Result:** Complete Epic Trek system. Player can click worldmap to select destination, expedition calculates path and cost, reveals fog en route, discovers kingdoms, stores results. All Gemini feedback addressed, CI green. Ready for Phase 4 (Regional dungeons/mountains).
 
-- **Exploration System Phase 2E: Scout Allocation UI & Progression Display** (PR #787, ready to merge 2026-07-04): Scout allocation interface and ring progress display in ExplorationPanel. Enables players to manage scout allocation from game UI.
+- **Exploration System Phase 4: Regional Dungeon/Mountain Locations** (PR #789, merged 2026-07-04): Distance-based turn costs for regional exploration. One dungeon and one mountain per region (18 total), seeded deterministically and discovered progressively.
+  - **game/world-locations.js** — Location seeding and discovery tracking:
+    - `seedRegionLocations(db, worldSeed)` — Creates all 18 regional locations at boot using seeded random with water avoidance (retry up to 10 times)
+    - `getRegionLocationCoords()` — Generates reproducible coordinates within 500px of region home
+    - `getLocationByRegionAndType()` — Cache lookup by region and type
+    - `markLocationDiscovered(db, locationId, kingdomId)` — Tracks which kingdoms have discovered each location
+    - `loadLocationCache(db)` — In-memory cache loading for fast runtime access
+  - **game/location-distance.js** — Distance and turn cost calculations:
+    - `getDistanceToLocation(kingdom, location)` — Hex distance from kingdom home to location using pixel coordinates
+    - `getLocationTurnCost(type, distance)` — Base 50 (dungeon) or 100 (mountain) + distance × 1.5
+  - **db/schema.js** — Added world_locations table:
+    - One dungeon + one mountain per region (18 total)
+    - `discovered_by_kingdom_ids` array tracking kingdoms that have discovered each location
+    - UNIQUE(type, region_name) constraint
+    - Added first_dungeon_found_turn and first_mountain_found_turn to kingdoms
+  - **index.js** — Server boot integration:
+    - Calls seedRegionLocations() and loadLocationCache() after initDb()
+    - Locations ready immediately for gameplay
+  - **routes/kingdom-exploration.js** — Modified POST /expedition/start:
+    - Detects dungeon/mountain types and uses location-based turn costs instead of fixed EXP_TURNS
+    - Validates unit availability (rangers/fighters) before deduction
+    - Calculates distance to actual regional location and turn cost
+    - Marks location as discovered, tracks first discovery turn
+    - Returns correct newTurnsStored in response for UI turn counter
+  - **Gemini review (5 critical issues identified, all fixed):**
+    - ✅ hexUnitDistance call: Pass pixel coordinates directly, not hex objects
+    - ✅ Unit availability: Added engine.getAvailableUnits() verification before deduction
+    - ✅ Column name: k.turn instead of k.turn_num; use === null for turn 0
+    - ✅ UI turn counter: Return actual newTurnsStored instead of hardcoded 0
+    - ✅ Database pollution: Simplified markLocationDiscovered query, removed NULL appending
+  - **Result:** Complete regional location system. Players discover and raid dungeons/mountains at distance-based turn costs. All Gemini feedback addressed in follow-up commit. Smoke test green, all baselines pass. Exploration System Redesign (Phases 1-4) fully complete.
+
+- **Exploration System Phase 2E: Scout Allocation UI & Progression Display** (PR #787, merged 2026-07-04): Scout allocation interface and ring progress display in ExplorationPanel. Enables players to manage scout allocation from game UI.
   - **Client Store:** Added scout_allocation and scout_progress state to profileStore with server sync
   - **UI Card:** New Scout Allocation card in ExplorationPanel with:
     - Ranger allocation slider with Min/Max controls
