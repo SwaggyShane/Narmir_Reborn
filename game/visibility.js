@@ -142,10 +142,67 @@ async function updateKingdomVisibility(db, kingdomId, updater) {
   });
 }
 
+/**
+ * Reveal all hexes in a completed scout ring for a kingdom.
+ * Adds all hexes at distance=ring from home to seen_cells (permanent discovery).
+ * Uses atomic transaction to prevent concurrent visibility loss.
+ *
+ * @param {object} db - Database connection
+ * @param {number} kingdomId - Kingdom ID
+ * @param {object} kingdom - Kingdom object (for map coordinates)
+ * @param {number} ring - Completed ring number (1-17)
+ * @returns {Promise} Resolves when visibility is updated
+ */
+async function revealRingHexes(db, kingdomId, kingdom, ring) {
+  if (!kingdom || !kingdomId || !ring || ring < 1 || ring > 17) {
+    return null;
+  }
+
+  try {
+    const { getRingHexes } = require('./scout-rings');
+
+    const { map_x, map_y } = getKingdomMapCoords(kingdom);
+    const hex = pixelToHex(map_x, map_y);
+    const homeHex = `${hex.col},${hex.row}`;
+
+    const ringHexes = getRingHexes(homeHex, ring);
+    if (!ringHexes || ringHexes.length === 0) {
+      return null;
+    }
+
+    return updateKingdomVisibility(db, kingdomId, (current) => {
+      const cellIndicesToReveal = ringHexes.map(hexKey => {
+        if (typeof hexKey === 'string') {
+          const [c, r] = hexKey.split(',').map(Number);
+          return cellIndex(c, r);
+        }
+        return cellIndex(hexKey.col, hexKey.row);
+      });
+      let newSeenCells = current.seenCells;
+
+      for (const idx of cellIndicesToReveal) {
+        if (idx >= 0) {
+          newSeenCells |= BigInt(1) << BigInt(idx);
+        }
+      }
+
+      return {
+        seenCells: newSeenCells,
+        currentCells: current.currentCells,
+        version: current.version,
+      };
+    });
+  } catch (err) {
+    console.error(`[visibility] Failed to reveal ring ${ring} for kingdom ${kingdomId}:`, err.message);
+    return null;
+  }
+}
+
 module.exports = {
   parseVisibility,
   serializeVisibility,
   getInitialVisibility,
   getKingdomVisibility,
   updateKingdomVisibility,
+  revealRingHexes,
 };
