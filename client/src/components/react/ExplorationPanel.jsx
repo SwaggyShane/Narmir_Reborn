@@ -67,7 +67,7 @@ const normalizeRewards = (rewards) => {
   return [];
 };
 
-const ExplorationPanel = () => {
+const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}) => {
   const rangers = useMilitaryStore((state) => state.troops.rangers);
   const fighters = useMilitaryStore((state) => state.troops.fighters);
   const engineers = useMilitaryStore((state) => state.troops.engineers);
@@ -109,6 +109,9 @@ const ExplorationPanel = () => {
   const [landExpansionTerrain, setLandExpansionTerrain] = useState('grassland');
   // Phase 2E: Scout allocation UI
   const [scoutAllocationInput, setScoutAllocationInput] = useState(0);
+  // Phase 3: Epic Trek point-and-go
+  const [epicTrekTargetX, setEpicTrekTargetX] = useState('');
+  const [epicTrekTargetY, setEpicTrekTargetY] = useState('');
 
   const refreshInventory = useCallback(async () => {
     try {
@@ -528,6 +531,56 @@ const ExplorationPanel = () => {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Release failed — please try again', 'error');
     }
   }, [scout_allocation, applyResult, refreshAll]);
+
+  const handleEpicTrek = useCallback(async () => {
+    const x = Number(epicTrekTargetX);
+    const y = Number(epicTrekTargetY);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter valid target coordinates (click on map or type X,Y)', 'error');
+      return;
+    }
+
+    if ((turns_stored || 0) < 1) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Epic Trek requires turns', 'warn');
+      return;
+    }
+
+    try {
+      const result = await apiCall('/api/kingdom/expedition/epic-trek', {
+        method: 'POST',
+        body: { target_x: x, target_y: y },
+      });
+
+      if (result.error) {
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        return;
+      }
+
+      applyResult(result, 'epic-trek-start');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Epic Trek launched!', 'success');
+      logInstantEntry('🗺️', 'Epic Trek', `Heading to (${x}, ${y}) — ${result.path_hexes} hexes, ${result.turns_left} turns`);
+      setEpicTrekTargetX('');
+      setEpicTrekTargetY('');
+      await refreshAll();
+    } catch (err) {
+      console.error('[expedition/epic-trek] failed:', err);
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Epic Trek failed — please try again', 'error');
+    }
+  }, [epicTrekTargetX, epicTrekTargetY, turns_stored, applyResult, logInstantEntry, refreshAll]);
+
+  // Auto-populate target coordinates when hex is selected from worldmap
+  useEffect(() => {
+    if (selectedHex) {
+      setEpicTrekTargetX(selectedHex.x);
+      setEpicTrekTargetY(selectedHex.y);
+      if (typeof window !== 'undefined' && typeof toast === 'function') {
+        toast(`Target set to (${selectedHex.x}, ${selectedHex.y})`, 'info');
+      }
+      if (onClearSelectedHex) {
+        onClearSelectedHex();
+      }
+    }
+  }, [selectedHex, onClearSelectedHex]);
 
   const renderRow = (entry, isCompleted = false) => {
     const rewards = isCompleted ? normalizeRewards(entry.rewards) : [];
@@ -1089,6 +1142,48 @@ const ExplorationPanel = () => {
                 </button>
                 <div className="mt-2 text-[10px] text-[var(--text3)]">Frontier only. Already-seen hexes are free (no cost) but do nothing.</div>
               </div>
+            </div>
+
+            <div className="card">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div className="card-title !mb-0">🛤️ Epic Trek</div>
+                <span className="rounded-full bg-[rgba(200,120,120,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--accent2)]">
+                  Phase 3
+                </span>
+              </div>
+              <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
+                Send rangers on a long expedition to a chosen location. Reveals fog along the path and discovers kingdoms & locations en route.
+              </div>
+              <div className="mb-2 grid grid-cols-2 gap-2 text-[12px]">
+                <div>
+                  <div className="name mb-0.5">Target X</div>
+                  <input
+                    type="number"
+                    className="input w-full"
+                    value={epicTrekTargetX}
+                    onChange={(e) => setEpicTrekTargetX(e.target.value)}
+                    placeholder="e.g. 500"
+                    min="0"
+                    max="1999"
+                  />
+                </div>
+                <div>
+                  <div className="name mb-0.5">Target Y</div>
+                  <input
+                    type="number"
+                    className="input w-full"
+                    value={epicTrekTargetY}
+                    onChange={(e) => setEpicTrekTargetY(e.target.value)}
+                    placeholder="e.g. 300"
+                    min="0"
+                    max="1379"
+                  />
+                </div>
+              </div>
+              <button className="base-btn variant-accent w-full" onClick={handleEpicTrek}>
+                Launch Epic Trek
+              </button>
+              <div className="mt-2 text-[10px] text-[var(--text3)]">Click the worldmap to auto-fill coordinates, or enter them manually. Requires Ring 2 Scout completion.</div>
             </div>
           </div>
 

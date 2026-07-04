@@ -23,7 +23,7 @@ const { getTerrainForRace, getTerrainModifiers } = require("../game/terrain");
 const { getWorldSeed } = require("../game/world-seed");
 const { getKingdomVisibility, updateKingdomVisibility } = require('../game/visibility');
 const { safeBitmapHasCell, safeBitmapAddCell, isValidCell } = require('../game/visibility-cells');
-const { pixelToHex, getHexesInRadius, isFrontier } = require('../game/hex-utils');
+const { pixelToHex, getHexesInRadius, isFrontier, hexUnitDistance } = require('../game/hex-utils');
 const { scoutRevealRadius, scoutFoodCostPerHex } = require('../game/scout-economy');
 const { validateRangerAllocation } = require('../game/ranger-allocation');
 const { parseTroopLevel } = require('../game/lib/troops');
@@ -3537,6 +3537,111 @@ module.exports = function (db) {
     } catch (err) {
       console.error('[kingdom] happiness-events error:', err);
       res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ═══ EPIC TREK ═══════════════════════════════════════════════════════════════════════════════════════════════════
+  // POST /expedition/epic-trek - Point-and-go targeted exploration
+  // Gated: Hidden until Ring 2 Scout complete
+  // Cost: 1.5 turns per hex distance
+  router.post('/expedition/epic-trek', requireAuth, requireCsrfToken, async (req, res) => {
+    const { target_x, target_y } = req.body;
+    const { getPathHexes, getEpicTrekTurns, isTargetInBounds } = require('../game/epic-trek-paths');
+
+    try {
+      // Validate input
+      if (!Number.isFinite(target_x) || !Number.isFinite(target_y)) {
+        return res.status(400).json({ error: 'Invalid target coordinates' });
+      }
+
+      if (!isTargetInBounds(target_x, target_y)) {
+        return res.status(400).json({ error: 'Target is outside map bounds' });
+      }
+
+      const result = await db.withTransaction(async () => {
+        const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
+
+        // Gating: Ring 2 completion check
+        const parsedVis = safeJsonParse(k.visibility || '{}', {}, 'auto:visibility');
+        const highestCompletedRing = parsedVis.highest_completed_ring || 0;
+        if (highestCompletedRing < 2) {
+          const err = new Error('Epic Trek unlocks at Ring 2 Scout completion');
+          err.statusCode = 403;
+          throw err;
+        }
+
+        // Get kingdom position and calculate distance/cost
+        const { map_x, map_y } = getKingdomMapCoords(k);
+        const distance = hexUnitDistance(map_x, map_y, target_x, target_y);
+        const turnsNeeded = getEpicTrekTurns(map_x, map_y, target_x, target_y);
+
+        if (k.turns_stored < turnsNeeded) {
+          const err = new Error(`Epic Trek requires ${turnsNeeded} turns (you have ${k.turns_stored})`);
+          err.statusCode = 429;
+          throw err;
+        }
+
+        // Calculate path and food cost
+        const pathHexes = getPathHexes(map_x, map_y, target_x, target_y);
+        const DEEP_EXP_FOOD_COST_PER_HEX = 50;
+        const rangerCount = k.rangers || 0;
+        const rangerLevel = parseTroopLevel(k.troop_levels || {}, 'rangers') || 1;
+        const levelMult = 1 + (rangerLevel - 1) * 0.05;
+        const foodNeeded = Math.ceil(pathHexes.length * DEEP_EXP_FOOD_COST_PER_HEX * levelMult);
+
+        if (k.food < foodNeeded) {
+          const err = new Error(`Epic Trek requires ${foodNeeded.toLocaleString()} food (you have ${k.food.toLocaleString()})`);
+          err.statusCode = 400;
+          throw err;
+        }
+
+        // Check for existing active epic-trek
+        const existing = await db.get(
+          'SELECT id FROM expeditions WHERE kingdom_id = $1 AND type = $2 AND turns_left > 0',
+          [k.id, 'epic-trek'],
+        );
+        if (existing) {
+          const err = new Error('An Epic Trek is already underway');
+          err.statusCode = 400;
+          throw err;
+        }
+
+        // Deduct turns and food
+        await db.run(
+          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = GREATEST(0, food - $2) WHERE id = $3',
+          [turnsNeeded, foodNeeded, k.id]
+        );
+
+        // Create expedition with path stored as JSON
+        await db.run(
+          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, extra_data) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [k.id, 'epic-trek', turnsNeeded, rangerCount, 0, foodNeeded, JSON.stringify({ path_hexes: pathHexes, target_x, target_y })]
+        );
+
+        return { turnsNeeded, distance, pathHexes, foodNeeded };
+      });
+
+      res.json({
+        ok: true,
+        turns_left: result.turnsNeeded,
+        distance: result.distance.toFixed(1),
+        path_hexes: result.pathHexes.length,
+        food_used: result.foodNeeded,
+        message: `Epic Trek launched to (${Math.round(target_x)}, ${Math.round(target_y)}) — ${result.turnsNeeded} turns, ${result.pathHexes.length} hexes to explore.`,
+      });
+    } catch (err) {
+      console.error('[expedition/epic-trek] failed:', err.message);
+      if (err.statusCode) {
+        return res.status(err.statusCode).json({ error: err.message });
+      }
+      res.status(500).json({ error: 'Epic Trek failed — please try again' });
     }
   });
 

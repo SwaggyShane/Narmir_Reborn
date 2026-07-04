@@ -1721,6 +1721,122 @@ function processTurn(k, db = null) {
 
 // ── Gameplay (expeditionRewards extracted to game/lib/gameplay.js) ──
 
+/**
+ * Process Epic Trek expedition completion: reveal fog along path and process discoveries.
+ * Called from resolveExpeditions when an epic-trek expedition turns_left reaches 0.
+ *
+ * @param {object} db - Database connection
+ * @param {object} exp - Expedition row (includes extra_data with path)
+ * @param {object} kingdom - Fresh kingdom state
+ * @returns {object} { events, updates, rewards } to merge into expedition processing
+ */
+async function resolveEpicTrek(db, exp, kingdom) {
+  const { updateKingdomVisibility } = require('./visibility');
+  const { cellIndex } = require('./visibility-cells');
+  const { processPathDiscoveries } = require('./epic-trek-discovery');
+  const { safeJsonParse } = require('../utils/helpers');
+
+  const events = [];
+  const updates = {};
+  const rewards = [];
+
+  // Parse path hexes from extra_data
+  const extraData = safeJsonParse(exp.extra_data || '{}', {}, 'epic-trek:extra_data');
+  const pathHexes = extraData.path_hexes || [];
+
+  if (pathHexes.length === 0) {
+    return { events, updates, rewards };
+  }
+
+  // Reveal fog along path
+  try {
+    await updateKingdomVisibility(db, kingdom.id, (current) => {
+      let newSeenCells = current.seenCells;
+
+      for (const hex of pathHexes) {
+        if (hex.col !== undefined && hex.row !== undefined) {
+          try {
+            const idx = cellIndex(hex.col, hex.row);
+            newSeenCells |= BigInt(1) << BigInt(idx);
+          } catch {
+            // Invalid hex coordinates — skip silently
+            devLog(`[epic-trek] Invalid hex coordinate: (${hex.col}, ${hex.row})`);
+          }
+        }
+      }
+
+      return {
+        seenCells: newSeenCells,
+        currentCells: current.currentCells,
+        version: current.version,
+      };
+    });
+
+    events.push({
+      type: 'system',
+      message: `Your explorers revealed ${pathHexes.length} hexes along the Epic Trek path.`,
+    });
+  } catch (err) {
+    console.error(`[epic-trek] Fog reveal failed for kingdom ${kingdom.id}:`, err.message);
+    events.push({
+      type: 'system',
+      message: `Epic Trek fog reveal encountered an error.`,
+    });
+  }
+
+  // Process discoveries along path
+  try {
+    const discoveries = processPathDiscoveries(pathHexes, kingdom);
+    if (discoveries && discoveries.length > 0) {
+      const newKingdoms = discoveries.filter(d => d.type === 'kingdom');
+      const newLocations = discoveries.filter(d => d.type === 'location');
+
+      // Update discovered_kingdoms
+      if (newKingdoms.length > 0) {
+        const { getKingdomMapCoords } = require('./world-map-coords');
+        const { pixelToHex } = require('./hex-utils');
+        const otherKingdoms = await db.all('SELECT id, race FROM kingdoms WHERE id != $1', [kingdom.id]);
+
+        let disc = {};
+        try {
+          disc = safeJsonParse(kingdom.discovered_kingdoms, {}, 'epic-trek:discovered_kingdoms');
+        } catch {}
+
+        let discoveredCount = 0;
+        for (const discovered of newKingdoms) {
+          const match = otherKingdoms.find(ok => {
+            const coords = getKingdomMapCoords({ id: ok.id, race: ok.race });
+            const h = pixelToHex(coords.map_x, coords.map_y);
+            return h.col === discovered.hex_col && h.row === discovered.hex_row;
+          });
+
+          if (match && !disc[match.id]) {
+            disc[match.id] = { found: true, discovered_turn: discovered.discovered_turn };
+            discoveredCount++;
+          }
+        }
+
+        if (discoveredCount > 0) {
+          updates.discovered_kingdoms = JSON.stringify(disc);
+          rewards.push({
+            text: `Your explorers discovered ${discoveredCount} kingdom${discoveredCount !== 1 ? 's' : ''}!`,
+          });
+        }
+      }
+
+      if (newLocations.length > 0) {
+        rewards.push({
+          text: `Your explorers found ${newLocations.length} location${newLocations.length !== 1 ? 's' : ''}!`,
+        });
+      }
+    }
+  } catch (err) {
+    console.error(`[epic-trek] Discovery processing failed for kingdom ${kingdom.id}:`, err.message);
+  }
+
+  return { events, updates, rewards };
+}
+
 async function resolveExpeditions(db, k, engine) {
   // Pick up active ones AND unclaimed ones (turns_left=0 but rewards_claimed=0)
   const exps = await db.all(
@@ -1812,6 +1928,28 @@ async function resolveExpeditions(db, k, engine) {
         freshK,
         db,
       );
+
+      // ── Epic Trek: Reveal fog along path and process discoveries ──────────
+      if (exp.type === 'epic-trek') {
+        try {
+          const epicTrekResult = await resolveEpicTrek(db, exp, freshK);
+          if (epicTrekResult && epicTrekResult.events) {
+            events.push(...epicTrekResult.events);
+          }
+          if (epicTrekResult && epicTrekResult.updates) {
+            Object.assign(updates, epicTrekResult.updates);
+          }
+          if (epicTrekResult && epicTrekResult.rewards) {
+            rewards.push(...epicTrekResult.rewards);
+          }
+        } catch (err) {
+          console.error(`[epic-trek] Resolution error for kingdom ${k.id} id=${exp.id}:`, err.message);
+          events.push({
+            type: 'system',
+            message: `Epic Trek returned -- an error occurred processing discoveries (fog reveal may be incomplete).`,
+          });
+        }
+      }
 
       // ── Throne of Nazdreg check ──────────────────────────────────────────────
       if (updates._check_throne) {

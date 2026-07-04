@@ -152,7 +152,7 @@ function MapLayerToggles({ layers, onToggle }) {
   );
 }
 
-const WorldmapPanel = () => {
+const WorldmapPanel = ({ onHexClick = null } = {}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [kingdoms, setKingdoms] = useState([]);
@@ -266,8 +266,10 @@ const WorldmapPanel = () => {
     let element = event.target;
     let nodeId = null;
     let targetKingdomId = null;
+    let hexX = null;
+    let hexY = null;
 
-    // Walk up the DOM tree to find node or kingdom element
+    // Walk up the DOM tree to find node, kingdom, or hex element
     while (element && element !== event.currentTarget) {
       if (!nodeId) {
         nodeId = element.getAttribute?.('data-node-id');
@@ -277,7 +279,17 @@ const WorldmapPanel = () => {
         targetKingdomId = element.getAttribute?.('data-kingdom-id');
         if (targetKingdomId) break;
       }
+      if (!hexX) {
+        hexX = element.getAttribute?.('data-hex-x');
+        hexY = element.getAttribute?.('data-hex-y');
+        if (hexX) break;
+      }
       element = element.parentElement;
+    }
+
+    if (hexX && hexY && typeof onHexClick === 'function') {
+      onHexClick(Number(hexX), Number(hexY));
+      return;
     }
 
     if (nodeId) {
@@ -293,7 +305,7 @@ const WorldmapPanel = () => {
       setSelectedNode(null);
       showMapKingdomCard(targetKingdomId, currentKingdomId, marketUpgrades);
     }
-  }, [currentKingdomId, marketUpgrades, nodes, shouldSuppressClick]);
+  }, [currentKingdomId, marketUpgrades, nodes, shouldSuppressClick, onHexClick]);
 
   const activeExpedition = selectedNode
     ? expeditions.find((exp) => String(exp.node_id) === String(selectedNode.id))
