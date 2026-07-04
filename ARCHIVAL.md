@@ -306,16 +306,59 @@
   - Updated: `game/scout-economy.js` with new BASE_HEX_EXPLORATION_PER_RANGER formula (0.00001)
   - All specs locked 2026-07-04; ready for Phase 1 implementation (Refactor Instant Searches → Turn-Based)
 
-- **Elevation System Plan: Post-Beta Architecture** (PR #799, merged 2026-07-04): Comprehensive deferred-work specification for elevation system enabling organic rivers and combat depth. Three-phase implementation (25-31 hours total) with expert assessment recommendations.
-  - **Phase 1 (Elevation Generation):** Multi-octave Perlin/Simplex FBM with world-seed seeding, terrain-type correlation (Mountains: 150-255, Hills: 80-150, Plains/Coasts: 20-80, Ocean: 0), precomputed at boot.
-  - **Phase 2 (Organic Rivers):** Gradient descent pathfinding with flow accumulation for variable river width, tributary merging, Bezier/Catmull-Rom spline rendering.
-  - **Phase 3 (Combat & Gameplay):** Conservative high-ground bonuses (Defender elevation > attacker → +12% defense reduction, -10% attacker damage), mountain movement penalties (-30%), elevation fatigue (1 per 10 units uphill), siege bonuses (+15% structure HP), spell LOS elevation blocking, expedition mountain costs (+50% turns).
-  - **Technical Considerations:** Client/server sync (deterministic seeding, cached on startup), performance (all precomputed, O(1) lookup during gameplay), debug mode (elevation heatmap visualization), React architecture (no state bloat).
-  - **Risks & Mitigations:** Seeding consistency (store in DB post-generation), combat balance (conservative bonuses to avoid PvP imbalance), pathfinding dead zones (test with elevation cost stacking), spell LOS edge cases (valley vs. peak testing), data migration (backfill script for pre-elevation worlds).
-  - **Suggested Implementation Order:** Phase 1 → Visualization layer → Phase 2 → Phase 3A (combat high ground) → Phase 3B (movement fatigue) → Phase 3C (spells/advanced) → Full balance pass.
-  - **Future Extensions:** Settlements on high ground, natural mountain chokepoints, weather system (snow, avalanche), dynamic erosion, scout discovery of mountain passes.
-  - **Gemini Review:** 1 feedback item: High ground condition logic contradiction (≥ vs. > elevation) resolved by updating main condition to ">" for clarity.
-  - **Status:** Design-locked, deferred post-Beta. Ready for Phase 1 when elevation system development begins.
+- **Elevation System Plan: Complete Production Spec** (PR #799 + follow-up commits 39d1007, 74bf22e, 8ee9aa2; 2026-07-04): Comprehensive deferred-work specification for elevation system enabling organic rivers and combat depth. Full implementation-ready spec with expert feedback, 17 robustness improvements, and 3 polish sections.
+  
+  **Phase 1 (Elevation Generation):**
+  - Multi-octave Perlin/Simplex FBM with world-seed seeding (includes FBM code skeleton with simplex-noise library pseudocode)
+  - Explicit elevation bands: Ocean 0, Coast 1-30, Plains 31-90, Hills 91-149, Mountains 150-255
+  - Biome-aware normalization (terrain type shapes elevation, not raw noise)
+  - Server-side generation pipeline (shared world primitive, not client-only)
+  - DB storage strategy: STORE in database (not regenerate) for consistency + migration logic for pre-elevation worlds
+  - Precomputed at boot, O(hex count) one-time cost
+  
+  **Phase 2 (Organic Rivers):**
+  - Concrete DAG algorithm: downhill neighbor graph + flow accumulation + sink rules
+  - Tributary merging via flow convergence (multiple hexes → same downstream hex)
+  - Bezier smoothing after DAG topology validation (prevents pathing bugs hidden by curves)
+  - Proportional river width based on accumulated flow
+  
+  **Phase 3 (Combat & Gameplay, feature-flagged):**
+  - Phase 3A: High-ground modifier (+7% defense, conservative within 5-10% window) behind FEATURE_ELEVATION_COMBAT
+  - Phase 3B: Movement penalties (-30% mountains) + elevation fatigue (1 per 10 units uphill) behind FEATURE_ELEVATION_MOVEMENT
+  - Phase 3C: Spell LOS checks + siege bonuses (+10% structure HP) behind FEATURE_ELEVATION_SPELLS
+  - Battle outcome logging for balance tuning
+  
+  **Robustness Improvements (17 integrated):**
+  - Feature flags: FEATURE_ELEVATION_COMBAT, FEATURE_ELEVATION_MOVEMENT, FEATURE_ELEVATION_SPELLS (independent toggles)
+  - Save compatibility: Existing kingdoms migrate with defaults (elevation = 0)
+  - Rollback strategies for each phase (disable flag, revert code, no player impact)
+  - Failure scenarios & error codes: ELEVATION_LOOKUP_FAILED, SPELL_LOS_BLOCKED, etc.
+  - Concurrency: Transaction-locked combat (SELECT FOR UPDATE), atomic elevation bonus
+  - Configuration table: All magic numbers in one place (bands, modifiers, costs)
+  - Cache invalidation rules (server restart, world regen, admin reset)
+  - Logging events: Band assignments, DAG validation, battle outcomes, flag toggles
+  - Performance targets: 5000 kingdoms, 100k+ expeditions, <100ms generation, <1ms lookup
+  - Deterministic seeding rules (world_seed + hex_coordinate + turn_number)
+  - Migration validation (row counts, JSON validity, indexes, constraints)
+  - Phase 3A sequence diagram (ASCII flow showing atomicity, logging, rollback)
+  - Out-of-scope features list (naval, scout heroes, shared discoveries, etc. deferred)
+  - Release checklist: 40+ verification items (migrations, rollback tests, PvP balance, mobile/desktop)
+  
+  **Polish Sections (3 integrated):**
+  - FBM code skeleton: JavaScript pseudocode using simplex-noise, seeded generation, biome correlation function
+  - Data storage strategy: Explicit decision to STORE (not regenerate), with migration logic and fallback for pre-elevation worlds
+  - Testing strategy: 40+ concrete test cases (determinism, band correlation, DAG acyclicity, flow conservation, modifier isolation, crash recovery, etc.)
+  - Deferred elevation tint layer: Optional visual polish (post-launch) to keep Phase 1 scope tight
+  
+  **Expert Feedback Integration:**
+  - Evaluated 20 suggestions: integrated 17, deferred 2, minor 1
+  - Concurred on: server-side generation pipeline, explicit elevation bands, DAG river algorithm, conservative feature-flagged combat, regression testing
+  - Architecture: Elevation as shared world primitive (not client-only), deterministic seeding, immutable storage
+  
+  **Status:** Design-locked, specification complete, implementation-ready. All commits merged to main. Ready for Phase 1 development whenever elevation system begins (post-Beta).
+  - Commit 39d1007: Expert feedback integration (architecture, algorithms, scope)
+  - Commit 74bf22e: 17 robustness improvements (rollback, error codes, concurrency, logging, release checklist)
+  - Commit 8ee9aa2: 3 polish sections (FBM skeleton, storage strategy, test suite)
 
 ### 2026-07-03
 
