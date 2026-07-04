@@ -10,6 +10,22 @@
 
 ### 2026-07-04
 
+- **ProgressBar Component Extraction & Refactoring** (PR #794, merged 2026-07-04): Created reusable `ProgressBar.jsx` component to eliminate 200+ individual progress bar div pairs scattered across panels. Enhanced component with flexible styling support via `wrapperClassName` and `barClassName` props for panel-specific customization while maintaining consistent reusable base.
+  - **Component improvements:**
+    - Auto-clamps percent values (0-100)
+    - Handles string percentage parsing (e.g., "45%") gracefully
+    - Supports custom DOM IDs for E2E test selectors
+    - Flexible wrapper/bar styling via optional className props
+    - Backward compatible with existing usage patterns
+  - **Panels refactored:**
+    - **TrainingPanel:** 6 support unit XP bars (engineers, scribes, researchers) + 6 troop unit XP bars (fighters, rangers, clerics, mages, thieves, ninjas)
+    - **StatusPanel:** 10 research/stat progress bars with correct colors and DOM IDs preserved
+    - **BuildPanel:** Build progress bars with custom h-[5px]/rounded-sm/bg-amber styling via custom className props
+  - **Code reduction:** ~200+ inline div pairs → 1 reusable component across 3+ panels
+  - **Gemini Review:** Initial review identified visual regressions (missing layout classes, broken colors, missing IDs) and component robustness gaps. All feedback addressed in follow-up commits: enhanced ProgressBar signature, restored layout classes, fixed color classes, restored DOM IDs, removed redundant parseFloat calls.
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all baseline checks), Sanity ✅, CI ✅ (all 3 checks green after final fix)
+  - **Approach:** Created single reusable component instead of batch CSS consolidation, enabling architectural improvement over individual style refactoring. More maintainable and reduces future bloat.
+
 - **Admin CSS Consolidation: Phase 1-3** (PR #793, merged 2026-07-04): Batch refactoring of inline styles to Tailwind CSS classes across three React panels. Total: 42 static styles converted using Python automation script with regex pattern mapping.
   - **Phase 1 - TrainingPanel:** 1 style converted (conditional capacity color from inline style to className with ternary logic). Dynamic width styles (progress bars) remain as inline (correct pattern).
   - **Phase 2 - BuildPanel:** 1 style converted (demolish button color from inline style={{}} to className). Remaining styles are dynamic (dependent on state).

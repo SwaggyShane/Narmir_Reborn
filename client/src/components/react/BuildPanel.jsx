@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
+import ProgressBar from './ProgressBar';
 import {
   useEconomyStore,
   useRace,
@@ -982,12 +983,11 @@ const BuildPanel = () => {
                           {fmt(item.eng)} engineers | ~{turnsStr} per unit
                         </span>
                       </div>
-                      <div className="h-[5px] rounded-sm bg-bg4">
-                        <div
-                          className="h-[5px] rounded-sm bg-amber transition-[width] duration-300"
-                          style={{ width: `${item.progressPct}%` }}
-                        />
-                      </div>
+                      <ProgressBar
+                        percent={item.progressPct}
+                        wrapperClassName="h-[5px] rounded-sm bg-bg4"
+                        barClassName="h-[5px] rounded-sm bg-amber transition-[width] duration-300"
+                      />
                     </div>
                   </div>
                 );
