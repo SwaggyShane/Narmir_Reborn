@@ -32,6 +32,48 @@ const DEFAULT_LAYERS = {
   terrain: false,
 };
 
+const TERRAIN_COLORS = {
+  plains: '#556b2f',
+  forest: '#2d4a2d',
+  mountains: '#5c4033',
+  hills: '#6b5b3f',
+  swamp: '#3a3f2a',
+  desert: '#8b7355',
+  coast: '#3a5f7a',
+  tundra: '#7a8a94',
+  volcanic: '#7a2e1a',
+  lake: '#2a5f8a',
+  ocean: '#0d3a5c',
+};
+
+const TERRAIN_DISPLAY_NAMES = {
+  plains: 'Plains',
+  forest: 'Forest',
+  mountains: 'Mountains',
+  hills: 'Hills',
+  swamp: 'Swamp',
+  desert: 'Desert',
+  coast: 'Coast',
+  tundra: 'Tundra',
+  volcanic: 'Volcanic',
+  lake: 'Lake',
+  ocean: 'Ocean',
+};
+
+const TERRAIN_EXP_SPEED = {
+  plains: 1.12,
+  forest: 0.92,
+  mountains: 0.80,
+  hills: 0.95,
+  swamp: 0.78,
+  desert: 0.88,
+  coast: 1.05,
+  tundra: 0.75,
+  volcanic: 0.70,
+  lake: 0.60,
+  ocean: 0.55,
+};
+
 export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions, setWorldSeed, setVisibility } = {}) {
   if (typeof setLoading === 'function') setLoading(true);
   if (typeof setError === 'function') setError('');
@@ -115,6 +157,39 @@ function RegionLegend({ kingdoms, highlightedRace, onHighlight }) {
               </div>
             </div>
           </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function TerrainLegend() {
+  const terrainKeys = Object.keys(TERRAIN_COLORS);
+  return (
+    <div className="flex flex-col">
+      {terrainKeys.map((terrain) => {
+        const color = TERRAIN_COLORS[terrain];
+        const name = TERRAIN_DISPLAY_NAMES[terrain] || terrain;
+        const speed = TERRAIN_EXP_SPEED[terrain] ?? 1.0;
+        const pct = Math.round((speed - 1) * 100);
+        const speedLabel = pct === 0 ? 'no change' : `${pct > 0 ? '+' : ''}${pct}%`;
+
+        return (
+          <div
+            key={terrain}
+            className="flex w-full items-center gap-2 border-b border-[var(--border)] px-0 py-1.5"
+          >
+            <span
+              className="inline-block h-3 w-3 shrink-0 rounded-sm border"
+              style={{ background: color }}
+            />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-semibold text-[var(--text)]">{name}</div>
+              <div className="text-[10px] text-[var(--text3)]">
+                Expedition speed: {speedLabel}
+              </div>
+            </div>
+          </div>
         );
       })}
     </div>
@@ -384,9 +459,9 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                 )}
                 <div className="absolute bottom-2 right-2 flex items-center gap-1">
                   <span className="rounded bg-black/45 px-2 py-1 text-[10px] text-[var(--text3)]">{zoomLabel}</span>
-                  <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); zoomOut(); }} aria-label="Zoom out">−</button>
-                  <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); zoomIn(); }} aria-label="Zoom in">+</button>
-                  <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); resetViewport(true); }} aria-label="Reset map view">⌂</button>
+                  <button type="button" className="base-btn px-3 py-2 text-[14px] md:px-2 md:py-1 md:text-[11px]" onClick={(e) => { e.stopPropagation(); zoomOut(); }} aria-label="Zoom out">−</button>
+                  <button type="button" className="base-btn px-3 py-2 text-[14px] md:px-2 md:py-1 md:text-[11px]" onClick={(e) => { e.stopPropagation(); zoomIn(); }} aria-label="Zoom in">+</button>
+                  <button type="button" className="base-btn px-3 py-2 text-[14px] md:px-2 md:py-1 md:text-[11px]" onClick={(e) => { e.stopPropagation(); resetViewport(true); }} aria-label="Reset map view">⌂</button>
                 </div>
               </div>
             )}
@@ -475,6 +550,11 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                 highlightedRace={highlightedRace}
                 onHighlight={setHighlightedRace}
               />
+            </div>
+
+            <div className="card" id="terrain-legend">
+              <div className="card-title !mb-3">Terrain</div>
+              <TerrainLegend />
             </div>
           </div>
         </div>
