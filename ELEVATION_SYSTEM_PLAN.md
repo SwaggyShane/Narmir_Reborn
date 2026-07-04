@@ -97,7 +97,7 @@ The world map currently lacks elevation data, which gates multiple features:
 **What:** Elevation affects military engagement and exploration mechanics.
 
 **Combat Integration:**
-- **High Ground Advantage:** Defender elevation ≥ attacker elevation → defender +12% damage reduction, attacker -10% damage output
+- **High Ground Advantage:** Defender elevation > attacker elevation → defender +12% damage reduction, attacker -10% damage output
   - Scale conservatively to avoid breaking PvP balance (NOT +50% defense)
   - Only applies if elevation difference ≥ 1 unit
 - **Mountain Terrain Penalty:** Units crossing mountains suffer -30% movement speed penalty
