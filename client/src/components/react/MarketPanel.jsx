@@ -442,10 +442,10 @@ const MarketPanel = () => {
                     const request = JSON.parse(o.request || '{}');
                     const offerStr = Object.entries(offer).map((e) => `${e[1]} ${e[0]}`).join(', ');
                     const requestStr = Object.entries(request).map((e) => `${e[1]} ${e[0]}`).join(', ');
-                    const statusColor = o.status === 'accepted' ? 'var(--green)' : o.status === 'declined' ? 'var(--red)' : 'var(--amber)';
+                    const statusColorClass = o.status === 'accepted' ? 'text-[var(--green)]' : o.status === 'declined' ? 'text-[var(--red)]' : 'text-[var(--amber)]';
                     return (
                       <div key={o.id} className="border-b border-[var(--border)] pb-1 text-[var(--text3)]">
-                        To <strong className="text-[var(--text)]">{escapeHtml(o.receiver_name)}</strong>: {escapeHtml(offerStr)} for {escapeHtml(requestStr)} <span style={{ color: statusColor }}>({escapeHtml(o.status)})</span>
+                        To <strong className="text-[var(--text)]">{escapeHtml(o.receiver_name)}</strong>: {escapeHtml(offerStr)} for {escapeHtml(requestStr)} <span className={statusColorClass}>({escapeHtml(o.status)})</span>
                       </div>
                     );
                   })
