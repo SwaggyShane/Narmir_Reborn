@@ -42,36 +42,58 @@
 
 **Two separate scout systems:**
 
-### A. SCOUT — ALLOCATION-BASED (Passive Ring Reveal)
+### A. SCOUT — ALLOCATION-BASED (Passive Ring Reveal) — LOCKED
 
 **Mechanic:** Assign rangers to scouting pool; rings auto-advance over time
 
 **UI:**
 - Allocate button (like building)
 - Release All button
-- Greyed out when full map revealed
+- Greyed out ONLY when final ring (Ring 17) is complete
+- Available through Ring 1-16 regardless of Epic Trek progress
+
+**Ranger allocation:**
+- NO hard cap (unlimited rangers can be assigned)
+- Scales by: ranger_count × level_multiplier × race_modifier
+
+**Ring progression formula (LOCKED):**
+```
+turns_per_ring = 20 + (ring_number - 1) × 5
+
+Ring 1: 20 turns
+Ring 2: 25 turns
+Ring 3: 30 turns
+...
+Ring 17: 100 turns
+TOTAL: ~1,020 turns (at 50 rangers L1)
+```
+
+**Scaling example:**
+- 50 rangers L1, no race mod: 1,020 turns full map
+- 100 rangers L1, no race mod: 510 turns full map
+- 50 rangers L100 (5.95x): ~171 turns full map
 
 **Behavior:**
 - Ring-based progression (Ring 1 = 6 hexes, Ring 2 = 12 hexes, Ring N ≈ 6N hexes)
 - Auto-advances to next ring when current completes
 - Discovers: locations, lore, junk prizes, kingdoms
 - Adds discovered kingdoms to `discovered_kingdoms`
+- Food cost: FREE
 
-**TBD (before implementation):**
-- [ ] Rangers per turn to complete each ring
-- [ ] Food cost per ring (or free?)
-- [ ] Shortfall handling (not enough rangers mid-ring)
+**Fog reveal:**
+- Preferred: Incremental (0.25 hex per tick as ring progresses)
+- Fallback: Full ring reveal on completion (if incremental too complex)
+- Path of least resistance allowed this time only
 
 ---
 
-### B. EPIC TREK — POINT-AND-GO (Active Exploration)
+### B. EPIC TREK — POINT-AND-GO (Active Exploration) — LOCKED
 
 **Mechanic:** Player selects target coordinate on map, expedition travels there revealing fog en route
 
-**Turn Cost Calculation (LOCKED):**
-- Map diagonal: ~41 hexes
-- Target: 41 hexes = 50 turns
-- **Formula: ~1.22 turns per hex distance traveled**
+**Turn Cost (LOCKED):**
+- **Formula: 1.5 turns per hex distance traveled**
+- Example: 10 hex journey = 15 turns
 
 **Behavior:**
 - One-way ticket (no mid-journey redirect)
@@ -84,6 +106,7 @@
 **Discovery (LOCKED):**
 - Each hex crossed has random chance to find locations/artifacts
 - Same probabilities as previous Deep Expedition
+- Does NOT grey out Scout (achievements require scouting junk prizes)
 
 ---
 
@@ -161,11 +184,12 @@ population_deducted = lands_discovered × 100
 
 ---
 
-## 7. DUNGEON RAID — TURN-BASED COMBAT EXPEDITION
+## 7. DUNGEON RAID — TURN-BASED COMBAT EXPEDITION (LOCKED)
 
-**Turn cost:** 50 turns + (hex_distance_to_location × 1 turn/hex)  
+**Turn cost:** 50 turns + (hex_distance_to_location × 1.5 turns/hex)  
 **Units:** Rangers + Fighters  
 **Reward:** Weapons, Armor (per-troop equippable), Combat rewards
+**Gating:** Hidden until player finds at least 1 dungeon location (via Scout or Epic Trek)
 
 ### Formula
 ```
@@ -183,11 +207,12 @@ armor_yield = fighter_count × armor_quality_tier × terrain_modifier
 
 ---
 
-## 8. MOUNTAIN'S HEART — TURN-BASED COMBAT EXPEDITION
+## 8. MOUNTAIN'S HEART — TURN-BASED COMBAT EXPEDITION (LOCKED)
 
-**Turn cost:** 100 turns + (hex_distance_to_location × 1 turn/hex)  
+**Turn cost:** 100 turns + (hex_distance_to_location × 1.5 turns/hex)  
 **Units:** Rangers (only)  
 **Reward:** Combat rewards
+**Gating:** Hidden until player finds at least 1 mountain location (via Scout or Epic Trek)
 
 ### Formula
 ```
@@ -313,43 +338,67 @@ Before coding each phase:
 
 ---
 
-## QUICK REFERENCE (LOCKED 2026-07-04)
+## COMPLETE REFERENCE (LOCKED 2026-07-04)
 
 **Map & Scale:**
-- Size: 1999 × 1380 pixels, 918 hexes
+- Size: 1999 × 1380 pixels, 918 hexes (~17 rings)
 - Players: 1000 goal, 100 happy, 1M lands/player cap
 - Total lands: 1 billion max, ~1.09M per hex
 
-**Scout System:**
-- Scout (allocation): Ring-based reveal, auto-advance, UI like building
-- Epic Trek (point-and-go): Pick target, travel there, reveal en route (~1.22 turns/hex)
+**SCOUT SYSTEM (COMPLETE):**
 
-**Turn-Based Actions:**
-- Hunting: 5 turns, 10 food/ranger L1, Forest biome, NO food cost
-- Prospecting: 5 turns, 5 gold/engineer L1, Mountain biome, Deep-Exp food cost
-- Land Expansion: Instant, 10 rangers = 1 land, 100 pop/land, Race modifiers
-- Dungeon Raid: 50 + distance turns, ranger+fighter, same loot as previous
-- Mountain's Heart: 100 + distance turns, ranger only, same loot as previous
+*Scout (Allocation-based):*
+- No hard cap on rangers (unlimited allocation)
+- Ring progression: Ring N = 20 + (N-1) × 5 turns
+- Base: 50 rangers L1 = ~1,020 turns full map
+- Scales by: ranger_count × level_multiplier × race_modifier
+- FREE (no food cost)
+- Fog reveal: Incremental preferred, full-ring fallback
+- Greyed out ONLY at Ring 17 (final ring)
+- Available through Ring 1-16 regardless of Epic Trek progress
+- Discovers: locations, lore, junk prizes, kingdoms
+- Gating: None (available from start)
 
-**Discovery:**
-- Scout + Epic Trek both discover locations (added to discovered_kingdoms)
-- Same artifact/prize tiers as previous Deep Expedition
-- Same discovery mechanics (random chance per hex for Epic Trek)
+*Epic Trek (Point-and-go):*
+- Turn cost: 1.5 turns per hex distance
+- Reveals en route (kingdoms, nodes, prices, artifacts)
+- Random discovery chance per hex (same as Deep Expedition)
+- Food cost: Deep Expedition formula
+- ONE-WAY (no mid-journey redirect)
+- Gating: Hidden until Ring 2 Scout complete
+- Does NOT grey out Scout
 
-**Mapping (Complete):**
+*Dungeon Raid:*
+- Turn cost: 50 + (distance × 1.5)
+- Units: Rangers + Fighters
+- Loot: Same as previous (weapons, armor, combat rewards)
+- Gating: Hidden until 1 dungeon found
+
+*Mountain's Heart:*
+- Turn cost: 100 + (distance × 1.5)
+- Units: Rangers only
+- Loot: Same as previous (combat rewards)
+- Gating: Hidden until 1 mountain found
+
+**TURN-BASED ACTIONS:**
+- Hunting: 5 turns, 10 food/ranger L1, Forest, NO food cost
+- Prospecting: 5 turns, 5 gold/engineer L1, Mountain, Deep-Exp food cost
+- Land Expansion: Instant, 10 rangers = 1 land, 100 pop/land, Race mods
+
+**COMPLETE MAPPINGS:**
 - search for gold → Prospecting ✅
 - search for food → Hunting ✅
 - search for land → Land Expansion ✅
 - search for locations → Epic Trek + Scout ✅
 - Scout Expedition → Scout (allocation) ✅
 - Deep Expedition → Epic Trek (point-and-go) ✅
-- Dungeon Raid → Regional-specific locations ✅
-- Mountain's Heart → Regional-specific locations ✅
+- Dungeon Raid → Regional-specific, hidden until found ✅
+- Mountain's Heart → Regional-specific, hidden until found ✅
 
-**UNKNOWN (TBD before Phase 2 coding):**
-- [ ] Rangers per turn for Scout ring completion
-- [ ] Scout food cost (if any) per ring
-- [ ] Scout shortfall handling (insufficient rangers mid-ring)
+---
 
-**This document is the source of truth. NO MORE RE-EXPLAINING.**
+## IMPLEMENTATION READY
+
+**ALL PARAMETERS LOCKED.** NO MORE CHANGES.
+This is the source of truth. NO MORE RE-EXPLAINING.
 
