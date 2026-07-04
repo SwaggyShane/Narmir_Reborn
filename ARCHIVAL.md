@@ -39,6 +39,19 @@
   - **Safety:** Both endpoints use `db.withTransaction()` for row-locking and training_allocation is parsed/validated in all helper functions
   - **Gemini review:** No feedback. CI: all green. Ready for Phase 2B (Ring Geometry).
 
+- **Exploration System Phase 2B: Scout Ring Geometry System** (PR #784, merged 2026-07-04): Ring progression infrastructure for turn-based scout advancement. Provides core math and enumeration for Rings 1-17 discovery.
+  - **Module:** Created `game/scout-rings.js` with six core functions:
+    - `getRingTurnCost(ring)` — Turn cost for specific ring: 20 + (N-1) × 5
+    - `getRingHexes(homeHex, ring)` — All hexes in ring N (distance N from home, via hex-utils)
+    - `getTotalHexesInRings(ring)` — Cumulative hex count in rings 1..N
+    - `getTotalTurnsToCompleteRing(ring)` — Cumulative turn cost for rings 1..N
+    - `getCompletedRing(scoutProgress)` — Highest completed ring from accumulated scout-turns
+    - `getProgressMetrics(scoutProgress)` — Current ring, progress %, turns toward next ring
+  - **Config:** SCOUT_CONSTANTS now used throughout (already added in Phase 2A)
+  - **Dependencies:** Requires `getHexesInRadius` from hex-utils (already available)
+  - **Performance:** Ring enumeration <5ms even for Ring 17 (919 hexes); suitable for turn-based (Phase 0 validated)
+  - **Gemini review:** None (force-push after branch rebase fixed inverted diff; new commit reviewed cleanly). CI green. Ready for Phase 2C (Engine integration).
+
 - **Exploration System Redesign — Design Phase Complete** (PR #778, merged `977c712`): Complete locked specification and 4-phase implementation plan for exploration system transformation. Replaces instant single-turn searches + generic expeditions with turn-based, progression-gated actions:
   - **Scout (allocation-based):** Ring progression (Ring N = 20 + (N-1) × 5 turns), auto-advances through 17 rings, discovers locations/lore/junk, no food cost, greyed out at Ring 17 only, no hard cap on rangers
   - **Epic Trek (point-and-go):** 1.5 turns per hex distance, reveals fog en route, random discovery per hex, food cost scales by ranger count, hidden until Ring 2 Scout complete

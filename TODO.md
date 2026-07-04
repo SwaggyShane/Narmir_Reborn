@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-04
+**Last updated:** 2026-07-04 (Phase 2B merged)
 
 ---
 
@@ -58,7 +58,7 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 **Phase 2A: Scout allocation database & persistence** — ✅ COMPLETE (PR #783, merged 2026-07-04; see ARCHIVAL.md)
 
-**Phase 2B: Scout ring geometry system** — 🔄 IN PROGRESS (PR #784, CI green, Gemini review pending)
+**Phase 2B: Scout ring geometry system** — ✅ COMPLETE (PR #784, merged 2026-07-04; see ARCHIVAL.md)
 
 **Phase 2C:** Engine integration & ring progression (est. 6-8 files)
 **Phase 2D:** Visibility integration & fog reveal (est. 4-6 files)
