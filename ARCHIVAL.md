@@ -10,6 +10,18 @@
 
 ### 2026-07-04
 
+- **Transaction Context Safety Fix: db.withTransaction Migration** (PR #790, merged 2026-07-04): Critical race condition fix migrating all 13 transaction endpoints from manual `BEGIN TRANSACTION`/`ROLLBACK`/`COMMIT` pattern to `db.withTransaction()` helper. Ensures transaction context is properly propagated via `transactionStorage`, enabling reliable row-locking with `SELECT...FOR UPDATE` to prevent lost-update race conditions on concurrent requests.
+  - **Problem:** Manual transaction pattern does not propagate transaction context correctly, causing `transactionStorage.getStore()` to return null after `BEGIN`, breaking `SELECT...FOR UPDATE` row locking. Concurrent requests on same row have no mutual exclusion, risking lost updates. Manual pattern also leaks connections (~40-50s until reaper reclaims).
+  - **Solution:** `db.withTransaction(fn)` wraps callback in `transactionStorage.run()`, which propagates context correctly. Verified via testing: concurrent `Promise.all` repro drops from ~50s (waiting on reaper) to under 1s with zero leaked connections.
+  - **Files modified:**
+    - `routes/hero.js` — 1 endpoint refactored (POST /recruit)
+    - `routes/kingdom-build.js` — 8 endpoints refactored (training-allocation, build-allocation, demolish, build, cancel-building, smithy/buy-hammers, smithy/buy-scaffolding, tower-craft)
+    - `routes/kingdom-economy.js` — 4 endpoints refactored (trade-routes/establish, market/buy, market/sell, economy/bank-deposit)
+  - **Pattern:** Replaced `await db.run("BEGIN TRANSACTION")` with `await db.withTransaction(async () => {...})`, converted `ROLLBACK; return res.status(xxx)` to `throw Error` with `statusCode` property, replaced `COMMIT` with callback close, wrapped outer `res.json()` in try-catch with `statusCode` error handler.
+  - **Gemini Review:** Initial review identified 3 critical issues (missing statusCode properties, hardcoded 500 status, missing game validations). All fixed in follow-up commit, CI green, ready to merge.
+  - **Testing:** Lint ✅, CI (Lint/Test/Build, Security, Text Encoding) ✅, Sanity check ✅ (patterns verified across 3 files, proper error handling confirmed).
+  - **Severity:** HIGH — data integrity issue affecting all transaction endpoints. Moderate-to-large blast radius but isolated to error handling pattern.
+
 - **Exploration System Phase 1: Complete Turn-Based Resource Gathering** (PR #780 backend + PR #781 UI, merged 2026-07-04): Full implementation of turn-based resource gathering with both backend endpoints and frontend UI integration.
   - **Phase 1a - Endpoints & Economy:** Refactored instant searches to turn-based actions with three new endpoints and economy modules
     - **Hunting:** 5 turns, 10 food per ranger L1, forest terrain bonus (1.3x), no food cost, no unit loss on completion
