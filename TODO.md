@@ -87,7 +87,7 @@ _None currently — see Known Technical Debt below for post-beta cleanup items._
 
 ## Known Technical Debt (Post-Beta)
 
-- **Admin inline CSS consolidation** — 59 static usages converted in `EvolutionPanel.jsx`/`ManagePanel.jsx`; ~440 remain across other admin panels, plus the shared `BTN`/`INPUT`/`TD`-style constant objects themselves still need a Tailwind equivalent before the conditional/dynamic usages that spread them can be converted
+- **Admin inline CSS consolidation (continued)** — 101 static usages converted to date (59 in `EvolutionPanel.jsx`/`ManagePanel.jsx` + 42 in Phase 1-3: TrainingPanel, BuildPanel, ResourcesPanel); ~398 remain across other panels. Phases 4+ deferred. Conditional styles and dynamic properties (ternaries, state-dependent) require more complex refactoring before the shared `BTN`/`INPUT`/`TD`-style constant objects can be converted.
 - **Component test coverage expansion** — 57+ component tests exist; gaps remain in some panels
 
 ---
