@@ -26,6 +26,19 @@
     - **Gemini review (Phase 1b):** Type safety issue in handleProspecting (use availableEngineers consistently). Fixed immediately. Dependency array corrected. CI green.
   - **Full Phase 1 Status:** ✅ COMPLETE. Both backend and UI fully functional. Ready for Phase 2 (Scout allocation system).
 
+- **Exploration System Phase 2A: Scout Allocation Database & Persistence** (PR #783, merged 2026-07-04): Foundation for scout ring progression system. Database schema, allocation logic, REST endpoints, and training-aware validation.
+  - **Database:** Added `scout_allocation INT DEFAULT 0` column to kingdoms table for tracking allocated scout rangers
+  - **Config:** Added `SCOUT_CONSTANTS` (SCOUT_BASE_TURNS=20, SCOUT_RING_INCREMENT=5, MAX_RING=17) for flexible tuning
+  - **Module:** Created `game/scout-allocation.js` with three core functions:
+    - `validateAllocation(kingdom, rangerCount)` — Check available rangers (accounts for training_allocation)
+    - `calculateAllocationResult(kingdom, rangerCount)` — Compute new allocation state
+    - `getAllocationStatus(kingdom)` — Return current allocation metrics
+  - **Endpoints:** Two new REST endpoints in `routes/kingdom-exploration.js`:
+    - `POST /api/kingdom/scout/allocate` — Allocate N rangers to scout pool
+    - `POST /api/kingdom/scout/release-all` — Release all scouts back to rangers
+  - **Safety:** Both endpoints use `db.withTransaction()` for row-locking and training_allocation is parsed/validated in all helper functions
+  - **Gemini review:** No feedback. CI: all green. Ready for Phase 2B (Ring Geometry).
+
 - **Exploration System Redesign — Design Phase Complete** (PR #778, merged `977c712`): Complete locked specification and 4-phase implementation plan for exploration system transformation. Replaces instant single-turn searches + generic expeditions with turn-based, progression-gated actions:
   - **Scout (allocation-based):** Ring progression (Ring N = 20 + (N-1) × 5 turns), auto-advances through 17 rings, discovers locations/lore/junk, no food cost, greyed out at Ring 17 only, no hard cap on rangers
   - **Epic Trek (point-and-go):** 1.5 turns per hex distance, reveals fog en route, random discovery per hex, food cost scales by ranger count, hidden until Ring 2 Scout complete
