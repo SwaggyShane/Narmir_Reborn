@@ -203,8 +203,8 @@ module.exports = function (db) {
         );
 
         await db.run(
-          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-          [k.id, 'hunting', 0, r, 0, JSON.stringify({ food: reward.foodReward }), 1],
+          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+          [k.id, 'hunting', 0, 0, 0, 0, JSON.stringify({ food: reward.foodReward }), 1],
         );
 
         let updates = {
@@ -280,8 +280,8 @@ module.exports = function (db) {
         );
 
         await db.run(
-          'INSERT INTO expeditions (kingdom_id, type, turns_left, engineers, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-          [k.id, 'prospecting', 0, e, reward.foodCost, JSON.stringify({ gold: reward.goldReward }), 1],
+          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+          [k.id, 'prospecting', 0, 0, 0, reward.foodCost, JSON.stringify({ gold: reward.goldReward }), 1],
         );
 
         let updates = {
