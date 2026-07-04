@@ -1126,11 +1126,12 @@ import { levelMultiplier } from './scout-economy.js';
 export function getRingHexes(centerHex, ringNumber) {
   if (ringNumber === 0) return [centerHex];
   
-  const allInRadius = getHexesInRadius(centerHex, ringNumber);
-  const prevRadius = ringNumber > 1 ? getHexesInRadius(centerHex, ringNumber - 1) : [centerHex];
+  const allInRadius = getHexesInRadius(centerHex.col, centerHex.row, ringNumber);
+  const prevRadius = ringNumber > 1 ? getHexesInRadius(centerHex.col, centerHex.row, ringNumber - 1) : [centerHex];
   
   // Ring N = all hexes at distance N (in radius but not in previous)
-  return allInRadius.filter(hex => !prevRadius.includes(hex));
+  const prevKeys = new Set(prevRadius.map(h => `${h.col},${h.row}`));
+  return allInRadius.filter(hex => !prevKeys.has(`${hex.col},${hex.row}`));
 }
 
 /**
@@ -1200,7 +1201,7 @@ export function getPathHexes(startX, startY, targetX, targetY) {
     const y = startY + (targetY - startY) * t;
     const hex = pixelToHex(x, y);
     
-    if (!path.length || hex !== path[path.length - 1]) {
+    if (!path.length || hex.col !== path[path.length - 1].col || hex.row !== path[path.length - 1].row) {
       path.push(hex);
     }
   }
@@ -1218,9 +1219,7 @@ export function getEpicTrekTurns(startX, startY, targetX, targetY) {
 }
 
 export function getDistanceInHexes(startX, startY, targetX, targetY) {
-  const startHex = pixelToHex(startX, startY);
-  const targetHex = pixelToHex(targetX, targetY);
-  return hexUnitDistance(startHex, targetHex);
+  return hexUnitDistance(startX, startY, targetX, targetY);
 }
 ```
 
@@ -1249,13 +1248,10 @@ router.post('/scout/allocate', requireAuth, requireCsrfToken, async (req, res) =
   }
   
   // Update with atomicity
-  await db.withTransaction(async () => {
+  await updateKingdomVisibility(db, kingdomId, async (visibility) => {
     await db.run('UPDATE kingdoms SET scout_allocation = ? WHERE id = ?', 
       [rangers, kingdomId]);
-    
-    // Trigger visibility update if needed
-    const visibility = getKingdomVisibility(kingdom);
-    await updateKingdomVisibility(kingdomId, visibility);
+    return visibility;
   });
   
   return res.json({ success: true, allocated: rangers });
