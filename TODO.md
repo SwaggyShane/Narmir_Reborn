@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-04 (CSS Consolidation Phase 4E: BuildPanel 4 inline styles → Tailwind, PR #801 pending CI)
+**Last updated:** 2026-07-04 (CSS Consolidation Phase 4D-4E complete: EconomyPanel + BuildPanel merged PR #800, #801)
 
 ---
 
