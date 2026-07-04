@@ -1566,6 +1566,22 @@ async function initDb(options = {}) {
     CREATE INDEX IF NOT EXISTS idx_mercs_kingdom ON mercenaries(kingdom_id);
   `);
 
+  // World locations (dungeons, mountains) table
+  await _db.exec(`
+    CREATE TABLE IF NOT EXISTS world_locations (
+      id                       SERIAL PRIMARY KEY,
+      type                     VARCHAR(20) NOT NULL,
+      region_name              VARCHAR(50) NOT NULL,
+      x                        NUMERIC NOT NULL,
+      y                        NUMERIC NOT NULL,
+      discovered_by_kingdom_ids INTEGER[] DEFAULT '{}',
+      created_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(type, region_name)
+    );
+    CREATE INDEX IF NOT EXISTS idx_world_locations_region ON world_locations(region_name);
+    CREATE INDEX IF NOT EXISTS idx_world_locations_type ON world_locations(type);
+  `);
+
   await _db.exec(`
     CREATE TABLE IF NOT EXISTS war_log (
       id              SERIAL PRIMARY KEY,
@@ -1587,6 +1603,10 @@ async function initDb(options = {}) {
   if (!kingdomsCols.includes('active_event'))          await addColumn('kingdoms', 'active_event',          "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('discovered_kingdoms'))   await addColumn('kingdoms', 'discovered_kingdoms',   "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('location_maps_wip'))     await addColumn('kingdoms', 'location_maps_wip',     "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
+
+  // ── Phase 4: World locations (dungeons/mountains) ────────────────────────────────
+  if (!kingdomsCols.includes('first_dungeon_found_turn'))  await addColumn('kingdoms', 'first_dungeon_found_turn',  'INTEGER DEFAULT NULL', kingdomsCols);
+  if (!kingdomsCols.includes('first_mountain_found_turn')) await addColumn('kingdoms', 'first_mountain_found_turn', 'INTEGER DEFAULT NULL', kingdomsCols);
   // Fog of War Phase 2: seen_cells/current_cells store BigInt hex-cell
   // bitmaps as decimal strings (JSON can't carry BigInt); "0" = no cells
   // seen/visible yet. game/visibility.js lazily seeds the kingdom's home
