@@ -62,7 +62,9 @@ module.exports = function (db) {
           req.player.playerId,
         ]);
         if (!k) {
-          throw new Error("Kingdom not found");
+          const err = new Error("Kingdom not found");
+          err.statusCode = 404;
+          throw err;
         }
 
         const existing = await db.all(

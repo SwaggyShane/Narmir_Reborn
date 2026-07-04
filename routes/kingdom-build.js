@@ -100,7 +100,9 @@ module.exports = function (db) {
           [req.player.playerId],
         );
         if (!k) {
-          throw new Error('Kingdom not found');
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
         }
 
         const capacity = k.bld_training * 100;
@@ -152,7 +154,9 @@ module.exports = function (db) {
           [req.player.playerId],
         );
         if (!k) {
-          throw new Error('Kingdom not found');
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
         }
 
         const resourceAlloc = safeJsonParse(k.resource_build_allocation, {}, 'build-allocation:resource_build_allocation');
@@ -290,7 +294,9 @@ module.exports = function (db) {
           req.player.playerId,
         ]);
         if (!k) {
-          throw new Error('Kingdom not found');
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
         }
 
         const result = engine.demolishBuilding(k, building, amountValidation.value);
@@ -332,7 +338,9 @@ module.exports = function (db) {
           req.player.playerId,
         ]);
         if (!k) {
-          throw new Error('Kingdom not found');
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
         }
 
         const buildingId = building.startsWith('bld_') ? building : `bld_${building}`;
@@ -418,12 +426,16 @@ module.exports = function (db) {
           [req.player.playerId],
         );
         if (!k) {
-          throw new Error('Kingdom not found');
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
         }
 
         const buildQueue = safeJsonParse(k.build_queue, {}, 'build:cancel_queue');
         if (!buildQueue[queueId]) {
-          throw new Error('Building not found in queue');
+          const err = new Error('Building not found in queue');
+          err.statusCode = 404;
+          throw err;
         }
 
         const buildJob = buildQueue[queueId];
@@ -451,7 +463,8 @@ module.exports = function (db) {
       res.json({ ok: true, updates, message });
     } catch (err) {
       console.error('[cancel-building] error:', err.message);
-      res.status(500).json({ error: err.message });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
     }
   });
 
@@ -465,7 +478,9 @@ module.exports = function (db) {
           req.player.playerId,
         ]);
         if (!k) {
-          throw new Error('Kingdom not found');
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
         }
         if (!(k.bld_smithies > 0)) {
           const err = new Error('Need at least 1 smithy');
@@ -519,7 +534,9 @@ module.exports = function (db) {
           req.player.playerId,
         ]);
         if (!k) {
-          throw new Error('Kingdom not found');
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
         }
 
         const baseCost = 2500;
@@ -595,7 +612,9 @@ module.exports = function (db) {
           [req.player.playerId],
         );
         if (!k) {
-          throw new Error('Kingdom not found');
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
         }
         if (k.bld_mage_towers === 0) {
           const err = new Error('You need at least 1 Mage Tower first');

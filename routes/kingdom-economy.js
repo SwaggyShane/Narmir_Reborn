@@ -138,16 +138,61 @@ module.exports = function (db) {
     res.json({ routes: visibleRoutes });
   });
   router.post("/trade-routes/establish", requireAuth, requireCsrfToken, async (req, res) => {
-    const { targetId } = req.body;
+    const targetId = parseInt(req.body.targetId);
+    if (isNaN(targetId))
+      return res.status(400).json({ error: "Invalid target kingdom" });
+
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
-    const target = await db.get("SELECT id, turn, name FROM kingdoms WHERE id = $1", [
+    const marketUpgrades = safeJsonParse(
+      k.market_upgrades,
+      {},
+      "establish:market_upgrades",
+    );
+    if (!marketUpgrades.trading_post) {
+      return res.status(400).json({
+        error: "Build a Trading Post in the Markets tab to establish trade routes",
+      });
+    }
+
+    if (k.id == targetId)
+      return res.status(400).json({ error: "Cannot trade with yourself" });
+
+    const target = await db.get("SELECT id, turn, name, race FROM kingdoms WHERE id = $1", [
       targetId,
     ]);
     if (!target) return res.status(404).json({ error: "Target kingdom not found" });
+
+    const vis = await getKingdomVisibility(db, k);
+    const targetCoords = getKingdomMapCoords({ id: targetId, race: target.race });
+    const targetHex = pixelToHex(targetCoords.map_x, targetCoords.map_y);
+    if (!safeBitmapHasCell(vis.seenCells, targetHex.col, targetHex.row)) {
+      return res.status(400).json({ error: "Target kingdom is not visible (scout the area first)" });
+    }
+
+    const routeCount = await db.get(
+      `SELECT COUNT(*) as count FROM (
+        SELECT id FROM trade_routes WHERE kingdom_id=$1
+        UNION ALL
+        SELECT id FROM trade_routes WHERE partner_id=$2
+      ) t`,
+      [k.id, k.id],
+    );
+    if (routeCount.count >= (engine.TRADE_ROUTE_MAX || 5)) {
+      return res.status(400).json({
+        error: `Maximum trade routes reached (${engine.TRADE_ROUTE_MAX || 5})`,
+      });
+    }
+
+    const existing = await db.get(
+      "SELECT id FROM trade_routes WHERE (kingdom_id=$1 AND partner_id=$2) OR (kingdom_id=$3 AND partner_id=$4)",
+      [k.id, targetId, targetId, k.id],
+    );
+    if (existing)
+      return res.status(400).json({ error: "Trade route already exists with this kingdom" });
 
     const distance = Math.hypot(k.x - target.x, k.y - target.y);
     const baseCost = Math.ceil(distance * 10);
