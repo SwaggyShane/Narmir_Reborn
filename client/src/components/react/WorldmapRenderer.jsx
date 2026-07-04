@@ -813,7 +813,27 @@ export function renderWorldMap(
         });
         svg += '</g>';
 
-        // Phase 4: Fog of War overlay (above terrain, below rivers/regions/labels).
+        // River network: overlaid directly on the terrain fill (not a gap
+        // like region borders — rivers are a geographic feature painted on
+        // top of whatever biome they cross, not a boundary carved out of it).
+        // Always visible regardless of the terrain toggle, same as lakes.
+        // Trunk segments (the spanning-tree connectors linking every region's
+        // lake to every other) render thicker/brighter than local tributaries
+        // — the "roadway" a navy actually travels, versus feeder streams.
+        // Rendered BEFORE fog so rivers appear under fog of war.
+        svg += '<g class="wm-layer wm-layer-rivers">';
+        hexGrid.riverSegments.forEach(function (seg) {
+          var underWidth = seg.kind === 'trunk' ? 6 : 4.5;
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#0d2a3a" stroke-width="' + underWidth + '" stroke-linecap="round" opacity="0.5" pointer-events="none"/>';
+        });
+        hexGrid.riverSegments.forEach(function (seg) {
+          var topWidth = seg.kind === 'trunk' ? 3.25 : 2.25;
+          var color = seg.kind === 'trunk' ? '#5cc0e8' : '#4a9fd0';
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="' + color + '" stroke-width="' + topWidth + '" stroke-linecap="round" opacity="0.85" class="water-edge" data-kind="' + seg.kind + '" pointer-events="none"/>';
+        });
+        svg += '</g>';
+
+        // Phase 4: Fog of War overlay (above terrain and rivers, below regions/labels).
         // Unseen: heavily obscured; seen: dimmed; current: fully visible (no overlay).
         // Reduced motion: static (no transitions/animations), as SVG is rendered statically via dangerouslySetInnerHTML (transitions would not trigger anyway).
         svg += '<g class="wm-layer wm-layer-fog" style="pointer-events:none">';
@@ -840,25 +860,6 @@ export function renderWorldMap(
         svg += '<g class="wm-layer wm-layer-hex-interact" style="pointer-events:auto">';
         hexGrid.cells.forEach(function (cell) {
           svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="transparent" stroke="none" data-hex-x="' + Math.round(cell.x) + '" data-hex-y="' + Math.round(cell.y) + '" style="cursor:crosshair;opacity:0" />';
-        });
-        svg += '</g>';
-
-        // River network: overlaid directly on the terrain fill (not a gap
-        // like region borders — rivers are a geographic feature painted on
-        // top of whatever biome they cross, not a boundary carved out of it).
-        // Always visible regardless of the terrain toggle, same as lakes.
-        // Trunk segments (the spanning-tree connectors linking every region's
-        // lake to every other) render thicker/brighter than local tributaries
-        // — the "roadway" a navy actually travels, versus feeder streams.
-        svg += '<g class="wm-layer wm-layer-rivers">';
-        hexGrid.riverSegments.forEach(function (seg) {
-          var underWidth = seg.kind === 'trunk' ? 6 : 4.5;
-          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#0d2a3a" stroke-width="' + underWidth + '" stroke-linecap="round" opacity="0.5" pointer-events="none"/>';
-        });
-        hexGrid.riverSegments.forEach(function (seg) {
-          var topWidth = seg.kind === 'trunk' ? 3.25 : 2.25;
-          var color = seg.kind === 'trunk' ? '#5cc0e8' : '#4a9fd0';
-          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="' + color + '" stroke-width="' + topWidth + '" stroke-linecap="round" opacity="0.85" class="water-edge" data-kind="' + seg.kind + '" pointer-events="none"/>';
         });
         svg += '</g>';
 
