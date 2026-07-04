@@ -27,6 +27,8 @@ const { pixelToHex, getHexesInRadius, isFrontier, hexUnitDistance } = require('.
 const { scoutRevealRadius, scoutFoodCostPerHex } = require('../game/scout-economy');
 const { validateRangerAllocation } = require('../game/ranger-allocation');
 const { parseTroopLevel } = require('../game/lib/troops');
+const { getLocationByRegionAndType, markLocationDiscovered } = require('../game/world-locations');
+const { getDistanceToLocation, getLocationTurnCost } = require('../game/location-distance');
 
 const router = express.Router();
 
@@ -3541,6 +3543,144 @@ module.exports = function (db) {
   });
 
   // ═══ EPIC TREK ═══════════════════════════════════════════════════════════════════════════════════════════════════
+  // POST /expedition/dungeon - Raid a region's dungeon location
+  // Gated: Hidden until first dungeon discovered
+  // Cost: 50 + (distance × 1.5) turns
+  router.post('/expedition/dungeon', requireAuth, requireCsrfToken, async (req, res) => {
+    try {
+      const result = await db.withTransaction(async () => {
+        const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
+
+        // Get the dungeon location for this kingdom's region
+        const location = getLocationByRegionAndType(k.race, 'dungeon');
+        if (!location) {
+          const err = new Error('No dungeon found in your region');
+          err.statusCode = 404;
+          throw err;
+        }
+
+        // Calculate distance and turn cost
+        const distance = getDistanceToLocation(k, location);
+        const turnCost = getLocationTurnCost('dungeon', distance);
+
+        if (k.turns_stored < turnCost) {
+          const err = new Error(`Dungeon raid requires ${turnCost} turns (you have ${k.turns_stored})`);
+          err.statusCode = 429;
+          throw err;
+        }
+
+        // Deduct turns
+        await db.run(
+          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1) WHERE id = $2',
+          [turnCost, k.id]
+        );
+
+        // Mark location as discovered
+        await markLocationDiscovered(db, location.id, k.id);
+
+        // Update first_dungeon_found_turn if this is their first dungeon
+        if (!k.first_dungeon_found_turn) {
+          const turnNum = await db.get('SELECT turn_num FROM kingdoms WHERE id = $1', [k.id]);
+          await db.run(
+            'UPDATE kingdoms SET first_dungeon_found_turn = $1 WHERE id = $2',
+            [turnNum?.turn_num || 0, k.id]
+          );
+        }
+
+        return { turnCost, distance };
+      });
+
+      res.json({
+        ok: true,
+        turns_used: result.turnCost,
+        distance: result.distance.toFixed(1),
+        message: `Dungeon raided at distance ${result.distance.toFixed(1)} hexes — ${result.turnCost} turns spent`,
+      });
+    } catch (err) {
+      console.error('[expedition/dungeon] failed:', err.message);
+      if (err.statusCode) {
+        return res.status(err.statusCode).json({ error: err.message });
+      }
+      res.status(500).json({ error: 'Dungeon raid failed — please try again' });
+    }
+  });
+
+  // POST /expedition/mountain - Explore a region's mountain location
+  // Gated: Hidden until first mountain discovered
+  // Cost: 100 + (distance × 1.5) turns
+  router.post('/expedition/mountain', requireAuth, requireCsrfToken, async (req, res) => {
+    try {
+      const result = await db.withTransaction(async () => {
+        const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
+
+        // Get the mountain location for this kingdom's region
+        const location = getLocationByRegionAndType(k.race, 'mountain');
+        if (!location) {
+          const err = new Error('No mountain found in your region');
+          err.statusCode = 404;
+          throw err;
+        }
+
+        // Calculate distance and turn cost
+        const distance = getDistanceToLocation(k, location);
+        const turnCost = getLocationTurnCost('mountain', distance);
+
+        if (k.turns_stored < turnCost) {
+          const err = new Error(`Mountain exploration requires ${turnCost} turns (you have ${k.turns_stored})`);
+          err.statusCode = 429;
+          throw err;
+        }
+
+        // Deduct turns
+        await db.run(
+          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1) WHERE id = $2',
+          [turnCost, k.id]
+        );
+
+        // Mark location as discovered
+        await markLocationDiscovered(db, location.id, k.id);
+
+        // Update first_mountain_found_turn if this is their first mountain
+        if (!k.first_mountain_found_turn) {
+          const turnNum = await db.get('SELECT turn_num FROM kingdoms WHERE id = $1', [k.id]);
+          await db.run(
+            'UPDATE kingdoms SET first_mountain_found_turn = $1 WHERE id = $2',
+            [turnNum?.turn_num || 0, k.id]
+          );
+        }
+
+        return { turnCost, distance };
+      });
+
+      res.json({
+        ok: true,
+        turns_used: result.turnCost,
+        distance: result.distance.toFixed(1),
+        message: `Mountain explored at distance ${result.distance.toFixed(1)} hexes — ${result.turnCost} turns spent`,
+      });
+    } catch (err) {
+      console.error('[expedition/mountain] failed:', err.message);
+      if (err.statusCode) {
+        return res.status(err.statusCode).json({ error: err.message });
+      }
+      res.status(500).json({ error: 'Mountain exploration failed — please try again' });
+    }
+  });
+
   // POST /expedition/epic-trek - Point-and-go targeted exploration
   // Gated: Hidden until Ring 2 Scout complete
   // Cost: 1.5 turns per hex distance
