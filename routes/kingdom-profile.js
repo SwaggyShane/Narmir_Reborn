@@ -58,6 +58,20 @@ module.exports = function (db) {
     }
     k.built_land = builtLand;
 
+    // Wrap troop counts in troops object for client store compatibility
+    k.troops = {
+      fighters: k.fighters || 0,
+      rangers: k.rangers || 0,
+      mages: k.mages || 0,
+      clerics: k.clerics || 0,
+      thieves: k.thieves || 0,
+      ninjas: k.ninjas || 0,
+      researchers: k.researchers || 0,
+      engineers: k.engineers || 0,
+      scribes: k.scribes || 0,
+      war_machines: k.war_machines || 0,
+    };
+
     res.json(k);
   });
 
