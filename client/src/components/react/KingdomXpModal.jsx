@@ -104,16 +104,10 @@ export default function KingdomXpModal({ open, onClose }) {
             <span>Progress to next level</span>
             <span>{pct}%</span>
           </div>
-          <div
-            className="overflow-hidden rounded-md"
-            style={{ height: 10, background: 'var(--bg4)' }}
-          >
+          <div className="h-2.5 overflow-hidden rounded-md bg-[var(--bg4)]">
             <div
-              className="h-full rounded-md transition-all duration-500"
-              style={{
-                width: `${pct}%`,
-                background: 'linear-gradient(90deg, var(--accent1), var(--gold))',
-              }}
+              className="h-full rounded-md bg-gradient-to-r from-[var(--accent1)] to-[var(--gold)] transition-[width] duration-500"
+              style={{ width: `${pct}%` }}
             />
           </div>
           <div className="mt-1 flex justify-between text-[11px] text-text3">
