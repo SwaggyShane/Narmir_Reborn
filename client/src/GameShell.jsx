@@ -58,7 +58,7 @@ const GameShell = () => {
   const { activePanel } = useActivePanel();
   const { isNight } = useNightCycle();
   const isFullBleedPanel = FULL_BLEED_SHELL_PANELS.has(activePanel);
-  const [onHexClick, setOnHexClick] = useState(null);
+  const [selectedHex, setSelectedHex] = useState(null);
 
   useEffect(() => {
     restoreAuthSession().catch((err) => {
@@ -73,7 +73,7 @@ const GameShell = () => {
       case 'studies': return <StudiesPanel />;
       case 'build': return <BuildPanel />;
       case 'heroes': return <HeroesPanel />;
-      case 'exploration': return <ExplorationPanel onSetHexClick={setOnHexClick} />;
+      case 'exploration': return <ExplorationPanel selectedHex={selectedHex} onClearSelectedHex={() => setSelectedHex(null)} />;
       case 'economy': return <EconomyPanel />;
       case 'resources': return <ResourcesPanel />;
       case 'market': return <MarketPanel />;
@@ -90,7 +90,7 @@ const GameShell = () => {
       case 'races': return <RacesPanel />;
       case 'changelog': return <ChangelogPanel />;
       case 'testing': return <TestingPanel />;
-      case 'worldmap': return <WorldmapPanel onHexClick={onHexClick} />;
+      case 'worldmap': return <WorldmapPanel onHexClick={(x, y) => setSelectedHex({ x, y })} />;
       case 'options': return <OptionsPanel />;
       case 'messages': return <MessagesPanel />;
       case 'forum':

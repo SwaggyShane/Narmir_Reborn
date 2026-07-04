@@ -67,7 +67,7 @@ const normalizeRewards = (rewards) => {
   return [];
 };
 
-const ExplorationPanel = ({ onSetHexClick = null } = {}) => {
+const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}) => {
   const rangers = useMilitaryStore((state) => state.troops.rangers);
   const fighters = useMilitaryStore((state) => state.troops.fighters);
   const engineers = useMilitaryStore((state) => state.troops.engineers);
@@ -532,14 +532,6 @@ const ExplorationPanel = ({ onSetHexClick = null } = {}) => {
     }
   }, [scout_allocation, applyResult, refreshAll]);
 
-  const handleHexClick = useCallback((hexX, hexY) => {
-    setEpicTrekTargetX(hexX);
-    setEpicTrekTargetY(hexY);
-    if (typeof window !== 'undefined' && typeof toast === 'function') {
-      toast(`Target set to (${hexX}, ${hexY})`, 'info');
-    }
-  }, []);
-
   const handleEpicTrek = useCallback(async () => {
     const x = Number(epicTrekTargetX);
     const y = Number(epicTrekTargetY);
@@ -576,17 +568,19 @@ const ExplorationPanel = ({ onSetHexClick = null } = {}) => {
     }
   }, [epicTrekTargetX, epicTrekTargetY, turns_stored, applyResult, logInstantEntry, refreshAll]);
 
-  // Register hex click handler with GameShell when this panel is active
+  // Auto-populate target coordinates when hex is selected from worldmap
   useEffect(() => {
-    if (onSetHexClick) {
-      onSetHexClick(handleHexClick);
-    }
-    return () => {
-      if (onSetHexClick) {
-        onSetHexClick(null);
+    if (selectedHex) {
+      setEpicTrekTargetX(selectedHex.x);
+      setEpicTrekTargetY(selectedHex.y);
+      if (typeof window !== 'undefined' && typeof toast === 'function') {
+        toast(`Target set to (${selectedHex.x}, ${selectedHex.y})`, 'info');
       }
-    };
-  }, [handleHexClick, onSetHexClick]);
+      if (onClearSelectedHex) {
+        onClearSelectedHex();
+      }
+    }
+  }, [selectedHex, onClearSelectedHex]);
 
   const renderRow = (entry, isCompleted = false) => {
     const rewards = isCompleted ? normalizeRewards(entry.rewards) : [];

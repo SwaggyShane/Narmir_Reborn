@@ -1742,7 +1742,7 @@ async function resolveEpicTrek(db, exp, kingdom) {
 
   // Parse path hexes from extra_data
   const extraData = safeJsonParse(exp.extra_data || '{}', {}, 'epic-trek:extra_data');
-  const pathHexes = extraData.path || [];
+  const pathHexes = extraData.path_hexes || [];
 
   if (pathHexes.length === 0) {
     return { events, updates, rewards };
@@ -1793,21 +1793,35 @@ async function resolveEpicTrek(db, exp, kingdom) {
 
       // Update discovered_kingdoms
       if (newKingdoms.length > 0) {
+        const { getKingdomMapCoords } = require('./world-map-coords');
+        const { pixelToHex } = require('./hex-utils');
+        const otherKingdoms = await db.all('SELECT id, race FROM kingdoms WHERE id != $1', [kingdom.id]);
+
         let disc = {};
         try {
           disc = safeJsonParse(kingdom.discovered_kingdoms, {}, 'epic-trek:discovered_kingdoms');
         } catch {}
 
+        let discoveredCount = 0;
         for (const discovered of newKingdoms) {
-          if (!disc[discovered.id]) {
-            disc[discovered.id] = { found: true, discovered_turn: discovered.discovered_turn };
+          const match = otherKingdoms.find(ok => {
+            const coords = getKingdomMapCoords({ id: ok.id, race: ok.race });
+            const h = pixelToHex(coords.map_x, coords.map_y);
+            return h.col === discovered.hex_col && h.row === discovered.hex_row;
+          });
+
+          if (match && !disc[match.id]) {
+            disc[match.id] = { found: true, discovered_turn: discovered.discovered_turn };
+            discoveredCount++;
           }
         }
 
-        updates.discovered_kingdoms = JSON.stringify(disc);
-        rewards.push({
-          text: `Your explorers discovered ${newKingdoms.length} kingdom${newKingdoms.length !== 1 ? 's' : ''}!`,
-        });
+        if (discoveredCount > 0) {
+          updates.discovered_kingdoms = JSON.stringify(disc);
+          rewards.push({
+            text: `Your explorers discovered ${discoveredCount} kingdom${discoveredCount !== 1 ? 's' : ''}!`,
+          });
+        }
       }
 
       if (newLocations.length > 0) {
