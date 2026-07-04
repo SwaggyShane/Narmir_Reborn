@@ -1,7 +1,7 @@
 # Exploration System Redesign
 
-**Status:** Design locked (2026-07-03)  
-**Scope:** Replace instant single-turn searches + expeditions with turn-based actions scaled by unit type, count, level, and terrain.
+**Status:** Design locked (2026-07-04)  
+**Scope:** Replace instant single-turn searches + expeditions with turn-based concentric-ring scouting + turn-based actions scaled by unit type, count, level, and terrain.
 
 ---
 
@@ -24,6 +24,32 @@
 | Food | Food search | Hunting | Rangers | None | Food (terrain-dependent, rangers/level scale rewards) |
 | Combat (low) | Dungeon Raid | Dungeon Raid | Rangers + Fighters | Food | Weapons, Armor (per-troop equip), combat rewards |
 | Combat (high) | Mountain's Heart | Mountain's Heart | Rangers | Food | Combat rewards |
+
+---
+
+## Scout Economy — LOCKED (2026-07-04)
+
+**Base Unit:**
+- 1 ranger at level 1 = **0.00001 hexes explored per scout action**
+
+**Hard Cap:**
+- Maximum 10,000 rangers per scout action (up from previous 1,000)
+
+**Level Scaling:**
+- Level 100 ranger = 5.95x base unit (1 + (100-1) × 0.05)
+- 10,000 rangers level 100 = 0.595 hexes per scout action
+
+**Exploration Target:**
+- Full map (195 hexes) in ~328 turns at level 100 rangers
+- ~500 turns acceptable for casual player progression
+- Scales linearly: more rangers = proportionally more hexes per action
+
+**Concentric Ring Model:**
+- Scout actions progressively reveal rings outward from home kingdom
+- Ring 0 = home hex (always visible)
+- Ring N = hexes at distance N from home
+- No manual targeting required (auto-advances to next unrevealed ring)
+- Food cost applies per hex revealed
 
 ---
 
