@@ -40,23 +40,28 @@
    - If no open PR exists: create a new PR **immediately after the push**. Do not wait for the user to notice.
      (Note: creating as a draft is optional; it was previously required when using Claude due to PR tooling issues.)
 
-7. **Wait for Gemini's ONE review**:
-   - Gemini will post a review once per PR. This is the only review you will ever receive.
-   - It may take a few minutes to appear.
-   - Do **not** merge or update docs while waiting for this review.
+7. **Actively monitor until merge**:
+   - Monitor CI status and Gemini review continuously — do not schedule check-ins.
+   - Gemini will post a review once per PR (this is the only review you will ever receive).
+   - It may take a few minutes to appear; stay alert and check periodically.
+   - Once Gemini review arrives, proceed immediately to step 8.
+   - Do **not** merge or update docs while waiting for the review.
 
 8. **Address Gemini's feedback and immediately move to step 9**:
    - Make code fixes for valid feedback, commit, and push (updates the same PR).
    - Or reply on the PR with a clear explanation if you are refuting the feedback.
    - **IMPORTANT: Do NOT wait for Gemini to review your fixes. Gemini will never comment again on this PR.**
    - Once you've addressed the feedback, move immediately to step 9.
+   - Continue active monitoring: check CI status in parallel while working on fixes.
 
 9. **Update TODO.md / ARCHIVAL.md**:
    - Move finished items to ARCHIVAL.md with a dated entry.
    - Do this **before** any self-merge.
    - Commit and push the docs update.
+   - Continue monitoring CI; do not schedule check-ins.
 
-10. **Self-merge to main**:
+10. **Self-merge to main** (when CI passes):
+    - Wait for all CI checks to pass (monitor actively, do not schedule check-ins).
     - Merge the PR to main. You have now addressed Gemini's ONE review, PR is green, and docs are updated.
     - Delete the feature branch locally and remotely.
     - **Done. Do not reopen the PR or wait for anything else.**
