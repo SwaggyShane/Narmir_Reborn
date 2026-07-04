@@ -821,14 +821,11 @@ const BuildPanel = () => {
                                     ✦ {att.special.name}{att.special.desc ? ': ' + att.special.desc : ''}
                                   </div>
                                 )}
-                                {hint && (() => {
-                                  const resonanceColorClass = tier === 'convergence' ? 'text-[var(--gold)]' : tier === 'alignment' ? 'text-[var(--amber)]' : 'text-[var(--text3)]';
-                                  return (
-                                    <div className={'mt-1.5 text-[10px] italic ' + resonanceColorClass} style={{ opacity: resonanceOpacity(contrib?.count || 1), letterSpacing: '0.2px' }}>
-                                      <span className="mr-1">{RESONANCE_GLYPH[tier] || '.'}</span>{hint}
-                                    </div>
-                                  );
-                                })()}
+                                {hint && (
+                                  <div className={`mt-1.5 text-[10px] italic ${tier === 'convergence' ? 'text-[var(--gold)]' : tier === 'alignment' ? 'text-[var(--amber)]' : 'text-[var(--text3)]'}`} style={{ opacity: resonanceOpacity(contrib?.count || 1), letterSpacing: '0.2px' }}>
+                                    <span className="mr-1">{RESONANCE_GLYPH[tier] || '.'}</span>{hint}
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
