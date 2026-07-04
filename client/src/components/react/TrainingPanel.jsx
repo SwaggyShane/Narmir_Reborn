@@ -213,7 +213,7 @@ const TrainingPanel = () => {
         {/* Training Rows */}
         <div className="trow">
           <span className="name">Fighters</span>
-          <ProgressBar percent={parseFloat(fighterXpView.barWidth)} variant="mil" />
+          <ProgressBar percent={fighterXpView.barWidth} variant="mil" />
           <span className="count min-w-[70px]">Lv {fighterXpView.level}</span>
           <span className="text-[11px] text-[var(--text3)] min-w-[80px]">{fighterXpView.xpText}</span>
           <div className="flex items-center mb-1">
@@ -224,7 +224,7 @@ const TrainingPanel = () => {
 
         <div className="trow">
           <span className="name">Rangers</span>
-          <ProgressBar percent={parseFloat(rangerXpView.barWidth)} variant="arm" />
+          <ProgressBar percent={rangerXpView.barWidth} variant="arm" />
           <span className="count min-w-[70px]">Lv {rangerXpView.level}</span>
           <span className="text-[11px] text-[var(--text3)] min-w-[80px]">{rangerXpView.xpText}</span>
           <div className="flex items-center mb-1">
@@ -235,7 +235,7 @@ const TrainingPanel = () => {
 
         <div className={clsx('trow', isVampire && 'hidden')}>
           <span className="name">Clerics</span>
-          <ProgressBar percent={parseFloat(clericXpView.barWidth)} variant="mana" />
+          <ProgressBar percent={clericXpView.barWidth} variant="mana" />
           <span className="count min-w-[70px]">Lv {clericXpView.level}</span>
           <span className="text-[11px] text-[var(--text3)] min-w-[80px]">{clericXpView.xpText}</span>
           <div className="flex items-center mb-1">
@@ -246,7 +246,7 @@ const TrainingPanel = () => {
 
         <div className="trow">
           <span className="name">Mages</span>
-          <ProgressBar percent={parseFloat(mageXpView.barWidth)} variant="spell" />
+          <ProgressBar percent={mageXpView.barWidth} variant="spell" />
           <span className="count min-w-[70px]">Lv {mageXpView.level}</span>
           <span className="text-[11px] text-[var(--text3)] min-w-[80px]">{mageXpView.xpText}</span>
           <div className="flex items-center mb-1">
@@ -257,7 +257,7 @@ const TrainingPanel = () => {
 
         <div className="trow">
           <span className="name">Thieves</span>
-          <ProgressBar percent={parseFloat(thiefXpView.barWidth)} variant="mil" />
+          <ProgressBar percent={thiefXpView.barWidth} variant="mil" />
           <span className="count min-w-[70px]">Lv {thiefXpView.level}</span>
           <span className="text-[11px] text-[var(--text3)] min-w-[80px]">{thiefXpView.xpText}</span>
           <div className="flex items-center mb-1">
@@ -268,7 +268,7 @@ const TrainingPanel = () => {
 
         <div className="trow border-b-0">
           <span className="name">Ninjas</span>
-          <ProgressBar percent={parseFloat(ninjaXpView.barWidth)} variant="wep" />
+          <ProgressBar percent={ninjaXpView.barWidth} variant="wep" />
           <span className="count min-w-[70px]">Lv {ninjaXpView.level}</span>
           <span className="text-[11px] text-[var(--text3)] min-w-[80px]">{ninjaXpView.xpText}</span>
           <div className="flex items-center mb-1">
