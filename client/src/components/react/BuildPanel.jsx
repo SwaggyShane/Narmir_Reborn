@@ -667,7 +667,7 @@ const BuildPanel = () => {
                 min="1"
                 placeholder="1"
               />
-              <button className="base-btn px-1.5 py-1 text-[10px]" style={{ background: 'var(--red)', color: '#fff' }} onClick={() => demolishB(b.id)}>🗑️</button>
+              <button className="base-btn px-1.5 py-1 text-[10px] bg-[var(--red)] text-white" onClick={() => demolishB(b.id)}>🗑️</button>
             </div>
           )}
         </div>
