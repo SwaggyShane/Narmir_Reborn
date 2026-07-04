@@ -19,6 +19,38 @@ Transform exploration from instant single-turn searches + generic expeditions in
 
 ## Phase Breakdown
 
+### Phase 0: Hex Foundation Prerequisite ⚠️ CRITICAL (est. 0-2 files)
+
+**Objective:** Ensure shared hex utilities are in place and integrated for all downstream phases
+
+**Status:** Likely complete (from Fog of War Phase 1); verify before proceeding to Phase 1.
+
+**Existing Code to Verify:**
+- `game/hex-utils.js` — Hex geometry (pixelToHex, hexCenter, hexNeighborKeys, hexUnitDistance, isFrontier, getHexesInRadius)
+- `game/visibility-cells.js` — Hex-cell bitmap math (hex ↔ bit-index)
+- `test/hex-utils.test.js` — Full test coverage
+- `test/visibility-cells.test.js` — Bitmap operation tests
+
+**Critical Dependencies (all phases rely on these):**
+- Scout ring calculation → needs `getHexesInRadius(center, radius)` to enumerate ring hexes
+- Scout distance scaling → needs `hexUnitDistance(hex1, hex2)` for turn cost scaling
+- Epic Trek pathfinding → needs `pixelToHex()` for target coordinate conversion and `getPathHexes()` for line-of-sight hex enumeration
+- Visibility updates → needs `visibility-cells.js` bitmap encode/decode for seen_cells persistence
+
+**Completion Criteria:**
+- [ ] `hex-utils.js` exports: hexCenter, pixelToHex, hexNeighborKeys, hexUnitDistance, isFrontier, getHexesInRadius
+- [ ] `visibility-cells.js` exports: cellToBitIndex, bitIndexToCell, encodeBitmap, decodeBitmap
+- [ ] All hex utilities have unit test coverage (round-trip, boundaries, performance)
+- [ ] No duplicated hex math across game/ or routes/ files
+- [ ] Confirm Fog of War Phase 1–2 integration is still sound (no regressions)
+
+**Files to Create (if missing):**
+- `game/epic-trek-paths.js` — Path calculation helpers (uses hex-utils)
+
+**Dependencies:** None (foundational layer for all phases)
+
+---
+
 ### Phase 1: Refactor Instant Searches → Turn-Based (est. 8-10 files)
 
 **Objective:** Convert `/search/gold`, `/search/food`, `/search/land` to turn-based actions in ExplorationPanel
@@ -243,6 +275,49 @@ CREATE TABLE world_locations (
 
 ---
 
+## Technical Decisions
+
+### Visibility Storage Strategy (Phase 2)
+
+**Decision: Keep using `kingdoms.visibility` JSON column (from Fog of War Phase 2), do NOT switch to dedicated `map_visibility` table**
+
+**Rationale:**
+- Fog of War Phase 2 already implemented `kingdoms.visibility` with seen_cells/current_cells bitmaps
+- Phase 2 adds `completed_rings` and `current_ring` to the same JSON column
+- Dedicated `map_visibility` table would require refactoring Fog of War's existing visibility system (high risk, out of scope)
+- Kingdom-scoped JSON approach is proven to work (already in production via Fog of War phases)
+
+**Implementation Detail:**
+- `kingdoms.visibility` JSON structure:
+  ```json
+  {
+    "seen_cells": "1234567890...",
+    "current_cells": "9876543210...",
+    "completed_rings": [1, 2, 3],
+    "current_ring": 4,
+    "epic_trek_discovered_hexes": "..."
+  }
+  ```
+- Use `db.withTransaction()` for atomic read-modify-write on visibility updates
+- Lazy initialization: backfill home-hex visibility on first read via `getInitialVisibility()` (proven pattern from Fog of War)
+
+### Hex Grid Design
+
+**Coordinate System (Locked):**
+- **Game data:** X,Y continuous (not hex-aligned) — kingdoms, nodes, land all use this
+- **Visibility overlay:** Hex grid (odd-r offset, pointy-top) — visual/fog of war only
+- **Conversion:** `pixelToHex(x, y)` converts game coordinates to hex cells for visibility checks
+- **Distance metric:** `hexUnitDistance(hex1, hex2)` for turn cost scaling (used by Scout rings and Epic Trek)
+
+**Ring Definition (Locked):**
+- Ring N = all hexes at exactly distance N from home hex (concentric rings outward)
+- Ring 0 = home hex only (always visible)
+- Ring 1 = 6 hexes (hex neighbors)
+- Ring N ≈ 6×N hexes (approximation; exact count varies at boundaries)
+- Max rings = 17 (covers full map, ~918 hexes at 34 pixels/hex = 1999×1380 map)
+
+---
+
 ## API Endpoints Summary
 
 ### Phase 1 (Modified)
@@ -332,10 +407,15 @@ CREATE TABLE world_locations (
 | Risk | Impact | Mitigation |
 |------|--------|-----------|
 | Visibility bitmaps too granular (sub-hex) | Rendering complexity | Use fallback: full-ring reveal (simpler) |
-| Scout allocation TPS impact (ticking per turn) | Server load | Batch updates, cache ring calculations |
-| Epic Trek pathfinding slow on large distances | Turn lag | Use straight-line hex enumeration, not A* |
-| Dungeon/Mountain seeding overlaps/invalid | UX broken | Validate coordinates before inserting, test boot |
-| Race modifiers not balanced | Game broken | Start with small values (0.9-1.1x), tune via playtesting |
+| Scout allocation TPS impact (ticking per turn) | Server load | Batch updates, cache ring calculations; profile processTurn() |
+| Ring calculations heavy on every turn (Phase 2) | CPU/latency | Precompute ring hexes at boot; cache scout progress state |
+| Epic Trek pathfinding slow on large distances | Turn lag | Use straight-line hex enumeration (Bresenham/hex line), not A* |
+| Epic Trek mobile click handling (targeting on map) | UX broken, misclicks | Validate click bounds, snap to nearest visible hex, visual feedback overlay |
+| Dungeon/Mountain seeding overlaps/invalid | UX broken | Validate coordinates within region bounds + water-avoiding before inserting; test boot sequence |
+| Race modifiers not balanced (Hunting/Prospecting/Land) | Game economy broken | Start with small values (0.9–1.1x); tie to terrain modifiers; tune via playtesting |
+| Migration safety for existing kingdoms (visibility data) | Data corruption | Backfill kingdoms.visibility on first boot (lazy init in getKingdomVisibility); test against 5K+ kingdom DB |
+| Concurrency on scout allocation updates | Lost updates (race condition) | Use db.withTransaction for allocation updates; test concurrent updates in integration tests |
+| Hex coordinate system confusion (pixels vs hex vs game coords) | Integration bugs | Keep coords separate: X,Y continuous (game data), hex visual only; document clearly in Phase 0 |
 
 ---
 
@@ -383,12 +463,20 @@ test/ranger-allocation.test.js — Phase 1,2
 2. **Phase 2** → Phase 3 (Phase 3 needs Ring 2 gating)
 3. **Phase 3** → Phase 4 (Phase 4 needs discovery mechanic from Phase 3)
 
-**Estimated Timeline (4-person team, part-time):**
-- Phase 1: 4-5 days
-- Phase 2: 5-6 days
-- Phase 3: 3-4 days
-- Phase 4: 2-3 days
-- **Total: ~2-3 weeks**
+**Estimated Timeline (1-2 developers, part-time with code review):**
+- Phase 0 (Verification): 1 day (mostly confirmation of existing hex-utils)
+- Phase 1 (Instant Searches → Turn-Based): 4-5 days
+- Phase 2 (Scout Allocation + Rings): 5-6 days
+- Phase 3 (Epic Trek): 3-4 days
+- Phase 4 (Regional Locations): 2-3 days
+- **Total: 4-6 weeks** (includes code review cycles, smoke testing, and risk mitigation validation)
+
+**Effort Breakdown per Phase:**
+- Phase 0: ~4 hours (hex-utils verification + gap analysis)
+- Phase 1: ~32-40 hours (3 economy modules, endpoint integration, UI updates, tests)
+- Phase 2: ~40-48 hours (2 core modules, DB migration, engine integration, allocation validation, UI, tests)
+- Phase 3: ~24-32 hours (2 core modules, pathfinding, discovery mechanics, gating, tests)
+- Phase 4: ~16-24 hours (location seeding, distance calc, dungeon/mountain gating, tests)
 
 ---
 
@@ -411,16 +499,18 @@ Before merge to main:
 
 ## Success Criteria (Complete Implementation)
 
-- [x] All 8 exploration actions fully functional
-- [x] Scout allocation progresses through 17 rings without player action
-- [x] Epic Trek unlocks at Ring 2 and reveals fog en route
-- [x] Dungeon/Mountain hidden until first discovery
-- [x] Turn costs, food costs, rewards all match spec
-- [x] Race modifiers apply correctly
-- [x] All formulas scale by count × level × terrain
-- [x] No crashes or data corruption in extended gameplay
-- [x] UI intuitive and responsive
-- [x] All tests passing
+- [ ] All 8 exploration actions fully functional (Hunting, Prospecting, Land Expansion, Scout, Epic Trek, Dungeon Raid, Mountain's Heart)
+- [ ] Scout allocation progresses through 17 rings without player action
+- [ ] Epic Trek unlocks at Ring 2 (via gating check) and reveals fog en route
+- [ ] Dungeon/Mountain hidden until first location of each type discovered
+- [ ] Turn costs match spec (Hunt/Prospect 5 turns, Dungeon 50+dist×1.5, Mountain 100+dist×1.5)
+- [ ] Food costs match spec (Hunt free, Prospect deep-exp formula, Land free, others per type)
+- [ ] Race modifiers apply correctly to Scout rings, Land Expansion, and Hunting/Prospecting terrain scaling
+- [ ] All formulas scale by count × level × terrain_modifier × race_modifier
+- [ ] No crashes or data corruption in extended gameplay (test with 100+ turns of allocation)
+- [ ] UI intuitive and responsive (map click targeting works on mobile, allocation sliders smooth, gating clear)
+- [ ] All tests passing (unit + integration + smoke at each phase)
+- [ ] Hex coordinate system separation maintained (no confusion between pixel X/Y, hex grid, game data coords)
 
 ---
 
