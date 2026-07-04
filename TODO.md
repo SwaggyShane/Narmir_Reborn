@@ -93,8 +93,8 @@ _None currently — see Known Technical Debt below for post-beta cleanup items._
   - **Phase 4B (RankingsPanel):** 105 static styles converted, 0 dynamic, 0 unmapped. Gemini review feedback (10 items) applied and fixes merged.
   - **Phase 4C (DefensePanel):** 5 conversions, 0 dynamic. Gemini edge-case feedback (max=0 guard) applied, merged 2026-07-04.
   - **Phase 4D (EconomyPanel):** 10 conversions, Gemini feedback (6 items) applied, merged 2026-07-04.
-  - **Phase 4E (BuildPanel):** 4 conversions in progress (PR #801 pending CI); Gemini feedback (IIFE → template literal) applied.
-  - **Remaining:** ~90 styles across 19 panels (Tier 2-3). ~398 original total; ~60 remain after phases 1-4E.
+  - **Phase 4E (BuildPanel):** 4 conversions complete, Gemini feedback (IIFE → template literal) applied, merged 2026-07-04.
+  - **Phase 4F+ (Remaining panels):** ~90 styles across 19 panels (Tier 2-3). ~398 original total; ~60 remain after phases 1-4E.
   - **Approach:** Python automation script with 95+ STYLE_MAPPINGS, batch conversion, direct ternaries/string concatenation for conditional styling.
 - **Component test coverage expansion** — 57+ component tests exist; gaps remain in some panels
 
