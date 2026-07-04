@@ -8,6 +8,8 @@ const { calculateHuntingReward } = require('../game/hunting-economy');
 const { calculateProspectingReward } = require('../game/prospecting-economy');
 const { calculateLandExpansionReward } = require('../game/land-expansion');
 const { validateAllocation, calculateAllocationResult, getAllocationStatus } = require('../game/scout-allocation');
+const { getLocationByRegionAndType, markLocationDiscovered } = require('../game/world-locations');
+const { getDistanceToLocation, getLocationTurnCost } = require('../game/location-distance');
 
 const MOJIBAKE_SIGNATURE = /[ÃÂâïðÅ�]/;
 
@@ -48,12 +50,81 @@ module.exports = function (db) {
     const r = Math.max(0, parseInt(rangers) || 0);
     const f = Math.max(0, parseInt(fighters) || 0);
     if (r < 1) return res.status(400).json({ error: 'Send at least 1 ranger' });
+
+    // Phase 4: Handle dungeon/mountain locations with distance-based turn costs
+    if (type === 'dungeon' || type === 'mountain') {
+      if (f < 1 && type === 'dungeon')
+        return res.status(400).json({ error: 'Dungeon raids require fighters' });
+      if (f > 0 && type === 'mountain')
+        return res.status(400).json({ error: 'Mountain expeditions are rangers only - leave your fighters behind.' });
+
+      try {
+        const result = await db.withTransaction(async () => {
+          const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
+            req.player.playerId,
+          ]);
+          if (!k) throw new Error('Kingdom not found');
+
+          // Get the location for this kingdom's region
+          const location = getLocationByRegionAndType(k.race, type);
+          if (!location) throw new Error(`No ${type} found in your region`);
+
+          // Calculate distance and turn cost
+          const distance = getDistanceToLocation(k, location);
+          const turnCost = getLocationTurnCost(type, distance);
+
+          if (k.turns_stored < turnCost) {
+            const error = new Error(`${type.charAt(0).toUpperCase() + type.slice(1)} expedition requires ${turnCost} turns (you have ${k.turns_stored})`);
+            error.statusCode = 429;
+            throw error;
+          }
+
+          // Deduct turns and mark location discovered
+          await db.run(
+            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1) WHERE id = $2',
+            [turnCost, k.id]
+          );
+
+          await markLocationDiscovered(db, location.id, k.id);
+
+          // Track first discovery
+          if (type === 'dungeon' && !k.first_dungeon_found_turn) {
+            await db.run('UPDATE kingdoms SET first_dungeon_found_turn = $1 WHERE id = $2', [k.turn_num || 0, k.id]);
+          } else if (type === 'mountain' && !k.first_mountain_found_turn) {
+            await db.run('UPDATE kingdoms SET first_mountain_found_turn = $1 WHERE id = $2', [k.turn_num || 0, k.id]);
+          }
+
+          return { turnCost, distance };
+        });
+
+        const label = type === 'dungeon' ? 'Dungeon' : 'Mountain';
+        const message = `${label} expedition launched -- Location found at distance ${result.distance.toFixed(1)} hexes. ${result.turnCost} turns spent exploring.`;
+
+        res.json({
+          ok: true,
+          turns_left: 0,
+          turns_stored: 0,
+          distance: result.distance.toFixed(1),
+          updates: {},
+          events: [],
+          message: repairMojibake(message),
+        });
+        return;
+      } catch (err) {
+        console.error(`[expedition/start] ${type} failed:`, err.message);
+        if (err.message.includes('Kingdom not found')) {
+          return res.status(404).json({ error: err.message });
+        }
+        if (err.statusCode) {
+          return res.status(err.statusCode).json({ error: err.message });
+        }
+        res.status(500).json({ error: `${type.charAt(0).toUpperCase() + type.slice(1)} expedition failed - please try again` });
+      }
+    }
+
+    // Original logic for scout, deep, hunting, prospecting
     if (type === 'mountain' && r < 10000)
       return res.status(400).json({ error: 'Mountain expedition requires at least 10,000 rangers' });
-    if (type === 'dungeon' && f < 1)
-      return res.status(400).json({ error: 'Dungeon raids require fighters' });
-    if (type === 'mountain' && f > 0)
-      return res.status(400).json({ error: 'Mountain expeditions are rangers only - leave your fighters behind.' });
 
     try {
       const { k, updates, foodNeeded } = await db.withTransaction(async () => {
