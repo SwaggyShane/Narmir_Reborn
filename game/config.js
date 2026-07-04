@@ -2027,6 +2027,28 @@ const config = {
     dungeonUltraRareChance: 0.01,
   },
 
+  // Exploration System Phase 1: Turn-based resource gathering (locked 2026-07-04)
+  HUNTING_CONSTANTS: {
+    TURN_COST: 5,
+    FOOD_PER_RANGER_L1: 10,
+    FOOD_COST: 0, // No food cost for hunting
+    BASE_FOOD_COST_PER_HEX: 50,
+    MIN_FOOD_COST_PER_HEX: 20,
+  },
+
+  PROSPECTING_CONSTANTS: {
+    TURN_COST: 5,
+    GOLD_PER_ENGINEER_L1: 5,
+    BASE_FOOD_COST_PER_HEX: 50,
+    MIN_FOOD_COST_PER_HEX: 20,
+  },
+
+  LAND_EXPANSION_CONSTANTS: {
+    TURN_COST: 0, // Instant
+    RANGERS_PER_LAND: 10,
+    POPULATION_COST_PER_LAND: 100,
+  },
+
   COMBAT_CONSTANTS: {
     baseAttackCost: 10,
     baseSpellCost: 5,
