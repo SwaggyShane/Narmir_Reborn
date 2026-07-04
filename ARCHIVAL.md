@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-04
+**Last updated:** 2026-07-04 (CSS Consolidation Phase 4H-4I: OptionsPanel PR #804, NewsPanel PR #805)
 
 ---
 
@@ -141,6 +141,25 @@
   - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks: forum, auth, portal, game), Sanity ✅ (no logic changes, status colors preserved)
   - **CI Status:** Validate Security Configuration ✅, Lint/Test/Build ⏳ (in progress), Validate Text Encoding ⏳ (in progress)
   - **Code Quality:** All changes lint ✅. No functional regressions. Clean, single-pattern conversion.
+
+- **Admin CSS Consolidation: Phase 4H (OptionsPanel)** (PR #804, merged 2026-07-04): Refactoring OptionsPanel component to convert 3 conditional inline styles to Tailwind CSS classes via clsx. Discord link settings UI with status indicators and message boxes.
+  - **Conversion Results:** 3 static/conditional styles converted (100% success). Theme button preview (line 448) kept inline — state-dependent dynamic value (`theme.preview`), not statically analyzable.
+  - **Key Improvements:**
+    - Discord link status box (lines 109-115): background + borderColor conditional converted to `clsx('...', linkStatus?.linked ? 'border-[#58a6ff] bg-[rgba(88,166,255,0.12)]' : 'border-[var(--border)] bg-[var(--bg3)]')`
+    - Discord status text (lines 111-117): color conditional converted to `clsx('text-[13px]', linkStatus?.linked ? 'text-[#58a6ff]' : 'text-[var(--text3)]')`
+    - Message box (lines 131-137): background + color + borderColor conditional converted to `clsx('...', msg.type === 'ok' ? 'border-[var(--green)] bg-[rgba(63,185,80,0.15)] text-[var(--green)]' : 'border-[var(--red)] bg-[rgba(248,81,73,0.15)] text-[var(--red)]')`
+  - **Gemini Review:** 3 feedback items — use `clsx()` instead of template-literal ternaries for readability. All addressed in follow-up commit.
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (no logic changes), CI ✅ (all 3 checks green after fix)
+  - **Code Quality:** All changes lint ✅. No functional regressions.
+
+- **Admin CSS Consolidation: Phase 4I (NewsPanel)** (PR #805, merged 2026-07-04): Refactoring NewsPanel component to convert 1 inline text color style to Tailwind CSS class via clsx. News feed UI with per-type icons, borders, and message bodies.
+  - **Conversion Results:** 1 static/conditional style converted (100% success). Per-type border-left color (line 245) correctly kept inline — `meta.color` is a runtime value from a lookup table (`game/news-emoji.mjs`), not statically analyzable by Tailwind's JIT compiler.
+  - **Key Improvements:**
+    - News body text color (line 249): Converted `style={{ color: isBorderType ? 'var(--text)' : 'var(--text2)' }}` to `className={clsx('news-body', isBorderType ? 'text-[var(--text)]' : 'text-[var(--text2)]')}`
+  - **Approach:** Direct clsx conversion, no new variables needed since `clsx` was already imported and used elsewhere in the file.
+  - **Gemini Review:** No feedback. Clean conversion, no issues identified.
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (no logic changes, existing CSS vars reused), CI ✅ (all 3 checks green)
+  - **Code Quality:** All changes lint ✅. No functional regressions.
 
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.
   - **Routes removed:**

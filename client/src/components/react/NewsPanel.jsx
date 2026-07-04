@@ -246,7 +246,7 @@ const NewsPanel = () => {
                 return (
                   <div className="news-item" style={borderStyle} key={`${group.turn}-${idx}-${item.combat_log_id || item.created_at || item.message?.slice(0, 32) || 'news'}`}>
                     <span className="news-icon">{displayIcon}</span>
-                    <span className="news-body" style={{ color: isBorderType ? 'var(--text)' : 'var(--text2)' }}>
+                    <span className={clsx('news-body', isBorderType ? 'text-[var(--text)]' : 'text-[var(--text2)]')}>
                       {displayMessage}
                       {item.combat_log_id ? (
                         <button
