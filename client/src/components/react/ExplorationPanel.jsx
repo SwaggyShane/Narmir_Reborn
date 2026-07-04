@@ -70,6 +70,7 @@ const normalizeRewards = (rewards) => {
 const ExplorationPanel = () => {
   const rangers = useMilitaryStore((state) => state.troops.rangers);
   const fighters = useMilitaryStore((state) => state.troops.fighters);
+  const engineers = useMilitaryStore((state) => state.troops.engineers);
   const food = useEconomyStore((state) => state.food);
   const turns_stored = useProfileStore((state) => state.turns_stored);
   useGameMutationEvents();
@@ -97,6 +98,13 @@ const ExplorationPanel = () => {
   const [activeExpeditions, setActiveExpeditions] = useState([]);
   const [completedExpeditions, setCompletedExpeditions] = useState([]);
   const [instantEntries, setInstantEntries] = useState([]);
+  // Phase 1: Turn-based resource gathering
+  const [huntingRangers, setHuntingRangers] = useState(0);
+  const [huntingTerrain, setHuntingTerrain] = useState('forest');
+  const [prospectingEngineers, setProspectingEngineers] = useState(0);
+  const [prospectingTerrain, setProspectingTerrain] = useState('mountain');
+  const [landExpansionRangers, setLandExpansionRangers] = useState(0);
+  const [landExpansionTerrain, setLandExpansionTerrain] = useState('grassland');
 
   const refreshInventory = useCallback(async () => {
     try {
@@ -153,6 +161,7 @@ const ExplorationPanel = () => {
   const inventoryCount = Object.keys(inventory).length;
   const availableRangers = Number(rangers || 0);
   const availableFighters = Number(fighters || 0);
+  const availableEngineers = Number(engineers || 0);
   const availableFood = Number(food || 0);
   const expeditionTurns = useMemo(() => EXPEDITION_TURNS, []);
   const mountainFoodCost = Math.ceil(mountainRangers * 0.5 * 100 * 0.75);
@@ -348,6 +357,114 @@ const ExplorationPanel = () => {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to clear expedition log', 'error');
     }
   }, [applyResult, refreshAll]);
+
+  // Phase 1: Turn-based resource gathering handlers
+  const handleHunting = useCallback(async () => {
+    const r = Number(huntingRangers || 0);
+    if (r < 1) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Send at least 1 ranger', 'error');
+      return;
+    }
+    if (r > availableRangers) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Not enough available rangers', 'error');
+      return;
+    }
+    if ((turns_stored || 0) < 5) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Hunting requires 5 turns', 'warn');
+      return;
+    }
+
+    try {
+      const result = await apiCall('/api/kingdom/expedition/hunting', {
+        method: 'POST',
+        body: { rangers: r, terrain: huntingTerrain },
+      });
+
+      if (result.error) {
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        return;
+      }
+
+      applyResult(result, 'hunting');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Hunting expedition complete!', 'success');
+      logInstantEntry('🦌', 'Hunting expedition', `${formatNum(r)} rangers returned with ${formatNum(result.reward?.foodReward || 0)} food`);
+      setHuntingRangers(0);
+      await refreshAll();
+    } catch (err) {
+      console.error('[expedition/hunting] failed:', err);
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Hunting failed — please try again', 'error');
+    }
+  }, [huntingRangers, huntingTerrain, availableRangers, turns_stored, applyResult, logInstantEntry, refreshAll]);
+
+  const handleProspecting = useCallback(async () => {
+    const e = Number(prospectingEngineers || 0);
+    if (e < 1) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Send at least 1 engineer', 'error');
+      return;
+    }
+    if (e > availableEngineers) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Not enough available engineers', 'error');
+      return;
+    }
+    if ((turns_stored || 0) < 5) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Prospecting requires 5 turns', 'warn');
+      return;
+    }
+
+    try {
+      const result = await apiCall('/api/kingdom/expedition/prospecting', {
+        method: 'POST',
+        body: { engineers: e, terrain: prospectingTerrain },
+      });
+
+      if (result.error) {
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        return;
+      }
+
+      applyResult(result, 'prospecting');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Prospecting expedition complete!', 'success');
+      logInstantEntry('⛏️', 'Prospecting expedition', `${formatNum(e)} engineers returned with ${formatNum(result.reward?.goldReward || 0)} gold`);
+      setProspectingEngineers(0);
+      await refreshAll();
+    } catch (err) {
+      console.error('[expedition/prospecting] failed:', err);
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Prospecting failed — please try again', 'error');
+    }
+  }, [prospectingEngineers, prospectingTerrain, availableEngineers, turns_stored, applyResult, logInstantEntry, refreshAll]);
+
+  const handleLandExpansion = useCallback(async () => {
+    const r = Number(landExpansionRangers || 0);
+    if (r < 1) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Send at least 1 ranger', 'error');
+      return;
+    }
+    if (r > availableRangers) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Not enough available rangers', 'error');
+      return;
+    }
+
+    try {
+      const result = await apiCall('/api/kingdom/expedition/land-expansion', {
+        method: 'POST',
+        body: { rangers: r, terrain: landExpansionTerrain },
+      });
+
+      if (result.error) {
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        return;
+      }
+
+      applyResult(result, 'land-expansion');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Land expanded!', 'success');
+      logInstantEntry('🗺️', 'Land expansion', `Discovered ${formatNum(result.reward?.landsDiscovered || 0)} new lands`);
+      setLandExpansionRangers(0);
+      await refreshAll();
+    } catch (err) {
+      console.error('[expedition/land-expansion] failed:', err);
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Land expansion failed — please try again', 'error');
+    }
+  }, [landExpansionRangers, landExpansionTerrain, availableRangers, applyResult, logInstantEntry, refreshAll]);
 
   const renderRow = (entry, isCompleted = false) => {
     const rewards = isCompleted ? normalizeRewards(entry.rewards) : [];
@@ -545,6 +662,97 @@ const ExplorationPanel = () => {
                   <div className="mb-1 text-[18px]">🔭</div>
                   Scout targets
                 </button>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-title">
+                Turn-based resource gathering <span className="text-[12px] font-normal text-[var(--accent1)]">5 turns each</span>
+              </div>
+              <div className="mb-3 text-[12px] text-[var(--text3)]">
+                Specialized operations that take 5 turns each. Rangers or engineers complete the task and return with resources.
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="font-semibold text-[var(--text)]">🦌 Hunting</div>
+                    <span className="text-[10px] text-[var(--green)]">5 turns</span>
+                  </div>
+                  <div className="mb-3 text-[11px] text-[var(--text3)]">Rangers hunt for food. Forest terrain is ideal.</div>
+                  <div className="mb-2 text-[12px]">
+                    <label className="block text-[var(--text3)]">Rangers</label>
+                    <div className="flex gap-1">
+                      <input
+                        type="number"
+                        className="input flex-1 text-right"
+                        value={huntingRangers}
+                        onChange={(e) => setHuntingRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        min="1"
+                        placeholder="Qty"
+                      />
+                      <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setHuntingRangers(availableRangers)}>
+                        Max
+                      </button>
+                    </div>
+                  </div>
+                  <button className="base-btn w-full bg-[rgba(76,175,130,0.2)] text-[12px]" onClick={handleHunting}>
+                    Hunt
+                  </button>
+                </div>
+
+                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="font-semibold text-[var(--text)]">⛏️ Prospecting</div>
+                    <span className="text-[10px] text-[var(--accent1)]">5 turns</span>
+                  </div>
+                  <div className="mb-3 text-[11px] text-[var(--text3)]">Engineers prospect for gold. Mountains are ideal.</div>
+                  <div className="mb-2 text-[12px]">
+                    <label className="block text-[var(--text3)]">Engineers</label>
+                    <div className="flex gap-1">
+                      <input
+                        type="number"
+                        className="input flex-1 text-right"
+                        value={prospectingEngineers}
+                        onChange={(e) => setProspectingEngineers(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        min="1"
+                        placeholder="Qty"
+                      />
+                      <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setProspectingEngineers(availableEngineers)}>
+                        Max
+                      </button>
+                    </div>
+                  </div>
+                  <button className="base-btn w-full bg-[rgba(180,60,0,0.2)] text-[12px]" onClick={handleProspecting}>
+                    Prospect
+                  </button>
+                </div>
+
+                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="font-semibold text-[var(--text)]">🗺️ Land Expansion</div>
+                    <span className="text-[10px] text-[var(--gold)]">Instant</span>
+                  </div>
+                  <div className="mb-3 text-[11px] text-[var(--text3)]">Rangers discover new land. Costs population.</div>
+                  <div className="mb-2 text-[12px]">
+                    <label className="block text-[var(--text3)]">Rangers</label>
+                    <div className="flex gap-1">
+                      <input
+                        type="number"
+                        className="input flex-1 text-right"
+                        value={landExpansionRangers}
+                        onChange={(e) => setLandExpansionRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        min="1"
+                        placeholder="Qty"
+                      />
+                      <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setLandExpansionRangers(availableRangers)}>
+                        Max
+                      </button>
+                    </div>
+                  </div>
+                  <button className="base-btn w-full bg-[rgba(218,165,32,0.2)] text-[12px]" onClick={handleLandExpansion}>
+                    Expand
+                  </button>
+                </div>
               </div>
             </div>
 

@@ -10,16 +10,21 @@
 
 ### 2026-07-04
 
-- **Exploration System Phase 1a: Turn-Based Resource Gathering Implementation** (PR #780, merged 2026-07-04): Refactored instant land/gold/food searches into turn-based resource gathering actions. Implements three endpoints and economy modules:
-  - **Hunting:** 5 turns, 10 food per ranger L1, forest terrain bonus (1.3x), no food cost, no unit loss on completion
-  - **Prospecting:** 5 turns, 5 gold per engineer L1, mountain terrain bonus (1.3x), food cost scales by engineer count and level, correct food formula (multiply by level multiplier, not divide)
-  - **Land Expansion:** Instant action, 10 rangers = 1 land, 100 population per land, terrain modifiers apply (forest/grassland/mountain/water)
-  - **Files created:** `game/hunting-economy.js`, `game/prospecting-economy.js`, `game/land-expansion.js`
-  - **Files modified:** `game/config.js` (added HUNTING/PROSPECTING/LAND_EXPANSION constants), `routes/kingdom-exploration.js` (added 3 POST endpoints)
-  - **Database:** No schema changes; instant-completion expeditions created with rewards_claimed=1 to prevent double-processing, rangers/fighters set to 0 to prevent unit loss
-  - **Terrain extraction:** All endpoints accept terrain parameter from request body with validation (forest/grassland/mountain/water), default to optimal terrain for each action
-  - **Gemini review (single):** Identified 5 critical issues — unit loss, double-processing, hardcoded terrain, broken terrain-key lookup, formula discrepancy. All addressed: removed unit decrements, set rewards_claimed=1, extracted terrain, fixed formulas, removed broken lookups. Correction needed: fixed database schema (rangers=0, fighters=0 for both endpoints). CI green, all checks passing.
-  - Phase 1a ready for Phase 1b (UI integration in ExplorationPanel.jsx)
+- **Exploration System Phase 1: Complete Turn-Based Resource Gathering** (PR #780 backend + PR #781 UI, merged 2026-07-04): Full implementation of turn-based resource gathering with both backend endpoints and frontend UI integration.
+  - **Phase 1a - Endpoints & Economy:** Refactored instant searches to turn-based actions with three new endpoints and economy modules
+    - **Hunting:** 5 turns, 10 food per ranger L1, forest terrain bonus (1.3x), no food cost, no unit loss on completion
+    - **Prospecting:** 5 turns, 5 gold per engineer L1, mountain terrain bonus (1.3x), food cost scales by engineer count and level, formula corrected (multiply by multiplier, not divide)
+    - **Land Expansion:** Instant action, 10 rangers = 1 land, 100 population per land, terrain modifiers apply (forest/grassland/mountain/water)
+    - **Files created:** `game/hunting-economy.js`, `game/prospecting-economy.js`, `game/land-expansion.js`
+    - **Files modified:** `game/config.js` (constants), `routes/kingdom-exploration.js` (endpoints)
+    - **Gemini review (Phase 1a):** 5 critical issues identified and addressed (unit loss, double-processing, hardcoded terrain, broken lookup, formula discrepancy). All fixed before merge. CI green.
+  - **Phase 1b - UI Integration:** Added turn-based resource gathering cards to ExplorationPanel component
+    - **UI Cards:** Hunting, Prospecting, and Land Expansion action panels with ranger/engineer inputs and Max buttons
+    - **Event Handlers:** Three new async handlers with validation, error handling, toast notifications, and instant entry logging
+    - **State Management:** New state variables for unit counts and terrain selection (terrain defaults hardcoded to optimal values)
+    - **Files modified:** `client/src/components/react/ExplorationPanel.jsx` (added UI, state, handlers)
+    - **Gemini review (Phase 1b):** Type safety issue in handleProspecting (use availableEngineers consistently). Fixed immediately. Dependency array corrected. CI green.
+  - **Full Phase 1 Status:** ✅ COMPLETE. Both backend and UI fully functional. Ready for Phase 2 (Scout allocation system).
 
 - **Exploration System Redesign — Design Phase Complete** (PR #778, merged `977c712`): Complete locked specification and 4-phase implementation plan for exploration system transformation. Replaces instant single-turn searches + generic expeditions with turn-based, progression-gated actions:
   - **Scout (allocation-based):** Ring progression (Ring N = 20 + (N-1) × 5 turns), auto-advances through 17 rings, discovers locations/lore/junk, no food cost, greyed out at Ring 17 only, no hard cap on rangers
