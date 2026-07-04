@@ -1,6 +1,9 @@
 'use strict';
 
 const { getCompletedRing } = require('./scout-rings');
+const { safeJsonParse } = require('../utils/helpers');
+const { getKingdomMapCoords } = require('./world-map-coords');
+const { pixelToHex } = require('./hex-utils');
 
 /**
  * Calculate scout-turns gained this turn from allocated rangers.
@@ -13,7 +16,13 @@ function getScoutProgressThisTurn(kingdom) {
   const allocated = Math.max(0, Math.floor(Number(kingdom.scout_allocation) || 0));
   if (allocated === 0) return 0;
 
-  const rangerLevel = Math.max(1, Number(kingdom.ranger_level) || 1);
+  let rangerLevel = 1;
+  if (kingdom.troop_levels) {
+    const troopLevels = typeof kingdom.troop_levels === 'string'
+      ? safeJsonParse(kingdom.troop_levels, {}, 'scout-progress:troop_levels')
+      : kingdom.troop_levels;
+    rangerLevel = troopLevels.rangers?.level || 1;
+  }
   const race = kingdom.race || 'human';
 
   // Base: 1 scout-turn per allocated ranger
@@ -27,11 +36,14 @@ function getScoutProgressThisTurn(kingdom) {
   // Race modifiers (from exploration spec): scout_rate
   const RACE_MODIFIERS = {
     human: 1.0,
-    orc: 1.1,     // Orcs are better scouts
-    elf: 1.15,    // Elves are best scouts
-    dwarf: 0.9,   // Dwarves prefer underground
-    halfling: 1.05,
-    beastfolk: 1.2,
+    orc: 1.1,           // Orcs are better scouts
+    high_elf: 1.15,     // Elves are best scouts
+    dark_elf: 1.15,
+    wood_elf: 1.15,
+    dwarf: 0.9,         // Dwarves prefer underground
+    dire_wolf: 1.0,
+    vampire: 1.0,
+    ogre: 1.0,
   };
   const raceModifier = RACE_MODIFIERS[race.toLowerCase()] || 1.0;
   progress *= raceModifier;
@@ -62,12 +74,20 @@ function processScoutProgress(kingdom, db = null) {
     previous_ring: previousRing,
   };
 
-  // If a ring was completed, reveal its hexes in visibility
-  if (result.ring_completed && db && kingdom.id && kingdom.location) {
-    // Defer visibility update to be batched with kingdom updates
-    result.visibility_update_needed = true;
-    result.home_hex = kingdom.location;
-    result.completed_ring = newRing;
+  // If a ring was completed, flag for visibility update
+  if (result.ring_completed && db && kingdom.id) {
+    try {
+      const { map_x, map_y } = getKingdomMapCoords(kingdom);
+      const hex = pixelToHex(map_x, map_y);
+      const homeHex = `${hex.col},${hex.row}`;
+
+      result.visibility_update_needed = true;
+      result.home_hex = homeHex;
+      result.completed_ring = newRing;
+    } catch (err) {
+      // If coordinate extraction fails, skip visibility update (not fatal)
+      console.warn('[scout-progress] Failed to get kingdom coordinates for visibility update:', err.message);
+    }
   }
 
   return result;
