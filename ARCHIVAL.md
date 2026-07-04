@@ -71,6 +71,17 @@
   - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, endpoints respond), Sanity ✅ (no logic changes)
   - **Code Quality:** All changes lint ✅. No functional regressions. 100% style conversion (no unmapped mappable styles remain).
 
+- **Admin CSS Consolidation: Phase 4C (DefensePanel)** (PR #797, merged 2026-07-04): Refactoring DefensePanel component to convert 5 inline color styles to Tailwind CSS classes. Defense tiers UI with stat displays and upgrade lists.
+  - **Conversion Results:** 5 static color styles converted (100% success), 0 dynamic styles, 0 unmapped edge cases. Refactored getStatColor() → getStatColorClass() to return Tailwind class names instead of CSS variable strings. Updated tierStatus state to use colorClass property instead of color.
+  - **Key Improvements:**
+    - Stat color styling: Changed from inline style={{color: ...}} with CSS variables to className-based approach using text-gold, text-green, text-text2 Tailwind classes
+    - tierStatus colors: Refactored state structure from color property to colorClass property for consistency with component-level styling
+    - Function signature change: getStatColor (returns CSS var strings) → getStatColorClass (returns Tailwind class names)
+  - **Gemini Review:** 1 feedback item identified on first review: edge case where stat targets (`max`) value of 0 (e.g., targetCastles) incorrectly evaluated to gold status. Fixed with guard clause `if (!max || max <= 0) return 'text-text2'` to return neutral color for inactive stats.
+    - ✅ Edge case fix applied: zero/negative targets now render as neutral (text-text2) instead of gold
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all baseline checks), Sanity ✅ (no logic changes, all CSS variables mapped to valid Tailwind classes)
+  - **Code Quality:** All changes lint ✅. No functional regressions. Clean refactoring with improved maintainability via class-name-based styling.
+
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.
   - **Routes removed:**
     - `kingdom-gameplay.js`: POST /build-queue, GET/POST /training-allocation, POST /build-allocation, POST /resource-build-allocation, POST /demolish, POST /build, POST /cancel-building, POST /smithy/buy-hammers, POST /smithy/buy-scaffolding, POST /smithy-allocation, POST /tower-craft, POST /tower-cancel, POST /shrine-allocation, POST /mausoleum-allocation, POST /buy-mausoleum-upgrade (16 total)
