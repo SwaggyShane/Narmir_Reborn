@@ -97,6 +97,22 @@
   - **CI Status:** All 3 checks passed ✅ (Validate Security Configuration, Validate Text Encoding, Lint/Test/Build)
   - **Code Quality:** All changes lint ✅. No functional regressions. Simplified className expressions per Gemini feedback.
 
+- **Admin CSS Consolidation: Phase 4E (BuildPanel)** (PR #801, merged 2026-07-04): Refactoring BuildPanel component to convert 4 inline styles to Tailwind CSS classes and refactor conditional colors to className expressions. Build queue UI with dynamic color indicators and conditional state displays.
+  - **Conversion Results:** 4 static/conditional styles converted (100% success), 1 partial conversion (resonance color extracted to template literal ternary, opacity remains inline), 1 intentionally preserved (icon.color background state-dependent).
+  - **Key Improvements:**
+    - Build completion button (line 708): Static background → `bg-[var(--accent1)]` class
+    - Build demolish button (line 711): Static background → `bg-[var(--red)]` class
+    - Resonance hint container (line 737): Conditional margin → `mb-2` via string concatenation
+    - Hammer durability display (lines 1021-1027): 3-tier color via template literal ternary (text-green/text-amber/text-red based on durability threshold)
+    - Resonance detail (line 827): Resonance tier color extracted to className ternary via template literal (convergence=text-gold, alignment=text-amber, other=text-text3), opacity/letterSpacing remain inline as dynamic
+    - Icon background (line 623): Kept inline style={{background: icon.color}} — state-dependent, correctly preserved
+  - **Approach:** Hybrid pattern — static backgrounds to Tailwind classes, conditional colors to className expressions with template literals and ternaries (cleaner than JSX IIFE), state-dependent values remain inline
+  - **Gemini Review:** 1 critical feedback item on first review: IIFE used in JSX render path for resonance color logic was unidiomatic and introduced unnecessary overhead. Fixed by replacing IIFE with direct template literal ternary expression.
+    - ✅ IIFE → template literal ternary fix applied, reducing JSX complexity and improving idiomatic React patterns
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks: forum, auth, portal, game), Sanity ✅ (no logic changes, HTML appearance identical)
+  - **CI Status:** All 3 checks passed ✅ (Validate Security Configuration, Validate Text Encoding, Lint/Test/Build)
+  - **Code Quality:** All changes lint ✅. No functional regressions. Improved idiomatic React rendering patterns.
+
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.
   - **Routes removed:**
     - `kingdom-gameplay.js`: POST /build-queue, GET/POST /training-allocation, POST /build-allocation, POST /resource-build-allocation, POST /demolish, POST /build, POST /cancel-building, POST /smithy/buy-hammers, POST /smithy/buy-scaffolding, POST /smithy-allocation, POST /tower-craft, POST /tower-cancel, POST /shrine-allocation, POST /mausoleum-allocation, POST /buy-mausoleum-upgrade (16 total)
