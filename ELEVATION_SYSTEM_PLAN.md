@@ -17,6 +17,54 @@ The world map currently lacks elevation data, which gates multiple features:
 
 ---
 
+## Feature Flags
+
+All post-Beta phases are gated behind feature flags for safe rollout and rollback.
+
+- **FEATURE_ELEVATION_COMBAT** — Phase 3A: High-ground combat modifier (+7% defense). Default: disabled. Enable after Phase 1 validation.
+- **FEATURE_ELEVATION_MOVEMENT** — Phase 3B: Movement penalties and elevation fatigue. Default: disabled. Enable after 1–2 weeks Phase 3A playtesting.
+- **FEATURE_ELEVATION_SPELLS** — Phase 3C: Spell LOS checks and siege bonuses. Default: disabled. Enable after Phase 3B validation.
+
+Feature flags are **independent**: can enable 3A without 3B, or 3B without 3C. Allows safe incremental testing and immediate rollback if issues detected.
+
+---
+
+## Save Compatibility
+
+Existing kingdoms and worlds must migrate safely to elevation system.
+
+**New Fields (with defaults):**
+
+Kingdoms:
+```json
+{
+  elevation: 0,           // kingdom position elevation (default: 0 = plains)
+  elevation_cached_at: null,  // last time elevation was queried (cache timestamp)
+}
+```
+
+Worlds:
+```json
+{
+  elevation_bands: {
+    ocean: [0, 0],
+    coast: [1, 30],
+    plains: [31, 90],
+    hills: [91, 149],
+    mountains: [150, 255]
+  },
+  elevation_generated_at: null,  // first time elevation was generated (immutable)
+}
+```
+
+**Migration Notes:**
+- Existing kingdoms get elevation = 0 (plains, neutral starting point)
+- No exploration/combat data lost (new fields are additive)
+- Elevation cache is empty until first world load (lazy generation)
+- Worlds generated before elevation system have no elevation_generated_at timestamp (flag for one-time generation on next load)
+
+---
+
 ## Architecture
 
 ### Phase 1: Elevation Data Generation
@@ -64,6 +112,22 @@ The world map currently lacks elevation data, which gates multiple features:
 
 **Performance Note:** Precompute during world generation; O(hex count) one-time cost, zero runtime cost during gameplay.
 
+**Rollback Strategy (Phase 1):**
+- If elevation generation causes world corruption or incorrect bands:
+  - Disable world load (prevent further corruption)
+  - Restore backup of `worlds` table before elevation addition
+  - Database migration remains (unused) — no data loss
+  - No player data affected (elevation is read-only, additive)
+  - Re-enable after validation
+
+**Migration Validation (Phase 1):**
+After migration, verify:
+- All hexes have elevation value (no NULLs)
+- Elevation bands match terrain type (mountains are 150+, oceans are 0)
+- Row count unchanged (all hexes present)
+- Indexes on elevation column exist
+- Deterministic: two worlds with same seed have identical elevation grids
+
 ---
 
 ### Phase 2: Organic River Flow
@@ -106,6 +170,14 @@ The world map currently lacks elevation data, which gates multiple features:
 
 **Files:**
 - `client/src/components/react/WorldmapRenderer.jsx` — Build downhill neighbor DAG + flow accumulation + topology validation + Bezier rendering
+
+**Rollback Strategy (Phase 2):**
+- If rivers look wrong (infinite loops, invalid sinks, poor visual flow):
+  - Disable river rendering (show placeholder or old BFS rivers)
+  - Keep elevation data (not affected)
+  - Revert WorldmapRenderer changes
+  - No player data loss
+  - Re-enable after DAG fix
 
 ---
 
@@ -159,6 +231,36 @@ The world map currently lacks elevation data, which gates multiple features:
 - `server/game/spells.js` — Range/LOS validation with elevation blocking
 - `client/src/components/react/WorldmapRenderer.jsx` — Preload elevation cache on world spawn
 
+**Rollback Strategy (Phase 3A/B/C):**
+- If combat breaks PvP balance or movement creates dead zones:
+  - Disable FEATURE_ELEVATION_COMBAT/MOVEMENT/SPELLS flag (immediate rollback)
+  - Revert code changes
+  - No player data loss (elevation bonuses were temporary)
+  - Fix issue, re-enable after validation
+- Each sub-phase (3A/3B/3C) can be rolled back independently
+
+**Failure Scenarios & Error Codes (Phase 3A/3B/C):**
+
+Combat Calculation Failures:
+- `ELEVATION_LOOKUP_FAILED` (400) — Attacker or defender elevation not found
+- `INVALID_ELEVATION_DIFFERENCE` (400) — Elevation difference calculation failed
+- `COMBAT_LOCKED` (409) — Battle already locked by concurrent request (retry)
+
+Movement Failures:
+- `ELEVATION_PATHFINDING_FAILED` (500) — A* pathfinding error with elevation cost
+- `MOVEMENT_DEAD_ZONE` (403) — Target unreachable due to elevation penalties (dead zone detected)
+- `INSUFFICIENT_MOVEMENT_POINTS` (403) — Unit doesn't have enough moves after elevation fatigue
+
+Spell/LOS Failures:
+- `SPELL_LOS_BLOCKED` (403) — Target not in line-of-sight due to elevation obstruction
+- `ELEVATION_ADVANTAGE_REQUIRED` (403) — Spell requires high ground, attacker on low ground
+
+**Concurrency & Atomicity (Phase 3A/B/C):**
+- Combat calculations must be transaction-locked: `SELECT...FOR UPDATE` on both kingdoms
+- Elevation bonus applied atomically (all-or-nothing)
+- Battle outcome logged in same transaction
+- If server crashes during combat: entire transaction rolls back (no partial state)
+
 ---
 
 ## Technical Considerations
@@ -186,6 +288,96 @@ The world map currently lacks elevation data, which gates multiple features:
 - Visual: Overlay elevation heatmap (blue=low, red=high) on worldmap for development
 - Command: `/debug elevation` toggles visualization
 - Export: `/world-map?debug=elevation` returns JSON of elevation grid for offline analysis
+
+### Configuration Parameters
+
+Gather all configurable values in one place to avoid magic numbers scattered in code:
+
+| Parameter | Value | Unit | Notes |
+|-----------|-------|------|-------|
+| **Elevation Bands** | | | |
+| Ocean elevation | 0 | int | Sea level |
+| Coast elevation | 1–30 | int | Shallow water, beaches |
+| Plains elevation | 31–90 | int | Flat terrain |
+| Hills elevation | 91–149 | int | Rolling terrain |
+| Mountains elevation | 150–255 | int | High peaks |
+| **Combat** | | | |
+| High ground modifier (Phase 3A) | +7% | percent | Defender damage reduction |
+| Movement penalty (mountains) | -30% | percent | Phase 3B |
+| Elevation fatigue cost | 1 point per 10 units | int | Uphill only, Phase 3B |
+| Siege structure HP bonus | +10% | percent | Phase 3C |
+| Spell LOS distance check | elevation-aware | bool | Phase 3C |
+| Combined bonus cap | +15% | percent | Max elevation + terrain + unit stacking |
+| **Noise Generation** | | | |
+| Octave count | 3–4 | int | Perlin/Simplex octaves |
+| Base frequency | 0.01 | float | Initial scale |
+| Amplitude decay | 0.5 | float | Per-octave reduction |
+| Normalization strength | 1.0 | float | How strongly biome rules apply |
+
+### Cache Invalidation
+
+Elevation data is static per world, but cache must be invalidated at specific times:
+
+- **Server Restart**: Elevation cache cleared, regenerated from world seed on first load
+- **World Regeneration**: Old elevation cache discarded, new elevation generated
+- **Admin Map Reset**: Clear elevation cache, rebuild from current terrain
+- **Kingdom Creation**: Assign current world elevation to new kingdom (one-time lookup)
+
+Never serve stale elevation data after these events.
+
+### Logging Events
+
+Log the following events for debugging, balance tuning, and audit trails:
+
+**Phase 1:**
+- `elevation_generation_started` (world_id, hex_count, noise_params)
+- `elevation_band_assigned` (hex_id, elevation, band_name, terrain_type)
+- `elevation_generation_complete` (world_id, total_hexes, min_elev, max_elev, band_distribution)
+
+**Phase 2:**
+- `river_dag_built` (world_id, hex_count, sink_count, branch_count)
+- `river_topology_validated` (world_id, acyclic: bool, all_reach_ocean: bool, flow_conservation: bool)
+
+**Phase 3A:**
+- `battle_started` (attacker_elev, defender_elev, elev_diff)
+- `elevation_bonus_applied` (kingdom_id, bonus_percent, damage_modified)
+- `battle_outcome` (winner_id, attacker_damage, defender_damage, bonus_applied)
+
+**Phase 3B/3C:**
+- `movement_elevation_cost` (kingdom_id, hex_from, hex_to, elev_change, fatigue_cost)
+- `spell_los_check` (caster_elev, target_elev, line_blocked: bool)
+- `feature_flag_toggled` (flag_name, enabled: bool, timestamp)
+
+### Performance Targets
+
+Elevation system must scale to:
+
+- **5000 kingdoms** (estimated upper bound for single-server deployment)
+- **~20,000 hexes** (hex count for large maps)
+- **100,000+ expeditions** (total historical, not concurrent)
+- Elevation generation: < 100ms per world (O(hex count) precomputed once)
+- Combat elevation lookup: < 1ms (O(1) cache hit)
+- River DAG validation: < 500ms per world (O(hex count), one-time)
+
+No architecture changes required up to these scales.
+
+### Deterministic Seeding
+
+Anywhere randomness exists, it must be seeded for reproducibility:
+
+**Elevation Generation:**
+- Seed: `world_seed` (global, immutable)
+- Result: Identical elevation grids for same world_seed (crucial for reset/replay)
+
+**River Generation (if any randomness):**
+- Seed: `world_seed + hex_coordinate` (location-specific randomness)
+- No per-kingdom randomness (ensures rivers are universal)
+
+**Discovery Randomness (Phase 2):**
+- Seed: `world_seed + expedition_id + turn_number` (unique per action)
+- Allows deterministic replay of any expedition
+
+Never use unseeded randomness (Math.random()). Always derive seed from immutable world state.
 
 ---
 
@@ -258,6 +450,64 @@ The world map currently lacks elevation data, which gates multiple features:
 
 ---
 
+## Phase 3A Sequence Diagram (Combat with Elevation Check)
+
+```
+Battle Start (attacker vs defender)
+  ↓
+Lookup Elevation (attacker_pos, defender_pos) [SELECT elevation FROM kingdoms]
+  ↓
+Calculate Elevation Difference (defender_elev - attacker_elev)
+  ↓
+Check Feature Flag (FEATURE_ELEVATION_COMBAT) [if disabled, skip to "Apply Damage"]
+  ↓
+Apply Elevation Bonus (if diff >= 1, defender damage reduction += 7%)
+  ↓
+Log Battle Start (with elevations)
+  ↓
+BEGIN TRANSACTION [SELECT...FOR UPDATE on both kingdoms]
+  ↓
+Apply Damage (with elevation modifier)
+  ↓
+Update Kingdom HP
+  ↓
+Log Battle Outcome (attacker damage, defender damage, elevation bonus applied)
+  ↓
+COMMIT TRANSACTION
+  ↓
+Return Result (attacker_damage, defender_damage, bonus_applied)
+  ↓
+Notify Player
+```
+
+**Key points:**
+- Elevation lookup is O(1) cache hit
+- All combat updates atomic (transaction-locked)
+- Feature flag allows disable without code change
+- Logging happens inside transaction (all-or-nothing)
+- If server crashes: transaction rolls back, no partial state
+
+---
+
+## Out-of-Scope Features (Prevent Scope Creep)
+
+The following features are NOT included in Phases 1-3 and should be deferred:
+
+- **Naval exploration** — Elevation doesn't affect water travel; defer to separate naval system
+- **Scout heroes** — Heroes with elevation bonuses; defer to hero system expansion
+- **Shared discoveries** — Multiple kingdoms sharing discovered locations; defer to social features
+- **Multi-destination expeditions** — Epic Trek to multiple targets in one turn; defer to routing system
+- **Random encounters** — Bandits, monsters on elevation; defer to encounters system
+- **Treasure maps** — Special high-elevation rewards; defer to treasure system
+- **Scout experience** — Scouts level up with exploration; defer to unit progression
+- **Expedition upgrades** — Better scouts, faster travel; defer to upgrade system
+- **Escort caravans** — Protected expeditions; defer to escort mechanics
+- **Dynamic elevation changes** — Mountains erode, islands sink; defer to world evolution system
+
+**Rationale:** These would expand scope significantly. Focus on core elevation mechanics (generation, rivers, combat) first.
+
+---
+
 ## Future Extensions (Post-Launch)
 
 Once elevation system proves stable:
@@ -305,6 +555,84 @@ Once elevation system proves stable:
 
 ---
 
+---
+
+## Release Checklist
+
+**This checklist gates release. All items must pass before merge to main.**
+
+### Phase 1 (Elevation Generation)
+- [ ] Elevation column added to hex/world tables
+- [ ] Migration verified: all hexes have elevation, no NULLs
+- [ ] Seed stability test passes: two worlds with same seed have identical elevation
+- [ ] Band correlation test passes: mountains always 150+, oceans always 0
+- [ ] Generation time < 100ms per world
+- [ ] Lint: 0 errors, 0 warnings
+- [ ] Smoke test: server boots, elevation loads, `/world-map` returns elevation data
+
+### Phase 2 (River Flow)
+- [ ] DAG algorithm implemented in WorldmapRenderer
+- [ ] Topology validation passes: no cycles, all paths reach ocean
+- [ ] Flow conservation test passes: inflow ≈ outflow for each hex
+- [ ] River rendering proportional to accumulated flow (visual QA)
+- [ ] Tributaries merge naturally (visual QA)
+- [ ] No infinite loops or stuck rivers
+- [ ] Lint: 0 errors, 0 warnings
+- [ ] Smoke test: rivers render, match topography, no visual corruption
+- [ ] Mobile verified: rivers render on mobile viewport
+
+### Phase 3A (Combat High Ground)
+- [ ] FEATURE_ELEVATION_COMBAT flag implemented and disabled by default
+- [ ] Combat modifier +7% applied only when enabled
+- [ ] Elevation lookup O(1) cache hit
+- [ ] Battle outcome logging complete
+- [ ] Error codes defined: ELEVATION_LOOKUP_FAILED, INVALID_ELEVATION_DIFFERENCE, COMBAT_LOCKED
+- [ ] Concurrency: SELECT...FOR UPDATE on both kingdoms during combat
+- [ ] Transaction atomicity: if crash, entire transaction rolls back
+- [ ] Rollback procedure tested: disable flag, code reverts, no player data loss
+- [ ] PvP balance test: +7% bonus feels fair (1-2 weeks playtesting)
+- [ ] No lint warnings
+- [ ] Smoke test: combat calculates correctly, logging works, feature flag toggles
+
+### Phase 3B (Movement + Fatigue)
+- [ ] FEATURE_ELEVATION_MOVEMENT flag implemented and disabled by default
+- [ ] Movement penalty -30% applied when enabled
+- [ ] Elevation fatigue: 1 point per 10 units uphill
+- [ ] Pathfinding A* with elevation cost (no dead zones)
+- [ ] Error codes defined: ELEVATION_PATHFINDING_FAILED, MOVEMENT_DEAD_ZONE, INSUFFICIENT_MOVEMENT_POINTS
+- [ ] Combined bonus cap enforced: elevation + terrain + unit type <= +15%
+- [ ] Rollback procedure tested: disable flag, old pathfinding restored
+- [ ] No lint warnings
+- [ ] Smoke test: movement costs calculate, A* finds routes, no dead zones
+
+### Phase 3C (Spells + Siege)
+- [ ] FEATURE_ELEVATION_SPELLS flag implemented and disabled by default
+- [ ] Spell LOS elevation check implemented (Bresenham + elevation)
+- [ ] Siege HP bonus +10% applied when enabled
+- [ ] Error codes defined: SPELL_LOS_BLOCKED, ELEVATION_ADVANTAGE_REQUIRED
+- [ ] LOS test from valley: spells blocked correctly
+- [ ] LOS test from peak: spells succeed
+- [ ] Rollback procedure tested: disable flag, spells unblock
+- [ ] No lint warnings
+- [ ] Smoke test: spell LOS works, siege feels meaningful, no invisible no-cast zones
+
+### Full Balance & Integration
+- [ ] 8-hour gameplay test with all flags enabled (no crashes, no balance issues)
+- [ ] Save compatibility verified: existing kingdoms migrate without data loss
+- [ ] Mobile viewport verified: all features work on phone/tablet
+- [ ] Desktop viewport verified: all features work on desktop
+- [ ] Performance benchmarks pass: elevation lookup < 1ms, generation < 100ms
+- [ ] No TODO comments in code
+- [ ] All feature flags configured in config
+- [ ] Telemetry logging verified (events appear in logs)
+- [ ] Cache invalidation tested: server restart, world regen both clear cache
+- [ ] No SQL warnings or slow queries
+- [ ] Code review passed (changes meet project standards)
+
+**Status:** Ready for release only when ALL checkboxes pass.
+
+---
+
 ## Notes
 
 - **Deferred Post-Beta.** This system should have been included in Fog of War Phase 1 but was not; elevation blocks organic rivers and combat depth.
@@ -317,3 +645,4 @@ Once elevation system proves stable:
 - **Independent Phases.** Phase 2 (rivers) requires Phase 1 (elevation); Phase 3 (combat) is independent and can be prioritized separately.
 - **Data Stability.** Elevation is deterministic; generate from world seed, store in DB after first generation. Do not regenerate (seeding drift breaks reproducibility). Add regression tests for seed stability.
 - **Regression Testing.** Add explicit regression tests after Phase 1 (seed stability, terrain/elevation correlation) and Phase 2 (DAG acyclicity, flow conservation). Ensures robustness before rollout.
+- **API Versioning (Minor).** Use `/api/v1/elevation/...` pattern if elevation system is ever exposed as public API (future-proofing).
