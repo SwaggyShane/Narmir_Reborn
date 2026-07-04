@@ -86,6 +86,8 @@ const { rateLimitConfig, logRateLimitConfig } = require('./config/rate-limiting'
 const { monitoringConfig, logMonitoringConfig } = require('./config/monitoring');
 const { safeJsonParse } = require('./utils/helpers');
 const SecretsManager = require('./utils/secrets');
+const { seedRegionLocations, loadLocationCache } = require('./game/world-locations');
+const { getWorldSeed } = require('./game/world-seed');
 
 const app    = express();
 const server = http.createServer(app);
@@ -647,6 +649,16 @@ async function start() {
       // already loaded by this point — initDb() itself loads it, since one
       // of its own steps (backfillResourceNodeMapCoords) needs it before
       // this function even returns.
+
+      // Seed and load world locations (dungeons/mountains) at boot
+      try {
+        const worldSeed = String(getWorldSeed());
+        await seedRegionLocations(db, worldSeed);
+        await loadLocationCache(db);
+        console.log('[locations] World locations seeded and loaded');
+      } catch (err) {
+        console.error('[locations] Failed to seed/load world locations:', err.message);
+      }
 
       await refreshLore(db);
       console.log('[lore] Lore and Random events refreshed');
