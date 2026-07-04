@@ -4,6 +4,9 @@ const { progressGoal, generateGoals, claimGoal } = require('../game/goals');
 const engine = require('../game/engine');
 const config = require('../game/config');
 const { applyKingdomUpdates } = require('../db/schema');
+const { calculateHuntingReward } = require('../game/hunting-economy');
+const { calculateProspectingReward } = require('../game/prospecting-economy');
+const { calculateLandExpansionReward } = require('../game/land-expansion');
 
 const MOJIBAKE_SIGNATURE = /[ÃÂâïðÅ�]/;
 
@@ -151,6 +154,207 @@ module.exports = function (db) {
         return res.status(err.statusCode).json({ error: err.message });
       }
       res.status(500).json({ error: 'Expedition failed - please try again' });
+    }
+  });
+
+  // POST /expedition/hunting — Turn-based hunting for food
+  router.post('/expedition/hunting', requireAuth, requireCsrfToken, async (req, res) => {
+    const { rangers } = req.body;
+    const r = Math.max(0, parseInt(rangers) || 0);
+
+    if (r < 1) return res.status(400).json({ error: 'Send at least 1 ranger' });
+
+    try {
+      const { updates, reward } = await db.withTransaction(async () => {
+        const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
+          req.player.playerId,
+        ]);
+        if (!k) throw new Error('Kingdom not found');
+
+        if (k.turns_stored < config.HUNTING_CONSTANTS.TURN_COST) {
+          const error = new Error(`Hunting requires ${config.HUNTING_CONSTANTS.TURN_COST} turns (you have ${k.turns_stored})`);
+          error.statusCode = 429;
+          throw error;
+        }
+
+        if (r > engine.getAvailableUnits(k, 'rangers')) {
+          const error = new Error('Not enough available rangers');
+          error.statusCode = 400;
+          throw error;
+        }
+
+        const existing = await db.get(
+          'SELECT id FROM expeditions WHERE kingdom_id = $1 AND type = $2 AND turns_left > 0',
+          [k.id, 'hunting'],
+        );
+        if (existing) {
+          const error = new Error('A hunting expedition is already underway');
+          error.statusCode = 400;
+          throw error;
+        }
+
+        const reward = calculateHuntingReward(r, k.ranger_level || 1, 'grassland', k.race);
+
+        await db.run(
+          'UPDATE kingdoms SET rangers = GREATEST(0, rangers - $1), turns_stored = GREATEST(0, turns_stored - $2), food = food + $3 WHERE id = $4',
+          [r, config.HUNTING_CONSTANTS.TURN_COST, reward.foodReward, k.id],
+        );
+
+        await db.run(
+          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, food_taken, rewards) VALUES ($1, $2, $3, $4, $5, $6)',
+          [k.id, 'hunting', 0, r, 0, JSON.stringify({ food: reward.foodReward })],
+        );
+
+        let updates = {
+          rangers: Math.max(0, k.rangers - r),
+          turns_stored: Math.max(0, k.turns_stored - config.HUNTING_CONSTANTS.TURN_COST),
+          food: k.food + reward.foodReward,
+        };
+
+        return { updates, reward };
+      });
+
+      res.json({
+        ok: true,
+        updates: updates,
+        reward: reward,
+        message: `Hunters returned with ${reward.foodReward.toLocaleString()} food.`,
+      });
+    } catch (err) {
+      console.error('[expedition/hunting] failed:', err.message);
+      if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
+      res.status(500).json({ error: 'Hunting failed - please try again' });
+    }
+  });
+
+  // POST /expedition/prospecting — Turn-based prospecting for gold
+  router.post('/expedition/prospecting', requireAuth, requireCsrfToken, async (req, res) => {
+    const { engineers } = req.body;
+    const e = Math.max(0, parseInt(engineers) || 0);
+
+    if (e < 1) return res.status(400).json({ error: 'Send at least 1 engineer' });
+
+    try {
+      const { updates, reward } = await db.withTransaction(async () => {
+        const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
+          req.player.playerId,
+        ]);
+        if (!k) throw new Error('Kingdom not found');
+
+        if (k.turns_stored < config.PROSPECTING_CONSTANTS.TURN_COST) {
+          const error = new Error(`Prospecting requires ${config.PROSPECTING_CONSTANTS.TURN_COST} turns (you have ${k.turns_stored})`);
+          error.statusCode = 429;
+          throw error;
+        }
+
+        if (e > engine.getAvailableUnits(k, 'engineers')) {
+          const error = new Error('Not enough available engineers');
+          error.statusCode = 400;
+          throw error;
+        }
+
+        const existing = await db.get(
+          'SELECT id FROM expeditions WHERE kingdom_id = $1 AND type = $2 AND turns_left > 0',
+          [k.id, 'prospecting'],
+        );
+        if (existing) {
+          const error = new Error('A prospecting expedition is already underway');
+          error.statusCode = 400;
+          throw error;
+        }
+
+        const reward = calculateProspectingReward(e, k.engineer_level || 1, 'grassland', k.race);
+
+        if (k.food < reward.foodCost) {
+          const error = new Error(`Prospecting requires ${reward.foodCost.toLocaleString()} food (you have ${k.food.toLocaleString()})`);
+          error.statusCode = 400;
+          throw error;
+        }
+
+        await db.run(
+          'UPDATE kingdoms SET engineers = GREATEST(0, engineers - $1), turns_stored = GREATEST(0, turns_stored - $2), food = GREATEST(0, food - $3), gold = gold + $4 WHERE id = $5',
+          [e, config.PROSPECTING_CONSTANTS.TURN_COST, reward.foodCost, reward.goldReward, k.id],
+        );
+
+        await db.run(
+          'INSERT INTO expeditions (kingdom_id, type, turns_left, fighters, food_taken, rewards) VALUES ($1, $2, $3, $4, $5, $6)',
+          [k.id, 'prospecting', 0, e, reward.foodCost, JSON.stringify({ gold: reward.goldReward })],
+        );
+
+        let updates = {
+          engineers: Math.max(0, k.engineers - e),
+          turns_stored: Math.max(0, k.turns_stored - config.PROSPECTING_CONSTANTS.TURN_COST),
+          food: Math.max(0, k.food - reward.foodCost),
+          gold: k.gold + reward.goldReward,
+        };
+
+        return { updates, reward };
+      });
+
+      res.json({
+        ok: true,
+        updates: updates,
+        reward: reward,
+        message: `Prospectors returned with ${reward.goldReward.toLocaleString()} gold.`,
+      });
+    } catch (err) {
+      console.error('[expedition/prospecting] failed:', err.message);
+      if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
+      res.status(500).json({ error: 'Prospecting failed - please try again' });
+    }
+  });
+
+  // POST /expedition/land-expansion — Instant land discovery
+  router.post('/expedition/land-expansion', requireAuth, requireCsrfToken, async (req, res) => {
+    const { rangers } = req.body;
+    const r = Math.max(0, parseInt(rangers) || 0);
+
+    if (r < 1) return res.status(400).json({ error: 'Send at least 1 ranger' });
+
+    try {
+      const { updates, reward } = await db.withTransaction(async () => {
+        const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
+          req.player.playerId,
+        ]);
+        if (!k) throw new Error('Kingdom not found');
+
+        if (r > engine.getAvailableUnits(k, 'rangers')) {
+          const error = new Error('Not enough available rangers');
+          error.statusCode = 400;
+          throw error;
+        }
+
+        const reward = calculateLandExpansionReward(r, k.ranger_level || 1, 'grassland', k.race, k.population);
+
+        if (reward.landsDiscovered === 0) {
+          const error = new Error('No land discovered (insufficient population or rangers)');
+          error.statusCode = 400;
+          throw error;
+        }
+
+        await db.run(
+          'UPDATE kingdoms SET land = land + $1, population = GREATEST(0, population - $2) WHERE id = $3',
+          [reward.landsDiscovered, reward.populationCost, k.id],
+        );
+
+        let updates = {
+          land: k.land + reward.landsDiscovered,
+          population: Math.max(0, k.population - reward.populationCost),
+        };
+
+        return { updates, reward };
+      });
+
+      res.json({
+        ok: true,
+        updates: updates,
+        reward: reward,
+        message: `Discovered ${reward.landsDiscovered.toLocaleString()} new lands.`,
+      });
+    } catch (err) {
+      console.error('[expedition/land-expansion] failed:', err.message);
+      if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
+      res.status(500).json({ error: 'Land expansion failed - please try again' });
     }
   });
 
