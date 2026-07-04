@@ -171,11 +171,17 @@ async function revealRingHexes(db, kingdomId, kingdom, ring) {
     }
 
     return updateKingdomVisibility(db, kingdomId, (current) => {
-      const cellIndicesToReveal = ringHexes.map(hexKey => cellIndex(hexKey));
+      const cellIndicesToReveal = ringHexes.map(hexKey => {
+        if (typeof hexKey === 'string') {
+          const [c, r] = hexKey.split(',').map(Number);
+          return cellIndex(c, r);
+        }
+        return cellIndex(hexKey.col, hexKey.row);
+      });
       let newSeenCells = current.seenCells;
 
       for (const idx of cellIndicesToReveal) {
-        if (idx >= 0 && idx < 195) {
+        if (idx >= 0) {
           newSeenCells |= BigInt(1) << BigInt(idx);
         }
       }
