@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-04 (CSS Consolidation Phase 4 complete: TestingPanel, PR #795 fixes applied)
+**Last updated:** 2026-07-04 (Elevation System Plan complete: PR #799 merged)
 
 ---
 
@@ -83,7 +83,16 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 ## Deferred Work
 
-_None currently — see Known Technical Debt below for post-beta cleanup items._
+### Elevation System (Post-Beta)
+
+**Status:** Design complete, locked specification (PR #799, merged 2026-07-04)
+
+- **Three-phase implementation:** Phase 1 (elevation generation via multi-octave Perlin noise), Phase 2 (organic river flow with gradient descent), Phase 3 (combat integration with high-ground bonuses)
+- **Estimated effort:** 25-31 hours (including visualization layer and balance testing)
+- **Blocks:** Organic river flow, combat elevation mechanics, siege depth mechanics
+- **Reference:** `ELEVATION_SYSTEM_PLAN.md` — complete architectural specification, risks, and implementation order
+
+See `ELEVATION_SYSTEM_PLAN.md` for full details on phases, technical considerations, risks, and implementation strategy.
 
 ## Known Technical Debt (Post-Beta)
 
