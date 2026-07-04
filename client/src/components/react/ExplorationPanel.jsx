@@ -402,7 +402,7 @@ const ExplorationPanel = () => {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Send at least 1 engineer', 'error');
       return;
     }
-    if (e > (engineers || 0)) {
+    if (e > availableEngineers) {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Not enough available engineers', 'error');
       return;
     }
@@ -431,7 +431,7 @@ const ExplorationPanel = () => {
       console.error('[expedition/prospecting] failed:', err);
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Prospecting failed — please try again', 'error');
     }
-  }, [prospectingEngineers, prospectingTerrain, engineers, turns_stored, applyResult, logInstantEntry, refreshAll]);
+  }, [prospectingEngineers, prospectingTerrain, availableEngineers, turns_stored, applyResult, logInstantEntry, refreshAll]);
 
   const handleLandExpansion = useCallback(async () => {
     const r = Number(landExpansionRangers || 0);
