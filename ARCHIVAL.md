@@ -10,6 +10,15 @@
 
 ### 2026-07-05
 
+- **Fog of War & Scout Ring Visibility Fixes Restored** (pushed to main `84016bb` 2026-07-05): Restored two critical visibility fixes that were reverted.
+  - **Issue:** Fog of war layer was appearing behind region names (not on top), and scout ring completions weren't notifying the client to refresh the worldmap.
+  - **Fixes Applied:**
+    1. Fog layer rendering order in WorldmapRenderer.jsx: Moved fog layer SVG rendering to AFTER region labels so fog appears on top (SVG rendering order determines z-order)
+    2. Scout ring socket event in engine.js: Added .then() handler to revealRingHexes() promise chain to emit 'event:world_updated' when visibility updates complete, plus safe io reference check
+  - **Impact:** Region names now visible above fog overlays; client refreshes worldmap when scout rings complete
+  - **Quality Gates:** Lint ✅, Tests ✅
+  - **Commits:** `84016bb` (restore fog and visibility fixes)
+
 - **Performance Fix: Restore Profiling Timer for Turn Processing** (pushed to main `b547b17` 2026-07-05): Restored missing console.time() for init-queries profiling after previous revert.
   - **Issue:** Turn processing appeared slow (~3 seconds) after multiple deployments and reverts. The profiling timer that measures database query performance was missing, preventing diagnosis.
   - **Root Cause:** The console.time(`[turn-${k.id}] init-queries`) call at the start of the database queries phase had been removed in a previous revert.
