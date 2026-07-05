@@ -315,10 +315,9 @@ module.exports = function (db) {
     return k;
   }
 
-  // â”€â”€ Shared turn runner â€” used by ALL routes that consume a turn â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  async function runTurn(db, k) {
+  // â”€â”€ Load turn input context (init queries + trade routes) â€” can run outside txn â”€â”€â”€â”€â”€â”€
+  async function loadTurnContext(db, k) {
     if (!k) throw new Error('Kingdom not found');
-    console.time(`[turn-${k.id}] total`);
     console.time(`[turn-${k.id}] init-queries`);
     // Inject region ownership status for bonuses
     // All 3 queries are independent â€” run them in parallel
@@ -337,23 +336,27 @@ module.exports = function (db) {
       ),
     ]);
     console.timeEnd(`[turn-${k.id}] init-queries`);
-    console.time(`[turn-${k.id}] trade-routes`);
     k._region_owned_by_my_alliance =
       regionStatus &&
       myAlliance &&
       regionStatus.owner_alliance_id === myAlliance.alliance_id;
     k._region_bonus_type = regionStatus?.bonus_type;
     k.heroes = heroes;
+    console.time(`[turn-${k.id}] trade-routes`);
     await loadTradeRoutes(k);
     console.timeEnd(`[turn-${k.id}] trade-routes`);
+    return { heroes };
+  }
 
-    console.time(`[turn-${k.id}] engine.processTurn`);
-    const { updates, events } = engine.processTurn(k, db);
-    console.timeEnd(`[turn-${k.id}] engine.processTurn`);
+  // â”€â”€ Commit turn side-effects (applies, hero XP, news, expeditions, resources) â”€â”€â”€â”€
+  // These are the DB writes that benefit from being inside a short transaction.
+  // Called from both legacy runTurn and the optimized /turn path.
+  async function commitTurnResults(db, k, updates, incomingEvents) {
+    const events = incomingEvents || [];
     const cleanEvents = events.map(normalizeNewsRow);
 
     const heroBatch = [];
-    for (const hero of heroes) {
+    for (const hero of (k.heroes || [])) {
       const xpResult = engine.awardHeroXp(hero, 10);
       heroBatch.push({ id: hero.id, level: xpResult.level, xp: xpResult.xp });
       engine.applyHeroTurnBonuses(hero, k, updates, events);
@@ -361,7 +364,6 @@ module.exports = function (db) {
 
     updates.turns_stored = k.turns_stored - 1;
 
-    // Apply kingdom updates in a transaction
     // Dedup news â€” only insert if we haven't already sent this EXACT message recently
     const filteredEvents = [];
     // Batch check for duplicate news instead of N+1 queries
@@ -431,7 +433,7 @@ module.exports = function (db) {
       throw err;
     }
 
-    // Resolve expeditions OUTSIDE the kingdom transaction so ticks are never rolled back
+    // Resolve expeditions 
     let expeditionEvents = [];
     try {
       console.time(`[turn-${k.id}] resolveExpeditions`);
@@ -525,13 +527,28 @@ module.exports = function (db) {
       // If no transaction: log but don't throw (prevent lost turns)
     }
 
+    return { updates, events: allEvents };
+  }
+
+  // â”€â”€ Shared turn runner â€” used by ALL routes that consume a turn â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  async function runTurn(db, k) {
+    if (!k) throw new Error('Kingdom not found');
+    console.time(`[turn-${k.id}] total`);
+    await loadTurnContext(db, k);
+
+    console.time(`[turn-${k.id}] engine.processTurn`);
+    const { updates, events } = engine.processTurn(k, db);
+    console.timeEnd(`[turn-${k.id}] engine.processTurn`);
+
+    const { updates: finalUpdates, events: finalEvents } = await commitTurnResults(db, k, updates, events);
+
     // Refresh fields that resolveExpeditions may have updated via SQL
     console.time(`[turn-${k.id}] refresh-queries`);
     const refreshed = await db.get(
       "SELECT rangers, fighters, gold, mana, land, scrolls, maps, blueprints_stored, troop_levels, library_progress, tower_progress, racial_bonuses_unlocked FROM kingdoms WHERE id = $1",
       [k.id],
     );
-    if (refreshed) Object.assign(updates, refreshed);
+    if (refreshed) Object.assign(finalUpdates, refreshed);
 
     // Fetch unread news count
     const unread = await db.get(
@@ -539,36 +556,111 @@ module.exports = function (db) {
       [k.id],
     );
     console.timeEnd(`[turn-${k.id}] refresh-queries`);
-    updates.unread_news = unread.c;
+    finalUpdates.unread_news = unread.c;
 
     // Calculate new score after turn
-    const finalState = { ...k, ...updates };
-    updates.score = engine.calculateScore(finalState);
+    const finalState = { ...k, ...finalUpdates };
+    finalUpdates.score = engine.calculateScore(finalState);
 
     console.timeEnd(`[turn-${k.id}] total`);
-    return { updates, events: allEvents };
+    return { updates: finalUpdates, events: finalEvents };
   }
 
   // â”€â”€ Take turn (advance game state) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Optimized to minimize time holding DB transaction/connection (Phase 1):
+  // - Prefetch of context (region/alliance/heroes + trade) + final refresh happen outside txn.
+  // - Inside txn: FOR UPDATE lock + fresh kingdom snapshot + processTurn (on locked state) + writes.
+  // - Context merged onto lockedK to preserve hero XP, bonuses, etc.
+  // This shortens txn hold vs. original (init queries + refresh moved out) while preserving correctness.
   router.post("/turn", requireAuth, requireCsrfToken, async (req, res) => {
+    const startTime = Date.now();
     try {
       const result = await withTurnLock(req.player.playerId, async () => {
-        // Wrap entire turn in transaction
-        return db.withTransaction(async () => {
-          // Fetch kingdom with row-level lock INSIDE transaction
-          const k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
-            req.player.playerId,
-          ]);
-          if (!k) {
-            throw new Error("Kingdom not found");
-          }
-          if (k.turns_stored < 1) {
-            throw new Error("No turns available â€” next +7 turns in 25 minutes");
-          }
+        // === PREFETCH context only (outside transaction) ===
+        // Context (region/alliance/heroes/trade) loaded outside to reduce txn hold time.
+        // Core kingdom state for processTurn will be fetched fresh *under lock*.
+        console.time(`[turn] prefetch`);
+        let k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1", [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          throw new Error("Kingdom not found");
+        }
+        if (k.turns_stored < 1) {
+          throw new Error("No turns available â€” next +7 turns in 25 minutes");
+        }
 
-          const { updates, events } = await runTurn(db, k);
-          return { ok: true, updates, events, turns_stored: updates.turns_stored };
-        });
+        // Load context (init-queries + trade-routes) OUTSIDE txn — parallel reads
+        await loadTurnContext(db, k);
+        console.timeEnd(`[turn] prefetch`);
+
+        // === SHORT TRANSACTION: lock + fresh snapshot + process + writes ===
+        console.time(`[turn] transaction`);
+        let txUpdates, txEvents;
+        try {
+          const txData = await db.withTransaction(async () => {
+            // Re-fetch with FOR UPDATE for row lock + authoritative *current* state
+            let lockedK = await db.get("SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
+              req.player.playerId,
+            ]);
+            if (!lockedK) {
+              throw new Error("Kingdom not found");
+            }
+            if (lockedK.turns_stored < 1) {
+              throw new Error("No turns available â€” next +7 turns in 25 minutes");
+            }
+
+            // Merge the pre-fetched context/heroes onto the fresh lockedK.
+            // Critical for: hero XP/turn bonuses, region bonuses in process/resolve, trade routes, etc.
+            Object.assign(lockedK, {
+              _region_owned_by_my_alliance: k._region_owned_by_my_alliance,
+              _region_bonus_type: k._region_bonus_type,
+              heroes: k.heroes,
+              _trade_routes: k._trade_routes,
+            });
+
+            // Run processTurn on the *locked* snapshot (prevents stale absolute updates
+            // and lost concurrent modifications from non-turn actions).
+            console.time(`[turn-${lockedK.id}] engine.processTurn`);
+            const { updates, events } = engine.processTurn(lockedK, db);
+            console.timeEnd(`[turn-${lockedK.id}] engine.processTurn`);
+
+            // Apply writes inside the same txn (applyUpdates, hero batch, news, expeditions, resources)
+            const { updates: committedUpdates, events: committedEvents } = await commitTurnResults(db, lockedK, updates, events);
+            return { updates: committedUpdates, events: committedEvents };
+          });
+          txUpdates = txData.updates;
+          txEvents = txData.events;
+        } catch (txErr) {
+          console.error('[turn] transaction failed:', txErr.message);
+          throw new Error('Turn processing failed, please retry', { cause: txErr });
+        }
+        console.timeEnd(`[turn] transaction`);
+
+        // === POSTFETCH (outside transaction) ===
+        console.time(`[turn] postfetch`);
+        const refreshed = await db.get(
+          "SELECT rangers, fighters, gold, mana, land, scrolls, maps, blueprints_stored, troop_levels, library_progress, tower_progress, racial_bonuses_unlocked FROM kingdoms WHERE id = $1",
+          [k.id],
+        );
+        if (refreshed) Object.assign(txUpdates, refreshed);
+
+        const unread = await db.get(
+          "SELECT COUNT(*) as c FROM news WHERE kingdom_id = $1 AND is_read = 0",
+          [k.id],
+        );
+        console.timeEnd(`[turn] postfetch`);
+
+        txUpdates.unread_news = unread.c;
+
+        // Final score on merged state
+        const finalState = { ...k, ...txUpdates };
+        txUpdates.score = engine.calculateScore(finalState);
+
+        const totalTime = Date.now() - startTime;
+        console.log(`[turn] complete for player ${req.player.playerId} in ${totalTime}ms (prefetch+process+tx+postfetch)`);
+
+        return { ok: true, updates: txUpdates, events: txEvents, turns_stored: txUpdates.turns_stored };
       });
       res.json(result);
     } catch (err) {
@@ -578,6 +670,9 @@ module.exports = function (db) {
       }
       if (err.message.includes("No turns available")) {
         return res.status(429).json({ error: err.message });
+      }
+      if (err.message.includes("Turn processing failed")) {
+        return res.status(500).json({ error: "Turn processing failed — please try again" });
       }
       const detail = process.env.NODE_ENV !== "production"
         ? (err.stack || err.message)
