@@ -371,7 +371,7 @@ function junkPrize(k, updates) {
   return "a strange pebble";
 }
 
-function expeditionRewards(type, rangers, fighters, k) {
+function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
   const tacBonus = 1 + k.res_military / 2000;
 
   // Race exploration bonus — affects all reward quantities
@@ -848,6 +848,24 @@ function expeditionRewards(type, rangers, fighters, k) {
 
     // No land rewards from mountain — focus purely on artifacts/magic
     // (explicitly 0 land)
+  } else if (type === "hunting" || type === "prospecting") {
+    // Hunting and Prospecting: Use pre-calculated rewards from expedition creation
+    // These were computed in the endpoint and stored as JSON.stringify({ food/gold: amount })
+    // The originalRewards parameter (if provided) contains this data
+    // Don't generate new rewards—just preserve what was calculated at expedition start
+    if (originalRewards) {
+      try {
+        const parsed = typeof originalRewards === "string" ? JSON.parse(originalRewards) : originalRewards;
+        if (parsed.food !== undefined) {
+          rewards.push({ text: `Rangers returned with ${parsed.food} food` });
+        } else if (parsed.gold !== undefined) {
+          rewards.push({ text: `Prospectors returned with ${parsed.gold} gold` });
+        }
+      } catch {
+        // If we can't parse the original rewards, don't add a fallback message
+        // The expedition will return troops but no rewards message will display
+      }
+    }
   }
 
   // ── Ultra-rare prizes ──────────────────────────────────────────────────
