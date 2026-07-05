@@ -361,6 +361,7 @@ module.exports = function (db) {
     const { updates, events } = engine.processTurn(k, db);
     console.timeEnd(`[turn-${k.id}] engine.processTurn`);
     const cleanEvents = events.map(normalizeNewsRow);
+    const turnNum = updates.turn || k.turn;
 
     const heroBatch = [];
     for (const hero of heroes) {
@@ -423,7 +424,6 @@ module.exports = function (db) {
         );
       }
 
-      const turnNum = updates.turn || k.turn;
       if (filteredEvents.length > 0) {
         await bulkInsertNews(
           db,
@@ -453,7 +453,6 @@ module.exports = function (db) {
       console.timeEnd(`[turn-${k.id}] resolveExpeditions`);
       expeditionEvents = expeditionEvents.map(normalizeNewsRow);
       if (expeditionEvents.length > 0) {
-        const turnNum = updates.turn || k.turn;
         await bulkInsertNews(
           db,
           expeditionEvents.map((ev) => ({
@@ -479,7 +478,6 @@ module.exports = function (db) {
               "UPDATE kingdoms SET discovered_kingdoms = $1 WHERE id = $2",
               [JSON.stringify(disc), k.id],
             );
-            const turnNum = updates.turn || k.turn;
             await db.run(
               "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1, $2, $3, $4)",
               [
@@ -519,7 +517,6 @@ module.exports = function (db) {
         Object.assign(updates, expUpdates);
       }
       if (lootEvents.length > 0) {
-        const turnNum = updates.turn || k.turn;
         const cleanLootEvents = lootEvents.map(normalizeNewsRow);
         await bulkInsertNews(db, cleanLootEvents.map(ev => ({ kingdom_id: k.id, type: ev.type || 'system', message: ev.message, turn_num: turnNum })));
         allEvents.push(...cleanLootEvents);
