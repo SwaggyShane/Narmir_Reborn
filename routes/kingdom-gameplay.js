@@ -199,7 +199,9 @@ async function withTurnLock(playerId, fn) {
   return promise;
 }
 
-//  Column Selection Constants for Query Optimization 
+const ERROR_NO_TURNS = "No turns available  next +7 turns in 25 minutes";
+
+//  Column Selection Constants for Query Optimization
 // Avoid SELECT * for better performance: network, parsing, memory
 // Column sets: choose what's actually needed to reduce network/parsing overhead
 const _KINGDOM_FULL = '*'; // Only use when truly necessary (GET /me)
@@ -361,6 +363,7 @@ module.exports = function (db) {
     const { updates, events } = engine.processTurn(k, db);
     console.timeEnd(`[turn-${k.id}] engine.processTurn`);
     const cleanEvents = events.map(normalizeNewsRow);
+    const turnNum = updates.turn || k.turn;
 
     const heroBatch = [];
     for (const hero of heroes) {
@@ -423,7 +426,6 @@ module.exports = function (db) {
         );
       }
 
-      const turnNum = updates.turn || k.turn;
       if (filteredEvents.length > 0) {
         await bulkInsertNews(
           db,
@@ -571,7 +573,7 @@ module.exports = function (db) {
           throw new Error("Kingdom not found");
         }
         if (k.turns_stored < 1) {
-          throw new Error("No turns available  next +7 turns in 25 minutes");
+          throw new Error(ERROR_NO_TURNS);
         }
 
         // SECOND: Fetch read-only reference data in parallel OUTSIDE transaction
@@ -601,7 +603,7 @@ module.exports = function (db) {
             throw new Error("Kingdom not found");
           }
           if (k_locked.turns_stored < 1) {
-            throw new Error("No turns available  next +7 turns in 25 minutes");
+            throw new Error(ERROR_NO_TURNS);
           }
 
           const { updates, events } = await runTurn(db, k_locked, preloadedQueries);
