@@ -698,24 +698,6 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                   </button>
                 </div>
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <button className="base-btn h-auto px-3 py-3 text-center text-[12px]" onClick={() => handleSearch('land')}>
-                  <div className="mb-1 text-[18px]">🗺️</div>
-                  Search for land
-                </button>
-                <button className="base-btn h-auto px-3 py-3 text-center text-[12px]" onClick={() => handleSearch('gold')}>
-                  <div className="mb-1 text-[18px]">⛏️</div>
-                  Forage for gold
-                </button>
-                <button className="base-btn h-auto px-3 py-3 text-center text-[12px]" onClick={() => handleSearch('food')}>
-                  <div className="mb-1 text-[18px]">🌾</div>
-                  Search for food
-                </button>
-                <button className="base-btn h-auto px-3 py-3 text-center text-[12px]" onClick={() => handleSearch('targets')}>
-                  <div className="mb-1 text-[18px]">🔭</div>
-                  Scout targets
-                </button>
-              </div>
             </div>
 
             <div className="card">
