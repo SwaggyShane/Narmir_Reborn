@@ -66,7 +66,7 @@ export function renderRegionLegend() {
           <span style="font-size:14px">${icon}</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;color:var(--text);font-weight:600">${meta.name}</div>
-            <div style="font-size:10px;color:var(--text3)">${bonus} · ${count} kingdoms</div>
+            <div style="font-size:10px;color:var(--text3)">${bonus} | ${count} kingdoms</div>
           </div>
         </div>`;
     })
