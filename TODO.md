@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (Hex modal enhancement: Terrain rendering in hex selection modal (PR #819) merged)
+**Last updated:** 2026-07-05 (Expedition system: Turn-based expeditions with travel time (PR #822) merged)
 
 ---
 
