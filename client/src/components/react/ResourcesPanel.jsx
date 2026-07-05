@@ -802,7 +802,7 @@ const ResourcesPanel = () => {
         <div className="card">
           <div className="card-title">Item Inventory</div>
           {items.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No items found.</div>}
-          <div className="grid gap-2.5 mt-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
+          <div className="grid gap-2.5 mt-3 grid-cols-[repeat(auto-fill,minmax(150px,1fr))]">
             {items.map(item => (
               <div key={item.id} className={clsx('p-3 rounded-lg bg-[var(--bg2)] text-center border', (item.qty || 0) > 0 ? 'border-[var(--green)]' : 'border-[var(--border)]')}>
                 <div className="text-2xl mb-1">{itemIcon(item.id)}</div>
