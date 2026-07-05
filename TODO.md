@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (CSS Consolidation Phase 4D-4R complete: EconomyPanel, BuildPanel, HappinessPanel, MarketPanel, OptionsPanel, NewsPanel, HeroesPanel, KingdomXpModal, WarfarePanel, small-panels batch, BattleReportModal, KingdomBodyHeader, ReplayModal/RankingsPanel/ExplorationPanel batch, TestingPanel, ResourcesPanel merged PR #800-#814)
+**Last updated:** 2026-07-05 (CSS Consolidation Phase 4S complete: Final audit confirms all remaining inline styles are dynamic; Phase 4A-4S complete merged PR #800-#814)
 
 ---
 
@@ -87,27 +87,6 @@ _None currently — see Known Technical Debt below for post-beta cleanup items._
 
 ## Known Technical Debt (Post-Beta)
 
-- **Admin inline CSS consolidation** — Progress: Phase 1-3 complete (101 styles converted, PR #793 merged); Phase 4 complete (TestingPanel: 146/177 static styles converted, PR #795 merged 2026-07-04); Phase 4B complete (RankingsPanel: 105 static styles converted, PR #796 merged 2026-07-04); Phase 4C in progress (DefensePanel: 5 inline colors → Tailwind, PR #797 pending merge; Gemini edge-case fix applied).
-  - **ProgressBar component extraction** (PR #794, merged 2026-07-04) — Architectural solution eliminates 200+ individual progress bar div pairs across TrainingPanel, StatusPanel, BuildPanel. No longer counted in individual style consolidation backlog.
-  - **Phase 4 (TestingPanel):** 146 conversions, 17 dynamic, 14 edge cases. Gemini review feedback applied and fixes merged.
-  - **Phase 4B (RankingsPanel):** 105 static styles converted, 0 dynamic, 0 unmapped. Gemini review feedback (10 items) applied and fixes merged.
-  - **Phase 4C (DefensePanel):** 5 conversions, 0 dynamic. Gemini edge-case feedback (max=0 guard) applied, merged 2026-07-04.
-  - **Phase 4D (EconomyPanel):** 10 conversions, Gemini feedback (6 items) applied, merged 2026-07-04.
-  - **Phase 4E (BuildPanel):** 4 conversions complete, Gemini feedback (IIFE → template literal) applied, merged 2026-07-04.
-  - **Phase 4F (HappinessPanel):** 1 conversion (happiness bar background color), Gemini review clean, merged 2026-07-04.
-  - **Phase 4G (MarketPanel):** 1 conversion (trade status color), Gemini review clean, merged 2026-07-04.
-  - **Phase 4H (OptionsPanel):** 3 conversions (Discord status box, status text, message box), Gemini feedback (use clsx) applied, merged 2026-07-04.
-  - **Phase 4I (NewsPanel):** 1 conversion (news-body text color, via clsx), 1 correctly left inline (per-type border-left color is a runtime lookup value, not statically analyzable by Tailwind). Gemini review clean, merged 2026-07-04.
-  - **Phase 4J (HeroesPanel):** 3 conversions (XP bar background color, hero-class-opt border color, hero-slots-bar transition property), all via clsx/direct className. Gemini feedback (1 item: simplified redundant `!isMaxLevel && levelReady` to `levelReady`) applied, merged 2026-07-04.
-  - **Phase 4K (KingdomXpModal):** 2 conversions (progress bar track height/background fully static, progress bar fill gradient background). Gemini feedback (2 items: use Tailwind gradient utilities instead of arbitrary linear-gradient value, narrow transition-all to transition-[width]) applied, merged 2026-07-04.
-  - **Phase 4L (WarfarePanel):** 2 conversions (attack estimate win-chance color via winColorClass in atkEstimate memo, war report outcome color via outcomeColorClass + clsx); dead `??` fallbacks removed. WarfarePanel now has zero inline styles. Gemini review clean, merged 2026-07-05.
-  - **Phase 4M (small panels batch):** 4 conversions across StatusPanel (badge bg-[#444]), UpgradesList (disabled:opacity-50 variant replacing opacity ternary), ResourceStrip (!text-[var(--red/gold)] — ! required to beat the .metric .val descendant selector), ToastProvider (static text-[#0a0a0a] split out of runtime style). Gemini review clean, merged 2026-07-05.
-  - **Phase 4N (BattleReportModal):** 26 conversions (backdrop, panel, bars, summary cards, outcome banner). Gemini feedback (9 items: project's custom fontSize scale — sm=11px/base=13px/md=14px/lg=16px/xl=18px — meant text-base/text-sm picks were wrong sizes; fixed to theme classes) applied, merged 2026-07-05.
-  - **Phase 4O (KingdomBodyHeader):** 7 conversions (GAP constant → gap-2/mt-2 utilities, text-shadow arbitrary property, XP bar gradient + conditional glow via clsx, Stat valueStyle → valueClass prop). Gemini feedback (1 item: transition-all duration-400 → transition-[width] duration-500; duration-400 was non-functional dead weight) applied, merged 2026-07-05.
-  - **Phase 4P (ReplayModal/RankingsPanel/ExplorationPanel batch):** 9 conversions — ReplayModal fully converted (StepCard enter/exit state via clsx, backdrop/panel); RankingsPanel rankColor/nameStyle → theme-class ternaries; ExplorationPanel border-l width split + rarity ternary (meta.* runtime values stay inline). HappinessGraph audited: 0 convertible. Gemini feedback (2 items: color: type hints on border-l-[var(...)]) applied, merged 2026-07-05.
-  - **Phase 4Q (TestingPanel):** 7 conversions (progress percent/bar ternaries, conditional row margin, finished-test strikethrough/color, button colors, static indent). Gemini feedback (1 item: boolean coercion on TEST_DESCRIPTIONS lookup) applied, merged 2026-07-05.
-  - **Phase 4R (ResourcesPanel):** ~45 conversions (stockpiles flex/colors, buildings tabs/cards/progress bars, expeditions cards/buttons/inputs, inventory grid/cards). All static and fixed-ternary styles converted; dynamic values (grid-template-columns, progress width, statusColor() lookup) correctly preserved inline. Pending Gemini review. **Lesson: use theme font-size classes (text-sm/base/md/lg/xl) instead of arbitrary text-[Npx] when the px value matches the custom scale; use color: type hints for side-specific border CSS vars.**
-  - **Approach:** Python automation script with 95+ STYLE_MAPPINGS, batch conversion, direct ternaries/string concatenation for conditional styling.
 - **Component test coverage expansion** — 57+ component tests exist; gaps remain in some panels
 
 ---
