@@ -2,13 +2,25 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Critical bug fix: Hunting/prospecting expeditions rewards now properly awarded; Exploration System enhancements PR #817-#818)
+**Last updated:** 2026-07-05 (Terrain System Phases 1-3, Admin CSS Phase 4R verified complete and moved to archive; TODO audit completed)
 
 ---
 
 ## Recent Chronology
 
 ### 2026-07-05
+
+- **Terrain System Phases 1-3 Complete** (PR #751, squash-merged `79a5ae72` 2026-07-04; Phase 3 commit `b22962f` 2026-07-04): Completed terrain type system with visual layer and combat integration.
+  - **Phase 1+2:** Data model and visual layer (terrain type system, toggleable visual layer with GSAP animation, expedition travel time & loot yield modifiers)
+  - **Phase 3:** Combat modifiers (CombatDef/Atk modifiers wired into calculateCombatPower, terrain added to battle reports)
+  - **Commits:** `79a5ae72` (Phase 1+2 squash), `b22962f` (Phase 3 complete)
+
+- **Admin CSS Consolidation Phase 4R (ResourcesPanel)** (PR #814, merged `82d1296` 2026-07-05): Converted ~45 inline styles in ResourcesPanel to Tailwind CSS, completed Gemini review feedback cycle.
+  - **Conversions:** Stockpiles flex/colors, buildings tabs/cards/progress bars, expeditions cards/buttons/inputs, inventory grid/cards
+  - **Gemini Feedback:** Addressed invalid Tailwind classes and duplicate attributes
+  - **Quality Gates:** CI ✅ (Lint/Test/Build, Validate Text Encoding, Validate Security Configuration), Smoke test ✅, no functional regressions
+  - **Follow-up:** Phase 4S (PR #815) completed as continuation
+  - **Commits:** `bd1b285` (initial refactor), `3425b85` (Gemini feedback), `82d1296` (merge)
 
 - **Critical Bug Fix: Hunting/Prospecting Expeditions Reward Processing** (PR #825, merged 2026-07-05): Fixed critical bug where hunting and prospecting expeditions returned 0 rangers/engineers with no resource rewards. User reported "Returned | 0 rangers" with no food gained after hunting.
   - **Root Cause:** `expeditionRewards()` function in `game/lib/gameplay.js` was missing case handling for hunting and prospecting types, causing it to return empty rewards arrays that overwrote the pre-calculated rewards stored at expedition creation time.
