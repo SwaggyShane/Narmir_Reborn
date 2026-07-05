@@ -2,13 +2,25 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Test infrastructure fixed; Worldmap features restored and Gemini feedback addressed; Terrain System Phases 1-3, Admin CSS Phase 4R verified complete; TODO audit completed; Performance regression fixed)
+**Last updated:** 2026-07-05 (Turn Processing Fix complete + Gemini addressed; Test infrastructure fixed; Worldmap features restored and Gemini feedback addressed; Terrain System Phases 1-3, Admin CSS Phase 4R verified complete; TODO audit completed; Performance regression fixed)
 
 ---
 
 ## Recent Chronology
 
 ### 2026-07-05
+
+- **Turn Processing Fix — Connection Pool Exhaustion (Phase 1)** (PR #834, merged `0859c68e` 2026-07-05): Refactored `/turn` endpoint to shorten DB transaction hold time (root cause of 502s at moderate concurrency). 
+  - Extracted `loadTurnContext()` (parallel init queries for region/alliance/heroes + trade) and `commitTurnResults()` (writes + side effects).
+  - Context load and final refresh queries moved outside `withTransaction()`.
+  - Inside txn: fresh `FOR UPDATE` `lockedK` + merged prefetch context + `processTurn()` + apply/resolve/resource logic.
+  - **Gemini Review (COMMENTED):** Two critical issues addressed in follow-up:
+    - Missing heroes/context on `lockedK` (heroes XP/bonuses and resolve/resource calcs were broken) — fixed via `Object.assign(lockedK, { heroes, _region_*, _trade_routes })`.
+    - Stale prefetch snapshot + absolute updates could overwrite concurrent non-turn actions (hire, expeditions, etc.) — fixed by computing `processTurn` against the locked snapshot.
+  - **Quality Gates:** Lint ✅, full test suite (63 files) ✅, CI ✅ (Lint/Test/Build + Security + Encoding all SUCCESS on fix commit).
+  - **Files:** `routes/kingdom-gameplay.js`
+  - **References:** `TURN_PROCESSING_FIX_PLAN.md`
+  - **Commits:** `a7a50174` (initial), `acb300be` (Gemini fixes)
 
 - **Fog of War & Scout Ring Visibility Fixes Restored** (pushed to main `84016bb` 2026-07-05): Restored two critical visibility fixes that were reverted.
   - **Issue:** Fog of war layer was appearing behind region names (not on top), and scout ring completions weren't notifying the client to refresh the worldmap.

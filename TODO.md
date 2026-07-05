@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (Terrain System & Admin CSS Phase 4R verified complete; TODO audit corrections)
+**Last updated:** 2026-07-05 (Turn Processing Fix / pool exhaustion complete + Gemini feedback addressed; Terrain System & Admin CSS Phase 4R verified complete; TODO audit corrections)
 
 ---
 
