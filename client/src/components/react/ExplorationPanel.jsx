@@ -9,6 +9,7 @@ import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { useGameMutationEvents } from '../../hooks/useGameState';
 import { useEconomyStore, useProfileStore, useMilitaryStore, useResearchStore, usePopulationStore } from '../../stores';
 import EmptyState from './EmptyState.jsx';
+import HexSelectionModal from './HexSelectionModal.jsx';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 const EXPEDITION_TURNS = {
@@ -57,6 +58,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const turns_stored = useProfileStore((state) => state.turns_stored);
   const scout_allocation = useProfileStore((state) => state.scout_allocation);
   const scout_progress = useProfileStore((state) => state.scout_progress);
+  const population = usePopulationStore((state) => state.population);
   useGameMutationEvents();
 
   const syncKingdomData = useCallback((kingdomData) => {
@@ -76,13 +78,22 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const [activeExpeditions, setActiveExpeditions] = useState([]);
   const [completedExpeditions, setCompletedExpeditions] = useState([]);
   const [instantEntries, setInstantEntries] = useState([]);
-  // Phase 1: Turn-based resource gathering
+  // Phase 1: Turn-based resource gathering with durations
   const [huntingRangers, setHuntingRangers] = useState(0);
   const [huntingTerrain, setHuntingTerrain] = useState('forest');
+  const [huntingDuration, setHuntingDuration] = useState(null); // 'instant', '5', '25', or null
+  const [huntingTargetHex, setHuntingTargetHex] = useState(null);
   const [prospectingEngineers, setProspectingEngineers] = useState(0);
   const [prospectingTerrain, setProspectingTerrain] = useState('mountain');
+  const [prospectingDuration, setProspectingDuration] = useState(null);
+  const [prospectingTargetHex, setProspectingTargetHex] = useState(null);
   const [landExpansionRangers, setLandExpansionRangers] = useState(0);
   const [landExpansionTerrain, setLandExpansionTerrain] = useState('grassland');
+  const [landExpansionDuration, setLandExpansionDuration] = useState(null);
+  const [landExpansionTargetHex, setLandExpansionTargetHex] = useState(null);
+  // Hex selection modal state
+  const [hexModalOpen, setHexModalOpen] = useState(false);
+  const [hexModalContext, setHexModalContext] = useState(null); // { type: 'hunting'|'prospecting'|'land_expansion'|'epic_trek', duration: ... }
   // Phase 2E: Scout allocation UI
   const [scoutAllocationInput, setScoutAllocationInput] = useState(0);
   // Phase 3: Epic Trek point-and-go
@@ -146,6 +157,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const availableFighters = Number(fighters || 0);
   const availableEngineers = Number(engineers || 0);
   const availableFood = Number(food || 0);
+  const availablePopulation = Number(population || 0);
   const expeditionTurns = useMemo(() => EXPEDITION_TURNS, []);
   const mountainFoodCost = Math.ceil(mountainRangers * 0.5 * 100 * 0.75);
 
@@ -253,6 +265,36 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to clear expedition log', 'error');
     }
   }, [applyResult, refreshAll]);
+
+  // Handler for opening hex selection modal for resource gathering
+  const openHexModal = useCallback((type, duration) => {
+    setHexModalContext({ type, duration });
+    setHexModalOpen(true);
+  }, []);
+
+  // Handler for hex selection modal result
+  const handleHexSelected = useCallback((hex) => {
+    if (!hexModalContext) return;
+
+    const { type, duration } = hexModalContext;
+
+    if (type === 'hunting') {
+      setHuntingTargetHex(hex);
+      setHuntingDuration(duration);
+    } else if (type === 'prospecting') {
+      setProspectingTargetHex(hex);
+      setProspectingDuration(duration);
+    } else if (type === 'land_expansion') {
+      setLandExpansionTargetHex(hex);
+      setLandExpansionDuration(duration);
+    } else if (type === 'epic_trek') {
+      setEpicTrekTargetX(hex.x);
+      setEpicTrekTargetY(hex.y);
+    }
+
+    setHexModalOpen(false);
+    setHexModalContext(null);
+  }, [hexModalContext]);
 
   // Phase 1: Turn-based resource gathering handlers
   const handleHunting = useCallback(async () => {
@@ -617,31 +659,41 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
         <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
           <div className="flex flex-col gap-4">
             <div className="card p-4">
-              <div className="card-title !mb-1">Available Rangers</div>
-              <div className="text-[28px] font-extrabold leading-none text-[var(--green)]">
-                {availableRangers.toLocaleString()}
-              </div>
-              <div className="mt-1 text-[12px] text-[var(--text3)]">
-                Ready to launch expeditions or scout targets.
+              <div className="card-title !mb-3">Available Units</div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <div className="text-[11px] text-[var(--text3)] uppercase font-semibold mb-1">Rangers</div>
+                  <div className="text-[24px] font-extrabold text-[var(--green)]">
+                    {availableRangers.toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[11px] text-[var(--text3)] uppercase font-semibold mb-1">Engineers</div>
+                  <div className="text-[24px] font-extrabold text-[var(--accent1)]">
+                    {availableEngineers.toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[11px] text-[var(--text3)] uppercase font-semibold mb-1">Population</div>
+                  <div className="text-[24px] font-extrabold text-[var(--gold)]">
+                    {availablePopulation.toLocaleString()}
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="card">
-              <div className="card-title">
-                Turn-based resource gathering <span className="text-[12px] font-normal text-[var(--accent1)]">5 turns each</span>
-              </div>
-              <div className="mb-3 text-[12px] text-[var(--text3)]">
-                Specialized operations that take 5 turns each. Rangers or engineers complete the task and return with resources.
+              <div className="card-title">Resource Gathering</div>
+              <div className="mb-4 text-[12px] text-[var(--text3)]">
+                Send specialists on expeditions to gather resources. Terrain affects returns. Durations scale from instant scouts to extended expeditions.
               </div>
               <div className="grid gap-4 md:grid-cols-3">
+                {/* Hunting Card */}
                 <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="font-semibold text-[var(--text)]">🦌 Hunting</div>
-                    <span className="text-[10px] text-[var(--green)]">5 turns</span>
-                  </div>
+                  <div className="mb-2 font-semibold text-[var(--text)]">🦌 Hunting</div>
                   <div className="mb-3 text-[11px] text-[var(--text3)]">Rangers hunt for food. Forest terrain is ideal.</div>
                   <div className="mb-2 text-[12px]">
-                    <label className="block text-[var(--text3)]">Rangers</label>
+                    <label className="block text-[var(--text3)] mb-1">Rangers</label>
                     <div className="flex gap-1">
                       <input
                         type="number"
@@ -656,19 +708,35 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       </button>
                     </div>
                   </div>
-                  <button className="base-btn w-full bg-[rgba(76,175,130,0.2)] text-[12px]" onClick={handleHunting}>
-                    Hunt
-                  </button>
+                  {huntingTargetHex && huntingDuration ? (
+                    <div className="mb-2 rounded bg-[var(--accent2)]/10 px-2 py-1 text-[11px] text-[var(--accent2)]">
+                      Target: ({huntingTargetHex.x}, {huntingTargetHex.y}) — {huntingDuration} turns
+                    </div>
+                  ) : null}
+                  <div className="flex gap-1">
+                    <button className="base-btn flex-1 bg-[rgba(76,175,130,0.2)] text-[11px]" onClick={handleHunting}>
+                      Instant
+                    </button>
+                    <button className="base-btn flex-1 bg-[rgba(76,175,130,0.2)] text-[11px]" onClick={() => openHexModal('hunting', '5')}>
+                      5
+                    </button>
+                    <button className="base-btn flex-1 bg-[rgba(76,175,130,0.2)] text-[11px]" onClick={() => openHexModal('hunting', '25')}>
+                      25
+                    </button>
+                  </div>
+                  {huntingTargetHex && huntingDuration && (huntingDuration === '5' || huntingDuration === '25') ? (
+                    <button className="base-btn w-full mt-2 bg-[rgba(76,175,130,0.3)] text-[11px] font-semibold" onClick={handleHunting}>
+                      Launch Hunting Expedition
+                    </button>
+                  ) : null}
                 </div>
 
+                {/* Prospecting Card */}
                 <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="font-semibold text-[var(--text)]">⛏️ Prospecting</div>
-                    <span className="text-[10px] text-[var(--accent1)]">5 turns</span>
-                  </div>
+                  <div className="mb-2 font-semibold text-[var(--text)]">⛏️ Prospecting</div>
                   <div className="mb-3 text-[11px] text-[var(--text3)]">Engineers prospect for gold. Mountains are ideal.</div>
                   <div className="mb-2 text-[12px]">
-                    <label className="block text-[var(--text3)]">Engineers</label>
+                    <label className="block text-[var(--text3)] mb-1">Engineers</label>
                     <div className="flex gap-1">
                       <input
                         type="number"
@@ -683,19 +751,35 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       </button>
                     </div>
                   </div>
-                  <button className="base-btn w-full bg-[rgba(180,60,0,0.2)] text-[12px]" onClick={handleProspecting}>
-                    Prospect
-                  </button>
+                  {prospectingTargetHex && prospectingDuration ? (
+                    <div className="mb-2 rounded bg-[var(--accent1)]/10 px-2 py-1 text-[11px] text-[var(--accent1)]">
+                      Target: ({prospectingTargetHex.x}, {prospectingTargetHex.y}) — {prospectingDuration} turns
+                    </div>
+                  ) : null}
+                  <div className="flex gap-1">
+                    <button className="base-btn flex-1 bg-[rgba(180,60,0,0.2)] text-[11px]" onClick={handleProspecting}>
+                      Instant
+                    </button>
+                    <button className="base-btn flex-1 bg-[rgba(180,60,0,0.2)] text-[11px]" onClick={() => openHexModal('prospecting', '5')}>
+                      5
+                    </button>
+                    <button className="base-btn flex-1 bg-[rgba(180,60,0,0.2)] text-[11px]" onClick={() => openHexModal('prospecting', '25')}>
+                      25
+                    </button>
+                  </div>
+                  {prospectingTargetHex && prospectingDuration && (prospectingDuration === '5' || prospectingDuration === '25') ? (
+                    <button className="base-btn w-full mt-2 bg-[rgba(180,60,0,0.3)] text-[11px] font-semibold" onClick={handleProspecting}>
+                      Launch Prospecting Expedition
+                    </button>
+                  ) : null}
                 </div>
 
+                {/* Land Expansion Card */}
                 <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="font-semibold text-[var(--text)]">🗺️ Land Expansion</div>
-                    <span className="text-[10px] text-[var(--gold)]">Instant</span>
-                  </div>
+                  <div className="mb-2 font-semibold text-[var(--text)]">🗺️ Land Expansion</div>
                   <div className="mb-3 text-[11px] text-[var(--text3)]">Rangers discover new land. Costs population.</div>
                   <div className="mb-2 text-[12px]">
-                    <label className="block text-[var(--text3)]">Rangers</label>
+                    <label className="block text-[var(--text3)] mb-1">Rangers</label>
                     <div className="flex gap-1">
                       <input
                         type="number"
@@ -710,9 +794,27 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       </button>
                     </div>
                   </div>
-                  <button className="base-btn w-full bg-[rgba(218,165,32,0.2)] text-[12px]" onClick={handleLandExpansion}>
-                    Expand
-                  </button>
+                  {landExpansionTargetHex && landExpansionDuration ? (
+                    <div className="mb-2 rounded bg-[var(--gold)]/10 px-2 py-1 text-[11px] text-[var(--gold)]">
+                      Target: ({landExpansionTargetHex.x}, {landExpansionTargetHex.y}) — {landExpansionDuration} turns
+                    </div>
+                  ) : null}
+                  <div className="flex gap-1">
+                    <button className="base-btn flex-1 bg-[rgba(218,165,32,0.2)] text-[11px]" onClick={handleLandExpansion}>
+                      Instant
+                    </button>
+                    <button className="base-btn flex-1 bg-[rgba(218,165,32,0.2)] text-[11px]" onClick={() => openHexModal('land_expansion', '5')}>
+                      5
+                    </button>
+                    <button className="base-btn flex-1 bg-[rgba(218,165,32,0.2)] text-[11px]" onClick={() => openHexModal('land_expansion', '25')}>
+                      25
+                    </button>
+                  </div>
+                  {landExpansionTargetHex && landExpansionDuration && (landExpansionDuration === '5' || landExpansionDuration === '25') ? (
+                    <button className="base-btn w-full mt-2 bg-[rgba(218,165,32,0.3)] text-[11px] font-semibold" onClick={handleLandExpansion}>
+                      Launch Land Expansion
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -915,10 +1017,15 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                   />
                 </div>
               </div>
-              <button className="base-btn variant-accent w-full" onClick={handleEpicTrek}>
-                Launch Epic Trek
-              </button>
-              <div className="mt-2 text-[10px] text-[var(--text3)]">Click the worldmap to auto-fill coordinates, or enter them manually.</div>
+              <div className="flex gap-2">
+                <button className="base-btn variant-accent flex-1" onClick={handleEpicTrek}>
+                  Launch Epic Trek
+                </button>
+                <button className="base-btn flex-1" onClick={() => openHexModal('epic_trek', null)}>
+                  Select on Map
+                </button>
+              </div>
+              <div className="mt-2 text-[10px] text-[var(--text3)]">Click "Select on Map" to choose coordinates visually, or enter them manually.</div>
             </div>
             )}
           </div>
@@ -953,6 +1060,19 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
           </div>
         </div>
       </div>
+
+      {/* Hex Selection Modal for resource gathering and epic trek */}
+      {hexModalOpen && (
+        <HexSelectionModal
+          isOpen={hexModalOpen}
+          context={hexModalContext}
+          onHexSelected={handleHexSelected}
+          onClose={() => {
+            setHexModalOpen(false);
+            setHexModalContext(null);
+          }}
+        />
+      )}
     </div>
   );
 };

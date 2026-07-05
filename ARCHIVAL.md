@@ -2,11 +2,40 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (CSS Consolidation Phase 4A-4S complete: OptionsPanel/NewsPanel/HeroesPanel/KingdomXpModal/WarfarePanel PR #804-#808, small-panels PR #809, BattleReportModal PR #810, KingdomBodyHeader PR #811, ReplayModal/RankingsPanel/ExplorationPanel PR #812, TestingPanel PR #813, ResourcesPanel PR #814, Final Audit PR #815)
+**Last updated:** 2026-07-05 (Exploration System enhancements: Resource gathering UI refactor PR #817 with duration-based expeditions, hex selection modal, and Gemini feedback fixes)
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-05
+
+- **Exploration System Enhancement: Resource Gathering UI Refactor** (PR #817, merged 2026-07-05): Refactored resource gathering system in ExplorationPanel with duration-based expeditions and reusable hex selection modal. Moved from single-button per resource to [Instant] [5] [25] duration options with visual hex targeting.
+  - **UI Improvements:**
+    - Updated "Available Rangers" card to "Available Units" with three-column layout (Rangers/Engineers/Population)
+    - Refactored Hunting/Prospecting/Land Expansion cards from single buttons to [Instant] [5] [25] duration buttons per resource
+    - Added "Launch" buttons for 5/25 turn expeditions (appears when target hex is selected)
+    - Show selected target coordinates and duration below buttons for user feedback
+  - **New Component:**
+    - Created `HexSelectionModal.jsx`: Reusable modal for hex selection (used by both resource gathering and Epic Trek)
+    - Supports coordinate manual input with X/Y fields
+    - Clear button unconditionally resets selection for better UX
+    - Validates both X and Y present before confirmation
+  - **Integration:**
+    - Updated Epic Trek card with "Select on Map" button to use hex selection modal
+    - Terrain modifier constants added (forest→hunting, mountain→prospecting, etc.) for future return scaling implementation
+  - **Gemini Review & Fixes:** 5 code review issues addressed in follow-up commit:
+    - ✅ Critical: Restored missing terrain state variables (huntingTerrain, prospectingTerrain, landExpansionTerrain) to fix ReferenceError
+    - ✅ High: Added "Launch" buttons for 5/25 turn expeditions (shown when target hex selected)
+    - ✅ Medium: Fixed HexSelectionModal input clearing UX (allow empty strings for backspacing)
+    - ✅ Medium: Fixed Clear button logic (unconditionally reset instead of showing error)
+    - ✅ Medium: Added coordinate validation in handleConfirm (ensure both X and Y present)
+    - ✅ Medium: Removed unused TERRAIN_MODIFIERS constant
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all baseline checks), CI ✅ (all 3 checks: Lint/Test/Build, Validate Text Encoding, Validate Security Configuration)
+  - **Commits:** 
+    - `baa611a`: Initial refactor with [Instant] [5] [25] buttons and HexSelectionModal
+    - `d480a8e`: Gemini feedback fixes (restored terrain vars, added Launch buttons, fixed UX issues)
+  - **Code Quality:** All changes lint ✅. No functional regressions. Improved UX for resource gathering target selection.
 
 ### 2026-07-04
 
