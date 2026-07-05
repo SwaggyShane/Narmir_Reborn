@@ -29,25 +29,37 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
 
   // Fetch worldSeed on mount
   useEffect(() => {
+    if (!isOpen) return;
+
+    let mounted = true;
     const fetchWorldSeed = async () => {
       try {
         const res = await fetch('/api/world-map');
         if (res.ok) {
           const data = await res.json();
-          setWorldSeed(data.worldSeed || null);
+          if (mounted) {
+            setWorldSeed(data.worldSeed || 0);
+          }
+        } else if (mounted) {
+          // Fallback to seed 0 if fetch fails
+          setWorldSeed(0);
         }
       } catch (err) {
         console.error('Failed to fetch world seed:', err);
+        if (mounted) {
+          // Fallback to seed 0 on error
+          setWorldSeed(0);
+        }
       }
     };
-    if (isOpen && !worldSeed) {
-      fetchWorldSeed();
-    }
-  }, [isOpen, worldSeed]);
+
+    fetchWorldSeed();
+    return () => { mounted = false; };
+  }, [isOpen]);
 
   // Build hex grid with terrain once worldSeed is available
   const hexGrid = useMemo(() => {
-    if (!isOpen || worldSeed === null) return null;
+    if (!isOpen || worldSeed === undefined || worldSeed === null) return null;
     return buildHexGrid(WORLD_WIDTH, WORLD_HEIGHT, worldSeed);
   }, [isOpen, worldSeed]);
 
