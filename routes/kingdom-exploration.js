@@ -243,10 +243,9 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/hunting — Turn-based hunting for food (target coordinates optional, recorded for future expansion)
+  // POST /expedition/hunting — Turn-based hunting for food with travel time
   router.post('/expedition/hunting', requireAuth, requireCsrfToken, async (req, res) => {
-    const { rangers, terrain } = req.body;
-    // target_x and target_y accepted but not yet used in reward calculation
+    const { rangers, terrain, target_x, target_y } = req.body;
     const r = Math.max(0, parseInt(rangers) || 0);
     const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
     const t = terrain && validTerrains.includes(terrain) ? terrain : 'forest';
@@ -254,14 +253,25 @@ module.exports = function (db) {
     if (r < 1) return res.status(400).json({ error: 'Send at least 1 ranger' });
 
     try {
-      const { updates, reward } = await db.withTransaction(async () => {
+      const { updates, reward, turnCost } = await db.withTransaction(async () => {
         const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
           req.player.playerId,
         ]);
         if (!k) throw new Error('Kingdom not found');
 
-        if (k.turns_stored < config.HUNTING_CONSTANTS.TURN_COST) {
-          const error = new Error(`Hunting requires ${config.HUNTING_CONSTANTS.TURN_COST} turns (you have ${k.turns_stored})`);
+        // Calculate turn cost: base + travel time
+        let totalTurns = config.HUNTING_CONSTANTS.TURN_COST;
+        if (target_x !== undefined && target_y !== undefined) {
+          const { hexUnitDistance } = require('../game/hex-utils');
+          const { getKingdomMapCoords } = require('../game/world-map-coords');
+          const kingdomCoords = getKingdomMapCoords(k);
+          const distance = hexUnitDistance(kingdomCoords.map_x, kingdomCoords.map_y, Number(target_x), Number(target_y));
+          const travelTime = Math.ceil(distance * 1.0); // 1 turn per hex
+          totalTurns = config.HUNTING_CONSTANTS.TURN_COST + (travelTime * 2); // round trip
+        }
+
+        if (k.turns_stored < totalTurns) {
+          const error = new Error(`Hunting requires ${totalTurns} turns (you have ${k.turns_stored})`);
           error.statusCode = 429;
           throw error;
         }
@@ -285,28 +295,28 @@ module.exports = function (db) {
         const reward = calculateHuntingReward(r, k.ranger_level || 1, t, k.race);
 
         await db.run(
-          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = food + $2 WHERE id = $3',
-          [config.HUNTING_CONSTANTS.TURN_COST, reward.foodReward, k.id],
+          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1) WHERE id = $2',
+          [totalTurns, k.id],
         );
 
         await db.run(
           'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-          [k.id, 'hunting', 0, 0, 0, 0, JSON.stringify({ food: reward.foodReward }), 1],
+          [k.id, 'hunting', totalTurns, r, 0, 0, JSON.stringify({ food: reward.foodReward }), 0],
         );
 
         let updates = {
-          turns_stored: Math.max(0, k.turns_stored - config.HUNTING_CONSTANTS.TURN_COST),
-          food: k.food + reward.foodReward,
+          turns_stored: Math.max(0, k.turns_stored - totalTurns),
         };
 
-        return { updates, reward };
+        return { updates, reward, turnCost: totalTurns };
       });
 
       res.json({
         ok: true,
         updates: updates,
         reward: reward,
-        message: `Hunters returned with ${reward.foodReward.toLocaleString()} food.`,
+        turnCost: turnCost,
+        message: `${turnCost} turn expedition started. Rangers will return with ${reward.foodReward.toLocaleString()} food.`,
       });
     } catch (err) {
       console.error('[expedition/hunting] failed:', err.message);
@@ -315,10 +325,9 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/prospecting — Turn-based prospecting for gold (target coordinates optional, recorded for future expansion)
+  // POST /expedition/prospecting — Turn-based prospecting for gold with travel time
   router.post('/expedition/prospecting', requireAuth, requireCsrfToken, async (req, res) => {
-    const { engineers, terrain } = req.body;
-    // target_x and target_y accepted but not yet used in reward calculation
+    const { engineers, terrain, target_x, target_y } = req.body;
     const e = Math.max(0, parseInt(engineers) || 0);
     const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
     const t = terrain && validTerrains.includes(terrain) ? terrain : 'mountain';
@@ -326,14 +335,25 @@ module.exports = function (db) {
     if (e < 1) return res.status(400).json({ error: 'Send at least 1 engineer' });
 
     try {
-      const { updates, reward } = await db.withTransaction(async () => {
+      const { updates, reward, turnCost } = await db.withTransaction(async () => {
         const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
           req.player.playerId,
         ]);
         if (!k) throw new Error('Kingdom not found');
 
-        if (k.turns_stored < config.PROSPECTING_CONSTANTS.TURN_COST) {
-          const error = new Error(`Prospecting requires ${config.PROSPECTING_CONSTANTS.TURN_COST} turns (you have ${k.turns_stored})`);
+        // Calculate turn cost: base + travel time
+        let totalTurns = config.PROSPECTING_CONSTANTS.TURN_COST;
+        if (target_x !== undefined && target_y !== undefined) {
+          const { hexUnitDistance } = require('../game/hex-utils');
+          const { getKingdomMapCoords } = require('../game/world-map-coords');
+          const kingdomCoords = getKingdomMapCoords(k);
+          const distance = hexUnitDistance(kingdomCoords.map_x, kingdomCoords.map_y, Number(target_x), Number(target_y));
+          const travelTime = Math.ceil(distance * 1.0);
+          totalTurns = config.PROSPECTING_CONSTANTS.TURN_COST + (travelTime * 2);
+        }
+
+        if (k.turns_stored < totalTurns) {
+          const error = new Error(`Prospecting requires ${totalTurns} turns (you have ${k.turns_stored})`);
           error.statusCode = 429;
           throw error;
         }
@@ -363,29 +383,29 @@ module.exports = function (db) {
         }
 
         await db.run(
-          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = GREATEST(0, food - $2), gold = gold + $3 WHERE id = $4',
-          [config.PROSPECTING_CONSTANTS.TURN_COST, reward.foodCost, reward.goldReward, k.id],
+          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = GREATEST(0, food - $2) WHERE id = $3',
+          [totalTurns, reward.foodCost, k.id],
         );
 
         await db.run(
           'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-          [k.id, 'prospecting', 0, 0, 0, reward.foodCost, JSON.stringify({ gold: reward.goldReward }), 1],
+          [k.id, 'prospecting', totalTurns, 0, 0, reward.foodCost, JSON.stringify({ gold: reward.goldReward }), 0],
         );
 
         let updates = {
-          turns_stored: Math.max(0, k.turns_stored - config.PROSPECTING_CONSTANTS.TURN_COST),
+          turns_stored: Math.max(0, k.turns_stored - totalTurns),
           food: Math.max(0, k.food - reward.foodCost),
-          gold: k.gold + reward.goldReward,
         };
 
-        return { updates, reward };
+        return { updates, reward, turnCost: totalTurns };
       });
 
       res.json({
         ok: true,
         updates: updates,
         reward: reward,
-        message: `Prospectors returned with ${reward.goldReward.toLocaleString()} gold.`,
+        turnCost: turnCost,
+        message: `${turnCost} turn expedition started. Prospectors will return with ${reward.goldReward.toLocaleString()} gold.`,
       });
     } catch (err) {
       console.error('[expedition/prospecting] failed:', err.message);
@@ -394,10 +414,9 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/land-expansion — Instant land discovery (target coordinates optional, recorded for future expansion)
+  // POST /expedition/land-expansion — Land discovery with travel time
   router.post('/expedition/land-expansion', requireAuth, requireCsrfToken, async (req, res) => {
-    // target_x and target_y accepted but not yet used in reward calculation
-    const { rangers, terrain } = req.body;
+    const { rangers, terrain, target_x, target_y } = req.body;
     const r = Math.max(0, parseInt(rangers) || 0);
     const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
     const t = terrain && validTerrains.includes(terrain) ? terrain : 'grassland';
@@ -405,11 +424,28 @@ module.exports = function (db) {
     if (r < 1) return res.status(400).json({ error: 'Send at least 1 ranger' });
 
     try {
-      const { updates, reward } = await db.withTransaction(async () => {
+      const { updates, reward, turnCost } = await db.withTransaction(async () => {
         const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
           req.player.playerId,
         ]);
         if (!k) throw new Error('Kingdom not found');
+
+        // Calculate turn cost: base (0 for instant) + travel time
+        let totalTurns = config.LAND_EXPANSION_CONSTANTS.TURN_COST;
+        if (target_x !== undefined && target_y !== undefined) {
+          const { hexUnitDistance } = require('../game/hex-utils');
+          const { getKingdomMapCoords } = require('../game/world-map-coords');
+          const kingdomCoords = getKingdomMapCoords(k);
+          const distance = hexUnitDistance(kingdomCoords.map_x, kingdomCoords.map_y, Number(target_x), Number(target_y));
+          const travelTime = Math.ceil(distance * 1.0);
+          totalTurns = config.LAND_EXPANSION_CONSTANTS.TURN_COST + (travelTime * 2);
+        }
+
+        if (k.turns_stored < totalTurns) {
+          const error = new Error(`Land expansion requires ${totalTurns} turns (you have ${k.turns_stored})`);
+          error.statusCode = 429;
+          throw error;
+        }
 
         if (r > engine.getAvailableUnits(k, 'rangers')) {
           const error = new Error('Not enough available rangers');
@@ -426,23 +462,29 @@ module.exports = function (db) {
         }
 
         await db.run(
-          'UPDATE kingdoms SET land = land + $1, population = GREATEST(0, population - $2) WHERE id = $3',
-          [reward.landsDiscovered, reward.populationCost, k.id],
+          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), population = GREATEST(0, population - $2) WHERE id = $3',
+          [totalTurns, reward.populationCost, k.id],
+        );
+
+        await db.run(
+          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+          [k.id, 'land_expansion', totalTurns, r, 0, 0, JSON.stringify({ land: reward.landsDiscovered }), 0],
         );
 
         let updates = {
-          land: k.land + reward.landsDiscovered,
+          turns_stored: Math.max(0, k.turns_stored - totalTurns),
           population: Math.max(0, k.population - reward.populationCost),
         };
 
-        return { updates, reward };
+        return { updates, reward, turnCost: totalTurns };
       });
 
       res.json({
         ok: true,
         updates: updates,
         reward: reward,
-        message: `Discovered ${reward.landsDiscovered.toLocaleString()} new lands.`,
+        turnCost: turnCost,
+        message: `${turnCost} turn expedition started. Rangers will discover ${reward.landsDiscovered.toLocaleString()} new lands.`,
       });
     } catch (err) {
       console.error('[expedition/land-expansion] failed:', err.message);
