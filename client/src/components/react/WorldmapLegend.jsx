@@ -1,54 +1,6 @@
 import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { getWorldMapData } from '../../utils/worldMapData.js';
-
-const REGION_META = {
-  dwarf: {
-    name: 'The Iron Holds',
-    color: '#8B6914',
-    stroke: '#c8962a',
-    icon: '🏔️',
-  },
-  high_elf: {
-    name: 'The Silverwood',
-    color: '#1a4a2e',
-    stroke: '#4caf82',
-    icon: '🌿',
-  },
-  orc: {
-    name: 'The Bloodplains',
-    color: '#4a1010',
-    stroke: '#e05c5c',
-    icon: '⚔️',
-  },
-  dark_elf: {
-    name: 'The Underspire',
-    color: '#1a1030',
-    stroke: 'var(--accent1)',
-    icon: '🕵️',
-  },
-  human: {
-    name: 'The Heartlands',
-    color: '#1a2a10',
-    stroke: '#8fb84a',
-    icon: '🌾',
-  },
-  dire_wolf: {
-    name: 'The Ashfang Wilds',
-    color: '#0d1a20',
-    stroke: '#4a8fb8',
-    icon: '🐺',
-  },
-};
-
-const REGION_BONUSES = {
-  dwarf: 'Improved construction speed',
-  high_elf: 'Increased mana production',
-  orc: 'Superior military strength',
-  dark_elf: 'Enhanced stealth and covert ops',
-  human: 'Better economy',
-  dire_wolf: 'Superior military strength',
-  vampire: 'Night combat specialization',
-};
+import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 
 export function renderRegionLegend() {
   const el = document.getElementById('region-legend-list');
@@ -84,4 +36,8 @@ export function highlightRegion(race) {
   svgEl.querySelectorAll('.kd-dot').forEach((d) => {
     d.style.opacity = d.dataset.race === race ? '1' : '0.2';
   });
+}
+
+if (typeof window !== 'undefined') {
+  window.highlightRegion = highlightRegion;
 }

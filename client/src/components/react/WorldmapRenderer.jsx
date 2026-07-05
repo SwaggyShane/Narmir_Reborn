@@ -840,16 +840,11 @@ export function renderWorldMap(
                       '<path d="M ' + (cell.x - 4) + ' ' + (cell.y + 2) + ' Q ' + (cell.x - 2) + ' ' + cell.y + ' ' + cell.x + ' ' + (cell.y + 2) + ' Q ' + (cell.x + 2) + ' ' + (cell.y + 4) + ' ' + (cell.x + 4) + ' ' + (cell.y + 2) + '" stroke="' + symbolColor + '" stroke-width="2" fill="none"/>';
               break;
             case 'tundra':
-              // Tundra: snowflake-like star
+              // Tundra: snowflake (3 intersecting lines)
               symbolColor = 'rgba(220,240,255,0.8)';
-              var angles = [0, 60, 120, 180, 240, 300];
-              symbol = '';
-              angles.forEach(function(angle) {
-                var rad = angle * Math.PI / 180;
-                var x2 = cell.x + 4 * Math.cos(rad);
-                var y2 = cell.y + 4 * Math.sin(rad);
-                symbol += '<line x1="' + cell.x + '" y1="' + cell.y + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + symbolColor + '" stroke-width="1.5"/>';
-              });
+              symbol = '<line x1="' + (cell.x - 4) + '" y1="' + cell.y + '" x2="' + (cell.x + 4) + '" y2="' + cell.y + '" stroke="' + symbolColor + '" stroke-width="1.5"/>' +
+                      '<line x1="' + (cell.x - 2) + '" y1="' + (cell.y - 3.46) + '" x2="' + (cell.x + 2) + '" y2="' + (cell.y + 3.46) + '" stroke="' + symbolColor + '" stroke-width="1.5"/>' +
+                      '<line x1="' + (cell.x - 2) + '" y1="' + (cell.y + 3.46) + '" x2="' + (cell.x + 2) + '" y2="' + (cell.y - 3.46) + '" stroke="' + symbolColor + '" stroke-width="1.5"/>';
               break;
             case 'volcanic':
               // Volcanic: crater rings
