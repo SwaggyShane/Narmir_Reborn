@@ -29,7 +29,10 @@
 
 ### Workflow Steps
 1. Make code changes on feature branch
-2. Run quality checks (lint → smoke → sanity) — see below
+2. Run quality checks (lint → smoke → sanity)
+   - If you have a server error, fix it and retest
+   - If you have any error, fix it and retest
+   - If there are any pre-existing problems, fix it and retest
 3. Stage and commit: `git add <files>` → `git commit -m "..."`
 4. Confirm branch and commits (see above)
 5. Push: `git push`
