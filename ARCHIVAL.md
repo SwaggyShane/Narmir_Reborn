@@ -76,7 +76,7 @@
     - `8edf6fe`: Fix missing exports (HEX_SIZE, HEX_W constants)
   - **Code Quality:** Lint ✅ (0 errors after fix). Build ✅. All smoke test baselines pass. No regressions.
 
-- **Restore Missing Worldmap Visual Features** (PR #828, in progress 2026-07-05): Restored three critical worldmap visualization features that were previously missing or broken.
+- **Restore Missing Worldmap Visual Features** (PR #828, merged 2026-07-05): Restored three critical worldmap visualization features that were previously missing or broken.
   - **Features Restored:**
     - **SVG Terrain Symbols Layer**: Added distinct visual symbols for each terrain type (plains grass, forest trees, mountain peaks, hills curves, swamp water, desert sand, coast waves, tundra snowflake, volcanic craters) to improve terrain recognition. Symbols render above terrain fill but below fog of war for clear visibility.
     - **River Layer Z-Order Fix**: Moved rivers layer to render BEFORE fog of war so rivers appear beneath fog overlays, maintaining geographic underlay while fog indicates exploration state.
@@ -85,12 +85,28 @@
     - ✅ HIGH: Imported REGION_META and REGION_BONUSES from raceData.js (instead of duplicated outdated constants missing vampire, ogre, wood_elf races)
     - ✅ HIGH: Bound highlightRegion function to global window object to prevent ReferenceError on legend onclick handlers
     - ✅ MEDIUM: Optimized tundra symbol rendering (3 intersecting lines instead of loop with trigonometry, reduces SVG elements 50% and eliminates Math.cos/Math.sin per cell)
-  - **Quality Gates:** Lint ✅ (0 errors), Smoke test ✅ (combat-v2 adapter), Text Encoding ✅ (fixed mojibake middle-dot character), CI in progress
+  - **Quality Gates:** Lint ✅ (0 errors), Smoke test ✅ (combat-v2 adapter), Text Encoding ✅ (fixed mojibake middle-dot character), CI ✅
   - **Commits:**
     - `7cad79b`: Initial restoration with terrain symbols layer and river z-order fix
     - `ab0dc0d`: Fix text encoding issue (middle-dot → pipe in legend)
     - `040ed22`: Address Gemini feedback (raceData import, window binding, tundra optimization)
   - **Files Changed:** `client/src/components/react/WorldmapRenderer.jsx` (terrain symbols + river layer order), `client/src/components/react/WorldmapLegend.jsx` (raceData imports + window binding)
+
+- **Terrain Legend Component & Middleware Test Fix** (PR #829, merged 2026-07-05): Added terrain legend UI component to worldmap panel with refined emoji symbols and 2-column grid layout. Fixed pre-existing JWT_SECRET test failure in middleware-csrf test.
+  - **Features Added:**
+    - **TerrainLegend Component**: React component displaying all 9 terrain types (plains, forest, mountains, hills, swamp, desert, coast, tundra, volcanic) with distinct emoji symbols in compact 2-column grid layout
+    - **TERRAIN_LEGEND Constant**: Array of terrain objects with type, name, and symbol for rendering legend entries
+    - **Test Infrastructure Fix**: Set JWT_SECRET environment variable before importing middleware in middleware-csrf.test.js to prevent module-load-time errors
+  - **Gemini Code Review Feedback Addressed:**
+    - ✅ MEDIUM: Fixed duplicate emoji (swamp and coast both used 🌊) by changing swamp to 🐊 (crocodile)
+    - ✅ MEDIUM: Fixed inverted emoji (mountains had ⛰️, hills had 🏔️) by swapping: mountains→🏔️ (snow-capped), hills→⛰️
+    - ✅ MEDIUM: Refactored TerrainLegend from full-width vertical list to 2-column grid layout for space efficiency (reduced ~300px vertical height)
+  - **Quality Gates:** Lint ✅ (0 errors), Test suite ✅ (all 63 test files pass), CI ✅ (all 3 checks: Lint/Test/Build, Validate Text Encoding, Validate Security Configuration)
+  - **Commits:**
+    - `3b96183`: feat: Add terrain legend to worldmap panel for terrain type reference
+    - `326e38e`: fix: Set JWT_SECRET in middleware-csrf test before middleware import
+    - `40bc4b8`: Fix terrain legend: correct emoji, improve layout (address Gemini feedback)
+  - **Files Changed:** `client/src/components/react/WorldmapPanel.jsx` (TerrainLegend component + TERRAIN_LEGEND constant), `test/middleware-csrf.test.js` (JWT_SECRET initialization)
 
 - **Exploration System Enhancement: Resource Gathering UI Refactor** (PR #817, merged 2026-07-05): Refactored resource gathering system in ExplorationPanel with duration-based expeditions and reusable hex selection modal. Moved from single-button per resource to [Instant] [5] [25] duration options with visual hex targeting.
   - **UI Improvements:**
