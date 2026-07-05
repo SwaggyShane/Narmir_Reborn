@@ -54,70 +54,68 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
           </button>
         </div>
 
-        {/* Map container placeholder */}
-        <div className="mb-3 rounded-md border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-4">
-          <div className="aspect-video flex flex-col items-center justify-center rounded bg-[rgba(0,0,0,0.3)]">
-            <div className="text-center">
-              <div className="text-[14px] font-semibold text-[var(--text)]">Worldmap</div>
-              <div className="mt-2 text-[12px] text-[var(--text3)]">
-                Click a hex to select target, or enter coordinates below
-              </div>
-              {selectedHex && (
-                <div className="mt-3 rounded bg-[var(--accent2)]/10 px-2 py-1 text-[12px] text-[var(--accent2)]">
-                  Selected: ({selectedHex.x}, {selectedHex.y})
-                </div>
-              )}
+        {/* Coordinate input instructions */}
+        <div className="mb-4 rounded-md border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-3">
+          <div className="text-center">
+            <div className="text-[13px] text-[var(--text2)]">
+              Enter target coordinates (X: 0-1999, Y: 0-1379) or click the map icon in the game to auto-fill
             </div>
+            {selectedHex && selectedHex.x !== undefined && selectedHex.y !== undefined && (
+              <div className="mt-2 rounded bg-[var(--accent2)]/10 px-2 py-1 text-[12px] text-[var(--accent2)]">
+                ✓ Target selected: ({selectedHex.x}, {selectedHex.y})
+              </div>
+            )}
           </div>
         </div>
 
         {/* Coordinate input */}
-        <div className="mb-4 grid grid-cols-3 gap-2">
+        <div className="mb-4 grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-[11px] text-[var(--text3)] mb-1">Target X</label>
+            <label className="block text-[11px] text-[var(--text3)] mb-1 font-semibold">Target X (0-1999)</label>
             <input
               type="number"
               className="input w-full"
               value={selectedHex?.x ?? ''}
               onChange={(e) => setSelectedHex(prev => ({ ...prev, x: e.target.value === '' ? '' : parseInt(e.target.value, 10) || 0 }))}
-              placeholder="0-1999"
+              placeholder="e.g. 500"
               min="0"
               max="1999"
             />
           </div>
           <div>
-            <label className="block text-[11px] text-[var(--text3)] mb-1">Target Y</label>
+            <label className="block text-[11px] text-[var(--text3)] mb-1 font-semibold">Target Y (0-1379)</label>
             <input
               type="number"
               className="input w-full"
               value={selectedHex?.y ?? ''}
               onChange={(e) => setSelectedHex(prev => ({ ...prev, y: e.target.value === '' ? '' : parseInt(e.target.value, 10) || 0 }))}
-              placeholder="0-1379"
+              placeholder="e.g. 700"
               min="0"
               max="1379"
             />
           </div>
-          <div className="flex items-end">
+        </div>
+
+        {/* Action buttons */}
+        <div className="space-y-2">
+          <div className="flex gap-2">
             <button
-              className="base-btn w-full"
+              className="base-btn flex-1 variant-accent"
+              onClick={handleConfirm}
+              disabled={!selectedHex || selectedHex.x === undefined || selectedHex.x === '' || selectedHex.y === undefined || selectedHex.y === ''}
+            >
+              Confirm Target
+            </button>
+            <button
+              className="base-btn px-3"
               onClick={() => setSelectedHex(null)}
+              title="Clear coordinates"
             >
               Clear
             </button>
           </div>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex gap-2">
           <button
-            className="base-btn flex-1 variant-accent"
-            onClick={handleConfirm}
-            disabled={!selectedHex || selectedHex.x === undefined || selectedHex.x === '' || selectedHex.y === undefined || selectedHex.y === ''}
-          >
-            Confirm Target
-          </button>
-          <button
-            className="base-btn flex-1"
+            className="base-btn w-full"
             onClick={handleCancel}
           >
             Cancel

@@ -325,7 +325,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
 
       applyResult(result, 'hunting');
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Hunting expedition complete!', 'success');
-      logInstantEntry('🦌', 'Hunting expedition', `${formatNum(r)} rangers returned with ${formatNum(result.reward?.foodReward || 0)} food`);
+      const foodGained = result.reward?.foodReward || 0;
+      logInstantEntry('🥩', 'Hunting expedition', `${formatNum(r)} rangers returned with ${formatNum(foodGained)} food`);
       setHuntingRangers(0);
       await refreshAll();
     } catch (err) {
@@ -362,7 +363,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
 
       applyResult(result, 'prospecting');
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Prospecting expedition complete!', 'success');
-      logInstantEntry('⛏️', 'Prospecting expedition', `${formatNum(e)} engineers returned with ${formatNum(result.reward?.goldReward || 0)} gold`);
+      const goldGained = result.reward?.goldReward || 0;
+      logInstantEntry('⛏️', 'Prospecting expedition', `${formatNum(e)} engineers returned with ${formatNum(goldGained)} gold`);
       setProspectingEngineers(0);
       await refreshAll();
     } catch (err) {
@@ -382,6 +384,15 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       return;
     }
 
+    // Estimate population cost (rough: ~5% per ranger)
+    const estimatedPopCost = Math.ceil(r * 0.05);
+    if (availablePopulation < estimatedPopCost) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') {
+        toast(`⚠️ Land expansion needs ~${formatNum(estimatedPopCost)} population but you only have ${formatNum(availablePopulation)}. This would harm your kingdom!`, 'warn');
+      }
+      return;
+    }
+
     try {
       const result = await apiCall('/api/kingdom/expedition/land-expansion', {
         method: 'POST',
@@ -395,7 +406,9 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
 
       applyResult(result, 'land-expansion');
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Land expanded!', 'success');
-      logInstantEntry('🗺️', 'Land expansion', `Discovered ${formatNum(result.reward?.landsDiscovered || 0)} new lands`);
+      const popCost = result.reward?.populationUsed || estimatedPopCost;
+      const landsFound = result.reward?.landsDiscovered || 0;
+      logInstantEntry('🗺️', 'Land expansion', `Discovered ${formatNum(landsFound)} new lands (used ${formatNum(popCost)} population)`);
       setLandExpansionRangers(0);
       await refreshAll();
     } catch (err) {
@@ -690,7 +703,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               <div className="grid gap-4 md:grid-cols-3">
                 {/* Hunting Card */}
                 <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3">
-                  <div className="mb-2 font-semibold text-[var(--text)]">🦌 Hunting</div>
+                  <div className="mb-2 font-semibold text-[var(--text)]">🥩 Hunting</div>
                   <div className="mb-3 text-[11px] text-[var(--text3)]">Rangers hunt for food. Forest terrain is ideal.</div>
                   <div className="mb-2 text-[12px]">
                     <label className="block text-[var(--text3)] mb-1">Rangers</label>
