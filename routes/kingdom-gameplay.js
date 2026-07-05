@@ -319,7 +319,6 @@ module.exports = function (db) {
   async function runTurn(db, k) {
     if (!k) throw new Error('Kingdom not found');
     console.time(`[turn-${k.id}] total`);
-    console.time(`[turn-${k.id}] init-queries`);
     // Inject region ownership status for bonuses
     // All 3 queries are independent â€” run them in parallel
     const [regionStatus, myAlliance, heroes] = await Promise.all([
