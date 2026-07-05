@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (CSS Consolidation Phase 4H-4Q: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806, KingdomXpModal PR #807, WarfarePanel PR #808, small-panels batch PR #809, BattleReportModal PR #810, KingdomBodyHeader PR #811, ReplayModal/RankingsPanel/ExplorationPanel batch PR #812, TestingPanel PR #813)
+**Last updated:** 2026-07-05 (CSS Consolidation Phase 4H-4R: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806, KingdomXpModal PR #807, WarfarePanel PR #808, small-panels batch PR #809, BattleReportModal PR #810, KingdomBodyHeader PR #811, ReplayModal/RankingsPanel/ExplorationPanel batch PR #812, TestingPanel PR #813, ResourcesPanel PR #814)
 
 ---
 
@@ -242,6 +242,21 @@
     - Static indent (line 530): `marginLeft: '28px'` → `ml-7` (7 * 4px = 28px)
   - **Gemini Review:** 1 item — boolean coercion on `TEST_DESCRIPTIONS[key]` lookup (change from `(TEST_DESCRIPTIONS[key] || isFailing)` to `(!!TEST_DESCRIPTIONS[key] || isFailing)`) for explicit type safety. Applied in follow-up commit.
   - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (no logic changes, all colors static), CI ✅ (all 3 checks green after fix)
+  - **Code Quality:** All changes lint ✅. No functional regressions.
+
+- **Admin CSS Consolidation: Phase 4R (ResourcesPanel)** (PR #814, merged 2026-07-05): Converting ~45 inline styles in ResourcesPanel to Tailwind CSS classes. Large-scale refactoring across stockpiles, buildings, expeditions, and inventory sections.
+  - **Conversion Results:** ~45 static/conditional styles converted (100% success). Dynamic values correctly preserved inline (grid-template-columns, progress bar width percentage, statusColor function call).
+  - **Key Improvements:**
+    - Stockpiles: flex layout + text colors → Tailwind classes, conditional status color (green/red) via clsx
+    - Buildings: tab navigation (padding/color/border conditional) → clsx, card layouts, progress bar container + fill with dynamic width inline
+    - Expeditions: card styling, dispatch/scan buttons, node/expedition input fields, countdown text colors
+    - Inventory: grid layout (dynamic gridTemplateColumns stays inline), item cards with conditional border color (green/border based on qty)
+  - **Dynamic values preserved:** 
+    - `gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))'` (auto-fill responsive grid)
+    - `width: getBuildPct(bld.key) + '%'` (dynamic progress percentage)
+    - `statusColor(exp.status)` (function-driven color lookup)
+  - **Gemini Review:** Pending (PR #814 awaiting Gemini review; CI all 3 checks passed)
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (no logic changes, dynamic values correctly preserved), CI ✅ (all 3 checks green)
   - **Code Quality:** All changes lint ✅. No functional regressions.
 
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.

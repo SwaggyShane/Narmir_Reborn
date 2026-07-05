@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (CSS Consolidation Phase 4D-4Q complete: EconomyPanel, BuildPanel, HappinessPanel, MarketPanel, OptionsPanel, NewsPanel, HeroesPanel, KingdomXpModal, WarfarePanel, small-panels batch, BattleReportModal, KingdomBodyHeader, ReplayModal/RankingsPanel/ExplorationPanel batch, TestingPanel merged PR #800-#813)
+**Last updated:** 2026-07-05 (CSS Consolidation Phase 4D-4R complete: EconomyPanel, BuildPanel, HappinessPanel, MarketPanel, OptionsPanel, NewsPanel, HeroesPanel, KingdomXpModal, WarfarePanel, small-panels batch, BattleReportModal, KingdomBodyHeader, ReplayModal/RankingsPanel/ExplorationPanel batch, TestingPanel, ResourcesPanel merged PR #800-#814)
 
 ---
 
@@ -106,7 +106,7 @@ _None currently — see Known Technical Debt below for post-beta cleanup items._
   - **Phase 4O (KingdomBodyHeader):** 7 conversions (GAP constant → gap-2/mt-2 utilities, text-shadow arbitrary property, XP bar gradient + conditional glow via clsx, Stat valueStyle → valueClass prop). Gemini feedback (1 item: transition-all duration-400 → transition-[width] duration-500; duration-400 was non-functional dead weight) applied, merged 2026-07-05.
   - **Phase 4P (ReplayModal/RankingsPanel/ExplorationPanel batch):** 9 conversions — ReplayModal fully converted (StepCard enter/exit state via clsx, backdrop/panel); RankingsPanel rankColor/nameStyle → theme-class ternaries; ExplorationPanel border-l width split + rarity ternary (meta.* runtime values stay inline). HappinessGraph audited: 0 convertible. Gemini feedback (2 items: color: type hints on border-l-[var(...)]) applied, merged 2026-07-05.
   - **Phase 4Q (TestingPanel):** 7 conversions (progress percent/bar ternaries, conditional row margin, finished-test strikethrough/color, button colors, static indent). Gemini feedback (1 item: boolean coercion on TEST_DESCRIPTIONS lookup) applied, merged 2026-07-05.
-  - **Phase 4R (ResourcesPanel):** ~45 static conversions (big batch). Pending. **Lesson: use theme font-size classes (text-sm/base/md/lg/xl) instead of arbitrary text-[Npx] when the px value matches the custom scale; use color: type hints for side-specific border CSS vars.**
+  - **Phase 4R (ResourcesPanel):** ~45 conversions (stockpiles flex/colors, buildings tabs/cards/progress bars, expeditions cards/buttons/inputs, inventory grid/cards). All static and fixed-ternary styles converted; dynamic values (grid-template-columns, progress width, statusColor() lookup) correctly preserved inline. Pending Gemini review. **Lesson: use theme font-size classes (text-sm/base/md/lg/xl) instead of arbitrary text-[Npx] when the px value matches the custom scale; use color: type hints for side-specific border CSS vars.**
   - **Approach:** Python automation script with 95+ STYLE_MAPPINGS, batch conversion, direct ternaries/string concatenation for conditional styling.
 - **Component test coverage expansion** — 57+ component tests exist; gaps remain in some panels
 
