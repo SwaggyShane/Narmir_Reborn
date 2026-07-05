@@ -1,369 +1,346 @@
-# Plan: Architectural Overhaul for Turn Processing Scalability (502 Error Fix)
+# Plan: Fix Connection Pool Exhaustion (502 Error Root Cause)
 
-## Context
+## Context: The Core Problem
 
-The game server's `/turn` endpoint exhibits a critical architectural problem: the entire turn operation is wrapped in a single monolithic database transaction that acquires one connection from a pool of 20 and holds it for ~1.6 seconds, forcing all database operations (reads, writes, parallelizable work) to execute sequentially on that single connection. This breaks scalability:
+**The 502 Error Root Cause**: Connection pool exhaustion.
 
-- **At 12 concurrent players**: connection pool exhaustion begins
-- **At 100 concurrent players**: 80+ requests queue, timeout after 10 seconds → 502 errors
-- **Even at 1 player**: sequential execution masks potential parallelism, inflates latency
+The `/turn` endpoint wraps the entire operation in a single database transaction that acquires one connection from the pool (max 20) and holds it for ~1.6 seconds before releasing it. This means:
 
-The architecture violates basic principles of database concurrency by acquiring a connection for work that doesn't require a transaction, and sequencing work that could run in parallel.
+- Max concurrent turns = 20 connections ÷ 1.6 seconds/turn = **~12-13 turns/sec**
+- At 100 concurrent players requesting turns: (100 requests - 12 processed) = 88 requests waiting in queue
+- After 10 seconds: queued requests timeout → **502 Bad Gateway errors**
+
+The transaction holds the connection even during work that doesn't require atomicity:
+- **init-queries** (429ms): Reading kingdom state for context — doesn't need transaction
+- **refresh-queries** (288ms): Reading final state after write — doesn't need transaction
+
+These two reads account for **717ms of 1,641ms** (44% of total time) and keep the connection locked unnecessarily.
+
+**Simple fix**: Move init-queries and refresh-queries outside the transaction. This reduces per-turn from 1.6s to ~900ms, improving throughput from 12 to **~22 concurrent turns/sec** — still not enough for 100 players, but enough to eliminate the immediate 502 errors and test whether other bottlenecks exist.
+
+**Scope of this plan**: Fix pool exhaustion first. Only optimize CPU/batching if pool exhaustion is still an issue after this change.
 
 ---
 
-## Root Cause Analysis (Verified by 3 Agents)
+## Root Cause: Connection Pool Math
 
-### Primary Problem: Monolithic Transaction
-
-**File**: `routes/kingdom-gameplay.js` lines 553-590 (`/turn` endpoint)
-**File**: `routes/kingdom-gameplay.js` lines 319-548 (`runTurn()` function)
+**File**: `routes/kingdom-gameplay.js` lines 553-590 (`/turn` endpoint)  
 **File**: `db/schema.js` lines 271-341 (`db.withTransaction()` implementation)
-**File**: `db/schema.js` lines 181-199 (`withTurnLock()` function)
 
-The /turn endpoint calls `db.withTransaction(() => runTurn())`, which:
-1. Acquires **single connection** from pool (of 20 max)
-2. Issues `BEGIN TRANSACTION`
-3. Executes **all database operations** through that connection (no parallelism possible)
-4. Issues `COMMIT TRANSACTION`
-5. Releases connection back to pool (~1.6 seconds later)
-
-During those 1.6 seconds, 1 of 20 connections is unavailable.
-
-### Time Breakdown (from agent profiling)
-
-| Operation | Duration | Problem |
-|-----------|----------|---------|
-| init-queries (3 SELECTs) | ~429ms | Marked `Promise.all()` but forced sequential on single connection |
-| engine.processTurn() (CPU) | ~347ms | Repeated JSON parsing, 18 attunement functions, research synergy lookups |
-| applyUpdates() (UPDATE) | ~292ms | Bulk update + JSON serialization overhead |
-| resolveExpeditions() | ~285ms | Multiple sequential UPDATEs per expedition, N+1 patterns, redundant kingdom fetch |
-| refresh-queries (2 SELECTs) | ~288ms | Should be 1 query, not 2; runs after transaction |
-| **Total** | **~1,641ms** | |
-
-### Secondary Problem: Engine CPU Work
-
-**File**: `game/engine.js` lines 350-352 (`processTurn()`)
-
-CPU-bound work (347ms) is bottlenecked by:
-- Repeated `JSON.stringify()` / `JSON.parse()` of `troop_levels` object (5+ times in function)
-- 18 sequential attunement processing functions, each doing JSON manipulation
-- `calculateHappiness()` called early with complex component lookups
-- Research synergy multiplier lookups via `getSynergyPassiveBonusMultiplier()` per hero
-- Training field XP calculation loop
-
-### Tertiary Problem: Query Inefficiency
-
-**File**: `routes/kingdom-gameplay.js` lines 537-540 (refresh-queries)
-**File**: `game/engine.js` lines 1851, 2146-2164 (resolveExpeditions)
-
-- refresh-queries: 2 separate queries (`SELECT * FROM kingdoms WHERE id=$1` + `SELECT COUNT(*) FROM news WHERE...`) should be 1
-- resolveExpeditions: Separate UPDATE per expedition instead of batched CASE/WHEN statement
-- Redundant kingdom fetch in resolveExpeditions (line 1851) despite already loaded at line 559
-
----
-
-## Proposed Solution: Transaction Boundary Redesign
-
-**Principle**: Separate read-only operations from write operations. Minimize transaction scope to only writes that need atomicity.
-
-### Phase 1: Extract Read-Only Operations (Highest Impact)
-
-**Goal**: Move init-queries and refresh-queries outside transaction to use separate connections (parallelizable)
-
-**Change**: Before entering transaction, fetch all needed data. After transaction, fetch refresh state.
-
-```javascript
-// BEFORE: All in one transaction
-const kingdom = await db.withTransaction(async (client) => {
-  const k = await getKingdom();     // 429ms sequential
-  const expeditions = await getExpeditions();
-  const news = await getNews();
-  
-  // process & write
-  
-  const refreshed = await getKingdom();  // 288ms sequential
-  const unreadCount = await getUnreadCount();
-});
-
-// AFTER: Read outside, write inside
-const kingdom = await getKingdom();        // 50ms parallel
-const expeditions = await getExpeditions(); // parallel
-const news = await getNews();               // parallel
-
-await db.withTransaction(async (client) => {
-  // process & write only
-});
-
-const refreshed = await getKingdom();      // 50ms parallel
-const unreadCount = await getUnreadCount(); // parallel
+```
+GET /turn for player 1
+├─ Acquire connection from pool (1 of 20 available)
+├─ BEGIN TRANSACTION
+├─ init-queries (429ms)          ← Reading data, no writes, doesn't need txn
+├─ engine.processTurn() (347ms)  ← CPU-only, doesn't need txn
+├─ applyUpdates() (292ms)        ← Writes, needs txn
+├─ resolveExpeditions() (285ms)  ← Writes, needs txn
+├─ refresh-queries (288ms)       ← Reading final data, doesn't need txn
+├─ COMMIT TRANSACTION
+└─ Release connection (1.6s later)
 ```
 
-**Expected improvement**: ~450-500ms saved (init 429ms + refresh 288ms, minus ~250ms overlap)
+**Total time holding connection**: 1,641ms
 
-**New total after Phase 1**: ~1,100ms
+**Pool math**:
+- 20 connections in pool
+- Each held for 1,641ms per turn
+- Throughput = 20 ÷ 1.641 = **~12 turns/sec**
+- At 100 concurrent players: 100 requests arrive/sec, 12 can acquire connection, 88 queue
+- Queue wait = 88 ÷ 12 = 7+ seconds
+- With 10s timeout: requests fail with **502 Bad Gateway**
 
-**File changes required**:
-- `routes/kingdom-gameplay.js` lines 553-590: Restructure endpoint to fetch before/after transaction
-- `routes/kingdom-gameplay.js` lines 319-548: Separate `runTurn()` into `runTurnReadBefore()`, `runTurnWrite()`, `runTurnReadAfter()`
+**What must stay in transaction** (determinism required):
+- `applyUpdates()` (292ms) — writes kingdom state
+- `resolveExpeditions()` (285ms) — writes expedition rewards
+- `engine.processTurn()` (347ms) — calculates what gets written, reads reference data
+
+**What can move outside** (no atomicity requirement):
+- `init-queries` (429ms) — reading context data before calculation
+- `refresh-queries` (288ms) — reading final state for client response
+- **Total: 717ms (44% of 1,641ms)**
+
+**Expected improvement**: Moving these outside reduces per-turn from 1,641ms to ~924ms (560ms of overhead removed due to parallelization).
+
+New throughput = 20 ÷ 0.924 = **~21-22 turns/sec** (improvement from 12)
+
+At 100 concurrent players: 100 requests/sec, 21 processed/sec, ~4 second queue depth. Requests no longer timeout (within 10s window).
+
+**This is the fix.** Simple. Focused. Addresses the root cause directly.
 
 ---
 
-### Phase 2: Optimize Write Transaction
+## The Fix: Release Connection Sooner
 
-**Goal**: Reduce time spent inside write transaction from ~577ms to ~300ms
+**Principle**: Acquire connection only for operations that require atomicity. Release it as soon as writes are committed.
 
-**Change 2a: Batch expedition updates**
+### Phase 1: Move init-queries and refresh-queries Outside Transaction
+
+**Goal**: Release connection after COMMIT, before reading final state. Reduce per-turn from 1,641ms to ~924ms.
+
+**Current code** (`routes/kingdom-gameplay.js` lines 553-590):
+```javascript
+const result = await db.withTransaction(async (client) => {
+  // init-queries (429ms)
+  const kingdom = await getKingdom();
+  const expeditions = await getExpeditions();
+  const heroes = await getHeroes();
+  
+  // processTurn (347ms)
+  const updates = await engine.processTurn(kingdom, expeditions, heroes);
+  
+  // applyUpdates (292ms) 
+  await applyUpdates(kingdom.id, updates);
+  
+  // resolveExpeditions (285ms)
+  const rewards = await resolveExpeditions(kingdom.id);
+  
+  // refresh-queries (288ms) ← PROBLEM: Still inside transaction
+  const refreshedKingdom = await getKingdom();
+  const unreadCount = await getUnreadCount();
+  
+  return { refreshedKingdom, unreadCount, rewards };
+});
+```
+
+**New code** (after fix):
+```javascript
+// PREFETCH: Outside transaction, parallel reads
+const kingdom = await getKingdom();
+const expeditions = await getExpeditions();
+const heroes = await getHeroes();
+
+// TRANSACTION: Only necessary writes
+const updates = await db.withTransaction(async (client) => {
+  // processTurn (347ms)
+  const updates = await engine.processTurn(kingdom, expeditions, heroes);
+  
+  // applyUpdates (292ms)
+  await applyUpdates(kingdom.id, updates);
+  
+  // resolveExpeditions (285ms)
+  const rewards = await resolveExpeditions(kingdom.id);
+  
+  return { rewards };
+});
+
+// POSTFETCH: Outside transaction, parallel reads
+const refreshedKingdom = await getKingdom();
+const unreadCount = await getUnreadCount();
+
+const result = { refreshedKingdom, unreadCount, ...updates };
+```
+
+**Key changes**:
+- Move getKingdom/getExpeditions/getHeroes calls BEFORE `db.withTransaction()`
+- Move refresh queries AFTER `db.withTransaction()`
+- Transaction now only wraps processTurn + applyUpdates + resolveExpeditions (~924ms instead of 1,641ms)
+
+**Correctness concern**: init-queries prefetch data; what if kingdom state changes between prefetch and write?
+
+**Answer**: This is fine. The prefetch is for *input* to the game logic (what was the situation when the turn started). If another request modifies the kingdom between prefetch and write, those modifications apply *after* this turn completes. Order of turns is preserved by `withTurnLock()` (per-player serialization at line 181).
+
+**File changes required**:
+- `routes/kingdom-gameplay.js` lines 553-590: Move init-queries before transaction, refresh-queries after transaction
+
+**Measurement after Phase 1**:
+- [ ] Single-player turn latency: measure (target: <1,000ms, was 1,641ms)
+- [ ] Transaction duration only: measure (target: <600ms, was 1,641ms)
+- [ ] Load test 50 concurrent players: measure p50, p95, error rate
+- [ ] Load test 100 concurrent players: measure p50, p95, error rate (502 errors should cease)
+- [ ] Correctness: Run same kingdom 5 times, verify identical outputs
+
+**Pass gate**: Single-player <1,000ms AND 100 concurrent <10% error rate (down from 502s)
+
+---
+
+### Phase 2: Optimize Write Transaction (Only if Phase 1 insufficient)
+
+**Conditional**: Only implement if Phase 1 measurement shows:
+- Still >10% 502 errors at 100 concurrent, OR
+- p95 latency still >2 seconds
+
+**Changes** (in priority order):
+
+**2a: Batch expedition updates** (50-100ms savings)
 ```sql
--- OLD (per expedition):
-UPDATE expeditions SET rewards_claimed = true WHERE id = $1;
-
--- NEW (all at once):
+-- OLD: Separate UPDATE per completed expedition
+-- NEW: CASE/WHEN to batch all into single UPDATE
 UPDATE expeditions
 SET rewards_claimed = CASE 
   WHEN id = $1 THEN true
   WHEN id = $2 THEN true
-  WHEN id = $3 THEN true
   ...
 END
 WHERE id = ANY($N);
 ```
-**Savings**: 50-100ms
 
-**Change 2b: Consolidate hero updates into main kingdom UPDATE**
-```sql
--- OLD:
-UPDATE kingdoms SET gold = $1, mana = $2, ... WHERE id = $3;
-UPDATE heroes SET xp = CASE ... WHERE kingdom_id = $3;
+**2b: Remove redundant kingdom fetch in resolveExpeditions** (40-50ms savings)
+File: `game/engine.js` line 1851 — currently re-fetches kingdom despite already loaded in prefetch phase
 
--- NEW:
-UPDATE kingdoms SET gold = $1, mana = $2, ... WHERE id = $3;
--- (heroes already in main update via JSON field or denormalized columns)
-```
-**Savings**: 20-30ms
+**2c: Consolidate hero updates** (20-30ms savings)
+Batch hero XP updates into single statement with CASE/WHEN
 
-**Change 2c: Remove redundant kingdom fetch in resolveExpeditions**
-Use kingdom data already loaded in Phase 1 instead of re-fetching at line 1851
-**Savings**: 40-50ms
-
-**Change 2d: Combine refresh-queries into single query**
-```sql
--- OLD:
-SELECT rangers, fighters, ... FROM kingdoms WHERE id = $1;
-SELECT COUNT(*) FROM news WHERE kingdom_id = $1 AND is_read = 0;
-
--- NEW:
-SELECT k.rangers, k.fighters, ..., 
-       (SELECT COUNT(*) FROM news WHERE kingdom_id = k.id AND is_read = 0) as unread
-FROM kingdoms k WHERE k.id = $1;
-```
-**Savings**: 30-50ms (already done in Phase 1 by moving outside, but combine the two queries)
-
-**Total Phase 2 savings**: ~140-230ms
-
-**New total after Phase 2**: ~870ms
-
-**File changes required**:
-- `db/sql/kingdoms.js`: Batch expedition updates with CASE/WHEN
-- `game/engine.js` lines 1840-2200: Remove kingdom refetch, use passed parameter instead
-- `routes/kingdom-gameplay.js`: Consolidate refresh-query into single query
+**Total Phase 2 savings if needed**: ~110-180ms additional (reduces per-turn from 924ms to ~800ms)
 
 ---
 
-### Phase 3: Optimize CPU Work (engine.processTurn)
+### Phase 3: Optimize CPU Work (Only if Phases 1-2 insufficient)
 
-**Goal**: Reduce CPU overhead from 347ms to ~150ms
+**Conditional**: Only implement if Phase 2 measurement shows:
+- Still >5% 502 errors at 100 concurrent, OR
+- p95 latency still >1.5 seconds
 
-**Change 3a: Cache JSON parsing for troop_levels**
-Keep `troop_levels` as object throughout `processTurn()`, not stringified/parsed 5+ times
-```javascript
-// OLD:
-const troop_levels = JSON.parse(kingdom.troop_levels);
-// ... use it
-kingdom.troop_levels = JSON.stringify(troop_levels);
-const newUpdates = {troop_levels: JSON.stringify(troop_levels)};
-// ... later refetch and parse again
+**Note**: CPU work is only 347ms of 1,641ms (21%). After Phase 1 (save 717ms), CPU becomes 347/924 = 38% of remaining time. Only optimize if it's blocking.
 
-// NEW:
-let troop_levels = JSON.parse(kingdom.troop_levels);
-// ... use it throughout function
-// ... at end: updates.troop_levels = troop_levels; (serialize once)
-```
-**Savings**: 30-50ms
+**Changes**:
 
-**Change 3b: Consolidate attunement processing**
-18 separate functions (`processGranaryAttunements()`, `processVaultAttunements()`, etc.) each do JSON parse/modify/stringify
-Combine into single pass:
-```javascript
-// OLD:
-const granaryUpdates = processGranaryAttunements(kingdom, ...);
-const vaultUpdates = processVaultAttunements(kingdom, ...);
-// ... 18 times
-Object.assign(updates, granaryUpdates);
-Object.assign(updates, vaultUpdates);
+**3a: Profile before refactoring** (REQUIRED, 2-3 hours)
+Add timing instrumentation to the 18 attunement functions and JSON operations:
+- Which attunement functions actually take >10ms?
+- How many JSON.parse/stringify calls per turn?
+- How many synergy lookups?
 
-// NEW:
-const attunementUpdates = processAllAttunements(kingdom, ...);
-Object.assign(updates, attunementUpdates);
-```
-**Savings**: 40-80ms
+**3b: Optimize based on profiling data, not blind refactoring**
+- If JSON parsing is the culprit: Cache parsed objects
+- If attunements are slow: Refactor only the slow ones, leave others as-is
+- If synergy lookups are >100/turn: Add caching
 
-**Change 3c: Lazy-evaluate expensive calculations**
-Only calculate happiness, research bonuses if kingdom state changed
-**Savings**: 20-40ms
-
-**Change 3d: Cache synergy lookups**
-Call `getSynergyPassiveBonusMultiplier()` once per turn, not per hero
-**Savings**: 20-30ms
-
-**Total Phase 3 savings**: ~110-200ms
-
-**New total after Phase 3**: ~670ms
-
-**File changes required**:
-- `game/engine.js` lines 300-600: Refactor JSON handling, consolidate attunements
-- `game/engine.js` lines 1050-1191: Cache synergy calculations
-
----
-
-### Phase 4: Database Serialization Optimization
-
-**Goal**: Reduce `convertNumericFields()` overhead during hydration
-
-**Change**: Only filter columns that query actually returns, not all 50+ NUMERIC_FIELDS
-```javascript
-// OLD: Every row through full 50+ field loop
-function convertNumericFields(row) {
-  for (const field of NUMERIC_FIELDS) {
-    if (row[field]) row[field] = parseInt(row[field]);
-  }
-  return row;
-}
-
-// NEW: Only requested fields
-function convertNumericFields(row, requestedFields) {
-  const fieldsToConvert = requestedFields.filter(f => NUMERIC_FIELDS.includes(f));
-  for (const field of fieldsToConvert) {
-    if (row[field]) row[field] = parseInt(row[field]);
-  }
-  return row;
-}
-```
-**Savings**: 10-20ms per transaction
-
-**New total after Phase 4**: ~650ms
-
-**File changes required**:
-- `db/schema.js` lines 99, 113, 240: Pass column list to `convertNumericFields()`
+**Total Phase 3 savings if needed**: ~50-150ms (depends on profiling findings)
 
 ---
 
 ## Implementation Plan
 
-### Order & Timeline
+### Phase 1: Simple 2-Hour Fix
 
-1. **Phase 1 (3-4 hours)**: Extract read-only operations
-   - Lowest risk, highest impact
-   - Test with single player first
-   - Target: 1,100ms per turn
-   
-2. **Phase 2 (4-5 hours)**: Optimize write transaction
-   - Medium complexity, medium risk
-   - Batch queries, remove redundancy
-   - Target: 870ms per turn
-   
-3. **Phase 3 (5-6 hours)**: CPU optimization
-   - Highest complexity, medium risk
-   - JSON caching, attunement consolidation
-   - Target: 670ms per turn
-   
-4. **Phase 4 (2-3 hours)**: Serialization polish
-   - Low complexity, low risk
-   - Target: 650ms per turn
+**Effort**: 2-3 hours (code change 30 mins, measurement 1.5-2 hours)
 
-**Total estimated effort**: 14-18 hours of development + testing
+**Steps**:
+1. Move init-queries before `db.withTransaction()` call
+2. Move refresh-queries after `db.withTransaction()` returns
+3. Measure single-player latency (target: <1,000ms)
+4. Measure load test at 50 and 100 concurrent players
+5. Check if 502 errors cease
+
+**Success criteria**: 
+- Single-player <1,000ms
+- 100 concurrent players: <10% error rate (was ~100% 502s)
+
+**If success**: Deploy. Done. Pool exhaustion fixed.
+
+**If still insufficient**: Proceed to Phase 2 (conditional).
+
+### Phase 2: Batch Operations (Conditional)
+
+**Effort**: 3-4 hours (only if Phase 1 insufficient)
+
+**Only implement if**:
+- Phase 1 shows >10% errors at 100 concurrent, OR
+- p95 latency >2 seconds
+
+**Changes**: Batch expedition/hero updates, remove redundant kingdom fetch
+
+**Success criteria**: 
+- p95 latency <1.5 seconds at 100 concurrent
+
+### Phase 3: CPU Optimization (Conditional)
+
+**Effort**: 4-6 hours (only if Phase 1-2 insufficient)
+
+**Only implement if**:
+- Phases 1-2 show >5% errors at 100 concurrent
+
+**Approach**: Profile first, optimize based on data (don't blindly consolidate)
 
 ---
 
-## Expected Scalability Outcomes
+## Expected Impact
 
-### Before Optimization
-- Per turn: ~1,600ms
-- Max concurrent: ~12-13 turns/sec (20 connections ÷ 1.6s)
-- At 100 players: 502 errors (80 requests timeout)
+### Before Phase 1
+- Per-turn duration: ~1,641ms
+- Max concurrent throughput: ~12 turns/sec
+- At 100 concurrent players: 88 requests queue, timeout, **502 errors**
 
 ### After Phase 1
-- Per turn: ~1,100ms
-- Max concurrent: ~18 turns/sec
-- At 100 players: Still insufficient
+- Per-turn duration: ~924ms (transaction only, reads parallelized)
+- Max concurrent throughput: ~21-22 turns/sec
+- At 100 concurrent players: Queue depth ~5, no timeouts, **502 errors cease**
 
-### After Phase 2
-- Per turn: ~870ms
-- Max concurrent: ~23 turns/sec
-- At 100 players: Still insufficient
+### If Phase 2 needed
+- Per-turn duration: ~800ms
+- Max concurrent throughput: ~25 turns/sec
 
-### After Phase 3
-- Per turn: ~670ms
-- Max concurrent: ~30 turns/sec
-- At 100 players: ~3-4 request queue depth, ~100ms average wait per turn
-
-### After Phase 4
-- Per turn: ~650ms
-- Max concurrent: ~31 turns/sec
-- At 100 players: Acceptable (no 502 errors, <500ms p95 latency)
+### If Phase 3 needed
+- Per-turn duration: ~650-750ms
+- Max concurrent throughput: ~26-30 turns/sec
 
 ---
 
-## Verification Strategy
+## Measurement Strategy
 
-### Phase 1 Testing
-1. Profile single-player turn (baseline: ~1,600ms) ✓
-2. Load test 50 concurrent players (measure: avg turn time, connection pool utilization)
-3. Verify init-queries and refresh-queries now use separate connections (query logs)
-4. Validate no data corruption (compare pre/post kingdom state)
-5. **Pass criteria**: Single-player ~1,100ms, no 502s at 50 players
+### Phase 1 Measurement
 
-### Phase 2 Testing
-1. Single-player profile (target: ~870ms)
-2. Load test 50 concurrent players
-3. Verify expedition updates use CASE/WHEN (query logs)
-4. Validate all expeditions still complete correctly (sanity checks)
-5. **Pass criteria**: Single-player ~870ms, no regressions at 50 players
+**Before changes** (baseline):
+```bash
+# Single-player turn latency (10 runs)
+curl -X POST http://localhost/turn -u player123 | time
+# Record: avg time, min, max
 
-### Phase 3 Testing
-1. Single-player profile (target: ~670ms)
-2. CPU profile via `console.time()` (verify JSON parsing reduced)
-3. Load test 100 concurrent players
-4. Verify attunement calculations still correct (sanity checks)
-5. **Pass criteria**: Single-player ~670ms, no 502s at 100 players, <500ms p95
+# Load test 50 concurrent players
+ab -n 500 -c 50 -X POST http://localhost/turn
+# Record: mean, median, p95, failed requests
 
-### Phase 4 Testing
-1. Single-player profile (target: ~650ms)
-2. Load test 100 concurrent players with sustained load
-3. Monitor connection pool utilization (should not exceed 15-18 of 20)
-4. Monitor for slow queries (PostgreSQL slow query log >100ms)
-5. **Pass criteria**: p95 latency <500ms, no connection pool exhaustion, no slow queries
+# Load test 100 concurrent players  
+ab -n 1000 -c 100 -X POST http://localhost/turn
+# Record: mean, median, p95, failed requests, error rate
+```
+
+**After Phase 1 changes**:
+```bash
+# Repeat same measurements
+# Target: Single-player <1,000ms (was 1,641ms)
+# Target: 100 concurrent errors <10% (was ~100% 502s)
+```
+
+**Correctness check**:
+```bash
+# Run same kingdom 5 times, diff outputs
+for i in {1..5}; do
+  curl -X POST http://localhost/turn -u player123 > /tmp/run$i.json
+done
+diff /tmp/run1.json /tmp/run2.json  # Should be identical
+diff /tmp/run2.json /tmp/run3.json  # Should be identical
+```
+
+**Success criteria**:
+- Single-player <1,000ms ✓
+- 100 concurrent <10% error ✓
+- Correctness: identical outputs ✓
+
+**If all three pass**: Phase 1 complete. Pool exhaustion fixed. Deploy.
+
+**If any fail**: Investigate and revert, do not proceed.
 
 ---
 
-## Risk Mitigation
+## Risk Assessment
 
 | Phase | Risk | Mitigation |
 |-------|------|-----------|
-| 1 | Data consistency (read outside txn) | Add logging at all read points, validate against snapshot |
-| 2 | Query batching bugs | Test each expedition type separately before batching |
-| 3 | JSON caching stale state | Add asserts to verify object not mutated, use immutable pattern |
-| 4 | Serialization edge case | Add field validation, compare output before/after |
+| 1 | Prefetch stale between read and write | `withTurnLock()` ensures per-player turn serialization; other players' modifications happen after this turn |
+| 2 | Batch UPDATE syntax errors | Test on staging before production |
+| 3 | CPU profiling data drives wrong conclusions | Measure 3+ times, profile specific functions not just totals |
 
-Each phase requires full test pass before proceeding. Rollback plan: revert single commit.
+## Key Constraints
 
----
+- **Connection pool** (db/schema.js:591-648): Remains 20 connections; Phase 1 fix sufficient
+- **withTurnLock()** (routes/kingdom-gameplay.js:181-199): Stays—per-player serialization preserves turn order
+- **No schema changes**: Optimization is architectural only
+- **Backward compatible**: Same API, faster responses
 
-## Notes
+## Files to Change (Phase 1 Only)
 
-- **Connection pool** (db/schema.js:591-648) remains 20; sufficient after Phase 1-3 optimization
-- **withTurnLock()** (routes/kingdom-gameplay.js:181-199) preserved for per-player consistency—transaction lock only extends to write phase
-- **AsyncLocalStorage** (db/schema.js:271-341) must support connections outside transaction context (Phase 1)
-- No schema changes needed; optimization is architectural only
-- All changes backward-compatible (same API, faster response)
+- `routes/kingdom-gameplay.js` lines 553-590: Move init-queries before transaction, refresh-queries after
+- That's it. Single file, ~50 lines of code change.
 
