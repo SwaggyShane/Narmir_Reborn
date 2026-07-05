@@ -12,29 +12,11 @@ import EmptyState from './EmptyState.jsx';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 const EXPEDITION_TURNS = {
-  scout: 10,
-  deep: 25,
   dungeon: 50,
   mountain: 100,
 };
 
 const TYPE_META = {
-  scout: {
-    icon: '🔭',
-    label: 'Scout expedition',
-    badge: '10 turns',
-    button: 'Launch expedition',
-    color: 'var(--green)',
-    border: 'var(--green)',
-  },
-  deep: {
-    icon: '🌲',
-    label: 'Deep expedition',
-    badge: '25 turns',
-    button: 'Launch expedition',
-    color: 'var(--accent1)',
-    border: 'var(--accent1)',
-  },
   dungeon: {
     icon: '⚔️',
     label: 'Dungeon raid',
@@ -88,15 +70,10 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const [inventory, setInventory] = useState({});
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [searchRangers, setSearchRangers] = useState(0);
-  const [scoutRangers, setScoutRangers] = useState(0);
-  const [deepRangers, setDeepRangers] = useState(0);
   const [dungeonRangers, setDungeonRangers] = useState(0);
   const [dungeonFighters, setDungeonFighters] = useState(0);
   const [mountainRangers, setMountainRangers] = useState(0);
   // Fog of War Phase 3: area hex scout (separate from old expedition scout types)
-  const [areaCol, setAreaCol] = useState('');
-  const [areaRow, setAreaRow] = useState('');
-  const [areaRangers, setAreaRangers] = useState(0);
   const [activeExpeditions, setActiveExpeditions] = useState([]);
   const [completedExpeditions, setCompletedExpeditions] = useState([]);
   const [instantEntries, setInstantEntries] = useState([]);
@@ -247,13 +224,9 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
 
   const handleLaunchExpedition = useCallback(async (type) => {
     const rangers = Number(
-      type === 'scout'
-        ? scoutRangers
-        : type === 'deep'
-          ? deepRangers
-          : type === 'dungeon'
-            ? dungeonRangers
-            : mountainRangers,
+      type === 'dungeon'
+        ? dungeonRangers
+        : mountainRangers,
     ) || 0;
     const fighters = type === 'dungeon' ? Number(dungeonFighters || 0) : 0;
 
@@ -304,45 +277,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       console.error('[expedition/start] failed:', err);
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Expedition failed — please try again', 'error');
     }
-  }, [applyResult, availableFighters, availableFood, availableRangers, deepRangers, dungeonFighters, dungeonRangers, expeditionTurns, logInstantEntry, mountainRangers, refreshAll, scoutRangers]);
-
-  // Fog of War Phase 3 client support: call /scout-area for hex reveal (frontier only, costs rangers/food)
-  const handleScoutArea = useCallback(async () => {
-    const col = parseInt(areaCol, 10);
-    const row = parseInt(areaRow, 10);
-    let rangersSent = Number(areaRangers) || 0;
-    if (!Number.isFinite(col) || !Number.isFinite(row) || col < 0 || row < 0) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter valid non-negative col and row for the target hex', 'error');
-      return;
-    }
-    if (rangersSent < 1) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Send at least 1 ranger for area scout', 'error');
-      return;
-    }
-    if (rangersSent > 1000) rangersSent = 1000;
-    if (rangersSent > availableRangers) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Not enough rangers', 'error');
-      return;
-    }
-
-    try {
-      const result = await apiCall('/api/kingdom/scout-area', {
-        method: 'POST',
-        body: { col, row, rangers: rangersSent },
-      });
-      if (result?.error) {
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
-        return;
-      }
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Hex area scouted — fog lifted!', 'success');
-      applyResult(result, 'scout-area');
-      // Refresh map data if the caller provided a way (parent usually reloads on turn/mutation events)
-      await refreshAll();
-    } catch (err) {
-      console.error('[scout-area] client failed:', err);
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Area scout failed — please try again', 'error');
-    }
-  }, [areaCol, areaRow, areaRangers, availableRangers, applyResult, refreshAll]);
+  }, [applyResult, availableFighters, availableFood, availableRangers, dungeonFighters, dungeonRangers, expeditionTurns, logInstantEntry, mountainRangers, refreshAll]);
 
   const clearExpeditionLog = useCallback(async () => {
     try {
@@ -876,7 +811,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
 
             <div className="card border-l-[3px] border-l-[var(--accent2)]">
               <div className="mb-2 flex items-center justify-between gap-3">
-                <div className="card-title !mb-0">🔍 Scout Allocation</div>
+                <div className="card-title !mb-0">🔍 Scouting</div>
                 <span className="rounded-full bg-[rgba(120,120,200,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--accent2)]">
                   Passive Rings
                 </span>
@@ -920,7 +855,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                   onClick={handleScoutAllocate}
                   disabled={scoutAllocationInput === 0}
                 >
-                  {scout_allocation === 0 ? 'Start Allocation' : 'Add to Allocation'}
+                  Allocate
                 </button>
                 {scout_allocation > 0 && (
                   <button
@@ -928,83 +863,13 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                     onClick={handleScoutReleaseAll}
                     title="Release all scouts and stop ring progression"
                   >
-                    Release All
+                    Release
                   </button>
                 )}
               </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
-              <div className="card border-l-[3px] border-l-[var(--green)]">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <div className="card-title !mb-0">🔭 Scout Expedition</div>
-                  <span className="rounded-full bg-[rgba(76,175,130,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--green)]">
-                    10 turns
-                  </span>
-                </div>
-                <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
-                  Rangers explore nearby territory. Rewards range from common to rare - gold, land, mana,
-                  wandering troops, and occasionally an ancient map.
-                </div>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <span className="name text-[12px]">Rangers</span>
-                  <span className="text-[11px] text-[var(--text3)]">
-                    avail: <span>{availableRangers}</span>
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      className="input w-[80px] text-right"
-                      value={scoutRangers}
-                      onChange={(e) => setScoutRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                      min="1"
-                      placeholder="Qty"
-                    />
-                    <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setScoutRangers(availableRangers)}>
-                      Max
-                    </button>
-                  </div>
-                </div>
-                <button className="base-btn variant-green w-full bg-[var(--green)] text-black" id="btn-exp-scout" onClick={() => handleLaunchExpedition('scout')}>
-                  {TYPE_META.scout.button}
-                </button>
-              </div>
-
-              <div className="card border-l-[3px] border-l-[var(--accent1)]">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <div className="card-title !mb-0">🌲 Deep Expedition</div>
-                  <span className="rounded-full bg-[rgba(180,60,0,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--accent1)]">
-                    25 turns
-                  </span>
-                </div>
-                <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
-                  Rangers venture deep into uncharted wilderness. Substantially better rewards including
-                  research scrolls, mercenary companies, ruins, and rare legendary artifacts.
-                </div>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <span className="name text-[12px]">Rangers</span>
-                  <span className="text-[11px] text-[var(--text3)]">
-                    avail: <span>{availableRangers}</span>
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      className="input w-[80px] text-right"
-                      value={deepRangers}
-                      onChange={(e) => setDeepRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                      min="1"
-                      placeholder="Qty"
-                    />
-                    <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setDeepRangers(availableRangers)}>
-                      Max
-                    </button>
-                  </div>
-                </div>
-                <button className="base-btn variant-accent w-full bg-[var(--accent1)]" id="btn-exp-deep" onClick={() => handleLaunchExpedition('deep')}>
-                  {TYPE_META.deep.button}
-                </button>
-              </div>
-
               <div className="card border-l-[3px] border-l-[var(--red)]">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div className="card-title !mb-0">⚔️ Dungeon Raid</div>
@@ -1102,51 +967,11 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                   {TYPE_META.mountain.button}
                 </button>
               </div>
-
-              {/* Fog of War Phase 3: Hex area scout UI (separate from expedition types; reveals frontier hexes) */}
-              <div className="card border-l-[3px] border-l-[var(--accent2)]">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <div className="card-title !mb-0">🗺️ Area Hex Scout</div>
-                  <span className="rounded-full bg-[rgba(120,120,200,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--accent2)]">
-                    Fog of War
-                  </span>
-                </div>
-                <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
-                  Send rangers to reveal a frontier hex area (and any kingdoms/nodes inside). Must be adjacent to seen cells. Costs rangers + food.
-                </div>
-                <div className="mb-2 grid grid-cols-3 gap-2 text-[12px]">
-                  <div>
-                    <div className="name mb-0.5">Col</div>
-                    <input type="number" className="input w-full" value={areaCol} onChange={(e) => setAreaCol(Math.max(0, parseInt(e.target.value, 10) || 0))} placeholder="e.g. 12" min="0" />
-                  </div>
-                  <div>
-                    <div className="name mb-0.5">Row</div>
-                    <input type="number" className="input w-full" value={areaRow} onChange={(e) => setAreaRow(Math.max(0, parseInt(e.target.value, 10) || 0))} placeholder="e.g. 7" min="0" />
-                  </div>
-                  <div>
-                    <div className="name mb-0.5">Rangers</div>
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        className="input w-full text-right"
-                        value={areaRangers}
-                        onChange={(e) => setAreaRangers(Math.max(0, Math.min(1000, parseInt(e.target.value, 10) || 0)))}
-                        min="0"
-                        max="1000"
-                        placeholder="Qty"
-                      />
-                      <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setAreaRangers(Math.min(1000, availableRangers))}>Max</button>
-                    </div>
-                  </div>
-                </div>
-                <button className="base-btn variant-accent w-full" onClick={handleScoutArea}>
-                  Scout Area
-                </button>
-                <div className="mt-2 text-[10px] text-[var(--text3)]">Frontier only. Already-seen hexes are free (no cost) but do nothing.</div>
-              </div>
             </div>
 
-            <div className="card">
+            {/* Epic Trek visible when Ring 2 complete: Ring 1 (20 turns) + Ring 2 (25 turns) = 45 scout-turns */}
+            {scout_progress >= 45 && (
+              <div className="card">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <div className="card-title !mb-0">🛤️ Epic Trek</div>
                 <span className="rounded-full bg-[rgba(200,120,120,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--accent2)]">
@@ -1185,8 +1010,9 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               <button className="base-btn variant-accent w-full" onClick={handleEpicTrek}>
                 Launch Epic Trek
               </button>
-              <div className="mt-2 text-[10px] text-[var(--text3)]">Click the worldmap to auto-fill coordinates, or enter them manually. Requires Ring 2 Scout completion.</div>
+              <div className="mt-2 text-[10px] text-[var(--text3)]">Click the worldmap to auto-fill coordinates, or enter them manually.</div>
             </div>
+            )}
           </div>
 
           <div className="card flex min-h-[780px] flex-col">
