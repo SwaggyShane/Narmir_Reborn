@@ -2,13 +2,35 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Exploration System enhancements: Resource gathering visual hex map modal PR #818 remedial work + PR #817 baseline features and Gemini feedback fixes)
+**Last updated:** 2026-07-05 (Critical bug fix: Hunting/prospecting expeditions rewards now properly awarded; Exploration System enhancements PR #817-#818)
 
 ---
 
 ## Recent Chronology
 
 ### 2026-07-05
+
+- **Critical Bug Fix: Hunting/Prospecting Expeditions Reward Processing** (PR #825, merged 2026-07-05): Fixed critical bug where hunting and prospecting expeditions returned 0 rangers/engineers with no resource rewards. User reported "Returned | 0 rangers" with no food gained after hunting.
+  - **Root Cause:** `expeditionRewards()` function in `game/lib/gameplay.js` was missing case handling for hunting and prospecting types, causing it to return empty rewards arrays that overwrote the pre-calculated rewards stored at expedition creation time.
+  - **Impact:** All hunting and prospecting expeditions lost their resources (food/gold) when completing, troops returned but with no rewards.
+  - **Fix Applied:**
+    - Extended `expeditionRewards()` signature to accept `originalRewards` parameter containing the pre-calculated JSON reward data
+    - Added case handling for "hunting" and "prospecting" types that:
+      - Parses the stored JSON rewards (`{ food: X }` or `{ gold: Y }`)
+      - Adds the parsed amounts to `updates.food` or `updates.gold` for database persistence
+      - Returns formatted reward text for expedition log display
+    - For prospecting expeditions: Redirected returned troops from rangers to engineers (prospecting uses engineers, not rangers)
+    - Updated `resolveExpeditions()` caller to pass `exp.rewards` to the function
+  - **Gemini Review:** One round of code review feedback requesting resource persistence and engineer handling — all feedback addressed and committed
+  - **Testing:** 
+    - Lint ✅ (0 errors throughout)
+    - Smoke test ✅ (fresh PostgreSQL, all baseline checks pass)
+    - CI ✅ (all 3 checks passed: Lint/Test/Build, Validate Text Encoding, Validate Security Configuration)
+  - **Files Changed:** `game/lib/gameplay.js` (expeditionRewards function), `game/engine.js` (call site)
+  - **Commits:**
+    - `1ace0b8`: Initial fix with reward preservation logic
+    - `ef0e7c1`: Apply Gemini feedback — properly award resources and handle prospecting engineers
+    - `8ad2334`: Update TODO.md documentation
 
 - **Exploration System Enhancement: Clickable Hex Map Modal for Resource Gathering** (PR #818, merged 2026-07-05): Remedial work completing PR #817 — replaced text-based coordinate input with visual, interactive SVG hex grid for resource gathering operations. Players now click on a hex to select targets for Hunting, Prospecting, Land Expansion, and Epic Trek expeditions with auto-triggering on selection.
   - **HexSelectionModal Complete Rewrite:**
