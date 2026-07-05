@@ -22,6 +22,18 @@ import {
 } from '../../utils/worldMapGsap.js';
 import { useWorldMapViewport } from '../../hooks/useWorldMapViewport.js';
 
+const TERRAIN_LEGEND = [
+  { type: 'plains', name: 'Plains', symbol: '🌾' },
+  { type: 'forest', name: 'Forest', symbol: '🌲' },
+  { type: 'mountains', name: 'Mountains', symbol: '⛰️' },
+  { type: 'hills', name: 'Hills', symbol: '🏔️' },
+  { type: 'swamp', name: 'Swamp', symbol: '🌊' },
+  { type: 'desert', name: 'Desert', symbol: '🏜️' },
+  { type: 'coast', name: 'Coast', symbol: '🌊' },
+  { type: 'tundra', name: 'Tundra', symbol: '❄️' },
+  { type: 'volcanic', name: 'Volcanic', symbol: '🌋' },
+];
+
 const MAP_REGIONS = Object.keys(REGION_META);
 
 const DEFAULT_LAYERS = {
@@ -81,6 +93,24 @@ async function establishTradeRoute(targetId, onSuccess) {
     console.error('[worldmap] establish trade route failed:', err);
     toast('Failed to establish trade route', 'error');
   }
+}
+
+function TerrainLegend() {
+  return (
+    <div className="flex flex-col">
+      {TERRAIN_LEGEND.map((terrain) => (
+        <div
+          key={terrain.type}
+          className="flex w-full items-center gap-2 border-b border-[var(--border)] px-0 py-1.5 text-left"
+        >
+          <span className="text-sm">{terrain.symbol}</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-semibold text-[var(--text)]">{terrain.name}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function RegionLegend({ kingdoms, highlightedRace, onHighlight }) {
@@ -467,6 +497,11 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                 </div>
               </div>
             )}
+
+            <div className="card" id="terrain-legend">
+              <div className="card-title !mb-3">Terrain Types</div>
+              <TerrainLegend />
+            </div>
 
             <div className="card" id="region-legend">
               <div className="card-title !mb-3">Regions</div>
