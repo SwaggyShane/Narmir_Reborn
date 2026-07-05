@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-04 (CSS Consolidation Phase 4H-4K: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806, KingdomXpModal PR #807)
+**Last updated:** 2026-07-05 (CSS Consolidation Phase 4H-4L: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806, KingdomXpModal PR #807, WarfarePanel PR #808)
 
 ---
 
@@ -178,6 +178,16 @@
     - Progress bar fill: static gradient background extracted to `bg-gradient-to-r from-[var(--accent1)] to-[var(--gold)]`, dynamic width remains inline
   - **Gemini Review:** 2 feedback items — use Tailwind's built-in gradient utilities instead of an arbitrary `bg-[linear-gradient(...)]` value, and narrow `transition-all` to `transition-[width]` since only width animates on the element. Both addressed in follow-up commit.
   - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (no logic changes, gradient renders identically, `h-2.5` matches the original 10px exactly), CI ✅ (all 3 checks green after fix)
+  - **Code Quality:** All changes lint ✅. No functional regressions.
+
+- **Admin CSS Consolidation: Phase 4L (WarfarePanel)** (PR #808, merged 2026-07-05): Refactoring WarfarePanel component to convert its 2 remaining inline color styles to Tailwind CSS classes. Attack estimate panel and war reports list.
+  - **Conversion Results:** 2 conditional styles converted (100% success). WarfarePanel now has zero inline `style={{}}` occurrences.
+  - **Key Improvements:**
+    - Attack estimate win-chance color: `winColor` renamed to `winColorClass` in the `atkEstimate` memo — 3-tier ternary (`text-[var(--green)]` ≥60%, `text-[var(--amber)]` ≥40%, `text-[var(--red)]` below)
+    - War report outcome color: `outcomeColor` renamed to `outcomeColorClass` (`text-[var(--green)]` success, `text-[var(--amber)]` caught, `text-[var(--text3)]` repelled), applied via `clsx('font-bold', outcomeColorClass)`
+    - Removed dead `?? 'var(--text2)'` / `?? 'var(--text)'` fallbacks — the ternaries always produce a value, so those branches were unreachable
+  - **Gemini Review:** No feedback. Clean conversion, no issues identified.
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (grepped renamed symbols — zero stale references; same colors and thresholds), CI ✅ (all 3 checks green)
   - **Code Quality:** All changes lint ✅. No functional regressions.
 
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.
