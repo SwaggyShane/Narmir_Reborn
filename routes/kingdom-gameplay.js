@@ -323,16 +323,13 @@ module.exports = function (db) {
     let regionStatus, myAlliance, heroes;
 
     if (preloadedQueries) {
-      // Use preloaded queries (already fetched outside transaction)
+      // Use preloaded queries for read-only reference data (already fetched outside transaction)
       regionStatus = preloadedQueries.regionStatus;
       myAlliance = preloadedQueries.myAlliance;
-      heroes = preloadedQueries.heroes;
     } else {
-      // Fallback: fetch queries inside transaction (slower but maintains compatibility)
+      // Fallback: fetch region and alliance inside transaction (slower but maintains compatibility)
       console.time(`[turn-${k.id}] init-queries`);
-      // Inject region ownership status for bonuses
-      // All 3 queries are independent  run them in parallel
-      [regionStatus, myAlliance, heroes] = await Promise.all([
+      [regionStatus, myAlliance] = await Promise.all([
         db.get(
           "SELECT owner_alliance_id, bonus_type FROM regions WHERE name = $1",
           [k.region],
@@ -341,13 +338,15 @@ module.exports = function (db) {
           "SELECT alliance_id FROM alliance_members WHERE kingdom_id = $1",
           [k.id],
         ),
-        db.all(
-          "SELECT * FROM heroes WHERE kingdom_id = $1 AND status = 'idle'",
-          [k.id],
-        ),
       ]);
       console.timeEnd(`[turn-${k.id}] init-queries`);
     }
+
+    // Always fetch heroes inside transaction with row lock to prevent race conditions on mutations
+    heroes = await db.all(
+      "SELECT * FROM heroes WHERE kingdom_id = $1 AND status = 'idle' FOR UPDATE",
+      [k.id],
+    );
     console.time(`[turn-${k.id}] trade-routes`);
     k._region_owned_by_my_alliance =
       regionStatus &&
@@ -486,13 +485,13 @@ module.exports = function (db) {
               [
                 k.id,
                 "system",
-                repairMojibake(` Your Surveyors discovered the kingdom of ${other.name}!`),
+                `🔭 Your Surveyors discovered the kingdom of ${other.name}!`,
                 turnNum,
               ],
             );
             events.push({
               type: "system",
-              message: repairMojibake(` Your Surveyors discovered the kingdom of ${other.name}!`),
+              message: `🔭 Your Surveyors discovered the kingdom of ${other.name}!`,
             });
           }
         }
@@ -575,9 +574,10 @@ module.exports = function (db) {
           throw new Error("No turns available  next +7 turns in 25 minutes");
         }
 
-        // SECOND: Fetch init-queries in parallel OUTSIDE transaction
+        // SECOND: Fetch read-only reference data in parallel OUTSIDE transaction
+        // (Heroes must be fetched inside transaction with row lock to prevent race conditions on mutations)
         console.time('[turn] init-queries-parallel');
-        const [regionStatus, myAlliance, heroes] = await Promise.all([
+        const [regionStatus, myAlliance] = await Promise.all([
           db.get(
             "SELECT owner_alliance_id, bonus_type FROM regions WHERE name = $1",
             [k.region],
@@ -586,14 +586,10 @@ module.exports = function (db) {
             "SELECT alliance_id FROM alliance_members WHERE kingdom_id = $1",
             [k.id],
           ),
-          db.all(
-            "SELECT * FROM heroes WHERE kingdom_id = $1 AND status = 'idle'",
-            [k.id],
-          ),
         ]);
         console.timeEnd('[turn] init-queries-parallel');
 
-        const preloadedQueries = { regionStatus, myAlliance, heroes };
+        const preloadedQueries = { regionStatus, myAlliance };
 
         // THIRD: Enter transaction only for state mutations
         return db.withTransaction(async () => {
@@ -1029,9 +1025,9 @@ module.exports = function (db) {
     const startedAt = parseInt(tRow?.value) || Math.floor(Date.now() / 1000);
     const SEASON_DUR = { spring: 3, summer: 5, fall: 2, winter: 3 };
     const SEASON_ICONS = {
-      spring: "",
-      summer: "",
-      fall: "",
+      spring: "\uD83C\uDF38",
+      summer: "\u2600\uFE0F",
+      fall: "\uD83C\uDF42",
       winter: "\u2744\uFE0F",
     };
     const daysLeft = Math.max(
