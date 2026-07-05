@@ -332,11 +332,11 @@ module.exports = function (db) {
   }
 
   //  Shared turn runner  used by ALL routes that consume a turn
-  async function runTurn(db, k, preloadedQueries) {
+  async function runTurn(db, k) {
     if (!k) throw new Error('Kingdom not found');
     console.time(`[turn-${k.id}] total`);
 
-    const { regionStatus, myAlliance } = preloadedQueries || await fetchInitQueries(db, k);
+    const { regionStatus, myAlliance } = await fetchInitQueries(db, k);
 
     const heroes = await db.all(
       "SELECT * FROM heroes WHERE kingdom_id = $1 AND status = 'idle' FOR UPDATE",
@@ -566,26 +566,7 @@ module.exports = function (db) {
           throw new Error(ERROR_NO_TURNS);
         }
 
-        // SECOND: Fetch read-only reference data in parallel OUTSIDE transaction
-        // (Heroes must be fetched inside transaction with row lock to prevent race conditions on mutations)
-        console.time('[turn] init-queries-parallel');
-        const [regionStatus, myAlliance] = await Promise.all([
-          db.get(
-            "SELECT owner_alliance_id, bonus_type FROM regions WHERE name = $1",
-            [k.region],
-          ),
-          db.get(
-            "SELECT alliance_id FROM alliance_members WHERE kingdom_id = $1",
-            [k.id],
-          ),
-        ]);
-        console.timeEnd('[turn] init-queries-parallel');
-
-        const preloadedQueries = { regionStatus, myAlliance };
-
-        // THIRD: Enter transaction only for state mutations
         return db.withTransaction(async () => {
-          // Re-fetch kingdom with row-level lock INSIDE transaction
           const k_locked = await db.get("SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
             req.player.playerId,
           ]);
@@ -596,7 +577,7 @@ module.exports = function (db) {
             throw new Error(ERROR_NO_TURNS);
           }
 
-          const { updates, events } = await runTurn(db, k_locked, preloadedQueries);
+          const { updates, events } = await runTurn(db, k_locked);
           return { ok: true, updates, events, turns_stored: updates.turns_stored };
         });
       });
