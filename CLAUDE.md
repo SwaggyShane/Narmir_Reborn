@@ -2,8 +2,6 @@
 
 #### *****DO NOT TAKE THE PATH OF LEAST RESISTANCE*****
 
-⚠️ **PROJECT-SPECIFIC WORKFLOW FIRST:** Before applying any rules from this guide, **check TODO.md for active/deferred work items** (ROADMAP.md was retired 2026-07-01; history lives in ARCHIVAL.md). Project workflows override these defaults. If TODO.md defines interim or custom workflow rules, follow those instead of the standard CLAUDE.md workflow.
-
 ## PR Workflow
 
 ### Before Every Push — No Exceptions
@@ -39,7 +37,6 @@
 6. **Create or update PR**:
    - If an open PR already exists for this branch: push to the existing PR (do not create a new one).
    - If no open PR exists: create a new PR **immediately after the push**. Do not wait for the user to notice.
-     (Note: creating as a draft is optional; it was previously required when using Claude due to PR tooling issues.)
 
 7. **Actively monitor until merge**:
    - Monitor CI status and Gemini review continuously — do not schedule check-ins.
