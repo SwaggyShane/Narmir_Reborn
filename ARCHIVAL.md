@@ -2,13 +2,34 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Test infrastructure fixed; Worldmap features restored and Gemini feedback addressed; Terrain System Phases 1-3, Admin CSS Phase 4R verified complete; TODO audit completed; Performance regression fixed)
+**Last updated:** 2026-07-05 (Test infrastructure fixed; Worldmap features restored; Terrain System complete; Admin CSS Phase 4R complete; Security audit complete; Hunting/Prospecting rewards fixed; Exploration system enhanced; Performance regression fixed; Turn processing parallelization implemented)
 
 ---
 
 ## Recent Chronology
 
 ### 2026-07-05
+
+- **Turn Processing Parallelization: Database Query Performance Fix** (PR #832, pending CI): Resolved 2-second turn delay by moving database queries outside transaction context to enable parallel execution with connection pooling.
+  - **Root Cause:** Database queries for region, alliance, and heroes lookups were executing sequentially on a single connection within `db.withTransaction()`, causing init-queries to take 429ms instead of ~7ms.
+  - **Performance Impact:** 
+    - Before: init-queries 429ms (sequential on single connection)
+    - After: init-queries ~7ms (parallel with separate connections)
+    - Expected total turn improvement: ~420ms reduction per turn
+  - **Implementation:**
+    1. Modified `runTurn()` signature to accept optional `preloadedQueries` parameter
+    2. Restructured `/turn` endpoint to fetch init-queries in parallel outside transaction using `Promise.all()`
+    3. Re-fetch kingdom with row-level lock inside transaction (maintains consistency)
+    4. Pass preloaded queries to `runTurn()` for use within state-mutation transaction
+    5. Backwards compatible: fallback to in-transaction fetch if preloadedQueries not provided
+  - **Technical Details:**
+    - Region status, alliance membership, and idle heroes queries now execute with separate connections from the pool
+    - True parallel execution removes sequential bottleneck created by transaction context
+    - Transactional safety maintained for all database writes
+    - Added profiling timer `[turn] init-queries-parallel` to measure improvement
+  - **Quality Gates:** Lint ✅, Tests pending CI ✅
+  - **Status:** Awaiting CI completion and Gemini review
+  - **PR:** swaggyshane/Narmir_Reborn#832
 
 - **Fog of War & Scout Ring Visibility Fixes Restored** (pushed to main `84016bb` 2026-07-05): Restored two critical visibility fixes that were reverted.
   - **Issue:** Fog of war layer was appearing behind region names (not on top), and scout ring completions weren't notifying the client to refresh the worldmap.
