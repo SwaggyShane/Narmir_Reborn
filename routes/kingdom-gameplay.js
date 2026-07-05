@@ -318,41 +318,31 @@ module.exports = function (db) {
   // â”€â”€ Shared turn runner â€” used by ALL routes that consume a turn â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function runTurn(db, k) {
     if (!k) throw new Error('Kingdom not found');
-    const runTurnStart = Date.now();
-
     // Inject region ownership status for bonuses
     // All 3 queries are independent â€” run them in parallel
-    const queryStart = Date.now();
     const [regionStatus, myAlliance, heroes] = await Promise.all([
       db.get(
-        “SELECT owner_alliance_id, bonus_type FROM regions WHERE name = $1”,
+        "SELECT owner_alliance_id, bonus_type FROM regions WHERE name = $1",
         [k.region],
       ),
       db.get(
-        “SELECT alliance_id FROM alliance_members WHERE kingdom_id = $1”,
+        "SELECT alliance_id FROM alliance_members WHERE kingdom_id = $1",
         [k.id],
       ),
       db.all(
-        “SELECT * FROM heroes WHERE kingdom_id = $1 AND status = 'idle'”,
+        "SELECT * FROM heroes WHERE kingdom_id = $1 AND status = 'idle'",
         [k.id],
       ),
     ]);
-    const queryMs = Date.now() - queryStart;
-
     k._region_owned_by_my_alliance =
       regionStatus &&
       myAlliance &&
       regionStatus.owner_alliance_id === myAlliance.alliance_id;
     k._region_bonus_type = regionStatus?.bonus_type;
     k.heroes = heroes;
-
-    const tradeStart = Date.now();
     await loadTradeRoutes(k);
-    const tradeMs = Date.now() - tradeStart;
 
-    const engineStart = Date.now();
     const { updates, events } = engine.processTurn(k, db);
-    const engineMs = Date.now() - engineStart;
     const cleanEvents = events.map(normalizeNewsRow);
 
     const heroBatch = [];
@@ -540,40 +530,27 @@ module.exports = function (db) {
     const finalState = { ...k, ...updates };
     updates.score = engine.calculateScore(finalState);
 
-    const totalRunTurnMs = Date.now() - runTurnStart;
-    console.log(`[runTurn-profile] queries=${queryMs}ms trade=${tradeMs}ms engine=${engineMs}ms total=${totalRunTurnMs}ms`);
-
     return { updates, events: allEvents };
   }
 
   // â”€â”€ Take turn (advance game state) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  router.post(“/turn”, requireAuth, requireCsrfToken, async (req, res) => {
-    const totalStart = Date.now();
+  router.post("/turn", requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const result = await withTurnLock(req.player.playerId, async () => {
         // Wrap entire turn in transaction
         return db.withTransaction(async () => {
           // Fetch kingdom with row-level lock INSIDE transaction
-          const fetchStart = Date.now();
-          const k = await db.get(“SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE”, [
+          const k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
             req.player.playerId,
           ]);
-          const fetchMs = Date.now() - fetchStart;
-
           if (!k) {
-            throw new Error(“Kingdom not found”);
+            throw new Error("Kingdom not found");
           }
           if (k.turns_stored < 1) {
-            throw new Error(“No turns available â€” next +7 turns in 25 minutes”);
+            throw new Error("No turns available â€” next +7 turns in 25 minutes");
           }
 
-          const runStart = Date.now();
           const { updates, events } = await runTurn(db, k);
-          const runMs = Date.now() - runStart;
-
-          const totalMs = Date.now() - totalStart;
-          console.log(`[turn-profile] kingdom=${k.id} fetch=${fetchMs}ms run=${runMs}ms total=${totalMs}ms`);
-
           return { ok: true, updates, events, turns_stored: updates.turns_stored };
         });
       });
@@ -3114,8 +3091,6 @@ module.exports = function (db) {
 };
 
 async function applyUpdates(db, kingdomId, updates) {
-  const applyStart = Date.now();
-
   // Validate no numeric values are NaN/Infinity (corrupted data protection)
   // Dynamically check all values instead of maintaining a hardcoded field list
   // This ensures future fields (new troop types, resources, etc.) are automatically protected
@@ -3133,20 +3108,15 @@ async function applyUpdates(db, kingdomId, updates) {
   }
   // We pass db parameter as usual, but applyKingdomUpdates just works directly against the global db object via schema
   await applyKingdomUpdates(kingdomId, updatesForDb);
-
-  const applyMs = Date.now() - applyStart;
-  if (applyMs > 100) console.log(`[applyUpdates-profile] slow update ${applyMs}ms for kingdom=${kingdomId}`);
 }
 
 // Insert multiple news rows in a single query â€” much faster than N sequential inserts
 async function bulkInsertNews(db, rows) {
-  const newsStart = Date.now();
-
   if (!rows || rows.length === 0) return;
   const placeholders = pgValueTuples(rows.length, 4);
   const values = rows.flatMap((r) => [
     r.kingdom_id,
-    r.type || “system”,
+    r.type || "system",
     decorateNewsMessage(r.message, repairMojibake),
     r.turn_num || 0,
   ]);
@@ -3154,9 +3124,6 @@ async function bulkInsertNews(db, rows) {
     `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
     values,
   );
-
-  const newsMs = Date.now() - newsStart;
-  if (newsMs > 50) console.log(`[bulkInsertNews-profile] slow insert ${newsMs}ms for ${rows.length} rows`);
 }
 
 // Prune old news â€” keep only the most recent N rows per kingdom
