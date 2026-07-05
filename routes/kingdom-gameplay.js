@@ -574,6 +574,8 @@ module.exports = function (db) {
       if (elapsed > 500) console.log(`[/turn endpoint] Total time: ${elapsed}ms`);
       res.json(result);
     } catch (err) {
+      const elapsed = Date.now() - endpointStart;
+      if (elapsed > 500) console.log(`[/turn endpoint] Failed after: ${elapsed}ms`);
       console.error("[turn] failed:", err.stack || err.message);
       if (err.message.includes("Kingdom not found")) {
         return res.status(404).json({ error: err.message });
