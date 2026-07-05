@@ -502,9 +502,9 @@ const WarfarePanel = () => {
     const winPct = defPower > 0
       ? Math.min(95, Math.max(5, Math.round((atkPower / (atkPower + defPower)) * 100)))
       : 90;
-    const winColor = winPct >= 60 ? 'var(--green)' : winPct >= 40 ? 'var(--amber)' : 'var(--red)';
+    const winColorClass = winPct >= 60 ? 'text-[var(--green)]' : winPct >= 40 ? 'text-[var(--amber)]' : 'text-[var(--red)]';
     const land = target ? Math.floor((target.land || 0) * 0.1) : 0;
-    return { atkPower, defPower, winPct, winColor, land, bullyMsg };
+    return { atkPower, defPower, winPct, winColorClass, land, bullyMsg };
   }, [atkQty, troopLevels, race, engineers, weaponsStockpile, resWeapons, resMilitary, resAttackMagic, resWarMachines, happiness, fighters, myLand, attackTarget]);
 
   const setAtkMax = useCallback((key) => {
@@ -751,11 +751,11 @@ const WarfarePanel = () => {
         : row.outcome === 'caught'
           ? 'Caught'
           : 'Repelled';
-      const outcomeColor = row.outcome === 'victory' || row.outcome === 'success'
-        ? 'var(--green)'
+      const outcomeColorClass = row.outcome === 'victory' || row.outcome === 'success'
+        ? 'text-[var(--green)]'
         : row.outcome === 'caught'
-          ? 'var(--amber)'
-          : 'var(--text3)';
+          ? 'text-[var(--amber)]'
+          : 'text-[var(--text3)]';
       return (
         <div key={row.id} className="border-b border-[var(--border)] px-1 py-3">
           <div className="flex justify-between gap-3 items-baseline flex-wrap">
@@ -763,7 +763,7 @@ const WarfarePanel = () => {
               <span className="mr-2">{icon}</span>
               {row.action_type || 'event'} — {row.attacker_name || 'Unknown'} vs {row.defender_name || 'Unknown'}
             </div>
-            <div style={{ color: outcomeColor ?? 'var(--text2)' }} className="font-bold">{outcome}</div>
+            <div className={clsx('font-bold', outcomeColorClass)}>{outcome}</div>
           </div>
           {row.detail ? (
             <pre className="mt-2 whitespace-pre-wrap text-[var(--text2)] text-[12px]">{renderDetail(row.detail)}</pre>
@@ -965,7 +965,7 @@ const WarfarePanel = () => {
                 </div>
                 <div className="flex justify-between mb-1">
                   <span className="text-[var(--text3)]">Win Chance</span>
-                  <span style={{ color: atkEstimate.winColor ?? 'var(--text)' }}>{atkEstimate.winPct}%</span>
+                  <span className={atkEstimate.winColorClass}>{atkEstimate.winPct}%</span>
                 </div>
                 <div className="flex justify-between mb-1">
                   <span className="text-[var(--text3)]">Est. Land Gain</span>
