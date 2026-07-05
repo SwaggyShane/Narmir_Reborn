@@ -349,26 +349,27 @@ module.exports = function (db) {
       }
 
 
-      // Create topic with first post in transaction
-      await db.run('BEGIN TRANSACTION');
+      // Create topic with first post in transaction (using safe withTransaction helper)
       try {
         const now = Math.floor(Date.now() / 1000);
-        const result = await db.run(
-          `INSERT INTO forum_topics (board_id, player_id, title, content, post_count, last_post_at, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, 1, $5, $6, $7)`,
-          [boardId, playerId, title.trim(), content.trim(), now, now, now]
-        );
+        const { topicId } = await db.withTransaction(async () => {
+          const result = await db.run(
+            `INSERT INTO forum_topics (board_id, player_id, title, content, post_count, last_post_at, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, 1, $5, $6, $7)`,
+            [boardId, playerId, title.trim(), content.trim(), now, now, now]
+          );
 
-        const topicId = result.lastID;
+          const id = result.lastID;
 
-        // Create the first post
-        await db.run(
-          `INSERT INTO forum_posts (topic_id, player_id, content, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [topicId, playerId, content.trim(), now, now]
-        );
+          // Create the first post
+          await db.run(
+            `INSERT INTO forum_posts (topic_id, player_id, content, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [id, playerId, content.trim(), now, now]
+          );
 
-        await db.run('COMMIT');
+          return { topicId: id };
+        });
 
         res.status(201).json({
           success: true,
@@ -376,7 +377,7 @@ module.exports = function (db) {
           message: "Topic created successfully",
         });
       } catch (txErr) {
-        await db.run('ROLLBACK').catch(() => {});
+        console.error("[forum] topic create tx error:", txErr.message);
         throw txErr;
       }
     } catch (err) {
@@ -416,26 +417,27 @@ module.exports = function (db) {
 
       const now = Math.floor(Date.now() / 1000);
 
-      // Create post and update topic in transaction
-      await db.run('BEGIN TRANSACTION');
+      // Create post and update topic in transaction (using safe withTransaction helper)
       try {
-        const result = await db.run(
-          `INSERT INTO forum_posts (topic_id, player_id, content, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [topicId, playerId, content.trim(), now, now]
-        );
+        const { postId } = await db.withTransaction(async () => {
+          const result = await db.run(
+            `INSERT INTO forum_posts (topic_id, player_id, content, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [topicId, playerId, content.trim(), now, now]
+          );
 
-        const postId = result.lastID;
+          const id = result.lastID;
 
-        // Update topic post_count and last_post_at
-        await db.run(
-          `UPDATE forum_topics
-           SET post_count = post_count + 1, last_post_at = $1, updated_at = $2
-           WHERE id = $3`,
-          [now, now, topicId]
-        );
+          // Update topic post_count and last_post_at
+          await db.run(
+            `UPDATE forum_topics
+             SET post_count = post_count + 1, last_post_at = $1, updated_at = $2
+             WHERE id = $3`,
+            [now, now, topicId]
+          );
 
-        await db.run('COMMIT');
+          return { postId: id };
+        });
 
         res.status(201).json({
           success: true,
@@ -443,7 +445,7 @@ module.exports = function (db) {
           message: "Reply posted successfully",
         });
       } catch (txErr) {
-        await db.run('ROLLBACK').catch(() => {});
+        console.error("[forum] post reply tx error:", txErr.message);
         throw txErr;
       }
     } catch (err) {
@@ -576,15 +578,15 @@ module.exports = function (db) {
       }
 
       // Use transaction to delete all posts first (to satisfy foreign key constraints), then delete topic
-      await db.run('BEGIN TRANSACTION');
       try {
-        // Hard delete all posts in the topic first to satisfy foreign key constraints
-        await db.run(`DELETE FROM forum_posts WHERE topic_id = $1`, [topicId]);
-        // Delete the topic
-        await db.run(`DELETE FROM forum_topics WHERE id = $1`, [topicId]);
-        await db.run('COMMIT');
+        await db.withTransaction(async () => {
+          // Hard delete all posts in the topic first to satisfy foreign key constraints
+          await db.run(`DELETE FROM forum_posts WHERE topic_id = $1`, [topicId]);
+          // Delete the topic
+          await db.run(`DELETE FROM forum_topics WHERE id = $1`, [topicId]);
+        });
       } catch (err) {
-        await db.run('ROLLBACK').catch(() => {});
+        console.error("[forum] delete topic tx error:", err.message);
         throw err;
       }
 

@@ -22,6 +22,12 @@
   - **Follow-up:** Phase 4S (PR #815) completed as continuation
   - **Commits:** `bd1b285` (initial refactor), `3425b85` (Gemini feedback), `82d1296` (merge)
 
+- **Security Audit Complete** (2026-07-05): All categories in TODO.md Security Audit reviewed, gaps addressed, and documented.
+  - **Categories reviewed:** SQL Injection (already PASS), XSS (sanitizeHtml improved + tests for data:/vbscript:/SVG/case), Input Validation (systematic + admin name rules added), AuthZ (JWT/CSRF/rate/admin confirmed), Race Conditions (tx migration in forum/research/warfare wrapper), Sensitive Data, Resource Mgmt.
+  - **Code changes:** sanitizeHtml.js hardened (blocked tags/protocols, entity decode); admin set-kingdom name validation added; forum + research + warfare partial tx migration from manual BEGIN to `db.withTransaction()`.
+  - **Docs:** SECURITY_AUDIT.md fully populated with PASS findings per category; TODO updated; this archival entry.
+  - **References:** `SECURITY_AUDIT.md`, `SQL_INJECTION_AUDIT_REPORT.md`, `utils/numeric-validation.js`, `routes/middleware.js`
+
 - **Critical Bug Fix: Hunting/Prospecting Expeditions Reward Processing** (PR #825, merged 2026-07-05): Fixed critical bug where hunting and prospecting expeditions returned 0 rangers/engineers with no resource rewards. User reported "Returned | 0 rangers" with no food gained after hunting.
   - **Root Cause:** `expeditionRewards()` function in `game/lib/gameplay.js` was missing case handling for hunting and prospecting types, causing it to return empty rewards arrays that overwrote the pre-calculated rewards stored at expedition creation time.
   - **Impact:** All hunting and prospecting expeditions lost their resources (food/gold) when completing, troops returned but with no rewards.

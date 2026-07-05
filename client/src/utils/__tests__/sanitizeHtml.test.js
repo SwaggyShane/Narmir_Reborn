@@ -42,6 +42,25 @@ describe('sanitizeHtml', () => {
     expect(output).not.toContain('srcdoc');
   });
 
+  it('blocks data: vbscript: and case-variant dangerous protocols (XSS gaps closed)', () => {
+    const input = `
+      <a href="DATA:text/html,<script>alert(1)</script>">bad</a>
+      <a href="VbScript:msgbox(1)">bad2</a>
+      <img src=" data: image/svg+xml;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+ " />
+      <a href="javascript:alert(1)">js</a>
+    `;
+
+    const output = sanitizeHtml(input);
+
+    expect(output).toContain('<a>bad</a>'); // href stripped, tag kept (text content preserved)
+    expect(output).not.toContain('DATA:');
+    expect(output).not.toContain('VbScript:');
+    expect(output).not.toContain('data:');
+    expect(output).not.toContain('javascript:');
+    // src attr stripped for img but tag may remain (harmless); verify no dangerous payload leaked
+    expect(output).not.toContain('image/svg+xml');
+  });
+
   it('escapes content when the DOM is unavailable', () => {
     vi.stubGlobal('document', undefined);
 

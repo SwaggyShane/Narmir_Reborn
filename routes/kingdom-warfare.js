@@ -12,21 +12,6 @@ const { getKingdomMapCoords } = require('../game/world-map-coords');
 
 const router = express.Router();
 
-// â"€â"€ Transaction support â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
-async function withTransaction(db, fn) {
-  await db.run("BEGIN TRANSACTION");
-  try {
-    const result = await fn();
-    await db.run("COMMIT");
-    return result;
-  } catch (err) {
-    try {
-      await db.run("ROLLBACK");
-    } catch {}
-    throw err;
-  }
-}
-
 function httpError(status, message) {
   const err = new Error(message);
   err.status = status;
@@ -114,7 +99,7 @@ module.exports = function (db) {
         throw httpError(400, 'Cannot attack yourself');
       }
 
-      await withTransaction(db, async () => {
+      await db.withTransaction(async () => {
         const lockedKingdoms = await lockKingdomRows(db, [attackerId, targetIdNum]);
         if (lockedKingdoms.length < 2) throw httpError(404, 'Target kingdom not found');
 
@@ -314,7 +299,7 @@ module.exports = function (db) {
 
     try {
       let response;
-      await withTransaction(db, async () => {
+      await db.withTransaction(async () => {
         const kingdomIds = [attackerId];
         if (targetIdNum && targetIdNum !== attackerId) kingdomIds.push(targetIdNum);
         const lockedKingdoms = await lockKingdomRows(db, kingdomIds);

@@ -18,6 +18,7 @@ const BLOCKED_TAGS = new Set([
   'set',
   'animateMotion',
   'animateTransform',
+  'foreignObject', // SVG XSS vector
 ]);
 
 const DANGEROUS_PROTOCOLS = new Set([
@@ -25,13 +26,16 @@ const DANGEROUS_PROTOCOLS = new Set([
   'data:',
   'vbscript:',
   'file:',
+  'about:',
 ]);
 
 function stripUnsafeAttributes(element) {
   for (const attr of [...element.attributes]) {
     const name = attr.name.toLowerCase();
     const rawValue = String(attr.value || '').trim();
-    const normalizedValue = rawValue.toLowerCase().replace(/\s+/g, '');
+    // Normalize: lower, remove whitespace, also decode some common entities for safety
+    let normalizedValue = rawValue.toLowerCase().replace(/\s+/g, '');
+    normalizedValue = normalizedValue.replace(/&#x3a;/g, ':').replace(/&#58;/g, ':'); // catch encoded :
 
     if (name.startsWith('on')) {
       element.removeAttribute(attr.name);
@@ -43,9 +47,10 @@ function stripUnsafeAttributes(element) {
       continue;
     }
 
-    if (name === 'href' || name === 'src' || name === 'xlink:href') {
+    // Block dangerous protocols in href/src and any URL-bearing attr (defense-in-depth)
+    if (name === 'href' || name === 'src' || name === 'xlink:href' || name === 'action' || name === 'formaction') {
       for (const protocol of DANGEROUS_PROTOCOLS) {
-        if (normalizedValue.startsWith(protocol)) {
+        if (normalizedValue.startsWith(protocol) || normalizedValue.includes(protocol)) {
           element.removeAttribute(attr.name);
           break;
         }

@@ -823,6 +823,20 @@ module.exports = function (db, io) {
       }
     }
 
+    // Input validation for kingdom name (defense-in-depth, same rules as registration)
+    if (typeof safe.name === 'string') {
+      const name = safe.name.trim();
+      if (name.length < 3 || name.length > 50) {
+        return res.status(400).json({ error: 'Kingdom name must be 3–50 characters' });
+      }
+      if (!/^[a-zA-Z0-9\s'-]+$/.test(name)) {
+        return res.status(400).json({
+          error: "Kingdom name can only contain letters, numbers, spaces, apostrophes, and hyphens",
+        });
+      }
+      safe.name = name; // use trimmed
+    }
+
     const safeKeys = Object.keys(safe);
     const { setClause, nextPlaceholder } = pgSetClauseWithNextPlaceholder(safeKeys, 1);
     await db.run(`UPDATE kingdoms SET ${setClause} WHERE id = ${nextPlaceholder}`, [

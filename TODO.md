@@ -14,20 +14,18 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 ## Active Work — Current Sprint
 
-### Security Audit — In Progress — MEDIUM-HIGH PRIORITY
-**Status:** 6 categories require review/completion  
-**Completed:**
-- ✅ SQL Injection: PASS (all parameterized)
+### Security Audit — COMPLETE (2026-07-05)
+**Status:** All 7 categories reviewed and documented ✅  
+**Summary:**
+- ✅ SQL Injection: PASS (100% parameterized + identifier quoting per SQL_INJECTION_AUDIT_REPORT)
+- ✅ XSS: PASS (sanitizeHtml hardened for data:/vbscript:/SVG/case; tests added; only safe internal dangerouslySetInnerHTML usage)
+- ✅ Input Validation: PASS (auth, forum, chat, numeric validators, admin set-kingdom name rules)
+- ✅ Authentication & Authorization: PASS (JWT, CSRF double-submit, tiered rate limits, admin IP+JWT)
+- ✅ Race Conditions: PASS on critical paths (withTransaction + FOR UPDATE + player turn locks); some manual patterns remain as tech debt
+- ✅ Sensitive Data: PASS (bcrypt, SecretsManager, sanitized logs/errors)
+- ✅ Resource Management: PASS (pool sizing/timeouts, 1-5MB limits, signature-validated uploads, bounded queries)
 
-**In Progress:**
-- XSS Vulnerabilities (sanitizeHtml gaps: data: URIs, vbscript:, SVG vectors, case-sensitivity)
-- Input Validation (systematic review: usernames, passwords, kingdom names, chat, numeric, arrays/objects)
-- Authentication & Authorization (JWT, CSRF, rate limiting, session fixation, admin checks)
-- Race Conditions & Transaction Safety (concurrent updates, building queues, trades, troops, resources)
-- Sensitive Data Exposure (password hashing, API keys, git history, error details)
-- Resource Management (Socket.io leaks, connection pooling, uploads, query bounds)
-
-**Reference:** `/home/user/Narmir_Reborn/SECURITY_AUDIT.md`
+**References:** `SECURITY_AUDIT.md`, `SQL_INJECTION_AUDIT_REPORT.md`
 
 ---
 

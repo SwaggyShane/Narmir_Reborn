@@ -118,19 +118,21 @@ module.exports = function (db) {
     }
 
     try {
-      // Wrap in transaction with row-level lock to prevent concurrent conflicts
-      await db.run("BEGIN TRANSACTION");
-      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
-        req.player.playerId,
-      ]);
-      if (!k) {
-        await db.run("ROLLBACK");
-        return res.status(404).json({ error: "Kingdom not found" });
-      }
-      if (k.turns_stored < 1) {
-        await db.run("ROLLBACK");
-        return res.status(429).json({ error: "No turns available" });
-      }
+      // Wrap in transaction with row-level lock to prevent concurrent conflicts (using db.withTransaction)
+      const { finalUpdates, events: finalEvents, increment } = await db.withTransaction(async () => {
+        const k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          const err = new Error("Kingdom not found");
+          err.statusCode = 404;
+          throw err;
+        }
+        if (k.turns_stored < 1) {
+          const err = new Error("No turns available");
+          err.statusCode = 429;
+          throw err;
+        }
 
       // Run full turn first
       await loadTradeRoutes(k);
@@ -145,8 +147,9 @@ module.exports = function (db) {
         researchValidation.value,
       );
       if (resResult.error) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: resResult.error });
+        const err = new Error(resResult.error);
+        err.statusCode = 400;
+        throw err;
       }
 
       const finalUpdates = { ...turnUpdates, ...resResult.updates };
@@ -158,7 +161,7 @@ module.exports = function (db) {
       const newVal = resCol ? finalUpdates[resCol] : "?";
       events.push({
         type: "system",
-        message: `ðŸ“š Studied ${discipline} with ${Number(researchers).toLocaleString()} researchers - +${resResult.increment} -> now ${newVal}${discipline !== "spellbook" ? "%" : ""}.`,
+        message: `📚 Studied ${discipline} with ${Number(researchers).toLocaleString()} researchers - +${resResult.increment} -> now ${newVal}${discipline !== "spellbook" ? "%" : ""}.`,
       });
       await bulkInsertNews(
         db,
@@ -169,23 +172,21 @@ module.exports = function (db) {
           turn_num: turnUpdates.turn || k.turn,
         })),
       );
-      await db.run("COMMIT");
+
+      return { finalUpdates, events, increment: resResult.increment };
+    });
 
       res.json({
         ok: true,
-        increment: resResult.increment,
+        increment,
         updates: finalUpdates,
-        events,
+        events: finalEvents,
         turns_stored: finalUpdates.turns_stored,
       });
     } catch (err) {
       console.error("[research] error:", err.message);
-      try {
-        await db.run("ROLLBACK");
-      } catch (rollbackErr) {
-        console.error("[research] rollback error:", rollbackErr.message);
-      }
-      res.status(500).json({ error: "Research processing failed â€” please try again" });
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message || "Research processing failed — please try again" });
     }
   });
 
