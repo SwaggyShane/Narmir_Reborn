@@ -633,8 +633,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     return (
       <div
         key={`active-summary-${entry.id}`}
-        className="rounded-xl border border-[var(--border)] bg-[rgba(255,255,255,0.04)] p-3"
-        style={{ borderLeftColor: meta.border || 'var(--border)', borderLeftWidth: '3px' }}
+        className="rounded-xl border border-l-[3px] border-[var(--border)] bg-[rgba(255,255,255,0.04)] p-3"
+        style={{ borderLeftColor: meta.border || 'var(--border)' }}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
@@ -704,8 +704,10 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                   {Object.entries(inventory).map(([itemId, item]) => (
                     <div
                       key={itemId}
-                      className="rounded-2xl border border-[var(--border)] bg-[rgba(255,255,255,0.05)] p-3"
-                      style={{ borderLeftColor: item.rarity === 'junk' ? 'var(--text3)' : 'var(--accent1)', borderLeftWidth: '3px' }}
+                      className={clsx(
+                        'rounded-2xl border border-l-[3px] border-[var(--border)] bg-[rgba(255,255,255,0.05)] p-3',
+                        item.rarity === 'junk' ? 'border-l-[color:var(--text3)]' : 'border-l-[color:var(--accent1)]',
+                      )}
                     >
                       <div className="mb-1 text-[12px] font-semibold">
                         {repairText(item.name)} <span className="font-bold text-[var(--gold)]">×{item.count}</span>
