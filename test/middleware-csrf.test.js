@@ -2,6 +2,11 @@
 
 require('dotenv').config();
 
+// Set JWT_SECRET before importing middleware (required at module load time)
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'test-secret-key-for-csrf-test-minimum-32-characters-long!!';
+}
+
 const assert = require('assert');
 const { requireCsrfToken } = require('../routes/middleware');
 
