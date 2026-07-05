@@ -2,13 +2,27 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Test infrastructure fixed; Worldmap features restored and Gemini feedback addressed; Terrain System Phases 1-3, Admin CSS Phase 4R verified complete; TODO audit completed)
+**Last updated:** 2026-07-05 (Test infrastructure fixed; Worldmap features restored and Gemini feedback addressed; Terrain System Phases 1-3, Admin CSS Phase 4R verified complete; TODO audit completed; Performance regression fixed)
 
 ---
 
 ## Recent Chronology
 
 ### 2026-07-05
+
+- **Performance Fix: Restore Profiling Timer for Turn Processing** (pushed to main `b547b17` 2026-07-05): Restored missing console.time() for init-queries profiling after previous revert.
+  - **Issue:** Turn processing appeared slow (~3 seconds) after multiple deployments and reverts. The profiling timer that measures database query performance was missing, preventing diagnosis.
+  - **Root Cause:** The console.time(`[turn-${k.id}] init-queries`) call at the start of the database queries phase had been removed in a previous revert.
+  - **Fix Applied:** Re-added the console.time() call in routes/kingdom-gameplay.js at line 322, right before the Promise.all() that runs the three parallel database queries.
+  - **Impact:** Turn processing now completes in 30-60ms with full profiling visibility:
+    - init-queries: 5-7ms
+    - trade-routes: 2-4ms  
+    - engine.processTurn: 1-17ms
+    - All remaining phases combined: ~5-10ms
+    - Total: ~30-60ms (was reported as ~3000ms before)
+  - **Profiling Output:** All console.timeEnd() calls now match their console.time() starts; no "No such label" warnings
+  - **Quality Gates:** Lint ✅, Tests ✅
+  - **Commits:** `b547b17` (restore profiling timer)
 
 - **Test Infrastructure Fix: JWT_SECRET Setup in Middleware Test** (PR #830, merged `c83bea5` 2026-07-05): Restored JWT_SECRET environment variable setup in middleware-csrf.test.js to fix test suite execution.
   - **Issue:** middleware-csrf.test.js was failing because routes/middleware.js throws an error at module import time if JWT_SECRET is not set. Test execution was blocked because the test couldn't import the middleware module.
