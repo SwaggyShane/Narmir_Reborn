@@ -318,6 +318,7 @@ module.exports = function (db) {
   // â”€â”€ Shared turn runner â€” used by ALL routes that consume a turn â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function runTurn(db, k) {
     if (!k) throw new Error('Kingdom not found');
+    console.time(`[turn-${k.id}] total`);
     // Inject region ownership status for bonuses
     // All 3 queries are independent â€” run them in parallel
     const [regionStatus, myAlliance, heroes] = await Promise.all([
@@ -334,6 +335,8 @@ module.exports = function (db) {
         [k.id],
       ),
     ]);
+    console.timeEnd(`[turn-${k.id}] init-queries`);
+    console.time(`[turn-${k.id}] trade-routes`);
     k._region_owned_by_my_alliance =
       regionStatus &&
       myAlliance &&
@@ -341,8 +344,11 @@ module.exports = function (db) {
     k._region_bonus_type = regionStatus?.bonus_type;
     k.heroes = heroes;
     await loadTradeRoutes(k);
+    console.timeEnd(`[turn-${k.id}] trade-routes`);
 
+    console.time(`[turn-${k.id}] engine.processTurn`);
     const { updates, events } = engine.processTurn(k, db);
+    console.timeEnd(`[turn-${k.id}] engine.processTurn`);
     const cleanEvents = events.map(normalizeNewsRow);
 
     const heroBatch = [];
@@ -387,7 +393,9 @@ module.exports = function (db) {
     }
 
     try {
+      console.time(`[turn-${k.id}] applyUpdates`);
       await applyUpdates(db, k.id, updates);
+      console.timeEnd(`[turn-${k.id}] applyUpdates`);
 
       // Batch hero XP updates
       if (heroBatch.length > 0) {
@@ -425,11 +433,13 @@ module.exports = function (db) {
     // Resolve expeditions OUTSIDE the kingdom transaction so ticks are never rolled back
     let expeditionEvents = [];
     try {
+      console.time(`[turn-${k.id}] resolveExpeditions`);
       expeditionEvents = await engine.resolveExpeditions(
         db,
         { ...k, ...updates },
         engine,
       );
+      console.timeEnd(`[turn-${k.id}] resolveExpeditions`);
       expeditionEvents = expeditionEvents.map(normalizeNewsRow);
       if (expeditionEvents.length > 0) {
         const turnNum = updates.turn || k.turn;
@@ -490,7 +500,9 @@ module.exports = function (db) {
 
     // Process real-time resource expeditions and persist their loot
     try {
+      console.time(`[turn-${k.id}] processResourceExpeditions`);
       const { kUpdates: expUpdates, lootEvents } = await processResourceExpeditionsDb(k.id, { ...k, ...updates });
+      console.timeEnd(`[turn-${k.id}] processResourceExpeditions`);
       if (Object.keys(expUpdates).length > 0) {
         await applyUpdates(db, k.id, expUpdates);
         Object.assign(updates, expUpdates);
@@ -513,6 +525,7 @@ module.exports = function (db) {
     }
 
     // Refresh fields that resolveExpeditions may have updated via SQL
+    console.time(`[turn-${k.id}] refresh-queries`);
     const refreshed = await db.get(
       "SELECT rangers, fighters, gold, mana, land, scrolls, maps, blueprints_stored, troop_levels, library_progress, tower_progress, racial_bonuses_unlocked FROM kingdoms WHERE id = $1",
       [k.id],
@@ -524,12 +537,14 @@ module.exports = function (db) {
       "SELECT COUNT(*) as c FROM news WHERE kingdom_id = $1 AND is_read = 0",
       [k.id],
     );
+    console.timeEnd(`[turn-${k.id}] refresh-queries`);
     updates.unread_news = unread.c;
 
     // Calculate new score after turn
     const finalState = { ...k, ...updates };
     updates.score = engine.calculateScore(finalState);
 
+    console.timeEnd(`[turn-${k.id}] total`);
     return { updates, events: allEvents };
   }
 
