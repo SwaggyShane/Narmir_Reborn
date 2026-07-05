@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (Hunting/prospecting expeditions bug fixed; resources now properly awarded)
+**Last updated:** 2026-07-05 (Production incident: reverted faulty profiling code; server recovered)
 
 ---
 
@@ -13,6 +13,17 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 ---
 
 ## Active Work — Current Sprint
+
+### Production Incident Recovery (2026-07-05) — COMPLETED
+**Status:** ✅ RESOLVED  
+**Issue:** Commit 27031fa introduced turn endpoint profiling code that caused a syntax error, crashing production server (Railway)
+**Root Cause:** Unknown—code parsed locally but failed at runtime on production (possible encoding/environment issue)
+**Recovery:**
+- Identified syntax error in production logs (`FATAL startup error: /app/routes/kingdom-gameplay.js:328`)
+- Reverted faulty profiling commit (27031fa) with revert commit 9b2b7ec
+- Verified local smoke test passes after revert
+- Pushed fix to main; server recovering on next deployment
+**Lesson:** Profiling instrumentation must be reviewed more carefully before production merge; consider adding integration tests for production environment code paths
 
 ### Critical Bug Fix: Hunting/Prospecting Expeditions (PR #825) — COMPLETED
 **Status:** ✅ MERGED 2026-07-05  
