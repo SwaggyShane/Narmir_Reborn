@@ -25,9 +25,9 @@ import { useWorldMapViewport } from '../../hooks/useWorldMapViewport.js';
 const TERRAIN_LEGEND = [
   { type: 'plains', name: 'Plains', symbol: '🌾' },
   { type: 'forest', name: 'Forest', symbol: '🌲' },
-  { type: 'mountains', name: 'Mountains', symbol: '⛰️' },
-  { type: 'hills', name: 'Hills', symbol: '🏔️' },
-  { type: 'swamp', name: 'Swamp', symbol: '🌊' },
+  { type: 'mountains', name: 'Mountains', symbol: '🏔️' },
+  { type: 'hills', name: 'Hills', symbol: '⛰️' },
+  { type: 'swamp', name: 'Swamp', symbol: '🐊' },
   { type: 'desert', name: 'Desert', symbol: '🏜️' },
   { type: 'coast', name: 'Coast', symbol: '🌊' },
   { type: 'tundra', name: 'Tundra', symbol: '❄️' },
@@ -97,16 +97,14 @@ async function establishTradeRoute(targetId, onSuccess) {
 
 function TerrainLegend() {
   return (
-    <div className="flex flex-col">
+    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
       {TERRAIN_LEGEND.map((terrain) => (
         <div
           key={terrain.type}
-          className="flex w-full items-center gap-2 border-b border-[var(--border)] px-0 py-1.5 text-left"
+          className="flex items-center gap-2 text-left"
         >
           <span className="text-sm">{terrain.symbol}</span>
-          <div className="min-w-0 flex-1">
-            <div className="text-xs font-semibold text-[var(--text)]">{terrain.name}</div>
-          </div>
+          <span className="text-xs font-semibold text-[var(--text)]">{terrain.name}</span>
         </div>
       ))}
     </div>
