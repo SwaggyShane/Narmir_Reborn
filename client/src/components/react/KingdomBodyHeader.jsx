@@ -29,7 +29,7 @@ function XpBar({ pct }) {
       <div
         id="xp-bar"
         className={clsx(
-          'h-full rounded-sm bg-gradient-to-r from-[var(--accent1)] to-[var(--gold)] transition-all duration-400',
+          'h-full rounded-sm bg-gradient-to-r from-[var(--accent1)] to-[var(--gold)] transition-[width] duration-500',
           pct > 0 && 'shadow-[0_0_6px_rgba(var(--theme-rgb),0.45)]',
         )}
         style={{ width: `${width}%` }}
