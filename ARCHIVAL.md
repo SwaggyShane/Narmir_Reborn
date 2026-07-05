@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (CSS Consolidation Phase 4H-4M: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806, KingdomXpModal PR #807, WarfarePanel PR #808, small-panels batch PR #809)
+**Last updated:** 2026-07-05 (CSS Consolidation Phase 4H-4N: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806, KingdomXpModal PR #807, WarfarePanel PR #808, small-panels batch PR #809, BattleReportModal PR #810)
 
 ---
 
@@ -199,6 +199,15 @@
     - ToastProvider: static `color: '#0a0a0a'` split out of the icon style object into `text-[#0a0a0a]`; runtime `theme.border` background stays inline
   - **Gemini Review:** No feedback. Clean conversion, no issues identified.
   - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (cascade audit of .badge/.btn:disabled/.metric .val before each conversion; grepped renamed defenseColor — zero stale references), CI ✅ (all 3 checks green)
+  - **Code Quality:** All changes lint ✅. No functional regressions.
+
+- **Admin CSS Consolidation: Phase 4N (BattleReportModal)** (PR #810, merged 2026-07-05): Converting all 26 static inline styles in the GSAP-animated battle report modal to Tailwind classes (net −70 lines pre-fix).
+  - **Conversion Results:** 26 static styles converted. Kept inline (runtime only): SummaryCard `borderLeftColor`/`color` from the `tone` prop, and the three bar widths (dynamic percentages, GSAP-animated).
+  - **Key Improvements:**
+    - Backdrop/panel/close/subtitle/dismiss → utility classes; title `titleColor` variable → clsx win/loss ternary; result rows `valColor` → `valColorClass`; outcome banner `outcomeStyle` object → `outcomeClass` clsx branch (gradients/borders/shadows as arbitrary-value utilities); SummaryCard chrome → clsx `impact` branch
+    - GSAP interplay safe by construction: GSAP writes inline styles at runtime, which override classes — entrance timeline, reduced-motion path, win pulse, and loss shake unchanged
+  - **Gemini Review:** 9 feedback items, 2 high-priority. Root cause: the project's `tailwind.config.js` overrides the fontSize scale (sm=11px, base=13px, md=14px, lg=16px, xl=18px), so `text-base`/`text-sm` picks were real size regressions (16px→13px title, 14px→11px row values). Fixed to `text-lg`/`text-md`, and swapped arbitrary `text-[11/13/18px]` for theme classes `text-sm`/`text-base`/`text-xl`. All addressed in follow-up commit.
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks, re-run after fixes), Sanity ✅ (full file re-read; grepped removed titleColor/outcomeStyle/valColor — zero stale references), CI ✅
   - **Code Quality:** All changes lint ✅. No functional regressions.
 
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.

@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (CSS Consolidation Phase 4D-4M complete: EconomyPanel, BuildPanel, HappinessPanel, MarketPanel, OptionsPanel, NewsPanel, HeroesPanel, KingdomXpModal, WarfarePanel, small-panels batch merged PR #800-#809)
+**Last updated:** 2026-07-05 (CSS Consolidation Phase 4D-4N complete: EconomyPanel, BuildPanel, HappinessPanel, MarketPanel, OptionsPanel, NewsPanel, HeroesPanel, KingdomXpModal, WarfarePanel, small-panels batch, BattleReportModal merged PR #800-#810)
 
 ---
 
@@ -102,7 +102,8 @@ _None currently — see Known Technical Debt below for post-beta cleanup items._
   - **Phase 4K (KingdomXpModal):** 2 conversions (progress bar track height/background fully static, progress bar fill gradient background). Gemini feedback (2 items: use Tailwind gradient utilities instead of arbitrary linear-gradient value, narrow transition-all to transition-[width]) applied, merged 2026-07-04.
   - **Phase 4L (WarfarePanel):** 2 conversions (attack estimate win-chance color via winColorClass in atkEstimate memo, war report outcome color via outcomeColorClass + clsx); dead `??` fallbacks removed. WarfarePanel now has zero inline styles. Gemini review clean, merged 2026-07-05.
   - **Phase 4M (small panels batch):** 4 conversions across StatusPanel (badge bg-[#444]), UpgradesList (disabled:opacity-50 variant replacing opacity ternary), ResourceStrip (!text-[var(--red/gold)] — ! required to beat the .metric .val descendant selector), ToastProvider (static text-[#0a0a0a] split out of runtime style). Gemini review clean, merged 2026-07-05.
-  - **Phase 4N+ (Remaining panels):** ~72 styles across 8 panels/components. Largest: ResourcesPanel (~51, mostly dynamic), BattleReportModal (~31), TestingPanel (~10 dynamic), KingdomBodyHeader (~7), HappinessGraph (~4), ExplorationPanel (~4), ReplayModal/RankingsPanel (~3 each). Most remaining styles are correctly-inline runtime values (dynamic widths, user chat colors, REGION_META/TOAST_THEME lookup colors, dangerouslySetInnerHTML SVG) rather than convertible debt — audit each before converting.
+  - **Phase 4N (BattleReportModal):** 26 conversions (backdrop, panel, bars, summary cards, outcome banner). Gemini feedback (9 items: project's custom fontSize scale — sm=11px/base=13px/md=14px/lg=16px/xl=18px — meant text-base/text-sm picks were wrong sizes; fixed to theme classes) applied, merged 2026-07-05.
+  - **Phase 4O+ (Remaining panels):** ~41 styles across 7 components. Largest: ResourcesPanel (~51 → mostly dynamic), TestingPanel (~10 dynamic), KingdomBodyHeader (~7), HappinessGraph (~4), ExplorationPanel (~4), ReplayModal/RankingsPanel (~3 each). Most remaining styles are correctly-inline runtime values — audit each before converting. **Lesson: use theme font-size classes (text-sm/base/md/lg/xl) instead of arbitrary text-[Npx] when the px value matches the custom scale.**
   - **Approach:** Python automation script with 95+ STYLE_MAPPINGS, batch conversion, direct ternaries/string concatenation for conditional styling.
 - **Component test coverage expansion** — 57+ component tests exist; gaps remain in some panels
 
