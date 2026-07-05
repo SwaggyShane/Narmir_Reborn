@@ -151,7 +151,7 @@ function SummaryCard({ label, value, tone = 'var(--text)', delay = 0, emphasis =
       )}
       style={{ borderLeftColor: tone }}
     >
-      <div className="mb-0.5 text-[11px] text-[var(--text3)]">{label}</div>
+      <div className="mb-0.5 text-sm text-[var(--text3)]">{label}</div>
       <div ref={valueRef} className="origin-center text-[15px] font-bold" style={{ color: tone }}>
         <AnimatedValue value={value} active delay={delay + 0.05} impact={impact} />
       </div>
@@ -374,7 +374,7 @@ export default function BattleReportModal({ data, onClose }) {
         className="relative max-h-[90vh] w-[90%] max-w-[480px] overflow-y-auto rounded-[var(--radius-lg)] border-2 border-[var(--accent1)] bg-[var(--bg2)] px-8 py-7 shadow-[0_24px_70px_rgba(0,0,0,0.55)]"
       >
         <div
-          className="absolute right-3 top-3 cursor-pointer p-1 text-[18px] leading-none text-[var(--text3)]"
+          className="absolute right-3 top-3 cursor-pointer p-1 text-xl leading-none text-[var(--text3)]"
           onClick={onClose}
           title="Close"
         >
@@ -383,18 +383,18 @@ export default function BattleReportModal({ data, onClose }) {
 
         <div
           ref={titleRef}
-          className={clsx('mb-1 text-base font-bold', win ? 'text-[var(--green)]' : 'text-[var(--red)]')}
+          className={clsx('mb-1 text-lg font-bold', win ? 'text-[var(--green)]' : 'text-[var(--red)]')}
         >
           {win ? ' Victory' : ' Repelled'}
         </div>
 
-        <div ref={subtitleRef} className="mb-4 text-[13px] text-[var(--text2)]">
+        <div ref={subtitleRef} className="mb-4 text-base text-[var(--text2)]">
           {type}&nbsp;&nbsp;<strong className="text-[var(--text)]">{target}</strong>
         </div>
 
         {hasPowerBars && (
           <div ref={powerWrapRef} className="mb-4">
-            <div className="mb-1 flex justify-between text-[11px] text-[var(--text3)]">
+            <div className="mb-1 flex justify-between text-sm text-[var(--text3)]">
               <span>
                 Your power: <strong className="text-[var(--green)]">{fmt(atkPower)}</strong>
               </span>
@@ -411,7 +411,7 @@ export default function BattleReportModal({ data, onClose }) {
 
         {showWallState && (
           <div ref={wallWrapRef} className="mb-4">
-            <div className="mb-1 flex justify-between text-[11px] text-[var(--text3)]">
+            <div className="mb-1 flex justify-between text-sm text-[var(--text3)]">
               <span>
                 Wall HP: <strong className="text-[var(--amber)]">{fmt(wallHpBefore)}</strong>
               </span>
@@ -422,7 +422,7 @@ export default function BattleReportModal({ data, onClose }) {
             <div ref={wallBarWrapRef} className="flex h-2 origin-center overflow-hidden rounded bg-[var(--bg4)]">
               <div ref={wallBarRef} className="bg-[var(--amber)]" style={{ width: `${wallPct}%` }} />
             </div>
-            <div className="mt-1 text-[11px] text-[var(--text3)]">
+            <div className="mt-1 text-sm text-[var(--text3)]">
               After battle: <strong className="text-[var(--text)]">{fmt(wallHpAfter)}</strong>
             </div>
           </div>
@@ -462,8 +462,8 @@ export default function BattleReportModal({ data, onClose }) {
                 }}
                 className="rounded-lg bg-[var(--bg3)] px-2.5 py-2"
               >
-                <div className="mb-0.5 text-[11px] text-[var(--text3)]">{label}</div>
-                <div className={clsx('text-sm font-semibold', valColorClass)}>
+                <div className="mb-0.5 text-sm text-[var(--text3)]">{label}</div>
+                <div className={clsx('text-md font-semibold', valColorClass)}>
                   <AnimatedValue value={value} active />
                 </div>
               </div>
