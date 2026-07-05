@@ -105,49 +105,83 @@ const result = await db.withTransaction(async (client) => {
 
 **New code** (after fix):
 ```javascript
-// PREFETCH: Outside transaction, parallel reads
-const kingdom = await getKingdom();
-const expeditions = await getExpeditions();
-const heroes = await getHeroes();
+const startTime = Date.now();
 
-// TRANSACTION: Only necessary writes
-const updates = await db.withTransaction(async (client) => {
-  // processTurn (347ms)
-  const updates = await engine.processTurn(kingdom, expeditions, heroes);
-  
-  // applyUpdates (292ms)
-  await applyUpdates(kingdom.id, updates);
-  
-  // resolveExpeditions (285ms)
-  const rewards = await resolveExpeditions(kingdom.id);
-  
-  return { rewards };
-});
+// PREFETCH: Outside transaction, parallel reads (80-100ms total)
+console.time('prefetch');
+const [kingdom, expeditions, heroes] = await Promise.all([
+  getKingdom(),
+  getExpeditions(),
+  getHeroes()
+]);
+console.timeEnd('prefetch');
 
-// POSTFETCH: Outside transaction, parallel reads
-const refreshedKingdom = await getKingdom();
-const unreadCount = await getUnreadCount();
+// TRANSACTION: Only necessary writes (600-650ms)
+console.time('transaction');
+let updates, rewards;
+try {
+  updates = await db.withTransaction(async (client) => {
+    // processTurn (347ms)
+    const updates = await engine.processTurn(kingdom, expeditions, heroes);
+    
+    // applyUpdates (292ms)
+    await applyUpdates(kingdom.id, updates);
+    
+    // resolveExpeditions (285ms)
+    const rewards = await resolveExpeditions(kingdom.id);
+    
+    return { updates, rewards };
+  });
+} catch (txError) {
+  console.error('Transaction failed:', txError);
+  // Return clear error to client; client may retry
+  throw new Error('Turn processing failed, please retry');
+}
+console.timeEnd('transaction');
 
-const result = { refreshedKingdom, unreadCount, ...updates };
+// POSTFETCH: Outside transaction, parallel reads (50-70ms total)
+console.time('postfetch');
+const [refreshedKingdom, unreadCount] = await Promise.all([
+  getKingdom(),
+  getUnreadCount()
+]);
+console.timeEnd('postfetch');
+
+const totalTime = Date.now() - startTime;
+console.log(`Turn complete: ${totalTime}ms (prefetch + tx + postfetch)`);
+
+const result = { refreshedKingdom, unreadCount, ...updates.updates, rewards: updates.rewards };
 ```
 
 **Key changes**:
-- Move getKingdom/getExpeditions/getHeroes calls BEFORE `db.withTransaction()`
+- **Promise.all()** for prefetch reads (parallel, not sequential) — saves ~200-300ms
+- **Promise.all()** for postfetch reads (parallel, not sequential) — saves ~150-200ms
+- Move getKingdom/getExpeditions/getHeroes BEFORE `db.withTransaction()`
 - Move refresh queries AFTER `db.withTransaction()`
-- Transaction now only wraps processTurn + applyUpdates + resolveExpeditions (~924ms instead of 1,641ms)
+- **Error handling**: Transaction fails → catch and return clear error (client may retry)
+- **Structured logging**: Time each layer (prefetch, transaction, postfetch) for diagnosis
+- Transaction now only wraps processTurn + applyUpdates + resolveExpeditions (~600-650ms instead of 1,641ms)
 
 **Correctness concern**: init-queries prefetch data; what if kingdom state changes between prefetch and write?
 
 **Answer**: This is fine. The prefetch is for *input* to the game logic (what was the situation when the turn started). If another request modifies the kingdom between prefetch and write, those modifications apply *after* this turn completes. Order of turns is preserved by `withTurnLock()` (per-player serialization at line 181).
 
 **File changes required**:
-- `routes/kingdom-gameplay.js` lines 553-590: Move init-queries before transaction, refresh-queries after transaction
+- `routes/kingdom-gameplay.js` lines 553-590: Restructure with Promise.all(), error handling, logging
 
 **Measurement after Phase 1**:
+
+**Tools**:
+- Load testing: Use `wrk` or `k6` instead of `ab` (more realistic scenarios)
+- DB monitoring: Check `pg_stat_activity`, `pg_stat_statements` during tests
+- Logging: Review console.time() output for actual prefetch/tx/postfetch breakdown
+
+**Tests**:
 - [ ] Single-player turn latency: measure (target: <1,000ms, was 1,641ms)
 - [ ] Transaction duration only: measure (target: <600ms, was 1,641ms)
 - [ ] Load test 50 concurrent players: measure p50, p95, error rate
 - [ ] Load test 100 concurrent players: measure p50, p95, error rate (502 errors should cease)
+- [ ] DB pool state: Check pg_stat_activity — confirm max 10-12 connections in use (not all 20)
 - [ ] Correctness: Run same kingdom 5 times, verify identical outputs
 
 **Pass gate**: Single-player <1,000ms AND 100 concurrent <10% error rate (down from 502s)
@@ -283,44 +317,79 @@ Add timing instrumentation to the 18 attunement functions and JSON operations:
 
 **Before changes** (baseline):
 ```bash
-# Single-player turn latency (10 runs)
-curl -X POST http://localhost/turn -u player123 | time
-# Record: avg time, min, max
+# Single-player turn latency (10 runs, check console.time() logs)
+for i in {1..10}; do
+  curl -X POST http://localhost/turn -H "Authorization: Bearer player123" 2>/dev/null
+done
+# Record: avg, min, max from logs (prefetch + tx + postfetch)
 
-# Load test 50 concurrent players
-ab -n 500 -c 50 -X POST http://localhost/turn
-# Record: mean, median, p95, failed requests
+# Load test 50 concurrent players (use wrk for better scenarios than ab)
+wrk -t 4 -c 50 -d 30s -s script.lua http://localhost/turn
+# Record: mean latency, stdev, p50, p95, p99, errors
 
 # Load test 100 concurrent players  
-ab -n 1000 -c 100 -X POST http://localhost/turn
-# Record: mean, median, p95, failed requests, error rate
+wrk -t 4 -c 100 -d 30s -s script.lua http://localhost/turn
+# Record: mean latency, stdev, p50, p95, p99, errors
+
+# DB monitoring during load test (in separate terminal)
+watch -n 1 'psql -c "SELECT count(*) FROM pg_stat_activity WHERE state = '\''active'\''"'
+# Record: peak connection count (should be <15, not all 20)
 ```
 
 **After Phase 1 changes**:
 ```bash
 # Repeat same measurements
 # Target: Single-player <1,000ms (was 1,641ms)
+# Target: 100 concurrent p95 <1,500ms (was hanging/502s)
 # Target: 100 concurrent errors <10% (was ~100% 502s)
+# Target: Peak DB connections <15 (was all 20 exhausted)
+```
+
+**Structured logging verification**:
+```
+Turn complete: 924ms (prefetch 85ms + transaction 612ms + postfetch 65ms)
+```
+Should show similar breakdown consistently.
+
+**DB query analysis**:
+```sql
+-- Check query performance during load
+SELECT query, calls, mean_exec_time 
+FROM pg_stat_statements 
+WHERE query LIKE '%kingdom%' 
+ORDER BY mean_exec_time DESC 
+LIMIT 10;
+
+-- Check slow queries (>100ms)
+SELECT * FROM pg_stat_statements 
+WHERE mean_exec_time > 100 
+ORDER BY mean_exec_time DESC;
 ```
 
 **Correctness check**:
 ```bash
-# Run same kingdom 5 times, diff outputs
+# Run same kingdom 5 times, compare outputs
 for i in {1..5}; do
-  curl -X POST http://localhost/turn -u player123 > /tmp/run$i.json
+  curl -X POST http://localhost/turn -H "Authorization: Bearer test-kingdom-123" > /tmp/run$i.json
 done
 diff /tmp/run1.json /tmp/run2.json  # Should be identical
 diff /tmp/run2.json /tmp/run3.json  # Should be identical
+# (If outputs differ, turn logic is non-deterministic — GATE FAILS)
 ```
 
 **Success criteria**:
 - Single-player <1,000ms ✓
+- 100 concurrent p95 <1,500ms ✓
 - 100 concurrent <10% error ✓
+- Peak DB connections <15 ✓
 - Correctness: identical outputs ✓
 
-**If all three pass**: Phase 1 complete. Pool exhaustion fixed. Deploy.
+**If all five pass**: Phase 1 complete. Pool exhaustion fixed. Deploy.
 
-**If any fail**: Investigate and revert, do not proceed.
+**If any fail**: 
+- Investigate logs (which layer is slow? prefetch/tx/postfetch?)
+- Check DB monitoring (is pool still exhausted?)
+- Revert and diagnose before proceeding.
 
 ---
 
