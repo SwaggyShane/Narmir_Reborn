@@ -565,14 +565,9 @@ function processTurn(k, db = null) {
         });
         // Defer visibility update to happen after turn is processed (async, non-blocking)
         if (db && k.id) {
-          revealRingHexes(db, k.id, { ...k, ...updates }, scoutResult.completed_ring_number)
-            .then(() => {
-              const socketIo = typeof io !== 'undefined' ? io : (typeof global !== 'undefined' && global.io);
-              if (socketIo) socketIo.emit('event:world_updated');
-            })
-            .catch(err =>
-              console.error(`[engine] Failed to reveal scout ring ${scoutResult.completed_ring_number}: ${err.message}`)
-            );
+          revealRingHexes(db, k.id, { ...k, ...updates }, scoutResult.completed_ring_number).catch(err =>
+            console.error(`[engine] Failed to reveal scout ring ${scoutResult.completed_ring_number}: ${err.message}`)
+          );
         }
       }
     }

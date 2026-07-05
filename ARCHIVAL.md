@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Fog of war visibility fixed; Test infrastructure fixed; Worldmap features restored and Gemini feedback addressed; Terrain System Phases 1-3, Admin CSS Phase 4R verified complete; TODO audit completed)
+**Last updated:** 2026-07-05 (Test infrastructure fixed; Worldmap features restored and Gemini feedback addressed; Terrain System Phases 1-3, Admin CSS Phase 4R verified complete; TODO audit completed)
 
 ---
 
@@ -83,22 +83,6 @@
     - `3d181b8`: Initial implementation with clickable hex grid modal and hexUtils
     - `8edf6fe`: Fix missing exports (HEX_SIZE, HEX_W constants)
   - **Code Quality:** Lint ✅ (0 errors after fix). Build ✅. All smoke test baselines pass. No regressions.
-
-- **Fix Fog of War Visibility Issues** (PR #831, pending merge 2026-07-05): Fixed two critical fog of war display and update issues affecting the worldmap.
-  - **Issues Fixed:**
-    - **Region Names Hidden Behind Fog Overlay**: Region labels were rendering before fog of war layer in SVG DOM, causing them to appear behind the fog's unseen/seen darkening overlays. In SVG (unlike CSS/HTML), elements render in DOM order, so later elements appear on top.
-    - **Client Not Refreshing When Scout Rings Complete**: When scout rings completed and revealed new hexes via `revealRingHexes()`, the client was never notified of the visibility update. Socket event `event:world_updated` was never emitted despite visibility changes occurring server-side.
-  - **Fixes Applied:**
-    - **SVG Rendering Order**: Moved fog of war layer rendering from position before region labels to AFTER region labels in the SVG string concatenation. This ensures fog layer is added to the DOM after labels, making fog appear on top (correctly obscuring unseen regions while labels remain visible in seen/current areas).
-    - **Socket Event Emission**: Added `.then()` handler to `revealRingHexes()` promise in `engine.js` to emit `event:world_updated` socket event after visibility update completes. This triggers client refresh via `useSocket.js` listener, updating the worldmap display with newly revealed hexes.
-    - **Safe io Reference**: Added defensive check for undefined `io` variable using `typeof io !== 'undefined'` with fallback to `global.io` to prevent ReferenceError in non-socket environments (tests, CLI, cron jobs).
-  - **Gemini Code Review Feedback Addressed:**
-    - ✅ HIGH: Fixed undefined `io` reference in socket event emission by adding safe existence check (guards against ReferenceError in test/non-socket environments)
-  - **Quality Gates:** Lint ✅ (0 errors), Test suite ✅ (all 63 test files pass), CI pending (initial checks in progress: Validate Security Configuration, Validate Text Encoding, Lint/Test/Build)
-  - **Commits:**
-    - `0aab1a1`: Fix fog of war visibility issues (SVG ordering + socket event emission)
-    - `f369923`: Fix undefined io reference with safe fallback
-  - **Files Changed:** `client/src/components/react/WorldmapRenderer.jsx` (fog layer SVG rendering order), `game/engine.js` (socket event emission on scout ring completion)
 
 - **Restore Missing Worldmap Visual Features** (PR #828, merged 2026-07-05): Restored three critical worldmap visualization features that were previously missing or broken.
   - **Features Restored:**
