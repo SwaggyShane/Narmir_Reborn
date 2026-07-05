@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
+import clsx from 'clsx';
 import gsap from 'gsap';
 import { fmt } from '../../utils/fmt.js';
 
@@ -142,26 +143,16 @@ function SummaryCard({ label, value, tone = 'var(--text)', delay = 0, emphasis =
   return (
     <div
       ref={cardRef}
-      style={{
-        background: impact
-          ? 'linear-gradient(180deg, rgba(34, 12, 12, 0.95) 0%, rgba(20, 10, 10, 0.98) 100%)'
-          : 'var(--bg3)',
-        borderRadius: 8,
-        padding: '8px 10px',
-        borderLeft: impact ? `4px solid ${tone}` : `3px solid ${tone}`,
-        boxShadow: impact ? '0 0 0 1px rgba(255,255,255,0.03) inset' : 'none',
-      }}
+      className={clsx(
+        'rounded-lg px-2.5 py-2',
+        impact
+          ? 'border-l-4 bg-[linear-gradient(180deg,rgba(34,12,12,0.95)_0%,rgba(20,10,10,0.98)_100%)] shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset]'
+          : 'border-l-[3px] bg-[var(--bg3)]',
+      )}
+      style={{ borderLeftColor: tone }}
     >
-      <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>{label}</div>
-      <div
-        ref={valueRef}
-        style={{
-          fontSize: 15,
-          fontWeight: 700,
-          color: tone,
-          transformOrigin: '50% 50%',
-        }}
-      >
+      <div className="mb-0.5 text-[11px] text-[var(--text3)]">{label}</div>
+      <div ref={valueRef} className="origin-center text-[15px] font-bold" style={{ color: tone }}>
         <AnimatedValue value={value} active delay={delay + 0.05} impact={impact} />
       </div>
     </div>
@@ -188,18 +179,10 @@ export default function BattleReportModal({ data, onClose }) {
   const hasData = Boolean(data);
   const { win, type, target, atkPower = 0, defPower = 0, rows = [], spellOutcome } = data ?? {};
 
-  const titleColor = win ? 'var(--green)' : 'var(--red)';
   const outcomeText = win ? ' Victory! Land captured and enemies routed.' : ' Attack repelled. Regroup and try again.';
-  const outcomeStyle = {
-    border: `1px solid ${win ? 'rgba(74, 222, 128, 0.42)' : 'rgba(248, 113, 113, 0.42)'}`,
-    background: win
-      ? 'linear-gradient(180deg, rgba(18, 54, 31, 0.98) 0%, rgba(10, 18, 13, 0.98) 100%)'
-      : 'linear-gradient(180deg, rgba(58, 17, 17, 0.98) 0%, rgba(22, 11, 11, 0.98) 100%)',
-    boxShadow: win
-      ? '0 0 0 1px rgba(74, 222, 128, 0.18), 0 10px 28px rgba(0, 0, 0, 0.35)'
-      : '0 0 0 1px rgba(248, 113, 113, 0.18), 0 10px 28px rgba(0, 0, 0, 0.35)',
-    color: win ? 'var(--green)' : 'var(--red)',
-  };
+  const outcomeClass = win
+    ? 'border border-[rgba(74,222,128,0.42)] bg-[linear-gradient(180deg,rgba(18,54,31,0.98)_0%,rgba(10,18,13,0.98)_100%)] shadow-[0_0_0_1px_rgba(74,222,128,0.18),0_10px_28px_rgba(0,0,0,0.35)] text-[var(--green)]'
+    : 'border border-[rgba(248,113,113,0.42)] bg-[linear-gradient(180deg,rgba(58,17,17,0.98)_0%,rgba(22,11,11,0.98)_100%)] shadow-[0_0_0_1px_rgba(248,113,113,0.18),0_10px_28px_rgba(0,0,0,0.35)] text-[var(--red)]';
   const total = atkPower + defPower || 1;
   const atkPct = Math.round((atkPower / total) * 100);
   const defPct = 100 - atkPct;
@@ -381,45 +364,17 @@ export default function BattleReportModal({ data, onClose }) {
   const modal = (
     <div
       ref={modalRef}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.7)',
-        zIndex: 'var(--z-backdrop)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
+      className="fixed inset-0 z-[var(--z-backdrop)] flex items-center justify-center bg-black/70"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
         ref={panelRef}
-        style={{
-          background: 'var(--bg2)',
-          border: '2px solid var(--accent1)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '28px 32px',
-          maxWidth: 480,
-          width: '90%',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          position: 'relative',
-          boxShadow: '0 24px 70px rgba(0, 0, 0, 0.55)',
-        }}
+        className="relative max-h-[90vh] w-[90%] max-w-[480px] overflow-y-auto rounded-[var(--radius-lg)] border-2 border-[var(--accent1)] bg-[var(--bg2)] px-8 py-7 shadow-[0_24px_70px_rgba(0,0,0,0.55)]"
       >
         <div
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: 12,
-            cursor: 'pointer',
-            color: 'var(--text3)',
-            fontSize: 18,
-            lineHeight: 1,
-            padding: 4,
-          }}
+          className="absolute right-3 top-3 cursor-pointer p-1 text-[18px] leading-none text-[var(--text3)]"
           onClick={onClose}
           title="Close"
         >
@@ -428,65 +383,53 @@ export default function BattleReportModal({ data, onClose }) {
 
         <div
           ref={titleRef}
-          style={{
-            fontSize: 16,
-            fontWeight: 700,
-            color: titleColor,
-            marginBottom: 4,
-          }}
+          className={clsx('mb-1 text-base font-bold', win ? 'text-[var(--green)]' : 'text-[var(--red)]')}
         >
           {win ? ' Victory' : ' Repelled'}
         </div>
 
-        <div
-          ref={subtitleRef}
-          style={{
-            fontSize: 13,
-            color: 'var(--text2)',
-            marginBottom: 16,
-          }}
-        >
-          {type}&nbsp;&nbsp;<strong style={{ color: 'var(--text)' }}>{target}</strong>
+        <div ref={subtitleRef} className="mb-4 text-[13px] text-[var(--text2)]">
+          {type}&nbsp;&nbsp;<strong className="text-[var(--text)]">{target}</strong>
         </div>
 
         {hasPowerBars && (
-          <div ref={powerWrapRef} style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>
+          <div ref={powerWrapRef} className="mb-4">
+            <div className="mb-1 flex justify-between text-[11px] text-[var(--text3)]">
               <span>
-                Your power: <strong style={{ color: 'var(--green)' }}>{fmt(atkPower)}</strong>
+                Your power: <strong className="text-[var(--green)]">{fmt(atkPower)}</strong>
               </span>
               <span>
-                Enemy power: <strong style={{ color: 'var(--red)' }}>{fmt(defPower)}</strong>
+                Enemy power: <strong className="text-[var(--red)]">{fmt(defPower)}</strong>
               </span>
             </div>
-            <div ref={powerBarWrapRef} style={{ height: 8, borderRadius: 4, overflow: 'hidden', background: 'var(--bg4)', display: 'flex', transformOrigin: '50% 50%' }}>
-              <div ref={attackBarRef} style={{ width: `${atkPct}%`, background: 'var(--green)' }} />
-              <div ref={defenseBarRef} style={{ width: `${defPct}%`, background: 'var(--red)' }} />
+            <div ref={powerBarWrapRef} className="flex h-2 origin-center overflow-hidden rounded bg-[var(--bg4)]">
+              <div ref={attackBarRef} className="bg-[var(--green)]" style={{ width: `${atkPct}%` }} />
+              <div ref={defenseBarRef} className="bg-[var(--red)]" style={{ width: `${defPct}%` }} />
             </div>
           </div>
         )}
 
         {showWallState && (
-          <div ref={wallWrapRef} style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>
+          <div ref={wallWrapRef} className="mb-4">
+            <div className="mb-1 flex justify-between text-[11px] text-[var(--text3)]">
               <span>
-                Wall HP: <strong style={{ color: 'var(--amber)' }}>{fmt(wallHpBefore)}</strong>
+                Wall HP: <strong className="text-[var(--amber)]">{fmt(wallHpBefore)}</strong>
               </span>
               <span>
-                Damage: <strong style={{ color: 'var(--red)' }}>-{fmt(wallDamage)}</strong>
+                Damage: <strong className="text-[var(--red)]">-{fmt(wallDamage)}</strong>
               </span>
             </div>
-            <div ref={wallBarWrapRef} style={{ height: 8, borderRadius: 4, overflow: 'hidden', background: 'var(--bg4)', display: 'flex', transformOrigin: '50% 50%' }}>
-              <div ref={wallBarRef} style={{ width: `${wallPct}%`, background: 'var(--amber)' }} />
+            <div ref={wallBarWrapRef} className="flex h-2 origin-center overflow-hidden rounded bg-[var(--bg4)]">
+              <div ref={wallBarRef} className="bg-[var(--amber)]" style={{ width: `${wallPct}%` }} />
             </div>
-            <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text3)' }}>
-              After battle: <strong style={{ color: 'var(--text)' }}>{fmt(wallHpAfter)}</strong>
+            <div className="mt-1 text-[11px] text-[var(--text3)]">
+              After battle: <strong className="text-[var(--text)]">{fmt(wallHpAfter)}</strong>
             </div>
           </div>
         )}
 
         {showSummary && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 14 }}>
+          <div className="mb-3.5 grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2">
             <div data-summary-card="true">
               <SummaryCard label="Casualties" value={casualties} tone="var(--red)" delay={0} emphasis impact />
             </div>
@@ -504,12 +447,12 @@ export default function BattleReportModal({ data, onClose }) {
           </div>
         )}
 
-        <div ref={rowsWrapRef} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+        <div ref={rowsWrapRef} className="mb-3.5 grid grid-cols-2 gap-2">
           {rows.map(([label, value], i) => {
             const sval = String(value);
-            let valColor = 'var(--text)';
-            if (sval.startsWith('+')) valColor = 'var(--green)';
-            else if (sval.startsWith('-') || (label.toLowerCase().includes('lost') && parseInt(value, 10) > 0)) valColor = 'var(--red)';
+            let valColorClass = 'text-[var(--text)]';
+            if (sval.startsWith('+')) valColorClass = 'text-[var(--green)]';
+            else if (sval.startsWith('-') || (label.toLowerCase().includes('lost') && parseInt(value, 10) > 0)) valColorClass = 'text-[var(--red)]';
 
             return (
               <div
@@ -517,14 +460,10 @@ export default function BattleReportModal({ data, onClose }) {
                 ref={(el) => {
                   rowRefs.current[i] = el;
                 }}
-                style={{
-                  background: 'var(--bg3)',
-                  borderRadius: 8,
-                  padding: '8px 10px',
-                }}
+                className="rounded-lg bg-[var(--bg3)] px-2.5 py-2"
               >
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>{label}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: valColor }}>
+                <div className="mb-0.5 text-[11px] text-[var(--text3)]">{label}</div>
+                <div className={clsx('text-sm font-semibold', valColorClass)}>
                   <AnimatedValue value={value} active />
                 </div>
               </div>
@@ -532,20 +471,11 @@ export default function BattleReportModal({ data, onClose }) {
           })}
         </div>
 
-        <div
-          ref={outcomeRef}
-          style={{
-            borderRadius: 8,
-            padding: 10,
-            textAlign: 'center',
-            fontWeight: 600,
-            ...outcomeStyle,
-          }}
-        >
+        <div ref={outcomeRef} className={clsx('rounded-lg p-2.5 text-center font-semibold', outcomeClass)}>
           {outcomeText}
         </div>
 
-        <button ref={buttonRef} className="btn" onClick={onClose} style={{ marginTop: 18, width: '100%' }}>
+        <button ref={buttonRef} className="btn mt-[18px] w-full" onClick={onClose}>
           Dismiss report
         </button>
       </div>
