@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Terrain System Phases 1-3, Admin CSS Phase 4R verified complete and moved to archive; TODO audit completed)
+**Last updated:** 2026-07-05 (Worldmap features restored and Gemini feedback addressed; Terrain System Phases 1-3, Admin CSS Phase 4R verified complete; TODO audit completed)
 
 ---
 
@@ -75,6 +75,22 @@
     - `3d181b8`: Initial implementation with clickable hex grid modal and hexUtils
     - `8edf6fe`: Fix missing exports (HEX_SIZE, HEX_W constants)
   - **Code Quality:** Lint ✅ (0 errors after fix). Build ✅. All smoke test baselines pass. No regressions.
+
+- **Restore Missing Worldmap Visual Features** (PR #828, in progress 2026-07-05): Restored three critical worldmap visualization features that were previously missing or broken.
+  - **Features Restored:**
+    - **SVG Terrain Symbols Layer**: Added distinct visual symbols for each terrain type (plains grass, forest trees, mountain peaks, hills curves, swamp water, desert sand, coast waves, tundra snowflake, volcanic craters) to improve terrain recognition. Symbols render above terrain fill but below fog of war for clear visibility.
+    - **River Layer Z-Order Fix**: Moved rivers layer to render BEFORE fog of war so rivers appear beneath fog overlays, maintaining geographic underlay while fog indicates exploration state.
+    - **WorldmapLegend.jsx Restoration**: Re-added previously deleted component from git history (commit d39be2e, created 2026-06-21). Note: Legend functionality already exists in WorldmapPanel as RegionLegend, so this file archived for reference.
+  - **Gemini Code Review Feedback Addressed:**
+    - ✅ HIGH: Imported REGION_META and REGION_BONUSES from raceData.js (instead of duplicated outdated constants missing vampire, ogre, wood_elf races)
+    - ✅ HIGH: Bound highlightRegion function to global window object to prevent ReferenceError on legend onclick handlers
+    - ✅ MEDIUM: Optimized tundra symbol rendering (3 intersecting lines instead of loop with trigonometry, reduces SVG elements 50% and eliminates Math.cos/Math.sin per cell)
+  - **Quality Gates:** Lint ✅ (0 errors), Smoke test ✅ (combat-v2 adapter), Text Encoding ✅ (fixed mojibake middle-dot character), CI in progress
+  - **Commits:**
+    - `7cad79b`: Initial restoration with terrain symbols layer and river z-order fix
+    - `ab0dc0d`: Fix text encoding issue (middle-dot → pipe in legend)
+    - `040ed22`: Address Gemini feedback (raceData import, window binding, tundra optimization)
+  - **Files Changed:** `client/src/components/react/WorldmapRenderer.jsx` (terrain symbols + river layer order), `client/src/components/react/WorldmapLegend.jsx` (raceData imports + window binding)
 
 - **Exploration System Enhancement: Resource Gathering UI Refactor** (PR #817, merged 2026-07-05): Refactored resource gathering system in ExplorationPanel with duration-based expeditions and reusable hex selection modal. Moved from single-button per resource to [Instant] [5] [25] duration options with visual hex targeting.
   - **UI Improvements:**
