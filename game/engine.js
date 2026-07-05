@@ -567,7 +567,8 @@ function processTurn(k, db = null) {
         if (db && k.id) {
           revealRingHexes(db, k.id, { ...k, ...updates }, scoutResult.completed_ring_number)
             .then(() => {
-              if (io) io.emit('event:world_updated');
+              const socketIo = typeof io !== 'undefined' ? io : (typeof global !== 'undefined' && global.io);
+              if (socketIo) socketIo.emit('event:world_updated');
             })
             .catch(err =>
               console.error(`[engine] Failed to reveal scout ring ${scoutResult.completed_ring_number}: ${err.message}`)
