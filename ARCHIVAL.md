@@ -2,13 +2,21 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Worldmap features restored and Gemini feedback addressed; Terrain System Phases 1-3, Admin CSS Phase 4R verified complete; TODO audit completed)
+**Last updated:** 2026-07-05 (Test infrastructure fixed; Worldmap features restored and Gemini feedback addressed; Terrain System Phases 1-3, Admin CSS Phase 4R verified complete; TODO audit completed)
 
 ---
 
 ## Recent Chronology
 
 ### 2026-07-05
+
+- **Test Infrastructure Fix: JWT_SECRET Setup in Middleware Test** (PR #830, merged `c83bea5` 2026-07-05): Restored JWT_SECRET environment variable setup in middleware-csrf.test.js to fix test suite execution.
+  - **Issue:** middleware-csrf.test.js was failing because routes/middleware.js throws an error at module import time if JWT_SECRET is not set. Test execution was blocked because the test couldn't import the middleware module.
+  - **Fix Applied:** Added JWT_SECRET setup (minimum 32-character secret) before importing middleware in test file
+  - **Impact:** All 63 test files now pass successfully; test suite can execute in all environments
+  - **Quality Gates:** CI ✅ (Lint/Test/Build, Validate Text Encoding, Validate Security Configuration)
+  - **Gemini Review:** Approved with no feedback needed
+  - **Commits:** `dab156b` (restore JWT_SECRET setup)
 
 - **Terrain System Phases 1-3 Complete** (PR #751, squash-merged `79a5ae72` 2026-07-04; Phase 3 commit `b22962f` 2026-07-04): Completed terrain type system with visual layer and combat integration.
   - **Phase 1+2:** Data model and visual layer (terrain type system, toggleable visual layer with GSAP animation, expedition travel time & loot yield modifiers)
