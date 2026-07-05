@@ -243,9 +243,10 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/hunting — Turn-based hunting for food
+  // POST /expedition/hunting — Turn-based hunting for food (target coordinates optional, recorded for future expansion)
   router.post('/expedition/hunting', requireAuth, requireCsrfToken, async (req, res) => {
     const { rangers, terrain } = req.body;
+    // target_x and target_y accepted but not yet used in reward calculation
     const r = Math.max(0, parseInt(rangers) || 0);
     const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
     const t = terrain && validTerrains.includes(terrain) ? terrain : 'forest';
@@ -314,9 +315,10 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/prospecting — Turn-based prospecting for gold
+  // POST /expedition/prospecting — Turn-based prospecting for gold (target coordinates optional, recorded for future expansion)
   router.post('/expedition/prospecting', requireAuth, requireCsrfToken, async (req, res) => {
     const { engineers, terrain } = req.body;
+    // target_x and target_y accepted but not yet used in reward calculation
     const e = Math.max(0, parseInt(engineers) || 0);
     const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
     const t = terrain && validTerrains.includes(terrain) ? terrain : 'mountain';
@@ -392,8 +394,9 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/land-expansion — Instant land discovery
+  // POST /expedition/land-expansion — Instant land discovery (target coordinates optional, recorded for future expansion)
   router.post('/expedition/land-expansion', requireAuth, requireCsrfToken, async (req, res) => {
+    // target_x and target_y accepted but not yet used in reward calculation
     const { rangers, terrain } = req.body;
     const r = Math.max(0, parseInt(rangers) || 0);
     const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
