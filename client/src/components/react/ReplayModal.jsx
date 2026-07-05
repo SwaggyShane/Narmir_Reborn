@@ -1,20 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
+import clsx from 'clsx';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 
 function StepCard({ step, visible }) {
   return (
     <div
-      style={{
-        marginBottom: '12px',
-        padding: '10px',
-        background: 'rgba(255,255,255,0.05)',
-        borderRadius: 'var(--radius)',
-        borderLeft: `3px solid ${String(step.icon || '').includes('⚔') ? 'var(--red)' : 'var(--accent)'}`,
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateX(0)' : 'translateX(20px)',
-        transition: 'all 0.3s ease',
-      }}
+      className={clsx(
+        'mb-3 rounded-[var(--radius)] border-l-[3px] bg-white/5 p-2.5 transition-all duration-300 ease-[ease]',
+        String(step.icon || '').includes('⚔') ? 'border-l-[var(--red)]' : 'border-l-[var(--accent)]',
+        visible ? 'translate-x-0 opacity-100' : 'translate-x-5 opacity-0',
+      )}
     >
       <div className="text-[12px] font-bold text-[var(--text2)] mb-1">
         {repairMojibake(step.icon || '⚔')} {repairMojibake(step.title || 'Battle Step')}
@@ -50,28 +46,10 @@ export default function ReplayModal({ title, steps, onClose }) {
 
   const modal = (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.7)',
-        zIndex: 'var(--z-modal)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
+      className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-black/70"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div
-        style={{
-          background: 'var(--bg2)',
-          border: '2px solid var(--accent1)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '20px',
-          maxWidth: '400px',
-          width: '90%',
-          position: 'relative',
-        }}
-      >
+      <div className="relative w-[90%] max-w-[400px] rounded-[var(--radius-lg)] border-2 border-[var(--accent1)] bg-[var(--bg2)] p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="m-0 text-[18px] text-[var(--text)]">
             {repairMojibake(title)}

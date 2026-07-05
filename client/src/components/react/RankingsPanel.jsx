@@ -136,14 +136,14 @@ const RankingsPanel = () => {
     const raceKey = String(row.race || 'human');
     const raceIcon = RACE_ICONS[raceKey] || '👤';
     const rankBadge = row.rank === 1 ? '👑' : row.rank <= 3 ? '🥈' : '';
-    const rankColor = row.rank === 1
-      ? { color: 'var(--gold)', fontWeight: 700 }
+    const rankColorClass = row.rank === 1
+      ? 'text-gold font-bold'
       : row.rank <= 3
-        ? { color: 'var(--amber)' }
-        : { color: 'var(--text3)' };
-    const nameStyle = isMe
-      ? { color: 'var(--accent1)', fontWeight: 700 }
-      : { color: 'var(--text)', fontWeight: 600 };
+        ? 'text-amber'
+        : 'text-text3';
+    const nameClass = isMe
+      ? 'text-accent1 font-bold'
+      : 'text-text font-semibold';
     const meTag = isMe ? <span className="text-[10px] font-normal text-[var(--accent1)]"> (you)</span> : null;
     const aiTag = row.is_ai ? <span className="text-[10px] text-text3"> 🤖</span> : null;
     const protTag = !isMe && (row.turn || 0) < 400
@@ -178,13 +178,13 @@ const RankingsPanel = () => {
 
     return (
       <tr key={row.id} className={clsx("border-b border-b-border transition-colors duration-150", isMe && "bg-[rgba(180,60,0,0.08)]")}>
-        <td style={{ padding: '10px 6px', ...rankColor }}>{rankBadge || row.rank}</td>
+        <td className={clsx('px-1.5 py-2.5', rankColorClass)}>{rankBadge || row.rank}</td>
         <td className="px-1.5 py-2.5 text-text2">{row.username || '—'}</td>
         <td className="px-1.5 py-2.5">
           <div className="flex items-center gap-2">
             <span className="text-lg flex-shrink-0">{raceIcon}</span>
             <div>
-              <div style={nameStyle}>{repairText(row.name || 'Unknown')}{meTag}{aiTag}{protTag}</div>
+              <div className={nameClass}>{repairText(row.name || 'Unknown')}{meTag}{aiTag}{protTag}</div>
               <div className="text-[11px] text-text3 capitalize mt-[1px]">{repairText(raceKey).replace(/_/g, ' ')}</div>
             </div>
           </div>
@@ -201,7 +201,7 @@ const RankingsPanel = () => {
   const renderAllianceRow = (row) => (
     <tr key={row.id} className="border-b border-b-border">
       <td className="px-1.5 py-2.5 text-text3">{row.rank}</td>
-      <td className="px-1.5 py-2.5" style={{color: 'var(--text)'}}>{repairText(row.name || '—')}</td>
+      <td className="px-1.5 py-2.5 text-text">{repairText(row.name || '—')}</td>
       <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{fmt(row.member_count)}</td>
       <td className="px-1.5 py-2.5 text-right text-gold font-semibold">{fmt(row.total_score)}</td>
       <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{fmt(row.member_count ? row.total_score / row.member_count : 0)}</td>
@@ -244,7 +244,7 @@ const RankingsPanel = () => {
               {loadingKingdoms ? (
                 <tr><td colSpan="8" className="text-[var(--text3)] text-[13px] text-center py-6">Loading rankings...</td></tr>
               ) : error ? (
-                <tr><td colSpan="8" className="text-red text-[13px] text-center" style={{padding: '24px 0'}}>{error}</td></tr>
+                <tr><td colSpan="8" className="text-red text-[13px] text-center py-6">{error}</td></tr>
               ) : filteredKingdoms.length === 0 ? (
                 <tr><td colSpan="8" className="text-[var(--text3)] text-[13px] text-center py-6">No kingdoms found.</td></tr>
               ) : filteredKingdoms.map(renderKingdomRow)}
