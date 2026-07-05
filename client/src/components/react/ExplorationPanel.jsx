@@ -272,29 +272,107 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     setHexModalOpen(true);
   }, []);
 
-  // Handler for hex selection modal result
-  const handleHexSelected = useCallback((hex) => {
+  // Handler for hex selection modal result — immediately trigger the action
+  const handleHexSelected = useCallback(async (hex) => {
     if (!hexModalContext) return;
 
-    const { type, duration } = hexModalContext;
-
-    if (type === 'hunting') {
-      setHuntingTargetHex(hex);
-      setHuntingDuration(duration);
-    } else if (type === 'prospecting') {
-      setProspectingTargetHex(hex);
-      setProspectingDuration(duration);
-    } else if (type === 'land_expansion') {
-      setLandExpansionTargetHex(hex);
-      setLandExpansionDuration(duration);
-    } else if (type === 'epic_trek') {
-      setEpicTrekTargetX(hex.x);
-      setEpicTrekTargetY(hex.y);
-    }
-
+    const { type } = hexModalContext;
     setHexModalOpen(false);
     setHexModalContext(null);
-  }, [hexModalContext]);
+
+    // Immediately execute the action when hex is selected
+    if (type === 'hunting') {
+      try {
+        const result = await apiCall('/api/kingdom/expedition/hunting', {
+          method: 'POST',
+          body: { rangers: huntingRangers, terrain: huntingTerrain, target_x: hex.x, target_y: hex.y },
+        });
+
+        if (result.error) {
+          if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+          return;
+        }
+
+        applyResult(result, 'hunting');
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Hunting expedition started!', 'success');
+        const foodGained = result.reward?.foodReward || 0;
+        logInstantEntry('🥩', 'Hunting expedition', `${formatNum(huntingRangers)} rangers sent to (${hex.x}, ${hex.y}) returned with ${formatNum(foodGained)} food`);
+        setHuntingRangers(0);
+        setHuntingTargetHex(null);
+        await refreshAll();
+      } catch (err) {
+        console.error('[expedition/hunting] failed:', err);
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast('Hunting failed — please try again', 'error');
+      }
+    } else if (type === 'prospecting') {
+      try {
+        const result = await apiCall('/api/kingdom/expedition/prospecting', {
+          method: 'POST',
+          body: { engineers: prospectingEngineers, terrain: prospectingTerrain, target_x: hex.x, target_y: hex.y },
+        });
+
+        if (result.error) {
+          if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+          return;
+        }
+
+        applyResult(result, 'prospecting');
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Prospecting expedition started!', 'success');
+        const goldGained = result.reward?.goldReward || 0;
+        logInstantEntry('⛏️', 'Prospecting expedition', `${formatNum(prospectingEngineers)} engineers sent to (${hex.x}, ${hex.y}) returned with ${formatNum(goldGained)} gold`);
+        setProspectingEngineers(0);
+        setProspectingTargetHex(null);
+        await refreshAll();
+      } catch (err) {
+        console.error('[expedition/prospecting] failed:', err);
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast('Prospecting failed — please try again', 'error');
+      }
+    } else if (type === 'land_expansion') {
+      try {
+        const result = await apiCall('/api/kingdom/expedition/land-expansion', {
+          method: 'POST',
+          body: { rangers: landExpansionRangers, terrain: landExpansionTerrain, target_x: hex.x, target_y: hex.y },
+        });
+
+        if (result.error) {
+          if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+          return;
+        }
+
+        applyResult(result, 'land-expansion');
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Land expansion started!', 'success');
+        const popCost = result.reward?.populationUsed || 0;
+        const landsFound = result.reward?.landsDiscovered || 0;
+        logInstantEntry('🗺️', 'Land expansion', `Rangers sent to (${hex.x}, ${hex.y}): Discovered ${formatNum(landsFound)} new lands (used ${formatNum(popCost)} population)`);
+        setLandExpansionRangers(0);
+        setLandExpansionTargetHex(null);
+        await refreshAll();
+      } catch (err) {
+        console.error('[expedition/land-expansion] failed:', err);
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast('Land expansion failed — please try again', 'error');
+      }
+    } else if (type === 'epic_trek') {
+      try {
+        const result = await apiCall('/api/kingdom/expedition/epic-trek', {
+          method: 'POST',
+          body: { target_x: hex.x, target_y: hex.y },
+        });
+
+        if (result.error) {
+          if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+          return;
+        }
+
+        applyResult(result, 'epic-trek-start');
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Epic Trek launched!', 'success');
+        logInstantEntry('🛤️', 'Epic Trek', `Heading to (${hex.x}, ${hex.y}) — ${result.path_hexes} hexes, ${result.turns_left} turns`);
+        await refreshAll();
+      } catch (err) {
+        console.error('[expedition/epic-trek] failed:', err);
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast('Epic Trek failed — please try again', 'error');
+      }
+    }
+  }, [hexModalContext, huntingRangers, huntingTerrain, prospectingEngineers, prospectingTerrain, landExpansionRangers, landExpansionTerrain, applyResult, logInstantEntry, refreshAll]);
 
   // Phase 1: Turn-based resource gathering handlers
   const handleHunting = useCallback(async () => {
