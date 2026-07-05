@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (CSS Consolidation Phase 4H-4N: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806, KingdomXpModal PR #807, WarfarePanel PR #808, small-panels batch PR #809, BattleReportModal PR #810)
+**Last updated:** 2026-07-05 (CSS Consolidation Phase 4H-4O: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806, KingdomXpModal PR #807, WarfarePanel PR #808, small-panels batch PR #809, BattleReportModal PR #810, KingdomBodyHeader PR #811)
 
 ---
 
@@ -208,6 +208,16 @@
     - GSAP interplay safe by construction: GSAP writes inline styles at runtime, which override classes — entrance timeline, reduced-motion path, win pulse, and loss shake unchanged
   - **Gemini Review:** 9 feedback items, 2 high-priority. Root cause: the project's `tailwind.config.js` overrides the fontSize scale (sm=11px, base=13px, md=14px, lg=16px, xl=18px), so `text-base`/`text-sm` picks were real size regressions (16px→13px title, 14px→11px row values). Fixed to `text-lg`/`text-md`, and swapped arbitrary `text-[11/13/18px]` for theme classes `text-sm`/`text-base`/`text-xl`. All addressed in follow-up commit.
   - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks, re-run after fixes), Sanity ✅ (full file re-read; grepped removed titleColor/outcomeStyle/valColor — zero stale references), CI ✅
+  - **Code Quality:** All changes lint ✅. No functional regressions.
+
+- **Admin CSS Consolidation: Phase 4O (KingdomBodyHeader)** (PR #811, merged 2026-07-05): Converting all 7 static inline styles in the kingdom header to Tailwind classes; only the XP bar's dynamic width stays inline.
+  - **Key Improvements:**
+    - `GAP = 8` module constant removed — all five inline `gap`/`marginTop` styles → `gap-2`/`mt-2` (one inline gap even duplicated an existing `gap-2` class)
+    - Kingdom name glow → `[text-shadow:0_0_10px_rgba(var(--theme-rgb),0.35)]` arbitrary property
+    - XP bar: static gradient → `bg-gradient-to-r from-[var(--accent1)] to-[var(--gold)]`; conditional glow (`pct > 0`) → clsx conditional `shadow-[...]`
+    - `Stat` component: `valueStyle` object prop → `valueClass` string prop (file-local; the only override was a static gold color) — exactly one color class present at a time, no cascade ambiguity
+  - **Gemini Review:** 1 item — `transition-all duration-400` → `transition-[width] duration-500`. Verified: `duration-400` is not in the config and used nowhere else, so it was silently non-functional pre-existing dead weight. Applied.
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (grepped removed GAP/valueStyle — zero stale references; all 5 Stat usages accounted for), CI ✅
   - **Code Quality:** All changes lint ✅. No functional regressions.
 
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.
