@@ -785,9 +785,101 @@ export function renderWorldMap(
         });
         svg += '</g>';
 
-        // Phase 4: Fog of War overlay (above terrain, below rivers/regions/labels).
+        // Terrain symbols layer: adds visual distinction to terrain types
+        // (rendered above terrain fill, below fog of war for visibility)
+        svg += '<g class="wm-layer wm-layer-terrain-symbols" style="pointer-events:none">';
+        hexGrid.cells.forEach(function (cell) {
+          if (cell.terrain === 'lake' || cell.terrain === 'ocean') return; // no symbols on water
+          var symbol = '';
+          var symbolColor = '';
+
+          switch (cell.terrain) {
+            case 'plains':
+              // Grass tufts: small dots
+              symbolColor = 'rgba(200,220,100,0.7)';
+              symbol = '<circle cx="' + cell.x + '" cy="' + (cell.y - 2) + '" r="1.5" fill="' + symbolColor + '"/>' +
+                      '<circle cx="' + (cell.x - 3) + '" cy="' + cell.y + '" r="1.5" fill="' + symbolColor + '"/>' +
+                      '<circle cx="' + (cell.x + 3) + '" cy="' + cell.y + '" r="1.5" fill="' + symbolColor + '"/>';
+              break;
+            case 'forest':
+              // Trees: small evergreen triangles
+              symbolColor = 'rgba(150,200,100,0.8)';
+              symbol = '<path d="M ' + cell.x + ' ' + (cell.y - 4) + ' L ' + (cell.x - 2) + ' ' + (cell.y - 1) + ' L ' + (cell.x + 2) + ' ' + (cell.y - 1) + ' Z" fill="' + symbolColor + '"/>' +
+                      '<path d="M ' + (cell.x - 4) + ' ' + (cell.y + 2) + ' L ' + (cell.x - 6) + ' ' + (cell.y + 4) + ' L ' + (cell.x - 2) + ' ' + (cell.y + 4) + ' Z" fill="' + symbolColor + '"/>' +
+                      '<path d="M ' + (cell.x + 4) + ' ' + (cell.y + 2) + ' L ' + (cell.x + 2) + ' ' + (cell.y + 4) + ' L ' + (cell.x + 6) + ' ' + (cell.y + 4) + ' Z" fill="' + symbolColor + '"/>';
+              break;
+            case 'mountains':
+              // Mountain peaks: triangles
+              symbolColor = 'rgba(200,200,200,0.8)';
+              symbol = '<path d="M ' + cell.x + ' ' + (cell.y - 5) + ' L ' + (cell.x - 4) + ' ' + (cell.y + 2) + ' L ' + cell.x + ' ' + (cell.y - 1) + ' Z" fill="' + symbolColor + '"/>' +
+                      '<path d="M ' + cell.x + ' ' + (cell.y - 1) + ' L ' + (cell.x + 4) + ' ' + (cell.y + 2) + ' L ' + (cell.x + 6) + ' ' + cell.y + ' Z" fill="' + symbolColor + '"/>';
+              break;
+            case 'hills':
+              // Rolling hills: curved shapes
+              symbolColor = 'rgba(200,180,120,0.7)';
+              symbol = '<path d="M ' + (cell.x - 5) + ' ' + (cell.y + 1) + ' Q ' + (cell.x - 3) + ' ' + (cell.y - 3) + ' ' + cell.x + ' ' + (cell.y + 1) + '" stroke="' + symbolColor + '" stroke-width="2" fill="none"/>' +
+                      '<path d="M ' + cell.x + ' ' + (cell.y + 1) + ' Q ' + (cell.x + 3) + ' ' + (cell.y - 2) + ' ' + (cell.x + 5) + ' ' + (cell.y + 1) + '" stroke="' + symbolColor + '" stroke-width="2" fill="none"/>';
+              break;
+            case 'swamp':
+              // Swamp: wavy water lines
+              symbolColor = 'rgba(100,150,100,0.7)';
+              symbol = '<path d="M ' + (cell.x - 4) + ' ' + cell.y + ' Q ' + (cell.x - 2) + ' ' + (cell.y - 2) + ' ' + cell.x + ' ' + cell.y + ' Q ' + (cell.x + 2) + ' ' + (cell.y + 2) + ' ' + (cell.x + 4) + ' ' + cell.y + '" stroke="' + symbolColor + '" stroke-width="1.5" fill="none"/>' +
+                      '<path d="M ' + (cell.x - 4) + ' ' + (cell.y + 3) + ' Q ' + (cell.x - 2) + ' ' + (cell.y + 1) + ' ' + cell.x + ' ' + (cell.y + 3) + ' Q ' + (cell.x + 2) + ' ' + (cell.y + 5) + ' ' + (cell.x + 4) + ' ' + (cell.y + 3) + '" stroke="' + symbolColor + '" stroke-width="1.5" fill="none"/>';
+              break;
+            case 'desert':
+              // Desert: sand pattern (diagonal lines)
+              symbolColor = 'rgba(200,160,80,0.6)';
+              symbol = '<line x1="' + (cell.x - 4) + '" y1="' + (cell.y - 4) + '" x2="' + (cell.x - 1) + '" y2="' + (cell.y - 1) + '" stroke="' + symbolColor + '" stroke-width="1.5"/>' +
+                      '<line x1="' + cell.x + '" y1="' + (cell.y - 4) + '" x2="' + (cell.x + 3) + '" y2="' + (cell.y - 1) + '" stroke="' + symbolColor + '" stroke-width="1.5"/>' +
+                      '<line x1="' + (cell.x + 2) + '" y1="' + (cell.y - 2) + '" x2="' + (cell.x + 5) + '" y2="' + (cell.y + 1) + '" stroke="' + symbolColor + '" stroke-width="1.5"/>';
+              break;
+            case 'coast':
+              // Coast: wave pattern
+              symbolColor = 'rgba(150,200,220,0.8)';
+              symbol = '<path d="M ' + (cell.x - 4) + ' ' + (cell.y - 2) + ' Q ' + (cell.x - 2) + ' ' + (cell.y - 4) + ' ' + cell.x + ' ' + (cell.y - 2) + ' Q ' + (cell.x + 2) + ' ' + cell.y + ' ' + (cell.x + 4) + ' ' + (cell.y - 2) + '" stroke="' + symbolColor + '" stroke-width="2" fill="none"/>' +
+                      '<path d="M ' + (cell.x - 4) + ' ' + (cell.y + 2) + ' Q ' + (cell.x - 2) + ' ' + cell.y + ' ' + cell.x + ' ' + (cell.y + 2) + ' Q ' + (cell.x + 2) + ' ' + (cell.y + 4) + ' ' + (cell.x + 4) + ' ' + (cell.y + 2) + '" stroke="' + symbolColor + '" stroke-width="2" fill="none"/>';
+              break;
+            case 'tundra':
+              // Tundra: snowflake (3 intersecting lines)
+              symbolColor = 'rgba(220,240,255,0.8)';
+              symbol = '<line x1="' + (cell.x - 4) + '" y1="' + cell.y + '" x2="' + (cell.x + 4) + '" y2="' + cell.y + '" stroke="' + symbolColor + '" stroke-width="1.5"/>' +
+                      '<line x1="' + (cell.x - 2) + '" y1="' + (cell.y - 3.46) + '" x2="' + (cell.x + 2) + '" y2="' + (cell.y + 3.46) + '" stroke="' + symbolColor + '" stroke-width="1.5"/>' +
+                      '<line x1="' + (cell.x - 2) + '" y1="' + (cell.y + 3.46) + '" x2="' + (cell.x + 2) + '" y2="' + (cell.y - 3.46) + '" stroke="' + symbolColor + '" stroke-width="1.5"/>';
+              break;
+            case 'volcanic':
+              // Volcanic: crater rings
+              symbolColor = 'rgba(220,100,60,0.7)';
+              symbol = '<circle cx="' + cell.x + '" cy="' + cell.y + '" r="3" fill="none" stroke="' + symbolColor + '" stroke-width="1.5"/>' +
+                      '<circle cx="' + cell.x + '" cy="' + cell.y + '" r="1.5" fill="' + symbolColor + '"/>';
+              break;
+          }
+
+          if (symbol) {
+            svg += symbol;
+          }
+        });
+        svg += '</g>';
+
+        // River network: rendered below fog of war so rivers are visible
+        // but not obscuring the unseen/seen fog overlay distinction.
+        // Rivers are a geographic feature, always visible regardless of terrain toggle.
+        // Trunk segments (spanning-tree connectors linking every region's lake to every other)
+        // render thicker/brighter than local tributaries — the "roadway" a navy travels.
+        svg += '<g class="wm-layer wm-layer-rivers">';
+        hexGrid.riverSegments.forEach(function (seg) {
+          var underWidth = seg.kind === 'trunk' ? 6 : 4.5;
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#0d2a3a" stroke-width="' + underWidth + '" stroke-linecap="round" opacity="0.5" pointer-events="none"/>';
+        });
+        hexGrid.riverSegments.forEach(function (seg) {
+          var topWidth = seg.kind === 'trunk' ? 3.25 : 2.25;
+          var color = seg.kind === 'trunk' ? '#5cc0e8' : '#4a9fd0';
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="' + color + '" stroke-width="' + topWidth + '" stroke-linecap="round" opacity="0.85" class="water-edge" data-kind="' + seg.kind + '" pointer-events="none"/>';
+        });
+        svg += '</g>';
+
+        // Fog of War overlay (above terrain and rivers, below regions/labels).
         // Unseen: heavily obscured; seen: dimmed; current: fully visible (no overlay).
-        // Reduced motion: static (no transitions/animations), as SVG is rendered statically via dangerouslySetInnerHTML (transitions would not trigger anyway).
+        // Reduced motion: static (no transitions/animations), as SVG is rendered statically via dangerouslySetInnerHTML.
         svg += '<g class="wm-layer wm-layer-fog" style="pointer-events:none">';
         hexGrid.cells.forEach(function (cell) {
           const col = cell.col, row = cell.row;
@@ -807,30 +899,11 @@ export function renderWorldMap(
         });
         svg += '</g>';
 
-        // Phase 3: Interactive hex layer for Epic Trek target selection
+        // Interactive hex layer for Epic Trek target selection
         // Invisible clickable hexes (for exploration mode)
         svg += '<g class="wm-layer wm-layer-hex-interact" style="pointer-events:auto">';
         hexGrid.cells.forEach(function (cell) {
           svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="transparent" stroke="none" data-hex-x="' + Math.round(cell.x) + '" data-hex-y="' + Math.round(cell.y) + '" style="cursor:crosshair;opacity:0" />';
-        });
-        svg += '</g>';
-
-        // River network: overlaid directly on the terrain fill (not a gap
-        // like region borders — rivers are a geographic feature painted on
-        // top of whatever biome they cross, not a boundary carved out of it).
-        // Always visible regardless of the terrain toggle, same as lakes.
-        // Trunk segments (the spanning-tree connectors linking every region's
-        // lake to every other) render thicker/brighter than local tributaries
-        // — the "roadway" a navy actually travels, versus feeder streams.
-        svg += '<g class="wm-layer wm-layer-rivers">';
-        hexGrid.riverSegments.forEach(function (seg) {
-          var underWidth = seg.kind === 'trunk' ? 6 : 4.5;
-          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#0d2a3a" stroke-width="' + underWidth + '" stroke-linecap="round" opacity="0.5" pointer-events="none"/>';
-        });
-        hexGrid.riverSegments.forEach(function (seg) {
-          var topWidth = seg.kind === 'trunk' ? 3.25 : 2.25;
-          var color = seg.kind === 'trunk' ? '#5cc0e8' : '#4a9fd0';
-          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="' + color + '" stroke-width="' + topWidth + '" stroke-linecap="round" opacity="0.85" class="water-edge" data-kind="' + seg.kind + '" pointer-events="none"/>';
         });
         svg += '</g>';
 
