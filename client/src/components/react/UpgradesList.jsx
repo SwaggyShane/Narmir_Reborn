@@ -111,12 +111,9 @@ function UpgradeRow({ category, upgradeKey, def, owned, state, onPurchased, purc
       {statusBadge}
       {!isOwned && hasReq && raceOk && vaultsOk && (
         <button
-          className="btn btn-gold text-[11px] px-2.5 py-0.5"
+          className="btn btn-gold text-[11px] px-2.5 py-0.5 disabled:opacity-50"
           onClick={handleBuy}
           disabled={!canBuy || purchasing}
-          style={{
-            opacity: canBuy && !purchasing ? 1 : 0.5,
-          }}
         >
           {purchasing ? 'Buying...' : 'Buy'}
         </button>

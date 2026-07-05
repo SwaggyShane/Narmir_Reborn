@@ -351,7 +351,7 @@ const StatusPanel = () => {
             <span className="text-[13px] text-text" id="s-label-thralls">Thralls</span>
             <span className="text-[13px] font-semibold text-right text-text" id="s-thralls">{thralls.toLocaleString()}</span>
             <span className="text-center text-[11px] font-semibold" id="s-lv-thralls">Lv {troopLevels?.thralls?.level || 1}</span>
-            <span className="badge text-center text-[9px]" style={{ background: '#444' }}>Defense</span>
+            <span className="badge bg-[#444] text-center text-[9px]">Defense</span>
           </div>
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
