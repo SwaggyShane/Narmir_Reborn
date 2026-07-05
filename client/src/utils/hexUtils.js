@@ -1,7 +1,7 @@
 // Client-side hex grid utilities (matches server game/hex-utils.js)
-const HEX_SIZE = 34;
-const HEX_W = Math.sqrt(3) * HEX_SIZE;
-const HEX_VERT = HEX_SIZE * 1.5;
+export const HEX_SIZE = 34;
+export const HEX_W = Math.sqrt(3) * HEX_SIZE;
+export const HEX_VERT = HEX_SIZE * 1.5;
 
 export function pixelToHex(x, y) {
   const r = y / HEX_VERT;
