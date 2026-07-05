@@ -485,9 +485,8 @@ const ResourcesPanel = () => {
         {tabs.map(tab => (
           <button
             key={tab.id}
-            className={`admin-tab base-btn rounded-t-xl border border-white/10 px-3 py-2 text-[12px] ${activeTab === tab.id ? 'active' : ''}`}
+            className={clsx('admin-tab base-btn rounded-none border border-white/10 px-3 py-2 text-[12px]', activeTab === tab.id ? 'active pb-2.5' : 'pb-2')}
             onClick={() => setActiveTab(tab.id)}
-            className={clsx('rounded-none', activeTab === tab.id ? 'pb-2.5' : 'pb-2')}
           >
             {tab.label}
           </button>
@@ -557,7 +556,7 @@ const ResourcesPanel = () => {
             </div>
             {showGuide && (
               <div className="mt-2.5 border-t border-t-blue-500/10 pt-2.5">
-                <ol className="text-[11.5px] text-[var(--text3)] pl-4.5 m-0 flex flex-col gap-1.5 leading-[1.45]">
+                <ol className="text-[11.5px] text-[var(--text3)] pl-[18px] m-0 flex flex-col gap-1.5 leading-[1.45]">
                   <li><strong>Hire Engineers:</strong> First, go hire/train Engineers in the <strong>Train/Hire</strong> panel. They do the actual physical work of construction!</li>
                   <li><strong>Assign Workers:</strong> Type the number of engineers to allocate in the <code>Eng</code> box (or click <strong>Max</strong>) beside your desired building.</li>
                   <li><strong>Begin Construction:</strong> Click <span className='font-semibold text-[var(--green)]'>Build</span>. Note that you can only construct one active project per resource category (Wood / Stone / Iron) at a time.</li>
@@ -574,7 +573,7 @@ const ResourcesPanel = () => {
                 <button
                   key={rtype.key}
                   onClick={() => setActiveBldTab(rtype.key)}
-                  className={clsx('px-3.5 py-2 bg-none border-none cursor-pointer text-[12px] border-b-2 border-b-transparent', activeBldTab === rtype.key ? 'text-[var(--green)] border-b-[var(--green)] font-semibold' : 'text-[var(--text3)]')}
+                  className={clsx('px-3.5 py-2 bg-transparent border-none cursor-pointer text-[12px] border-b-2 border-b-transparent', activeBldTab === rtype.key ? 'text-[var(--green)] border-b-[var(--green)] font-semibold' : 'text-[var(--text3)]')}
                 >
                   {rtype.icon} {rtype.label}
                 </button>
@@ -606,7 +605,7 @@ const ResourcesPanel = () => {
                         <div className="font-semibold text-[14px] text-[var(--text)]">
                           Stage {bld.stage}: {bld.label}
                         </div>
-                        <div className="text-[12px] text-[var(--text3)] mt-0.75">
+                        <div className="text-[12px] text-[var(--text3)] mt-[3px]">
                           Built: <span id={`bld-count-${bld.key}`} className={clsx(atCap ? 'text-[var(--red)]' : 'text-[var(--green)]')}>{fmt(kingdom['bld_' + bld.key] || 0)}</span>
                           {bCap !== Infinity && <span>&nbsp;&middot;&nbsp; Cap: <span className={clsx(atCap && 'text-[var(--red)]')}>{bCap}</span></span>}
                           &nbsp;&middot;&nbsp; Yield: {bld.yield} {rtype.label.toLowerCase()} / {bld.yieldEvery === 1 ? 'turn' : bld.yieldEvery + ' turns'}
@@ -624,7 +623,7 @@ const ResourcesPanel = () => {
                             <span id={`s3-status-${rtype.key}`} className='text-[var(--red)]'>Locked</span>
                           </div>
                         )}
-                        <div id={`bracket-lock-${rtype.key}-${bld.stage}`} className="text-[11px] text-[var(--red)] mt-0.75 hidden">
+                        <div id={`bracket-lock-${rtype.key}-${bld.stage}`} className="text-[11px] text-[var(--red)] mt-[3px] hidden">
                           Bracket locked - advance a level bracket to build more.
                         </div>
                         <div className="mt-1.5 text-[11px] text-[var(--text3)]">
@@ -642,7 +641,7 @@ const ResourcesPanel = () => {
                             <div className="mt-2.5 bg-[var(--bg)] rounded border border-[var(--border)] h-2.5 overflow-hidden">
                               <div className="h-full rounded bg-[var(--green)] transition-[width] duration-300" style={{ width: getBuildPct(bld.key) + '%' }}></div>
                             </div>
-                            <div className="text-[11px] text-[var(--text3)] mt-0.75">
+                            <div className="text-[11px] text-[var(--text3)] mt-[3px]">
                               {fmt(getBuildProgress(bld.key))} / {fmt(BUILDING_COST[bld.key])} effort ({getBuildPct(bld.key)}%)
                               &nbsp;&middot;&nbsp; ~{getBuildRemaining(bld.key)} turns remaining
                             </div>
@@ -675,13 +674,13 @@ const ResourcesPanel = () => {
                             )}
                             {bld.stage === 2 && !s2Un && (
                               <button id={`unlock-s2-${rtype.key}`} onClick={() => purchaseUpgrade(rtype.key, 2)}
-                                className="px-2.5 py-1.25 rounded border-none cursor-pointer text-[11px] font-semibold bg-[var(--gold)] text-black">
+                                className="px-2.5 py-[5px] rounded border-none cursor-pointer text-[11px] font-semibold bg-[var(--gold)] text-black">
                                 Unlock Stage 2 (10,000 gold)
                               </button>
                             )}
                             {bld.stage === 3 && !s3Un && (
                               <button id={`unlock-s3-${rtype.key}`} onClick={() => purchaseUpgrade(rtype.key, 3)}
-                                className="px-2.5 py-1.25 rounded border-none cursor-pointer text-[11px] font-semibold bg-[var(--gold)] text-black">
+                                className="px-2.5 py-[5px] rounded border-none cursor-pointer text-[11px] font-semibold bg-[var(--gold)] text-black">
                                 Unlock Stage 3 (100,000 gold)
                               </button>
                             )}
@@ -733,7 +732,7 @@ const ResourcesPanel = () => {
                       className="w-[100px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />
                     <button onClick={() => launchExpedition(node)}
                       disabled={hasActiveExpedition(node.id) || (expPop[node.id] || 0) < 10 || launching[node.id]}
-                      className={clsx('px-2.5 py-1.25 rounded border-none cursor-pointer text-[12px] font-semibold text-white', hasActiveExpedition(node.id) ? 'bg-[var(--text3)] cursor-not-allowed' : 'bg-[#3b82f6]')}>
+                      className={clsx('px-2.5 py-[5px] rounded border-none cursor-pointer text-[12px] font-semibold text-white', hasActiveExpedition(node.id) ? 'bg-[var(--text3)] cursor-not-allowed' : 'bg-[#3b82f6]')}>
                       {hasActiveExpedition(node.id) ? 'Active' : launching[node.id] ? '...' : 'Dispatch'}
                     </button>
                   </div>
@@ -788,7 +787,7 @@ const ResourcesPanel = () => {
                     <input type="number" min="1" placeholder="Fighters" value={interceptFighters[vExp.id] || ''} onChange={(e) => setInterceptFighters(p => ({...p, [vExp.id]: parseInt(e.target.value)}))}
                       className="w-[80px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />
                     <button onClick={() => interceptExpedition(vExp.id)} disabled={intercepting[vExp.id]}
-                      className={clsx('px-2.5 py-1.25 rounded border-none cursor-pointer text-[12px] font-semibold bg-[var(--red)] text-white', intercepting[vExp.id] && 'opacity-50')}>
+                      className={clsx('px-2.5 py-[5px] rounded border-none cursor-pointer text-[12px] font-semibold bg-[var(--red)] text-white', intercepting[vExp.id] && 'opacity-50')}>
                       {intercepting[vExp.id] ? '...' : 'Intercept'}
                     </button>
                   </div>
@@ -803,7 +802,7 @@ const ResourcesPanel = () => {
         <div className="card">
           <div className="card-title">Item Inventory</div>
           {items.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No items found.</div>}
-          <div className="grid auto-fill gap-2.5 mt-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
+          <div className="grid gap-2.5 mt-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
             {items.map(item => (
               <div key={item.id} className={clsx('p-3 rounded-lg bg-[var(--bg2)] text-center border', (item.qty || 0) > 0 ? 'border-[var(--green)]' : 'border-[var(--border)]')}>
                 <div className="text-2xl mb-1">{itemIcon(item.id)}</div>
