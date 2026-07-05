@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (CSS Consolidation Phase 4H-4L: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806, KingdomXpModal PR #807, WarfarePanel PR #808)
+**Last updated:** 2026-07-05 (CSS Consolidation Phase 4H-4M: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806, KingdomXpModal PR #807, WarfarePanel PR #808, small-panels batch PR #809)
 
 ---
 
@@ -188,6 +188,17 @@
     - Removed dead `?? 'var(--text2)'` / `?? 'var(--text)'` fallbacks — the ternaries always produce a value, so those branches were unreachable
   - **Gemini Review:** No feedback. Clean conversion, no issues identified.
   - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (grepped renamed symbols — zero stale references; same colors and thresholds), CI ✅ (all 3 checks green)
+  - **Code Quality:** All changes lint ✅. No functional regressions.
+
+- **Admin CSS Consolidation: Phase 4M (small panels batch)** (PR #809, merged 2026-07-05): Converting the last static/conditional inline styles across four small components — StatusPanel, UpgradesList, ResourceStrip, ToastProvider — one style each.
+  - **Conversion Results:** 4 styles converted. Remaining inline styles in these files are runtime values (dynamic happiness-mask width, TOAST_THEME lookup colors) and stay inline by design.
+  - **Key Improvements:**
+    - StatusPanel: Thralls Defense badge `background: '#444'` → `bg-[#444]` (base `.badge` class sets no background — no cascade conflict)
+    - UpgradesList: Buy button opacity ternary → `disabled:opacity-50` variant; the opacity condition was exactly the inverse of the `disabled` prop, so the variant replaces the JS with a static class
+    - ResourceStrip: `defenseColor` → `defenseColorClass` using `!text-[var(--red)]` / `!text-[var(--gold)]`; the `!` modifier is required because `.metric .val` is a two-class descendant selector that would beat a plain utility, and the replaced inline style outranked it
+    - ToastProvider: static `color: '#0a0a0a'` split out of the icon style object into `text-[#0a0a0a]`; runtime `theme.border` background stays inline
+  - **Gemini Review:** No feedback. Clean conversion, no issues identified.
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (cascade audit of .badge/.btn:disabled/.metric .val before each conversion; grepped renamed defenseColor — zero stale references), CI ✅ (all 3 checks green)
   - **Code Quality:** All changes lint ✅. No functional regressions.
 
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.
