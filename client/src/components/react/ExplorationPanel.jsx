@@ -706,7 +706,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       key={itemId}
                       className={clsx(
                         'rounded-2xl border border-l-[3px] border-[var(--border)] bg-[rgba(255,255,255,0.05)] p-3',
-                        item.rarity === 'junk' ? 'border-l-[var(--text3)]' : 'border-l-[var(--accent1)]',
+                        item.rarity === 'junk' ? 'border-l-[color:var(--text3)]' : 'border-l-[color:var(--accent1)]',
                       )}
                     >
                       <div className="mb-1 text-[12px] font-semibold">

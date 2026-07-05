@@ -8,7 +8,7 @@ function StepCard({ step, visible }) {
     <div
       className={clsx(
         'mb-3 rounded-[var(--radius)] border-l-[3px] bg-white/5 p-2.5 transition-all duration-300 ease-[ease]',
-        String(step.icon || '').includes('⚔') ? 'border-l-[var(--red)]' : 'border-l-[var(--accent)]',
+        String(step.icon || '').includes('⚔') ? 'border-l-[color:var(--red)]' : 'border-l-[color:var(--accent)]',
         visible ? 'translate-x-0 opacity-100' : 'translate-x-5 opacity-0',
       )}
     >
