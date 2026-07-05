@@ -99,6 +99,20 @@
 
 ### 2026-07-04
 
+- **Exploration System Redesign — All 4 Phases Complete** (PR #779-#789, all merged 2026-07-04): Comprehensive transformation of instant single-turn searches + generic expeditions into turn-based, progression-gated exploration system with scout allocation rings, Epic Trek point-and-go targeting, resource gathering mechanics, and regional locations.
+  - **Phase 0: Hex Foundation Validation** (PR #779): Verified pixelToHex, hexUnitDistance, getHexesInRadius functions; verified visibility-cells bitmap functions; performance validation (Ring 1-11 <1ms, Ring 12-17 <5ms); fixed blueprint code bugs
+  - **Phase 1: Turn-based Actions Refactor** (PR #780 backend, #781 UI): Converted instant searches to turn-based actions with proper state management and UI integration
+  - **Phase 2A: Scout Allocation Database** (PR #783): Database schema and persistence layer for scout allocation system
+  - **Phase 2B: Scout Ring Geometry** (PR #784): Ring progression calculations and spatial system
+  - **Phase 2C: Engine Integration** (PR #785): Core game engine wiring for ring progression and turn calculation
+  - **Phase 2D: Visibility Integration** (PR #786): Fog of War system integration with ring-based discovery
+  - **Phase 2E: Scout UI & Progression Display** (PR #787): User interface for scout allocation management and ring progress display
+  - **Phase 3: Epic Trek Exploration** (PR #788): Point-and-go targeting system for extended exploration
+  - **Phase 4: Regional Locations** (PR #789): Dungeon/mountain discovery system with deterministic seeding and location-based turn costs
+  - **Specifications:** `EXPLORATION_SYSTEM_LOCKED.md` (complete specification, all parameters locked), `IMPLEMENTATION_PLAN.md` (4-phase roadmap with file manifest)
+  - **Quality Gates:** Lint ✅, Smoke tests ✅, Gemini reviews addressed, all CI checks passing
+  - **Impact:** Complete exploration system overhaul enabling turn-based progression-gated discovery mechanics as foundation for post-beta features
+
 - **ProgressBar Component Extraction & Refactoring** (PR #794, merged 2026-07-04): Created reusable `ProgressBar.jsx` component to eliminate 200+ individual progress bar div pairs scattered across panels. Enhanced component with flexible styling support via `wrapperClassName` and `barClassName` props for panel-specific customization while maintaining consistent reusable base.
   - **Component improvements:**
     - Auto-clamps percent values (0-100)

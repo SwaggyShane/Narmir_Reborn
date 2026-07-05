@@ -40,45 +40,6 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 ---
 
-## Recently Completed: Exploration System Redesign (4 Phases)
-
-**Status:** Phase 0 spike complete (PR #779, merged 2026-07-04); ready for Phase 1
-
-**Overview:** Transform instant single-turn searches + generic expeditions into turn-based, progression-gated exploration system (Scout allocation-based rings, Epic Trek point-and-go targeting, Hunting/Prospecting/Land Expansion resource gathering, regional Dungeon/Mountain locations).
-
-**Phase 0: Hex Foundation Validation** — ✅ COMPLETE (PR #779, merged 2026-07-04)
-- ✅ Verified pixelToHex, hexUnitDistance, getHexesInRadius functions exist and work
-- ✅ Verified visibility-cells bitmap functions (cellIndex, encodeCellSet, decodeCellSet, etc.)
-- ✅ Performance: Ring 1-11 <1ms, Ring 12-17 <5ms (acceptable for turn-based)
-- ✅ Fixed blueprint code bugs identified by Gemini (ring formula, object reference equality, function signatures)
-
-**Phase 1: Refactor instant searches → turn-based actions** — ✅ COMPLETE (PR #780 backend + PR #781 UI, merged 2026-07-04; see ARCHIVAL.md)
-
-**Phase 2A: Scout allocation database & persistence** — ✅ COMPLETE (PR #783, merged 2026-07-04; see ARCHIVAL.md)
-
-**Phase 2B: Scout ring geometry system** — ✅ COMPLETE (PR #784, merged 2026-07-04; see ARCHIVAL.md)
-
-**Phase 2C: Engine integration & ring progression** — ✅ COMPLETE (PR #785, merged 2026-07-04; see ARCHIVAL.md)
-
-**Phase 2D: Visibility integration & fog reveal** — ✅ COMPLETE (PR #786, merged 2026-07-04; see ARCHIVAL.md)
-
-**Phase 2E: Scout allocation UI & progression display** — ✅ COMPLETE (PR #787, ready to merge 2026-07-04; see ARCHIVAL.md)
-
-**Phase 3: Epic Trek point-and-go exploration** — ✅ COMPLETE (PR #788, merged 2026-07-04; see ARCHIVAL.md)
-
-**Phase 4: Regional dungeon/mountain locations** — ✅ COMPLETE (PR #789, merged 2026-07-04)
-- ✅ world-locations.js: Deterministic seeding, discovery tracking, in-memory cache
-- ✅ location-distance.js: Hex distance and turn cost calculations
-- ✅ Database: world_locations table (18 locations), kingdom tracking columns
-- ✅ Server boot: Location seeding at startup
-- ✅ Expedition routes: Integrated dungeon/mountain into /expedition/start with location-based turn costs
-
-**References:**
-- `EXPLORATION_SYSTEM_LOCKED.md` — Complete specification (all parameters locked)
-- `IMPLEMENTATION_PLAN.md` — Detailed 4-phase roadmap with file manifest, database schema changes, API endpoints, and testing strategy
-
----
-
 ## Deferred Work — Post-Beta / Future Phases
 
 ### Elevation System Plan (Complete Spec) — POST-BETA
