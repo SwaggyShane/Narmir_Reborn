@@ -199,7 +199,9 @@ async function withTurnLock(playerId, fn) {
   return promise;
 }
 
-//  Column Selection Constants for Query Optimization 
+const ERROR_NO_TURNS = "No turns available  next +7 turns in 25 minutes";
+
+//  Column Selection Constants for Query Optimization
 // Avoid SELECT * for better performance: network, parsing, memory
 // Column sets: choose what's actually needed to reduce network/parsing overhead
 const _KINGDOM_FULL = '*'; // Only use when truly necessary (GET /me)
@@ -315,35 +317,28 @@ module.exports = function (db) {
     return k;
   }
 
+  async function fetchInitQueries(db, k) {
+    const [regionStatus, myAlliance] = await Promise.all([
+      db.get(
+        "SELECT owner_alliance_id, bonus_type FROM regions WHERE name = $1",
+        [k.region],
+      ),
+      db.get(
+        "SELECT alliance_id FROM alliance_members WHERE kingdom_id = $1",
+        [k.id],
+      ),
+    ]);
+    return { regionStatus, myAlliance };
+  }
+
   //  Shared turn runner  used by ALL routes that consume a turn
   async function runTurn(db, k, preloadedQueries) {
     if (!k) throw new Error('Kingdom not found');
     console.time(`[turn-${k.id}] total`);
 
-    let regionStatus, myAlliance, heroes;
+    const { regionStatus, myAlliance } = preloadedQueries || await fetchInitQueries(db, k);
 
-    if (preloadedQueries) {
-      // Use preloaded queries for read-only reference data (already fetched outside transaction)
-      regionStatus = preloadedQueries.regionStatus;
-      myAlliance = preloadedQueries.myAlliance;
-    } else {
-      // Fallback: fetch region and alliance inside transaction (slower but maintains compatibility)
-      console.time(`[turn-${k.id}] init-queries`);
-      [regionStatus, myAlliance] = await Promise.all([
-        db.get(
-          "SELECT owner_alliance_id, bonus_type FROM regions WHERE name = $1",
-          [k.region],
-        ),
-        db.get(
-          "SELECT alliance_id FROM alliance_members WHERE kingdom_id = $1",
-          [k.id],
-        ),
-      ]);
-      console.timeEnd(`[turn-${k.id}] init-queries`);
-    }
-
-    // Always fetch heroes inside transaction with row lock to prevent race conditions on mutations
-    heroes = await db.all(
+    const heroes = await db.all(
       "SELECT * FROM heroes WHERE kingdom_id = $1 AND status = 'idle' FOR UPDATE",
       [k.id],
     );
@@ -568,7 +563,7 @@ module.exports = function (db) {
           throw new Error("Kingdom not found");
         }
         if (k.turns_stored < 1) {
-          throw new Error("No turns available  next +7 turns in 25 minutes");
+          throw new Error(ERROR_NO_TURNS);
         }
 
         // SECOND: Fetch read-only reference data in parallel OUTSIDE transaction
@@ -598,7 +593,7 @@ module.exports = function (db) {
             throw new Error("Kingdom not found");
           }
           if (k_locked.turns_stored < 1) {
-            throw new Error("No turns available  next +7 turns in 25 minutes");
+            throw new Error(ERROR_NO_TURNS);
           }
 
           const { updates, events } = await runTurn(db, k_locked, preloadedQueries);
