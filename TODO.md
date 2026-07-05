@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (Production incident: reverted faulty profiling code; server recovered)
+**Last updated:** 2026-07-05 (Terrain System Phases 1-3 verified complete; marked as finished work)
 
 ---
 
@@ -33,16 +33,6 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 - Fix: Extended function signature to accept original rewards, parse stored JSON, properly award food/gold to kingdom treasury
 - Also: Prospecting now correctly returns engineers instead of rangers
 - PR #825: Merged, all CI checks passed (Lint, Security, Text Encoding)
-
-### Terrain System Phase 1+2 (PR #751) — HIGH PRIORITY
-**Status:** Merge decision pending  
-**Details:**
-- Phase 1 (data model, basic visual layer, turn cost fix): ✅ COMPLETE
-- Phase 2 (GSAP entrance/hover + expeditions mechanic with terrain modifiers): ✅ COMPLETE
-- Quality gates: ✅ Lint 0 errors, ✅ Fresh smoke test, ✅ Codex 500-turn validation (mountains ~40% slower travel vs plains)
-- Branch: `feature/terrain-phase1` (4 core commits + 50 handshake commits)
-- PR #751: Open (DRAFT), contains full Phase 1+2 summary
-**Action:** Await merge go-ahead or start Phase 3 scoping (combat modifiers, visual enhancements, dynamic terrain)
 
 ### Security Audit — In Progress — MEDIUM-HIGH PRIORITY
 **Status:** 6 categories require review/completion  
@@ -97,6 +87,18 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 **Phase 5: Expansion Hooks** (deferred)
 - Special locations, map items, terrain-scoped discovery difficulty
+
+### Terrain System (3 Phases)
+
+**Phase 1+2: Terrain Data & Visuals** — ✅ COMPLETE (PR #751, squash-merged `79a5ae72` 2026-07-04; see ARCHIVAL.md)
+- ✅ Terrain type system (`game/terrain.js`: TERRAIN_TYPES, modifiers, RACE_TO_TERRAIN mapping)
+- ✅ Terrain column on resource_nodes with idempotent backfill
+- ✅ Toggleable terrain visual layer (biome fills, GSAP animation, hover tooltips)
+- ✅ Expedition travel time & loot yield respond to destination terrain via getTerrainModifiers()
+
+**Phase 3: Combat Modifiers** — ✅ COMPLETE (commit b22962f 2026-07-04)
+- ✅ CombatDef/Atk modifiers wired into calculateCombatPower
+- ✅ Terrain added to battle reports
 
 ---
 
