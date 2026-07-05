@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (CSS Consolidation Phase 4H-4P: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806, KingdomXpModal PR #807, WarfarePanel PR #808, small-panels batch PR #809, BattleReportModal PR #810, KingdomBodyHeader PR #811, ReplayModal/RankingsPanel/ExplorationPanel batch PR #812)
+**Last updated:** 2026-07-05 (CSS Consolidation Phase 4H-4Q: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806, KingdomXpModal PR #807, WarfarePanel PR #808, small-panels batch PR #809, BattleReportModal PR #810, KingdomBodyHeader PR #811, ReplayModal/RankingsPanel/ExplorationPanel batch PR #812, TestingPanel PR #813)
 
 ---
 
@@ -228,6 +228,20 @@
     - Compile-verified with the project's Tailwind 3.4.17 that `border-l-[var(--x)]` resolves to border-left-color and is ordered after `border-[var(--border)]`
   - **Gemini Review:** 2 items — add explicit `color:` type hints to `border-l-[var(...)]` values (ambiguous between width/color in Tailwind v3). Applied even though compile-verified, as the hint is strictly more robust.
   - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks, re-run after fix), Sanity ✅ (grepped removed rankColor/nameStyle — zero stale references), CI ✅
+  - **Code Quality:** All changes lint ✅. No functional regressions.
+
+- **Admin CSS Consolidation: Phase 4Q (TestingPanel)** (PR #813, merged 2026-07-05): Converting 7 remaining inline styles in TestingPanel to Tailwind CSS classes. Testing dashboard UI with progress indicators and test status displays.
+  - **Conversion Results:** 7 static/conditional styles converted (100% success). Dynamic flex weight values (lines 385/391/397) kept inline by design.
+  - **Key Improvements:**
+    - Progress percent color (line 454): 2-tier ternary (100% = green, else = amber) → `className={clsx('text-sm font-bold', progressPercent === 100 ? 'text-[#4ade80]' : 'text-[#fbbf24]')}`
+    - Progress bar fill color (line 464): 2-tier ternary → `className={clsx('h-full transition-all duration-300 ease-in-out', progressPercent === 100 ? 'bg-[#4ade80]' : 'bg-[#fbbf24]')}`, width remains inline
+    - Test row margin (line 486): Conditional bottom margin → `clsx('flex items-center gap-2', (!!TEST_DESCRIPTIONS[key] || isFailing) && 'mb-1.5')` with boolean coercion for clarity
+    - Finished test strikethrough (line 496): Strikethrough + text color ternary → `className={clsx('flex-1 font-medium', test.finished && 'line-through text-[var(--text2)]')}`
+    - Pass button color (line 502): 2-tier ternary → `className={clsx('px-2 py-1 text-sm border-none rounded-sm cursor-pointer', test.passed === true ? 'bg-[#4ade80]' : 'bg-[var(--border)]')}`
+    - Fail button color (line 514): similar pattern to pass button
+    - Static indent (line 530): `marginLeft: '28px'` → `ml-7` (7 * 4px = 28px)
+  - **Gemini Review:** 1 item — boolean coercion on `TEST_DESCRIPTIONS[key]` lookup (change from `(TEST_DESCRIPTIONS[key] || isFailing)` to `(!!TEST_DESCRIPTIONS[key] || isFailing)`) for explicit type safety. Applied in follow-up commit.
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (no logic changes, all colors static), CI ✅ (all 3 checks green after fix)
   - **Code Quality:** All changes lint ✅. No functional regressions.
 
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.
