@@ -1,11 +1,12 @@
 # Claude Code Workflow Guide
 
+#### *****DO NOT TAKE THE PATH OF LEAST RESISTANCE*****
+
 ⚠️ **PROJECT-SPECIFIC WORKFLOW FIRST:** Before applying any rules from this guide, **check TODO.md for active/deferred work items** (ROADMAP.md was retired 2026-07-01; history lives in ARCHIVAL.md). Project workflows override these defaults. If TODO.md defines interim or custom workflow rules, follow those instead of the standard CLAUDE.md workflow.
 
 ## PR Workflow
 
 ### Before Every Push — No Exceptions
-#### DO NOT TAKE THE PATH OF LEAST RESISTANCEE
 1. Confirm you are on the correct branch:
    ```bash
    git branch --show-current
