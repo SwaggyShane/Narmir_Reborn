@@ -1927,6 +1927,7 @@ async function resolveExpeditions(db, k, engine) {
         exp.fighters,
         freshK,
         db,
+        exp.rewards,
       );
 
       // ── Epic Trek: Reveal fog along path and process discoveries ──────────

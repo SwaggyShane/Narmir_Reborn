@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (Comprehensive markdown audit: Outstanding work items prioritized and catalogued)
+**Last updated:** 2026-07-05 (Hunting/prospecting expeditions bug fixed; resources now properly awarded)
 
 ---
 
@@ -13,6 +13,15 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 ---
 
 ## Active Work — Current Sprint
+
+### Critical Bug Fix: Hunting/Prospecting Expeditions (PR #825) — COMPLETED
+**Status:** ✅ MERGED 2026-07-05  
+**Details:**
+- Bug: Hunting and prospecting expeditions returned with 0 rangers/engineers and no resource rewards
+- Root cause: `expeditionRewards()` function missing case handling for these types, returning empty rewards array that overwrote pre-calculated amounts
+- Fix: Extended function signature to accept original rewards, parse stored JSON, properly award food/gold to kingdom treasury
+- Also: Prospecting now correctly returns engineers instead of rangers
+- PR #825: Merged, all CI checks passed (Lint, Security, Text Encoding)
 
 ### Terrain System Phase 1+2 (PR #751) — HIGH PRIORITY
 **Status:** Merge decision pending  
