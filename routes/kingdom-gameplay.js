@@ -340,9 +340,14 @@ module.exports = function (db) {
       regionStatus.owner_alliance_id === myAlliance.alliance_id;
     k._region_bonus_type = regionStatus?.bonus_type;
     k.heroes = heroes;
+    const t2 = Date.now();
     await loadTradeRoutes(k);
+    if (Date.now() - t2 > 50) console.log(`[runTurn] loadTradeRoutes: ${Date.now() - t2}ms`);
 
+    const t3 = Date.now();
     const { updates, events } = engine.processTurn(k, db);
+    if (Date.now() - t3 > 100) console.log(`[runTurn] engine.processTurn: ${Date.now() - t3}ms`);
+
     const cleanEvents = events.map(normalizeNewsRow);
 
     const heroBatch = [];
@@ -387,7 +392,9 @@ module.exports = function (db) {
     }
 
     try {
+      const t4 = Date.now();
       await applyUpdates(db, k.id, updates);
+      if (Date.now() - t4 > 100) console.log(`[runTurn] applyUpdates: ${Date.now() - t4}ms`);
 
       // Batch hero XP updates
       if (heroBatch.length > 0) {
@@ -406,6 +413,7 @@ module.exports = function (db) {
 
       const turnNum = updates.turn || k.turn;
       if (filteredEvents.length > 0) {
+        const t5 = Date.now();
         await bulkInsertNews(
           db,
           filteredEvents.map((ev) => ({
@@ -415,6 +423,7 @@ module.exports = function (db) {
             turn_num: turnNum,
           })),
         );
+        if (Date.now() - t5 > 50) console.log(`[runTurn] bulkInsertNews: ${Date.now() - t5}ms`);
         if (Math.random() < 0.05) await pruneNews(db, k.id, 200);
       }
     } catch (err) {
@@ -425,11 +434,13 @@ module.exports = function (db) {
     // Resolve expeditions OUTSIDE the kingdom transaction so ticks are never rolled back
     let expeditionEvents = [];
     try {
+      const t6 = Date.now();
       expeditionEvents = await engine.resolveExpeditions(
         db,
         { ...k, ...updates },
         engine,
       );
+      if (Date.now() - t6 > 100) console.log(`[runTurn] resolveExpeditions: ${Date.now() - t6}ms`);
       expeditionEvents = expeditionEvents.map(normalizeNewsRow);
       if (expeditionEvents.length > 0) {
         const turnNum = updates.turn || k.turn;
@@ -490,7 +501,9 @@ module.exports = function (db) {
 
     // Process real-time resource expeditions and persist their loot
     try {
+      const t7 = Date.now();
       const { kUpdates: expUpdates, lootEvents } = await processResourceExpeditionsDb(k.id, { ...k, ...updates });
+      if (Date.now() - t7 > 100) console.log(`[runTurn] processResourceExpeditionsDb: ${Date.now() - t7}ms`);
       if (Object.keys(expUpdates).length > 0) {
         await applyUpdates(db, k.id, expUpdates);
         Object.assign(updates, expUpdates);
@@ -513,6 +526,7 @@ module.exports = function (db) {
     }
 
     // Refresh fields that resolveExpeditions may have updated via SQL
+    const t8 = Date.now();
     const refreshed = await db.get(
       "SELECT rangers, fighters, gold, mana, land, scrolls, maps, blueprints_stored, troop_levels, library_progress, tower_progress, racial_bonuses_unlocked FROM kingdoms WHERE id = $1",
       [k.id],
@@ -524,6 +538,7 @@ module.exports = function (db) {
       "SELECT COUNT(*) as c FROM news WHERE kingdom_id = $1 AND is_read = 0",
       [k.id],
     );
+    if (Date.now() - t8 > 50) console.log(`[runTurn] Final refresh queries: ${Date.now() - t8}ms`);
     updates.unread_news = unread.c;
 
     // Calculate new score after turn
@@ -535,6 +550,7 @@ module.exports = function (db) {
 
   // â”€â”€ Take turn (advance game state) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.post("/turn", requireAuth, requireCsrfToken, async (req, res) => {
+    const endpointStart = Date.now();
     try {
       const result = await withTurnLock(req.player.playerId, async () => {
         // Wrap entire turn in transaction
@@ -554,6 +570,8 @@ module.exports = function (db) {
           return { ok: true, updates, events, turns_stored: updates.turns_stored };
         });
       });
+      const elapsed = Date.now() - endpointStart;
+      if (elapsed > 500) console.log(`[/turn endpoint] Total time: ${elapsed}ms`);
       res.json(result);
     } catch (err) {
       console.error("[turn] failed:", err.stack || err.message);
