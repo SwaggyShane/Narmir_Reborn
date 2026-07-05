@@ -969,7 +969,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               </div>
             </div>
 
-            {scout_progress >= 2 && (
+            {/* Epic Trek visible when Ring 2 complete: Ring 1 (20 turns) + Ring 2 (25 turns) = 45 scout-turns */}
+            {scout_progress >= 45 && (
               <div className="card">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <div className="card-title !mb-0">🛤️ Epic Trek</div>
