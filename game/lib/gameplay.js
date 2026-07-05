@@ -849,6 +849,11 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
     // No land rewards from mountain — focus purely on artifacts/magic
     // (explicitly 0 land)
   } else if (type === "hunting" || type === "prospecting") {
+    if (type === "prospecting") {
+      // Prospecting uses engineers, not rangers. Redirect returned troops to engineers.
+      updates.engineers = (k.engineers || 0) + updates._rangers_returned;
+      delete updates._rangers_returned;
+    }
     // Hunting and Prospecting: Use pre-calculated rewards from expedition creation
     // These were computed in the endpoint and stored as JSON.stringify({ food/gold: amount })
     // The originalRewards parameter (if provided) contains this data
@@ -857,9 +862,13 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
       try {
         const parsed = typeof originalRewards === "string" ? JSON.parse(originalRewards) : originalRewards;
         if (parsed.food !== undefined) {
-          rewards.push({ text: `Rangers returned with ${parsed.food} food` });
+          const foodAmount = Number(parsed.food) || 0;
+          rewards.push({ text: `Rangers returned with ${foodAmount} food` });
+          updates.food = (k.food || 0) + foodAmount;
         } else if (parsed.gold !== undefined) {
-          rewards.push({ text: `Prospectors returned with ${parsed.gold} gold` });
+          const goldAmount = Number(parsed.gold) || 0;
+          rewards.push({ text: `Prospectors returned with ${goldAmount} gold` });
+          updates.gold = (k.gold || 0) + goldAmount;
         }
       } catch {
         // If we can't parse the original rewards, don't add a fallback message
