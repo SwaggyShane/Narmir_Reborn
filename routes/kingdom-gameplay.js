@@ -567,16 +567,18 @@ module.exports = function (db) {
   }
 
   // â”€â”€ Take turn (advance game state) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // Optimized to minimize time holding DB transaction/connection:
-  // - Prefetch + context + CPU processTurn happen outside txn (using snapshot)
-  // - Only row lock + writes (apply, news, expeditions, resources) inside txn
-  // - Refresh queries after commit
-  // This reduces per-turn txn hold time significantly to fix pool exhaustion.
+  // Optimized to minimize time holding DB transaction/connection (Phase 1):
+  // - Prefetch of context (region/alliance/heroes + trade) + final refresh happen outside txn.
+  // - Inside txn: FOR UPDATE lock + fresh kingdom snapshot + processTurn (on locked state) + writes.
+  // - Context merged onto lockedK to preserve hero XP, bonuses, etc.
+  // This shortens txn hold vs. original (init queries + refresh moved out) while preserving correctness.
   router.post("/turn", requireAuth, requireCsrfToken, async (req, res) => {
     const startTime = Date.now();
     try {
       const result = await withTurnLock(req.player.playerId, async () => {
-        // === PREFETCH (outside transaction) ===
+        // === PREFETCH context only (outside transaction) ===
+        // Context (region/alliance/heroes/trade) loaded outside to reduce txn hold time.
+        // Core kingdom state for processTurn will be fetched fresh *under lock*.
         console.time(`[turn] prefetch`);
         let k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1", [
           req.player.playerId,
@@ -590,20 +592,15 @@ module.exports = function (db) {
 
         // Load context (init-queries + trade-routes) OUTSIDE txn — parallel reads
         await loadTurnContext(db, k);
-
-        // CPU-bound game logic OUTSIDE txn
-        console.time(`[turn-${k.id}] engine.processTurn`);
-        const { updates, events } = engine.processTurn(k, db);
-        console.timeEnd(`[turn-${k.id}] engine.processTurn`);
         console.timeEnd(`[turn] prefetch`);
 
-        // === SHORT TRANSACTION: only lock + writes (~600ms target vs previous 1.6s) ===
+        // === SHORT TRANSACTION: lock + fresh snapshot + process + writes ===
         console.time(`[turn] transaction`);
         let txUpdates, txEvents;
         try {
           const txData = await db.withTransaction(async () => {
-            // Re-fetch with FOR UPDATE for row lock + authoritative check
-            const lockedK = await db.get("SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
+            // Re-fetch with FOR UPDATE for row lock + authoritative *current* state
+            let lockedK = await db.get("SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
               req.player.playerId,
             ]);
             if (!lockedK) {
@@ -613,7 +610,22 @@ module.exports = function (db) {
               throw new Error("No turns available â€” next +7 turns in 25 minutes");
             }
 
-            // Apply pre-computed results. Pass lockedK for ID/ consistency; deltas from snapshot.
+            // Merge the pre-fetched context/heroes onto the fresh lockedK.
+            // Critical for: hero XP/turn bonuses, region bonuses in process/resolve, trade routes, etc.
+            Object.assign(lockedK, {
+              _region_owned_by_my_alliance: k._region_owned_by_my_alliance,
+              _region_bonus_type: k._region_bonus_type,
+              heroes: k.heroes,
+              _trade_routes: k._trade_routes,
+            });
+
+            // Run processTurn on the *locked* snapshot (prevents stale absolute updates
+            // and lost concurrent modifications from non-turn actions).
+            console.time(`[turn-${lockedK.id}] engine.processTurn`);
+            const { updates, events } = engine.processTurn(lockedK, db);
+            console.timeEnd(`[turn-${lockedK.id}] engine.processTurn`);
+
+            // Apply writes inside the same txn (applyUpdates, hero batch, news, expeditions, resources)
             const { updates: committedUpdates, events: committedEvents } = await commitTurnResults(db, lockedK, updates, events);
             return { updates: committedUpdates, events: committedEvents };
           });
