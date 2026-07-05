@@ -487,7 +487,7 @@ const ResourcesPanel = () => {
             key={tab.id}
             className={`admin-tab base-btn rounded-t-xl border border-white/10 px-3 py-2 text-[12px] ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
-            style={{ borderRadius: 0, paddingBottom: activeTab === tab.id ? '10px' : '8px' }}
+            className={clsx('rounded-none', activeTab === tab.id ? 'pb-2.5' : 'pb-2')}
           >
             {tab.label}
           </button>
@@ -518,17 +518,17 @@ const ResourcesPanel = () => {
 
                 return (
                   <div key={res.key} className='p-3.5 rounded-lg bg-[var(--bg2)] border border-[var(--border)]'>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <div className="flex items-center gap-2 mb-2">
                       <span className='text-2xl'>{res.icon}</span>
                       <div>
-                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text3)' }}>{res.label}</div>
-                        <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--green)' }} id={`res-stock-${res.key}`}>{fmt(kingdom[res.key] || 0)}</div>
+                        <div className="text-[12px] font-semibold text-[var(--text3)]">{res.label}</div>
+                        <div className="text-[22px] font-bold text-[var(--green)]" id={`res-stock-${res.key}`}>{fmt(kingdom[res.key] || 0)}</div>
                       </div>
                     </div>
                     <div className="text-[11px] text-[var(--text3)]">
                       <div title={titleStr}>Yield: <span className='text-[var(--text)]' id={`res-yield-${res.key}`}>{strYield}</span></div>
                       <div>Workers needed: <span className='text-[var(--text)]' id={`res-workers-${res.key}`}>{fmt(totalWorkers)}</span></div>
-                      <div>Status: <span id={`res-status-${res.key}`} style={{ color: freePop >= totalWorkers ? 'var(--green)' : 'var(--red)' }}>{totalWorkers === 0 ? '-' : freePop >= totalWorkers ? 'Operating' : 'Understaffed'}</span></div>
+                      <div>Status: <span id={`res-status-${res.key}`} className={clsx(freePop >= totalWorkers ? 'text-[var(--green)]' : 'text-[var(--red)]')}>{totalWorkers === 0 ? '-' : freePop >= totalWorkers ? 'Operating' : 'Understaffed'}</span></div>
                     </div>
                   </div>
                 );
@@ -537,10 +537,10 @@ const ResourcesPanel = () => {
           </div>
           <div className="card mt-3">
             <div className="card-title">Workforce</div>
-            <div style={{ fontSize: '13px', color: 'var(--text3)', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div className="text-[13px] text-[var(--text3)] mt-2 flex flex-col gap-1">
               <div>Total population: <span id="res-pop-total" className='text-[var(--text)]'>{fmt(pop)}</span></div>
               <div>Hired units: <span id="res-pop-hired" className='text-[var(--text)]'>{fmt(hired)}</span></div>
-              <div>Free population: <span id="res-pop-free" style={{ color: freePop > 0 ? 'var(--green)' : 'var(--red)' }}>{fmt(freePop)}</span></div>
+              <div>Free population: <span id="res-pop-free" className={clsx(freePop > 0 ? 'text-[var(--green)]' : 'text-[var(--red)]')}>{fmt(freePop)}</span></div>
             </div>
           </div>
         </div>
@@ -549,15 +549,15 @@ const ResourcesPanel = () => {
       {activeTab === 'buildings' && (
         <div>
           <div id="buildings-guide-card" className="card" className='mb-3 bg-blue-950/5 border border-blue-500/15 p-3.5'>
-            <div id="guide-header-toggle" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }} onClick={() => setShowGuide(!showGuide)}>
-              <div style={{ fontWeight: 600, fontSize: '13px', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div id="guide-header-toggle" className="flex justify-between items-center cursor-pointer select-none" onClick={() => setShowGuide(!showGuide)}>
+              <div className="font-semibold text-[13px] text-[#60a5fa] flex items-center gap-1.5">
                 💡 <span>Guide: How to build buildings &amp; produce resources</span>
               </div>
               <span className="text-[11px] text-[var(--text3)]">{showGuide ? 'Collapse [\u2212]' : 'Expand Guide [+]'}</span>
             </div>
             {showGuide && (
-              <div style={{ marginTop: '10px', borderTop: '1px solid rgba(59, 130, 246, 0.1)', paddingTop: '10px' }}>
-                <ol style={{ fontSize: '11.5px', color: 'var(--text3)', paddingLeft: '18px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px', lineHeight: 1.45 }}>
+              <div className="mt-2.5 border-t border-t-blue-500/10 pt-2.5">
+                <ol className="text-[11.5px] text-[var(--text3)] pl-4.5 m-0 flex flex-col gap-1.5 leading-[1.45]">
                   <li><strong>Hire Engineers:</strong> First, go hire/train Engineers in the <strong>Train/Hire</strong> panel. They do the actual physical work of construction!</li>
                   <li><strong>Assign Workers:</strong> Type the number of engineers to allocate in the <code>Eng</code> box (or click <strong>Max</strong>) beside your desired building.</li>
                   <li><strong>Begin Construction:</strong> Click <span className='font-semibold text-[var(--green)]'>Build</span>. Note that you can only construct one active project per resource category (Wood / Stone / Iron) at a time.</li>
@@ -574,10 +574,7 @@ const ResourcesPanel = () => {
                 <button
                   key={rtype.key}
                   onClick={() => setActiveBldTab(rtype.key)}
-                  style={{
-                    padding: '8px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', borderBottom: '2px solid transparent',
-                    ...(activeBldTab === rtype.key ? { color: 'var(--green)', borderBottomColor: 'var(--green)', fontWeight: 600 } : { color: 'var(--text3)' })
-                  }}
+                  className={clsx('px-3.5 py-2 bg-none border-none cursor-pointer text-[12px] border-b-2 border-b-transparent', activeBldTab === rtype.key ? 'text-[var(--green)] border-b-[var(--green)] font-semibold' : 'text-[var(--text3)]')}
                 >
                   {rtype.icon} {rtype.label}
                 </button>
@@ -604,14 +601,14 @@ const ResourcesPanel = () => {
 
                 return (
                   <div key={bld.key} className="card" style={getCardStyle(bld, rtype.key)}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                      <div style={{ flex: 1, minWidth: '200px' }}>
-                        <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text)' }}>
+                    <div className="flex items-start justify-between flex-wrap gap-2">
+                      <div className="flex-1 min-w-[200px]">
+                        <div className="font-semibold text-[14px] text-[var(--text)]">
                           Stage {bld.stage}: {bld.label}
                         </div>
-                        <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '3px' }}>
-                          Built: <span id={`bld-count-${bld.key}`} style={{ color: atCap ? 'var(--red)' : 'var(--green)' }}>{fmt(kingdom['bld_' + bld.key] || 0)}</span>
-                          {bCap !== Infinity && <span>&nbsp;&middot;&nbsp; Cap: <span style={atCap ? { color: 'var(--red)' } : {}}>{bCap}</span></span>}
+                        <div className="text-[12px] text-[var(--text3)] mt-0.75">
+                          Built: <span id={`bld-count-${bld.key}`} className={clsx(atCap ? 'text-[var(--red)]' : 'text-[var(--green)]')}>{fmt(kingdom['bld_' + bld.key] || 0)}</span>
+                          {bCap !== Infinity && <span>&nbsp;&middot;&nbsp; Cap: <span className={clsx(atCap && 'text-[var(--red)]')}>{bCap}</span></span>}
                           &nbsp;&middot;&nbsp; Yield: {bld.yield} {rtype.label.toLowerCase()} / {bld.yieldEvery === 1 ? 'turn' : bld.yieldEvery + ' turns'}
                           &nbsp;&middot;&nbsp; {bld.workersPerBuilding} workers/building
                         </div>
@@ -627,10 +624,10 @@ const ResourcesPanel = () => {
                             <span id={`s3-status-${rtype.key}`} className='text-[var(--red)]'>Locked</span>
                           </div>
                         )}
-                        <div id={`bracket-lock-${rtype.key}-${bld.stage}`} style={{ fontSize: '11px', color: 'var(--red)', marginTop: '3px', display: 'none' }}>
+                        <div id={`bracket-lock-${rtype.key}-${bld.stage}`} className="text-[11px] text-[var(--red)] mt-0.75 hidden">
                           Bracket locked - advance a level bracket to build more.
                         </div>
-                        <div style={{ marginTop: '6px', fontSize: '11px', color: 'var(--text3)' }}>
+                        <div className="mt-1.5 text-[11px] text-[var(--text3)]">
                           Cost:
                           {GOLD_COST[bld.key] > 0 && <span> {fmt(GOLD_COST[bld.key])} gold</span>}
                           {WOOD_COST[bld.key] > 0 && <span> &middot; {fmt(WOOD_COST[bld.key])} wood</span>}
@@ -642,10 +639,10 @@ const ResourcesPanel = () => {
 
                         {isAct && (
                           <React.Fragment>
-                            <div style={{ marginTop: '10px', background: 'var(--bg)', borderRadius: '4px', height: '10px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                              <div style={{ background: 'var(--green)', height: '100%', borderRadius: '4px', transition: 'width 0.3s', width: getBuildPct(bld.key) + '%' }}></div>
+                            <div className="mt-2.5 bg-[var(--bg)] rounded border border-[var(--border)] h-2.5 overflow-hidden">
+                              <div className="h-full rounded bg-[var(--green)] transition-[width] duration-300" style={{ width: getBuildPct(bld.key) + '%' }}></div>
                             </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '3px' }}>
+                            <div className="text-[11px] text-[var(--text3)] mt-0.75">
                               {fmt(getBuildProgress(bld.key))} / {fmt(BUILDING_COST[bld.key])} effort ({getBuildPct(bld.key)}%)
                               &nbsp;&middot;&nbsp; ~{getBuildRemaining(bld.key)} turns remaining
                             </div>
@@ -653,38 +650,38 @@ const ResourcesPanel = () => {
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end', marginLeft: 'auto' }}>
+                      <div className="flex flex-col gap-1.5 items-end ml-auto">
                         {isAct ? (
-                          <div style={{ fontSize: '11px', color: 'var(--text3)', textAlign: 'right' }}>{fmt(getBuildEngineers(bld.key))} engineers assigned</div>
+                          <div className="text-[11px] text-[var(--text3)] text-right">{fmt(getBuildEngineers(bld.key))} engineers assigned</div>
                         ) : (
                           <React.Fragment>
                             <div className='flex items-center gap-1.5'>
                               <input type="number" min="0" value={engineerAllocations[bld.key] || ''} onChange={(e) => setEngineerAllocations((prev) => ({ ...prev, [bld.key]: e.target.value }))} placeholder="Eng"
                                 disabled={disab}
-                                style={{ width: '70px', padding: '4px 6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '12px', textAlign: 'center' }} />
+                                className="w-[70px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />
                               <button onClick={() => setMax(bld)} disabled={disab}
-                                style={{ padding: '4px 10px', borderRadius: '4px', border: '2px solid var(--green)', background: 'transparent', color: 'var(--green)', cursor: 'pointer', fontSize: '11px', fontWeight: 700, ...(disab ? { opacity: 0.4, cursor: 'not-allowed' } : {}) }}>
+                                className={clsx('px-2.5 py-1 rounded border-2 border-[var(--green)] bg-transparent text-[var(--green)] cursor-pointer text-[11px] font-bold', disab && 'opacity-40 cursor-not-allowed')}>
                                 Max
                               </button>
                               <button onClick={() => startBuild(bld)} disabled={disab}
-                                style={{ padding: '6px 12px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600, background: 'var(--green)', color: '#000', ...(disab ? { opacity: 0.4, cursor: 'not-allowed' } : {}) }}>
+                                className={clsx('px-3 py-1.5 rounded border-none cursor-pointer text-[12px] font-semibold bg-[var(--green)] text-black', disab && 'opacity-40 cursor-not-allowed')}>
                                 Build
                               </button>
                             </div>
                             {atCap && (
-                              <div style={{ fontSize: '11px', color: 'var(--red)', fontWeight: 600 }}>
+                              <div className="text-[11px] text-[var(--red)] font-semibold">
                                 Cap Reached
                               </div>
                             )}
                             {bld.stage === 2 && !s2Un && (
                               <button id={`unlock-s2-${rtype.key}`} onClick={() => purchaseUpgrade(rtype.key, 2)}
-                                style={{ padding: '5px 10px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, background: 'var(--gold)', color: '#000' }}>
+                                className="px-2.5 py-1.25 rounded border-none cursor-pointer text-[11px] font-semibold bg-[var(--gold)] text-black">
                                 Unlock Stage 2 (10,000 gold)
                               </button>
                             )}
                             {bld.stage === 3 && !s3Un && (
                               <button id={`unlock-s3-${rtype.key}`} onClick={() => purchaseUpgrade(rtype.key, 3)}
-                                style={{ padding: '5px 10px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, background: 'var(--gold)', color: '#000' }}>
+                                className="px-2.5 py-1.25 rounded border-none cursor-pointer text-[11px] font-semibold bg-[var(--gold)] text-black">
                                 Unlock Stage 3 (100,000 gold)
                               </button>
                             )}
@@ -706,22 +703,22 @@ const ResourcesPanel = () => {
             <div className="card-title">Scout New Nodes</div>
             <div className='text-xs text-[var(--text3)] my-1.5 mb-2.5'>Pay 500 gold to discover a new resource node.</div>
             <button onClick={scoutNode} disabled={scouting}
-              style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, background: 'var(--green)', color: '#000' }}>
+              className="px-4 py-2 rounded-lg border-none cursor-pointer font-semibold bg-[var(--green)] text-black">
               {scouting ? 'Scouting...' : '🔭 Scout Node (500 gold)'}
             </button>
             {scoutMsg && (
-              <div style={{ marginTop: '8px', fontSize: '12px', color: scoutMsg.startsWith('Error') ? 'var(--red)' : 'var(--green)' }}>{scoutMsg}</div>
+              <div className={clsx('mt-2 text-[12px]', scoutMsg.startsWith('Error') ? 'text-[var(--red)]' : 'text-[var(--green)]')}>{scoutMsg}</div>
             )}
           </div>
 
           <div className="card mb-3">
             <div className='flex justify-between items-center'>
               <div className="card-title">Discovered Nodes ({nodes.length})</div>
-              <button onClick={loadNodes} style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text3)', cursor: 'pointer', fontSize: '11px' }}>Refresh</button>
+              <button onClick={loadNodes} className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--bg2)] text-[var(--text3)] cursor-pointer text-[11px]">Refresh</button>
             </div>
             {nodes.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No nodes discovered yet. Scout to find resource nodes!</div>}
             {nodes.map(node => (
-              <div key={node.id} style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+              <div key={node.id} className="mt-2.5 p-2.5 rounded-lg bg-[var(--bg2)] border border-[var(--border)]">
                 <div className='flex justify-between items-start flex-wrap gap-2'>
                   <div>
                     <div className='font-semibold text-sm'>{node.name}</div>
@@ -733,10 +730,10 @@ const ResourcesPanel = () => {
                   <div className='flex items-center gap-1.5'>
                     <input type="number" min="10" placeholder="Pop (min 10)"
                       value={expPop[node.id] || ''} onChange={(e) => setExpPop(p => ({...p, [node.id]: parseInt(e.target.value)}))}
-                      style={{ width: '100px', padding: '4px 6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '12px', textAlign: 'center' }} />
+                      className="w-[100px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />
                     <button onClick={() => launchExpedition(node)}
                       disabled={hasActiveExpedition(node.id) || (expPop[node.id] || 0) < 10 || launching[node.id]}
-                      style={{ padding: '5px 10px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600, ...(hasActiveExpedition(node.id) ? { background: 'var(--text3)', color: '#fff', cursor: 'not-allowed' } : { background: '#3b82f6', color: '#fff' }) }}>
+                      className={clsx('px-2.5 py-1.25 rounded border-none cursor-pointer text-[12px] font-semibold text-white', hasActiveExpedition(node.id) ? 'bg-[var(--text3)] cursor-not-allowed' : 'bg-[#3b82f6]')}>
                       {hasActiveExpedition(node.id) ? 'Active' : launching[node.id] ? '...' : 'Dispatch'}
                     </button>
                   </div>
@@ -748,11 +745,11 @@ const ResourcesPanel = () => {
           <div className="card mb-3">
             <div className='flex justify-between items-center'>
               <div className="card-title">Active Expeditions ({activeExpeditions.length})</div>
-              <button onClick={loadExpeditions} style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text3)', cursor: 'pointer', fontSize: '11px' }}>Refresh</button>
+              <button onClick={loadExpeditions} className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--bg2)] text-[var(--text3)] cursor-pointer text-[11px]">Refresh</button>
             </div>
             {activeExpeditions.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No active expeditions.</div>}
             {activeExpeditions.map(exp => (
-              <div key={exp.id} style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+              <div key={exp.id} className="mt-2.5 p-2.5 rounded-lg bg-[var(--bg2)] border border-[var(--border)]">
                 <div className='flex justify-between items-start flex-wrap gap-2'>
                   <div>
                     <div className='font-semibold text-sm'>{exp.node_name} <span className="text-[11px] text-[var(--text3)]">({typeIcon(exp.node_type)} {exp.node_type})</span></div>
@@ -761,12 +758,12 @@ const ResourcesPanel = () => {
                       {exp.food_taken > 0 && <span> &middot; 🍖 {fmt(exp.food_taken)} food taken</span>}
                     </div>
                     {exp.loot && Object.keys(exp.loot).filter(k => !k.startsWith('_')).length > 0 && (
-                      <div style={{ fontSize: '11px', color: 'var(--green)', marginTop: '2px' }}>
+                      <div className="text-[11px] text-[var(--green)] mt-0.5">
                         Loot: {formatLoot(exp.loot)}
                       </div>
                     )}
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text3)', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  <div className="text-[11px] text-[var(--text3)] text-right whitespace-nowrap">
                     {exp.status === 'outbound' && <div>Arrives: <span className='text-[var(--text)]'>{countdown(exp.arrive_at)}</span></div>}
                     {exp.status === 'harvesting' && <div>Done: <span className='text-[var(--gold)]'>{countdown(exp.harvest_ends_at)}</span></div>}
                     {exp.status === 'returning' && <div>Returns: <span className='text-[var(--green)]'>{countdown(exp.return_at)}</span></div>}
@@ -777,21 +774,21 @@ const ResourcesPanel = () => {
           </div>
 
           {isOrc && (
-            <div className="card" style={{ border: '1px solid var(--red)' }}>
+            <div className="card border border-[var(--red)]">
               <div className="card-title" className='text-[var(--red)]'>Orc Interception</div>
               <div className='text-xs text-[var(--text3)] my-1.5 mb-2.5'>Intercept other kingdoms' expeditions. Need 3x combat power of the civilians.</div>
-              <button onClick={loadVisibleExps} style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid var(--red)', background: 'transparent', color: 'var(--red)', cursor: 'pointer', fontSize: '11px', marginBottom: '8px' }}>Scan Expeditions</button>
-              {visibleExps.length === 0 && <div style={{ fontSize: '12px', color: 'var(--text3)' }}>No visible expeditions.</div>}
+              <button onClick={loadVisibleExps} className="px-2.5 py-1 rounded border border-[var(--red)] bg-transparent text-[var(--red)] cursor-pointer text-[11px] mb-2">Scan Expeditions</button>
+              {visibleExps.length === 0 && <div className="text-[12px] text-[var(--text3)]">No visible expeditions.</div>}
               {visibleExps.map(vExp => (
-                <div key={vExp.id} style={{ marginTop: '8px', padding: '8px', background: 'var(--bg2)', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div key={vExp.id} className="mt-2 p-2 bg-[var(--bg2)] rounded flex justify-between items-center flex-wrap gap-2">
                   <div className='text-xs'>
                     <span className='text-[var(--text3)]'>{vExp.kingdom_name}</span> - {typeIcon(vExp.node_type)} &middot; <span style={statusColor(vExp.status)}>{vExp.status}</span> &middot; Pop: {fmt(vExp.population_sent)}
                   </div>
                   <div className='flex items-center gap-1.5'>
                     <input type="number" min="1" placeholder="Fighters" value={interceptFighters[vExp.id] || ''} onChange={(e) => setInterceptFighters(p => ({...p, [vExp.id]: parseInt(e.target.value)}))}
-                      style={{ width: '80px', padding: '4px 6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '12px', textAlign: 'center' }} />
+                      className="w-[80px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />
                     <button onClick={() => interceptExpedition(vExp.id)} disabled={intercepting[vExp.id]}
-                      style={{ padding: '5px 10px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600, background: 'var(--red)', color: '#fff', ...(intercepting[vExp.id] ? { opacity: 0.5 } : {}) }}>
+                      className={clsx('px-2.5 py-1.25 rounded border-none cursor-pointer text-[12px] font-semibold bg-[var(--red)] text-white', intercepting[vExp.id] && 'opacity-50')}>
                       {intercepting[vExp.id] ? '...' : 'Intercept'}
                     </button>
                   </div>
@@ -806,12 +803,12 @@ const ResourcesPanel = () => {
         <div className="card">
           <div className="card-title">Item Inventory</div>
           {items.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No items found.</div>}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px', marginTop: '12px' }}>
+          <div className="grid auto-fill gap-2.5 mt-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
             {items.map(item => (
-              <div key={item.id} style={{ padding: '12px', borderRadius: '8px', background: 'var(--bg2)', textAlign: 'center', border: `1px solid ${(item.qty || 0) > 0 ? 'var(--green)' : 'var(--border)'}` }}>
-                <div style={{ fontSize: '24px', marginBottom: '4px' }}>{itemIcon(item.id)}</div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text)' }}>{item.name}</div>
-                <div style={{ fontSize: '20px', fontWeight: 700, marginTop: '4px', color: (item.qty || 0) > 0 ? 'var(--green)' : 'var(--text3)' }}>{item.qty || 0}</div>
+              <div key={item.id} className={clsx('p-3 rounded-lg bg-[var(--bg2)] text-center border', (item.qty || 0) > 0 ? 'border-[var(--green)]' : 'border-[var(--border)]')}>
+                <div className="text-2xl mb-1">{itemIcon(item.id)}</div>
+                <div className="text-[11px] font-semibold text-[var(--text)]">{item.name}</div>
+                <div className={clsx('text-[20px] font-bold mt-1', (item.qty || 0) > 0 ? 'text-[var(--green)]' : 'text-[var(--text3)]')}>{item.qty || 0}</div>
               </div>
             ))}
           </div>
