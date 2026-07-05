@@ -298,7 +298,7 @@ const ResourceStrip = () => {
   const food = useFood();
   const foodDelta = useFoodBalance();
   const defenseRating = useDefenseRating();
-  const defenseColor = String(defenseRating).toLowerCase().includes('undefended') ? 'var(--red)' : 'var(--gold)';
+  const defenseColorClass = String(defenseRating).toLowerCase().includes('undefended') ? '!text-[var(--red)]' : '!text-[var(--gold)]';
 
   const goldIncome = useGoldIncome();
   const manaRegen = useManaRegen();
@@ -424,7 +424,7 @@ const ResourceStrip = () => {
       </MetricBox>
       <MetricBox metricKey="defense" title="Open Defense">
         <div className="lbl">Defense</div>
-        <div className="val" style={{ color: defenseColor }}>{defenseRating}</div>
+        <div className={clsx('val', defenseColorClass)}>{defenseRating}</div>
         <div className="sub"><span>{numberValue(buildingCounts.walls).toLocaleString()}</span> walls</div>
       </MetricBox>
     </>
