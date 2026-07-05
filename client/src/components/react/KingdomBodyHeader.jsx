@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import clsx from 'clsx';
 import { useActivePanel } from '../../hooks/useActivePanel';
 import { kingdomXpProgress } from '../../utils/xp.js';
 import { fmt } from '../../utils/fmt.js';
@@ -18,8 +19,6 @@ import KingdomXpModal from './KingdomXpModal.jsx';
 
 import { HIDE_KINGDOM_HEADER_PANELS } from '../../utils/panelMeta.js';
 
-const GAP = 8;
-
 function XpBar({ pct }) {
   const width = Math.max(pct > 0 ? 2 : 0, pct);
   return (
@@ -29,22 +28,21 @@ function XpBar({ pct }) {
     >
       <div
         id="xp-bar"
-        className="h-full rounded-sm transition-all duration-400"
-        style={{
-          width: `${width}%`,
-          background: 'linear-gradient(90deg, var(--accent1), var(--gold))',
-          boxShadow: pct > 0 ? '0 0 6px rgba(var(--theme-rgb), 0.45)' : undefined,
-        }}
+        className={clsx(
+          'h-full rounded-sm bg-gradient-to-r from-[var(--accent1)] to-[var(--gold)] transition-[width] duration-500',
+          pct > 0 && 'shadow-[0_0_6px_rgba(var(--theme-rgb),0.45)]',
+        )}
+        style={{ width: `${width}%` }}
       />
     </div>
   );
 }
 
-function Stat({ label, value, valueStyle = {} }) {
+function Stat({ label, value, valueClass = 'text-[var(--text)]' }) {
   return (
     <span className="whitespace-nowrap text-[11px] text-[var(--text2)]">
       {label}{' '}
-      <span className="font-semibold text-[12px] text-[var(--text)]" style={valueStyle}>
+      <span className={clsx('font-semibold text-[12px]', valueClass)}>
         {value}
       </span>
     </span>
@@ -83,11 +81,8 @@ const KingdomBodyHeader = () => {
         id="kd-top"
         className="kd-top shell-lore-box relative z-10 mb-2 mt-2 box-border min-w-0 w-full max-w-full shrink-0 overflow-hidden px-2 sm:mb-3 sm:mt-3 sm:px-4"
       >
-        <div
-          className="kingdom-header flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
-          style={{ gap: `${GAP}px` }}
-        >
-          <div className="flex min-w-0 w-full flex-wrap items-center sm:flex-1" style={{ gap: `${GAP}px` }}>
+        <div className="kingdom-header flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="flex min-w-0 w-full flex-wrap items-center gap-2 sm:flex-1">
             <h1
               id="kingdom-name"
               className="min-w-0 break-words font-cinzel text-base font-bold leading-snug sm:text-lg md:text-xl text-[var(--text)]"
@@ -98,12 +93,7 @@ const KingdomBodyHeader = () => {
               >
                 of
               </span>
-              <span
-                className="font-bold text-[var(--gold)]"
-                style={{
-                  textShadow: '0 0 10px rgba(var(--theme-rgb), 0.35)',
-                }}
-              >
+              <span className="font-bold text-[var(--gold)] [text-shadow:0_0_10px_rgba(var(--theme-rgb),0.35)]">
                 {kingdomName}
               </span>
             </h1>
@@ -128,9 +118,9 @@ const KingdomBodyHeader = () => {
             )}
           </div>
 
-          <div className="flex w-full shrink-0 flex-wrap items-center justify-start sm:w-auto sm:justify-end" style={{ gap: `${GAP}px` }}>
+          <div className="flex w-full shrink-0 flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
             <Stat label="Turn" value={turn} />
-            <Stat label="Score" value={displayScore.toLocaleString()} valueStyle={{ color: 'var(--gold)' }} />
+            <Stat label="Score" value={displayScore.toLocaleString()} valueClass="text-[var(--gold)]" />
             <span className="text-[11px] text-[var(--text3)] shrink-0">
               Lv{' '}
               <span
@@ -144,8 +134,7 @@ const KingdomBodyHeader = () => {
               type="button"
               onClick={() => setXpModalOpen(true)}
               title="Click for XP breakdown"
-              className="border-none bg-transparent p-0 transition hover:opacity-90 flex items-center shrink-0"
-              style={{ gap: `${GAP}px` }}
+              className="border-none bg-transparent p-0 transition hover:opacity-90 flex items-center gap-2 shrink-0"
             >
               <XpBar pct={pct} />
               <span id="xp-label" className="hidden xs:inline text-[10px] text-[var(--text3)] shrink-0">
@@ -156,7 +145,7 @@ const KingdomBodyHeader = () => {
         </div>
 
         {(metadata.local_time || metadata.vampire_countdown || metadata.season) && (
-          <div className="flex w-full shrink-0 flex-wrap items-center justify-start sm:w-auto sm:justify-end" style={{ gap: `${GAP}px`, marginTop: `${GAP}px` }}>
+          <div className="mt-2 flex w-full shrink-0 flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
             {metadata.local_time && <Stat label="Time" value={metadata.local_time} />}
             {metadata.vampire_countdown && <Stat label="Vampire" value={metadata.vampire_countdown} />}
             {metadata.season && <Stat label="Season" value={metadata.season} />}
