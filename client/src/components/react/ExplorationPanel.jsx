@@ -69,7 +69,6 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   }, []);
   const [inventory, setInventory] = useState({});
   const [inventoryOpen, setInventoryOpen] = useState(false);
-  const [searchRangers, setSearchRangers] = useState(0);
   const [dungeonRangers, setDungeonRangers] = useState(0);
   const [dungeonFighters, setDungeonFighters] = useState(0);
   const [mountainRangers, setMountainRangers] = useState(0);
@@ -176,51 +175,6 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     if (!title) return;
     logInstantEntry(icon, title, subtitle);
   });
-
-  const handleSearch = useCallback(async (type) => {
-    const r = Number(searchRangers || 0);
-    if (r <= 0) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Assign some rangers first', 'error');
-      return;
-    }
-    if (r > availableRangers) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Not enough rangers', 'error');
-      return;
-    }
-    if ((turns_stored || 0) < 1) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('No turns available', 'warn');
-      return;
-    }
-
-    try {
-      const result = await apiCall('/api/kingdom/search', {
-        method: 'POST',
-        body: { type, rangers: r },
-      });
-
-      if (result.error) {
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
-        return;
-      }
-
-      applyResult(result, 'search');
-      if (typeof window !== 'undefined' && typeof toast === 'function') {
-        const landNote = type === 'land' ? ' (diminishing returns apply)' : '';
-        toast(repairText(result.message || 'Search complete') + landNote, 'success');
-      }
-
-      const icons = { land: '🗺️', gold: '⛏️', food: '🌾', targets: '🔭' };
-      logInstantEntry(
-        icons[type] || '🧭',
-        repairText(result.message || 'Search complete'),
-        `Sent ${formatNum(r)} rangers | 1 turn used`,
-      );
-      await refreshAll();
-    } catch (err) {
-      console.error('Search API error:', err);
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Search action failed: ${err.message}`, 'error');
-    }
-  }, [applyResult, availableRangers, logInstantEntry, refreshAll, searchRangers, turns_stored]);
 
   const handleLaunchExpedition = useCallback(async (type) => {
     const rangers = Number(
@@ -669,34 +623,6 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               </div>
               <div className="mt-1 text-[12px] text-[var(--text3)]">
                 Ready to launch expeditions or scout targets.
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="card-title">
-                Instant search <span className="text-[12px] font-normal text-[var(--green)]">costs 1 turn</span>
-              </div>
-              <div className="mb-3 text-[12px] text-[var(--text3)]">
-                Quick operations that return results immediately.
-              </div>
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <span className="name">Rangers</span>
-                <span className="text-[12px] text-[var(--text3)]">
-                  Available: <span>{availableRangers}</span>
-                </span>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    className="input w-[90px] text-right"
-                    value={searchRangers}
-                    onChange={(e) => setSearchRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                    min="0"
-                    placeholder="Qty"
-                  />
-                  <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setSearchRangers(availableRangers)}>
-                    Max
-                  </button>
-                </div>
               </div>
             </div>
 
