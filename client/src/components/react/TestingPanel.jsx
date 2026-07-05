@@ -451,7 +451,7 @@ const TestingPanel = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold" style={{color: progressPercent === 100 ? '#4ade80' : '#fbbf24'}}>
+                  <div className={clsx('text-sm font-bold', progressPercent === 100 ? 'text-[#4ade80]' : 'text-[#fbbf24]')}>
                     {progressPercent}%
                   </div>
                   <div className="text-[10px]">{isExpanded ? '▼' : '▶'}</div>
@@ -461,7 +461,8 @@ const TestingPanel = () => {
               {/* Progress Bar */}
               <div className="h-1 bg-[var(--border)]">
                 <div
-                  className="h-full transition-all duration-300 ease-in-out" style={{width: `${progressPercent}%`, backgroundColor: progressPercent === 100 ? '#4ade80' : '#fbbf24'}}
+                  className={clsx('h-full transition-all duration-300 ease-in-out', progressPercent === 100 ? 'bg-[#4ade80]' : 'bg-[#fbbf24]')}
+                  style={{width: `${progressPercent}%`}}
                 />
               </div>
 
@@ -482,7 +483,7 @@ const TestingPanel = () => {
                           isFailing ? "p-2 pl-1.5 bg-[#ef4444]/10 border-l-[3px] border-l-[#ef4444]" : "p-2 bg-transparent border-l-0"
                         )}
                       >
-                        <div className="flex items-center gap-2" style={{marginBottom: (TEST_DESCRIPTIONS[key] || isFailing) ? '6px' : '0'}}>
+                        <div className={clsx('flex items-center gap-2', (TEST_DESCRIPTIONS[key] || isFailing) && 'mb-1.5')}>
                           {/* Finished Checkbox */}
                           <input
                             type="checkbox"
@@ -492,14 +493,14 @@ const TestingPanel = () => {
                           />
 
                           {/* Test Name */}
-                          <span className="flex-1 font-medium" style={{textDecoration: test.finished ? 'line-through' : 'none', color: test.finished ? 'var(--text2)' : 'inherit'}}>
+                          <span className={clsx('flex-1 font-medium', test.finished && 'line-through text-[var(--text2)]')}>
                             {testName}
                           </span>
 
                           {/* Pass/Fail Buttons */}
                           <button
                             onClick={() => setTestPassed(group.id, testName, true)}
-                            className="px-2 py-1 text-sm border-none rounded-sm cursor-pointer" style={{backgroundColor: test.passed === true ? '#4ade80' : 'var(--border)'}}
+                            className={clsx('px-2 py-1 text-sm border-none rounded-sm cursor-pointer', test.passed === true ? 'bg-[#4ade80]' : 'bg-[var(--border)]')}
                             title="Mark as passed"
                           >
                             👍
@@ -511,7 +512,7 @@ const TestingPanel = () => {
                               setFailureComment(test.comment || '');
                               setCommentingTest(key);
                             }}
-                            className="px-2 py-1 text-sm border-none rounded-sm cursor-pointer" style={{backgroundColor: test.passed === false ? '#ef4444' : 'var(--border)'}}
+                            className={clsx('px-2 py-1 text-sm border-none rounded-sm cursor-pointer', test.passed === false ? 'bg-[#ef4444]' : 'bg-[var(--border)]')}
                             title="Mark as failed"
                           >
                             👎
@@ -527,7 +528,7 @@ const TestingPanel = () => {
 
                         {/* Failure Comment Section */}
                         {isFailing && (
-                          <div className="text-sm" style={{marginLeft: '28px'}}>
+                          <div className="text-sm ml-7">
                             {isCommentingThis ? (
                               <div className="flex gap-1">
                                 <textarea
