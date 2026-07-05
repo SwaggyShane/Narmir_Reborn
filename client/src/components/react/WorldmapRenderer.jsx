@@ -877,28 +877,6 @@ export function renderWorldMap(
         });
         svg += '</g>';
 
-        // Fog of War overlay (above terrain and rivers, below regions/labels).
-        // Unseen: heavily obscured; seen: dimmed; current: fully visible (no overlay).
-        // Reduced motion: static (no transitions/animations), as SVG is rendered statically via dangerouslySetInnerHTML.
-        svg += '<g class="wm-layer wm-layer-fog" style="pointer-events:none">';
-        hexGrid.cells.forEach(function (cell) {
-          const col = cell.col, row = cell.row;
-          let fog = 'unseen';
-          if (isHexCurrent(col, row, currentBig)) fog = 'current';
-          else if (isHexSeen(col, row, seenBig)) fog = 'seen';
-          if (fog === 'current') return; // no overlay
-          let fogFill, fogOpacity;
-          if (fog === 'unseen') {
-            fogFill = 'rgb(0,0,0)';
-            fogOpacity = '0.92';
-          } else {
-            fogFill = 'rgb(15,20,35)';
-            fogOpacity = '0.65';
-          }
-          svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.8) + '" fill="' + fogFill + '" opacity="' + fogOpacity + '" />';
-        });
-        svg += '</g>';
-
         // Interactive hex layer for Epic Trek target selection
         // Invisible clickable hexes (for exploration mode)
         svg += '<g class="wm-layer wm-layer-hex-interact" style="pointer-events:auto">';
@@ -970,6 +948,29 @@ export function renderWorldMap(
             escapeHtml(REGION_BONUSES[race] || "") +
             "</text>";
           svg += "</g>";
+        });
+        svg += '</g>';
+
+        // Fog of War overlay (above terrain, rivers, regions, and labels).
+        // Unseen: heavily obscured; seen: dimmed; current: fully visible (no overlay).
+        // Rendered after labels to ensure fog appears on top and obscures region names appropriately.
+        // Reduced motion: static (no transitions/animations), as SVG is rendered statically via dangerouslySetInnerHTML.
+        svg += '<g class="wm-layer wm-layer-fog" style="pointer-events:none">';
+        hexGrid.cells.forEach(function (cell) {
+          const col = cell.col, row = cell.row;
+          let fog = 'unseen';
+          if (isHexCurrent(col, row, currentBig)) fog = 'current';
+          else if (isHexSeen(col, row, seenBig)) fog = 'seen';
+          if (fog === 'current') return; // no overlay
+          let fogFill, fogOpacity;
+          if (fog === 'unseen') {
+            fogFill = 'rgb(0,0,0)';
+            fogOpacity = '0.92';
+          } else {
+            fogFill = 'rgb(15,20,35)';
+            fogOpacity = '0.65';
+          }
+          svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.8) + '" fill="' + fogFill + '" opacity="' + fogOpacity + '" />';
         });
         svg += '</g>';
 
