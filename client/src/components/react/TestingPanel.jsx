@@ -483,7 +483,7 @@ const TestingPanel = () => {
                           isFailing ? "p-2 pl-1.5 bg-[#ef4444]/10 border-l-[3px] border-l-[#ef4444]" : "p-2 bg-transparent border-l-0"
                         )}
                       >
-                        <div className={clsx('flex items-center gap-2', (TEST_DESCRIPTIONS[key] || isFailing) && 'mb-1.5')}>
+                        <div className={clsx('flex items-center gap-2', (!!TEST_DESCRIPTIONS[key] || isFailing) && 'mb-1.5')}>
                           {/* Finished Checkbox */}
                           <input
                             type="checkbox"
