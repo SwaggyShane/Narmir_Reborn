@@ -11,6 +11,7 @@ const WORLD_MAX_ROW = 1379;
 const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
   const [selectedHex, setSelectedHex] = useState(null);
   const [worldSeed, setWorldSeed] = useState(null);
+  const [visibility, setVisibility] = useState(null);
   const svgRef = useRef(null);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
@@ -27,33 +28,43 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
   const contextLabel = contextLabels[context?.type] || { icon: '🗺️', name: 'Target Selection', desc: 'Click on a hex' };
   const durationLabel = context?.duration ? `${context.duration} turns` : 'Target Selection';
 
-  // Fetch worldSeed on mount
+  // Fetch worldSeed and visibility on mount
   useEffect(() => {
     if (!isOpen) return;
 
     let mounted = true;
-    const fetchWorldSeed = async () => {
+    const fetchMapData = async () => {
       try {
         const res = await fetch('/api/world-map');
         if (res.ok) {
           const data = await res.json();
           if (mounted) {
             setWorldSeed(data.worldSeed || 0);
+            // Parse visibility bitmap
+            if (data.visibility?.seenCells) {
+              try {
+                const seenBig = BigInt(data.visibility.seenCells);
+                setVisibility({ seenCells: seenBig });
+              } catch (e) {
+                console.error('Failed to parse visibility:', e);
+                setVisibility(null);
+              }
+            }
           }
         } else if (mounted) {
-          // Fallback to seed 0 if fetch fails
           setWorldSeed(0);
+          setVisibility(null);
         }
       } catch (err) {
-        console.error('Failed to fetch world seed:', err);
+        console.error('Failed to fetch map data:', err);
         if (mounted) {
-          // Fallback to seed 0 on error
           setWorldSeed(0);
+          setVisibility(null);
         }
       }
     };
 
-    fetchWorldSeed();
+    fetchMapData();
     return () => { mounted = false; };
   }, [isOpen]);
 
@@ -61,7 +72,7 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
   const hexGrid = useMemo(() => {
     if (!isOpen || worldSeed === undefined || worldSeed === null) return null;
     return buildHexGrid(WORLD_WIDTH, WORLD_HEIGHT, worldSeed);
-  }, [isOpen, worldSeed]);
+  }, [isOpen, worldSeed, visibility]);
 
   const handleHexClick = useCallback((col, row) => {
     if (col < 0 || col > WORLD_MAX_COL || row < 0 || row > WORLD_MAX_ROW) {
@@ -111,9 +122,22 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
 
   if (!isOpen) return null;
 
+  // Helper to check if a cell is visible (seen)
+  const isHexSeen = (col, row) => {
+    if (!visibility?.seenCells) return true; // No visibility data = show all
+    const CLIENT_CELL_INDEX_OFFSET = 8;
+    const CLIENT_CELL_INDEX_STRIDE = 32;
+    const colShifted = col + CLIENT_CELL_INDEX_OFFSET;
+    const rowShifted = row + CLIENT_CELL_INDEX_OFFSET;
+    if (colShifted < 0 || colShifted >= CLIENT_CELL_INDEX_STRIDE || rowShifted < 0) return false;
+    const idx = rowShifted * CLIENT_CELL_INDEX_STRIDE + colShifted;
+    return (visibility.seenCells & (1n << BigInt(idx))) !== 0n;
+  };
+
   // Build SVG elements from terrain grid
   const hexElements = [];
   const borderElements = [];
+  const fogElements = [];
 
   if (hexGrid) {
     const { cells, cellMap } = hexGrid;
@@ -146,6 +170,19 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
           style={{ cursor: 'pointer', transition: 'fill 0.1s' }}
         />
       );
+
+      // Render fog overlay for unseen hexes
+      if (!isHexSeen(cell.col, cell.row)) {
+        fogElements.push(
+          <polygon
+            key={`fog-${cell.col}-${cell.row}`}
+            points={cornerStr}
+            fill="rgba(0, 0, 0, 0.7)"
+            stroke="none"
+            pointerEvents="none"
+          />
+        );
+      }
 
       // Draw region boundaries (lines between hexes of different races)
       const parity = cell.row & 1;
@@ -241,6 +278,8 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
             {hexElements}
             {/* Region boundaries */}
             {borderElements}
+            {/* Fog of war overlay */}
+            {fogElements}
           </svg>
           {!hexGrid && (
             <div className="absolute inset-0 flex items-center justify-center">
