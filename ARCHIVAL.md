@@ -2,13 +2,39 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Exploration System enhancements: Resource gathering UI refactor PR #817 with duration-based expeditions, hex selection modal, and Gemini feedback fixes)
+**Last updated:** 2026-07-05 (Exploration System enhancements: Resource gathering visual hex map modal PR #818 remedial work + PR #817 baseline features and Gemini feedback fixes)
 
 ---
 
 ## Recent Chronology
 
 ### 2026-07-05
+
+- **Exploration System Enhancement: Clickable Hex Map Modal for Resource Gathering** (PR #818, merged 2026-07-05): Remedial work completing PR #817 — replaced text-based coordinate input with visual, interactive SVG hex grid for resource gathering operations. Players now click on a hex to select targets for Hunting, Prospecting, Land Expansion, and Epic Trek expeditions with auto-triggering on selection.
+  - **HexSelectionModal Complete Rewrite:**
+    - SVG hex grid rendering with pan/zoom controls via mouse drag
+    - Click-to-select hex cells with immediate visual feedback (highlighted cell, coordinates displayed)
+    - Auto-close modal on hex selection with automatic endpoint trigger
+    - Removed separate confirm button — action triggers immediately on hex click
+  - **New Utilities:**
+    - Created `client/src/utils/hexUtils.js` — shared client-side hex math matching server logic (pixelToHex, hexCenter, hexCorners)
+    - Hex coordinate conversion from pixel clicks using pixelToHex (odd-r offset, pointy-top hexagons)
+  - **ExplorationPanel Integration:**
+    - Updated `handleHexSelected` callback to auto-trigger endpoints immediately (hunting, prospecting, land-expansion, epic-trek)
+    - Modal now closes and action starts without user confirmation step
+    - Endpoints accept optional target_x/target_y coordinates for future expansion
+  - **Backend Routes Updated:**
+    - `/api/kingdom/expedition/hunting`: Now accepts optional target coordinates
+    - `/api/kingdom/expedition/prospecting`: Now accepts optional target coordinates
+    - `/api/kingdom/expedition/land-expansion`: Now accepts optional target coordinates
+  - **CI/Testing:**
+    - Initial build failed: Missing export of HEX_SIZE constant from hexUtils.js
+    - Fixed with minimal commit adding export statements
+    - Final CI: All 3 checks passed ✅ (Lint/Test/Build, Validate Text Encoding, Validate Security Configuration)
+  - **Commits:**
+    - `3d181b8`: Initial implementation with clickable hex grid modal and hexUtils
+    - `8edf6fe`: Fix missing exports (HEX_SIZE, HEX_W constants)
+  - **Code Quality:** Lint ✅ (0 errors after fix). Build ✅. All smoke test baselines pass. No regressions.
 
 - **Exploration System Enhancement: Resource Gathering UI Refactor** (PR #817, merged 2026-07-05): Refactored resource gathering system in ExplorationPanel with duration-based expeditions and reusable hex selection modal. Moved from single-button per resource to [Instant] [5] [25] duration options with visual hex targeting.
   - **UI Improvements:**
