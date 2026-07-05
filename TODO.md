@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (Terrain System Phases 1-3 verified complete; marked as finished work)
+**Last updated:** 2026-07-05 (Terrain System & Admin CSS Phase 4R verified complete; TODO audit corrections)
 
 ---
 
@@ -49,18 +49,19 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 **Reference:** `/home/user/Narmir_Reborn/SECURITY_AUDIT.md`
 
-### Admin CSS Consolidation Phase 4R (PR #814) — Awaiting Gemini Review
-**Status:** AWAITING REVIEW  
-**Details:**
-- ✅ PR #814 merged 2026-07-05
-- ✅ Converted ~45 inline styles in ResourcesPanel to Tailwind CSS
-- ✅ CI: All 3 checks passed (Lint, Test/Build, Security)
-- ✅ Smoke test: Green, no functional regressions
-- ⏳ Awaiting Gemini review sign-off for final closure
-
 ---
 
 ## Previous Work
+
+### Admin CSS Consolidation Phase 4R (PR #814) — ✅ COMPLETE
+**Status:** ✅ MERGED & COMPLETE (2026-07-05)
+**Details:**
+- ✅ PR #814 merged 2026-07-05 (commit 82d1296)
+- ✅ Converted ~45 inline styles in ResourcesPanel to Tailwind CSS
+- ✅ CI: All 3 checks passed (Lint, Test/Build, Security)
+- ✅ Smoke test: Green, no functional regressions
+- ✅ Gemini feedback addressed (commit 3425b85)
+- ✅ Phase 4S (PR #815) completed as follow-up
 
 ### Fog of War System (5 Phases)
 
