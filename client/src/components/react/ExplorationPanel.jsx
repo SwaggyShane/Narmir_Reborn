@@ -80,12 +80,15 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const [instantEntries, setInstantEntries] = useState([]);
   // Phase 1: Turn-based resource gathering with durations
   const [huntingRangers, setHuntingRangers] = useState(0);
+  const [huntingTerrain, setHuntingTerrain] = useState('forest');
   const [huntingDuration, setHuntingDuration] = useState(null); // 'instant', '5', '25', or null
   const [huntingTargetHex, setHuntingTargetHex] = useState(null);
   const [prospectingEngineers, setProspectingEngineers] = useState(0);
+  const [prospectingTerrain, setProspectingTerrain] = useState('mountain');
   const [prospectingDuration, setProspectingDuration] = useState(null);
   const [prospectingTargetHex, setProspectingTargetHex] = useState(null);
   const [landExpansionRangers, setLandExpansionRangers] = useState(0);
+  const [landExpansionTerrain, setLandExpansionTerrain] = useState('grassland');
   const [landExpansionDuration, setLandExpansionDuration] = useState(null);
   const [landExpansionTargetHex, setLandExpansionTargetHex] = useState(null);
   // Hex selection modal state
@@ -157,13 +160,6 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const availablePopulation = Number(population || 0);
   const expeditionTurns = useMemo(() => EXPEDITION_TURNS, []);
   const mountainFoodCost = Math.ceil(mountainRangers * 0.5 * 100 * 0.75);
-
-  // Terrain modifiers for resource gathering returns
-  const TERRAIN_MODIFIERS = {
-    hunting: { forest: 1.5, grassland: 1.0, mountain: 0.6, desert: 0.3, water: 0.2, swamp: 1.1 },
-    prospecting: { mountain: 1.5, grassland: 1.0, forest: 0.6, desert: 1.2, water: 0.1, swamp: 0.7 },
-    land_expansion: { grassland: 1.0, forest: 0.8, mountain: 0.6, desert: 0.5, water: 0.2, swamp: 0.7 },
-  };
 
   const applyResult = useCallback((result, reason) => {
     if (applyGameMutation) {
@@ -712,6 +708,11 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       </button>
                     </div>
                   </div>
+                  {huntingTargetHex && huntingDuration ? (
+                    <div className="mb-2 rounded bg-[var(--accent2)]/10 px-2 py-1 text-[11px] text-[var(--accent2)]">
+                      Target: ({huntingTargetHex.x}, {huntingTargetHex.y}) — {huntingDuration} turns
+                    </div>
+                  ) : null}
                   <div className="flex gap-1">
                     <button className="base-btn flex-1 bg-[rgba(76,175,130,0.2)] text-[11px]" onClick={handleHunting}>
                       Instant
@@ -723,6 +724,11 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       25
                     </button>
                   </div>
+                  {huntingTargetHex && huntingDuration && (huntingDuration === '5' || huntingDuration === '25') ? (
+                    <button className="base-btn w-full mt-2 bg-[rgba(76,175,130,0.3)] text-[11px] font-semibold" onClick={handleHunting}>
+                      Launch Hunting Expedition
+                    </button>
+                  ) : null}
                 </div>
 
                 {/* Prospecting Card */}
@@ -745,6 +751,11 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       </button>
                     </div>
                   </div>
+                  {prospectingTargetHex && prospectingDuration ? (
+                    <div className="mb-2 rounded bg-[var(--accent1)]/10 px-2 py-1 text-[11px] text-[var(--accent1)]">
+                      Target: ({prospectingTargetHex.x}, {prospectingTargetHex.y}) — {prospectingDuration} turns
+                    </div>
+                  ) : null}
                   <div className="flex gap-1">
                     <button className="base-btn flex-1 bg-[rgba(180,60,0,0.2)] text-[11px]" onClick={handleProspecting}>
                       Instant
@@ -756,6 +767,11 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       25
                     </button>
                   </div>
+                  {prospectingTargetHex && prospectingDuration && (prospectingDuration === '5' || prospectingDuration === '25') ? (
+                    <button className="base-btn w-full mt-2 bg-[rgba(180,60,0,0.3)] text-[11px] font-semibold" onClick={handleProspecting}>
+                      Launch Prospecting Expedition
+                    </button>
+                  ) : null}
                 </div>
 
                 {/* Land Expansion Card */}
@@ -778,6 +794,11 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       </button>
                     </div>
                   </div>
+                  {landExpansionTargetHex && landExpansionDuration ? (
+                    <div className="mb-2 rounded bg-[var(--gold)]/10 px-2 py-1 text-[11px] text-[var(--gold)]">
+                      Target: ({landExpansionTargetHex.x}, {landExpansionTargetHex.y}) — {landExpansionDuration} turns
+                    </div>
+                  ) : null}
                   <div className="flex gap-1">
                     <button className="base-btn flex-1 bg-[rgba(218,165,32,0.2)] text-[11px]" onClick={handleLandExpansion}>
                       Instant
@@ -789,6 +810,11 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       25
                     </button>
                   </div>
+                  {landExpansionTargetHex && landExpansionDuration && (landExpansionDuration === '5' || landExpansionDuration === '25') ? (
+                    <button className="base-btn w-full mt-2 bg-[rgba(218,165,32,0.3)] text-[11px] font-semibold" onClick={handleLandExpansion}>
+                      Launch Land Expansion
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </div>

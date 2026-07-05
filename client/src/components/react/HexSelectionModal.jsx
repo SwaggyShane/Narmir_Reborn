@@ -15,13 +15,15 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
   const durationLabel = context?.duration ? `${context.duration} turns` : 'Target Selection';
 
   const handleConfirm = useCallback(() => {
-    if (!selectedHex) {
+    const x = selectedHex?.x;
+    const y = selectedHex?.y;
+    if (x === undefined || y === undefined || x === '' || y === '') {
       if (typeof window !== 'undefined' && typeof toast === 'function') {
-        toast('Please select a target hex on the map', 'warn');
+        toast('Please enter both X and Y coordinates', 'warn');
       }
       return;
     }
-    onHexSelected(selectedHex);
+    onHexSelected({ x: parseInt(x, 10), y: parseInt(y, 10) });
     setSelectedHex(null);
   }, [selectedHex, onHexSelected]);
 
@@ -77,7 +79,7 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
               type="number"
               className="input w-full"
               value={selectedHex?.x ?? ''}
-              onChange={(e) => setSelectedHex(prev => ({ ...prev, x: parseInt(e.target.value, 10) || 0 }))}
+              onChange={(e) => setSelectedHex(prev => ({ ...prev, x: e.target.value === '' ? '' : parseInt(e.target.value, 10) || 0 }))}
               placeholder="0-1999"
               min="0"
               max="1999"
@@ -89,7 +91,7 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
               type="number"
               className="input w-full"
               value={selectedHex?.y ?? ''}
-              onChange={(e) => setSelectedHex(prev => ({ ...prev, y: parseInt(e.target.value, 10) || 0 }))}
+              onChange={(e) => setSelectedHex(prev => ({ ...prev, y: e.target.value === '' ? '' : parseInt(e.target.value, 10) || 0 }))}
               placeholder="0-1379"
               min="0"
               max="1379"
@@ -98,15 +100,7 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
           <div className="flex items-end">
             <button
               className="base-btn w-full"
-              onClick={() => {
-                if (selectedHex?.x !== undefined && selectedHex?.y !== undefined) {
-                  setSelectedHex(null);
-                } else {
-                  if (typeof window !== 'undefined' && typeof toast === 'function') {
-                    toast('Enter valid coordinates', 'warn');
-                  }
-                }
-              }}
+              onClick={() => setSelectedHex(null)}
             >
               Clear
             </button>
@@ -118,7 +112,7 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
           <button
             className="base-btn flex-1 variant-accent"
             onClick={handleConfirm}
-            disabled={!selectedHex}
+            disabled={!selectedHex || selectedHex.x === undefined || selectedHex.x === '' || selectedHex.y === undefined || selectedHex.y === ''}
           >
             Confirm Target
           </button>
