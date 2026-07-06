@@ -237,7 +237,7 @@ const CLIENT_CELL_INDEX_STRIDE = 32;
 function clientCellIndex(col, row) {
   const colShifted = col + CLIENT_CELL_INDEX_OFFSET;
   const rowShifted = row + CLIENT_CELL_INDEX_OFFSET;
-  if (colShifted < 0 || colShifted >= CLIENT_CELL_INDEX_STRIDE || rowShifted < 0) return -1;
+  if (colShifted < 0 || colShifted >= CLIENT_CELL_INDEX_STRIDE || rowShifted < 0 || rowShifted >= CLIENT_CELL_INDEX_STRIDE) return -1;
   return rowShifted * CLIENT_CELL_INDEX_STRIDE + colShifted;
 }
 function isHexSeen(col, row, seenBig) {
