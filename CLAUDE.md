@@ -1,5 +1,8 @@
 # Claude Code Workflow Guide
 
+## ⚠️ FIRST: Check Memory
+**On every session start:** Read `C:\Users\king_\.claude\projects\C--Users-king-\memory\MEMORY.md` to understand prior learnings, known issues, and project context. This is non-negotiable.
+
 #### *****DO NOT TAKE THE PATH OF LEAST RESISTANCE*****
 
 ## PR Workflow
