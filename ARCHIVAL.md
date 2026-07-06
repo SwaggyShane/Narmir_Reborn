@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Turn Processing Fix Phases 1, 3a, 3b complete; Phase 2 deferred; Phase 3c conditional optimization pending)
+**Last updated:** 2026-07-05 (Turn Processing Fix Phases 1, 3a, 3b, 3c complete; Phase 2 deferred; measurement infrastructure deployed)
 
 ---
 
@@ -34,6 +34,20 @@
   - **Files:** `game/engine.js`, `routes/kingdom-gameplay.js`, `TODO.md`
   - **Commits:** `5e513eb0` (initial), `fa0d17a0` (Gemini fix - instrument attunements), `d84fa23f` (docs), merged as PR #838
   - **Status:** Ready for extending to all 18 attunements and Phase 3c optimization based on profiling results
+
+- **Turn Processing Fix — Exploration Measurement Infrastructure (Phase 3c)** (PR #839, merged `2de76421` 2026-07-05): Complete profiling instrumentation and measurement tools for identifying exploration bottleneck (user insight: exploration system additions correlate with turn latency).
+  - **Full Instrumentation:** All 18 attunement functions instrumented with `measureAttunement()` for comprehensive coverage
+  - **Exploration Focus:** Scout progress function (`processScoutProgress`) instrumented as key exploration operation
+  - **Enhanced Measurement Script:** Created `game/measure-turn-real.js`
+    - Connects to database and fetches real kingdom for profiling
+    - Runs processTurn with full profiling enabled
+    - Outputs comprehensive report: total time, JSON costs, all attunement timings, optimization recommendations
+    - Usage: `node game/measure-turn-real.js <kingdomId>`
+  - **Gemini Review (COMMENTED):** Identified critical database connection leak (process.exit in catch bypasses finally) → fixed by moving process.exit outside catch block
+  - **Quality Gates:** Lint ✅, Test suite (63 files) ✅, Build ✅
+  - **Files:** `game/engine.js` (all 19 functions instrumented), `game/measure-turn-real.js` (new), `TODO.md`
+  - **Commits:** `62c03378` (scout instrumentation), `19e6a872` (all 18 attunements), `5f980519` (measure-turn-real.js), `64646185` (DB cleanup fix), `548be568` (docs), merged as PR #839
+  - **Status:** Measurement infrastructure ready for deployment. Next: Run measurements on real kingdoms to identify which operations are bottlenecks, then implement Phase 3d optimizations (conditional: caching for JSON, refactoring slow attunements, synergy lookup caching)
 
 - **Turn Processing Fix — Connection Pool Exhaustion (Phase 1)** (PR #834, merged `0859c68e` 2026-07-05): Refactored `/turn` endpoint to shorten DB transaction hold time (root cause of 502s at moderate concurrency). 
   - Extracted `loadTurnContext()` (parallel init queries for region/alliance/heroes + trade) and `commitTurnResults()` (writes + side effects).
