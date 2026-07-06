@@ -937,38 +937,6 @@ export function renderWorldMap(
         });
         svg += '</g>';
 
-        // Region labels: rendered BEFORE fog so they're not darkened by fog overlay
-        svg += '<g class="wm-layer wm-layer-region-labels">';
-        Object.entries(REGION_META).forEach(function (e) {
-          var race = e[0];
-          var meta = e[1];
-          var home = RACE_HOMES[race];
-          if (!home) return;
-          var cx = home.x;
-          var cy = home.y;
-          var titleColor = darkenHexColor(meta.color || '#333333', 0.35);
-          var titleLines = wrapRegionName(meta.name);
-          var titleFontSize = 15;
-          var titleLineHeight = titleFontSize + 3;
-          var titleTop = cy - 8 - ((titleLines.length - 1) * titleLineHeight) / 2;
-
-          svg += '<g class="wm-region-label" style="transition:opacity 0.3s;opacity:' + regionOpacity(race, highlightedRace) + '">';
-          titleLines.forEach(function (line, i) {
-            svg +=
-              '<text x="' + cx + '" y="' + (titleTop + i * titleLineHeight) +
-              '" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="' + titleFontSize + '" fill="' + titleColor + '" opacity="1" pointer-events="none" style="text-transform:uppercase;letter-spacing:1.5px;text-shadow:0 2px 8px rgba(0,0,0,0.8),0 -1px 2px rgba(0,0,0,0.6);">' +
-              escapeHtml(line) +
-              "</text>";
-          });
-          svg +=
-            '<text x="' + cx + '" y="' + (titleTop + titleLines.length * titleLineHeight + 6) +
-            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="11" fill="#ffffff" opacity="1" pointer-events="none" style="text-shadow:0 1px 4px rgba(0,0,0,0.8);">' +
-            escapeHtml(REGION_BONUSES[race] || "") +
-            "</text>";
-          svg += "</g>";
-        });
-        svg += '</g>';
-
         // Grid lines - subtle
         for (gx = 0; gx < W; gx += 80) {
 
@@ -1428,7 +1396,37 @@ export function renderWorldMap(
 
           '" fill="url(#vignette)" pointer-events="none"/>';
 
+        // Region labels — rendered LAST, same layer as title so they're on top of everything
+        svg += '<g class="wm-layer wm-layer-region-labels">';
+        Object.entries(REGION_META).forEach(function (e) {
+          var race = e[0];
+          var meta = e[1];
+          var home = RACE_HOMES[race];
+          if (!home) return;
+          var cx = home.x;
+          var cy = home.y;
+          var titleColor = darkenHexColor(meta.color || '#333333', 0.35);
+          var titleLines = wrapRegionName(meta.name);
+          var titleFontSize = 15;
+          var titleLineHeight = titleFontSize + 3;
+          var titleTop = cy - 8 - ((titleLines.length - 1) * titleLineHeight) / 2;
 
+          svg += '<g class="wm-region-label" style="transition:opacity 0.3s;opacity:' + regionOpacity(race, highlightedRace) + '">';
+          titleLines.forEach(function (line, i) {
+            svg +=
+              '<text x="' + cx + '" y="' + (titleTop + i * titleLineHeight) +
+              '" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="' + titleFontSize + '" fill="' + titleColor + '" opacity="1" pointer-events="none" style="text-transform:uppercase;letter-spacing:1.5px;text-shadow:0 2px 8px rgba(0,0,0,0.8),0 -1px 2px rgba(0,0,0,0.6);">' +
+              escapeHtml(line) +
+              "</text>";
+          });
+          svg +=
+            '<text x="' + cx + '" y="' + (titleTop + titleLines.length * titleLineHeight + 6) +
+            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="11" fill="#ffffff" opacity="1" pointer-events="none" style="text-shadow:0 1px 4px rgba(0,0,0,0.8);">' +
+            escapeHtml(REGION_BONUSES[race] || "") +
+            "</text>";
+          svg += "</g>";
+        });
+        svg += '</g>';
 
         svg += "</svg>";
 
