@@ -937,41 +937,6 @@ export function renderWorldMap(
         });
         svg += '</g>';
 
-        // Region labels, one per race, centered on its home seed point.
-        // Title wraps to two lines when needed so it fits inside the region,
-        // and uses a darker shade of the region's own color instead of white
-        // so it visibly carries that race's identity.
-        svg += '<g class="wm-layer wm-layer-region-labels">';
-        Object.entries(REGION_META).forEach(function (e) {
-          var race = e[0];
-          var meta = e[1];
-          var home = RACE_HOMES[race];
-          if (!home) return;
-          var cx = home.x;
-          var cy = home.y;
-          var titleColor = darkenHexColor(meta.color || '#333333', 0.35);
-          var titleLines = wrapRegionName(meta.name);
-          var titleFontSize = 15;
-          var titleLineHeight = titleFontSize + 3;
-          var titleTop = cy - 8 - ((titleLines.length - 1) * titleLineHeight) / 2;
-
-          svg += '<g class="wm-region-label" filter="url(#uiShadow)" style="transition:opacity 0.3s;opacity:' + regionOpacity(race, highlightedRace) + '">';
-          titleLines.forEach(function (line, i) {
-            svg +=
-              '<text x="' + cx + '" y="' + (titleTop + i * titleLineHeight) +
-              '" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="' + titleFontSize + '" fill="' + titleColor + '" opacity="0.95" pointer-events="none" style="text-transform:uppercase;letter-spacing:1.5px;">' +
-              escapeHtml(line) +
-              "</text>";
-          });
-          svg +=
-            '<text x="' + cx + '" y="' + (titleTop + titleLines.length * titleLineHeight + 6) +
-            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="11" fill="#ffffff" opacity="0.95" pointer-events="none">' +
-            escapeHtml(REGION_BONUSES[race] || "") +
-            "</text>";
-          svg += "</g>";
-        });
-        svg += '</g>';
-
         // Grid lines - subtle
         for (gx = 0; gx < W; gx += 80) {
 
@@ -1431,7 +1396,37 @@ export function renderWorldMap(
 
           '" fill="url(#vignette)" pointer-events="none"/>';
 
+        // Region labels: rendered LAST so they appear on top of fog, kingdoms, and vignette
+        svg += '<g class="wm-layer wm-layer-region-labels">';
+        Object.entries(REGION_META).forEach(function (e) {
+          var race = e[0];
+          var meta = e[1];
+          var home = RACE_HOMES[race];
+          if (!home) return;
+          var cx = home.x;
+          var cy = home.y;
+          var titleColor = darkenHexColor(meta.color || '#333333', 0.35);
+          var titleLines = wrapRegionName(meta.name);
+          var titleFontSize = 15;
+          var titleLineHeight = titleFontSize + 3;
+          var titleTop = cy - 8 - ((titleLines.length - 1) * titleLineHeight) / 2;
 
+          svg += '<g class="wm-region-label" filter="url(#uiShadow)" style="transition:opacity 0.3s;opacity:' + regionOpacity(race, highlightedRace) + '">';
+          titleLines.forEach(function (line, i) {
+            svg +=
+              '<text x="' + cx + '" y="' + (titleTop + i * titleLineHeight) +
+              '" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="' + titleFontSize + '" fill="' + titleColor + '" opacity="0.95" pointer-events="none" style="text-transform:uppercase;letter-spacing:1.5px;">' +
+              escapeHtml(line) +
+              "</text>";
+          });
+          svg +=
+            '<text x="' + cx + '" y="' + (titleTop + titleLines.length * titleLineHeight + 6) +
+            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="11" fill="#ffffff" opacity="0.95" pointer-events="none">' +
+            escapeHtml(REGION_BONUSES[race] || "") +
+            "</text>";
+          svg += "</g>";
+        });
+        svg += '</g>';
 
         svg += "</svg>";
 
