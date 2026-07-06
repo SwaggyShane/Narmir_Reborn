@@ -23,6 +23,7 @@ const { revealRingHexes } = require("./visibility");
 const { safeJsonParse, clearParseCache } = require('../utils/helpers');
 const { EPOCH_NOW } = require('../lib/db-sql');
 const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
+const { getProfiler } = require('./profiling');
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so
@@ -304,7 +305,20 @@ const SCAFFOLDING_BONUS_BUILDINGS = new Set(SCAFF_BONUS);
 
 // ── Gameplay (purchaseUpgrade extracted to game/lib/gameplay.js) ──
 
+// Measure attunement function execution time for profiling
+// eslint-disable-next-line no-unused-vars
+function measureAttunement(name, fn) {
+  const start = performance.now();
+  const result = fn();
+  const duration = performance.now() - start;
+  const profiler = getProfiler();
+  profiler.recordAttunementCall(name, duration);
+  return result;
+}
+
 function processTurn(k, db = null) {
+  const profiler = getProfiler();
+  profiler.start();
   clearParseCache();
 
   // Defensive: heal k.troop_levels from any nested stringification at the start of the turn
@@ -1689,7 +1703,8 @@ function processTurn(k, db = null) {
     updates.active_effects = cleanedKingdom.active_effects;
   }
 
-  return { updates, events: events.map(cleanNewsEvent) };
+  const report = profiler.end();
+  return { updates, events: events.map(cleanNewsEvent), _profileReport: report };
 }
 
 // ── Level-based caps ──────────────────────────────────────────────────────────
