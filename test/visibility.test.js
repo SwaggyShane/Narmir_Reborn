@@ -174,14 +174,17 @@ async function runDbPersistenceCheck() {
   const visDebuff = await getVis(null, debuffRow); // active_effects present: no DB fetch path
   const home = getInitialVisibility({ id: 42, race: 'human' });
   assert.strictEqual(visDebuff.currentCells, home.currentCells, 'fog_of_war debuff must force currentCells to home-only initial');
-  assert.strictEqual(visDebuff.seenCells.toString(), preSeen, 'fog_of_war debuff must leave seenCells untouched');
-  console.log('getKingdomVisibility: fog_of_war debuff forces current to home, preserves seen');
+  // seen must still contain the home hex (always-visible rule) but otherwise be left alone (debuff does not clear prior seen)
+  const expectedSeenUnderDebuff = (BigInt(preSeen) | home.seenCells).toString();
+  assert.strictEqual(visDebuff.seenCells.toString(), expectedSeenUnderDebuff, 'fog_of_war debuff must leave seenCells untouched except to ensure home hex is present');
+  console.log('getKingdomVisibility: fog_of_war debuff forces current to home, preserves seen (home bit guaranteed)');
 
-  // no debuff: keeps the passed current
+  // no debuff: keeps the passed current (plus home guarantee)
   const normalRow = { id: 42, race: 'human', visibility: preVis, active_effects: JSON.stringify({}) };
   const visNormal = await getVis(null, normalRow);
-  assert.strictEqual(visNormal.currentCells.toString(), preSeen, 'absent fog_of_war must preserve the row currentCells');
-  console.log('getKingdomVisibility: no fog_of_war preserves currentCells from row');
+  const expectedCurrentNormal = (BigInt(preSeen) | home.seenCells).toString();  // home uses .seenCells but value same as initial current
+  assert.strictEqual(visNormal.currentCells.toString(), expectedCurrentNormal, 'absent fog_of_war must preserve the row currentCells (plus guarantee home is in current)');
+  console.log('getKingdomVisibility: no fog_of_war preserves currentCells from row (home bit guaranteed)');
 })().catch((err) => {
   console.error('debuff visibility test failed:', err);
   process.exit(1);

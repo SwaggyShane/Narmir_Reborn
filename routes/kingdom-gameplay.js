@@ -1521,7 +1521,7 @@ module.exports = function (db) {
   router.get("/world-map", requireAuth, async (req, res) => {
     try {
       const k = await db.get(
-        "SELECT id, discovered_kingdoms, visibility FROM kingdoms WHERE player_id = $1",
+        "SELECT id, race, discovered_kingdoms, visibility FROM kingdoms WHERE player_id = $1",
         [req.player.playerId],
       );
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -1608,7 +1608,7 @@ module.exports = function (db) {
       // region column may not exist yet â€” fallback query
       try {
         const k = await db.get(
-          "SELECT id, discovered_kingdoms, visibility FROM kingdoms WHERE player_id = $1",
+          "SELECT id, race, discovered_kingdoms, visibility FROM kingdoms WHERE player_id = $1",
           [req.player.playerId],
         );
         let discovered = {};
