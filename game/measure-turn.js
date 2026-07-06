@@ -3,19 +3,21 @@
 // Profiles a single turn execution to identify CPU bottlenecks
 // Usage: node game/measure-turn.js <kingdomId>
 
-const { TurnProfiler } = require('./profiling');
+const { initProfiler, runWithProfiler } = require('./profiling');
 
 async function measureTurn(kingdomId) {
   console.log(`\n🔍 Measuring turn execution for kingdom ${kingdomId}...\n`);
 
-  const profiler = new TurnProfiler();
-  profiler.start();
+  const profiler = initProfiler();
 
   try {
-    // In a real scenario, would fetch kingdom from DB and call processTurn
-    // For now, this script demonstrates the profiling structure
-    console.log('Profiling infrastructure created.');
-    console.log('Next: Integrate profiler into processTurn and run measurement');
+    // Run profiling in AsyncLocalStorage context for thread-safety
+    await runWithProfiler(profiler, async () => {
+      // In a real scenario, would fetch kingdom from DB and call processTurn
+      // For now, this script demonstrates the profiling structure
+      console.log('Profiling infrastructure created (AsyncLocalStorage, high-resolution timing).');
+      console.log('Next: Integrate profiler into processTurn and run measurement');
+    });
   } catch (error) {
     console.error('Measurement failed:', error.message);
   }
@@ -51,7 +53,7 @@ async function measureTurn(kingdomId) {
   console.log(`  High Synergy Lookups: ${report.summary.profileNeeded.highSynergyLookups ? '✓ YES' : '✗ no'}`);
 
   console.log('\n' + '='.repeat(60));
-  console.log('Phase 3a Profiling: Foundation created, ready for instrumentation\n');
+  console.log('Phase 3a Profiling: Foundation ready for processTurn integration\n');
 }
 
 // Run if invoked directly

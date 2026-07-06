@@ -1,6 +1,8 @@
 // Phase 3a Profiling Utility
 // Measures CPU-bound operations in processTurn to identify optimization opportunities
 
+const { AsyncLocalStorage } = require('async_hooks');
+
 class TurnProfiler {
   constructor() {
     this.reset();
@@ -20,7 +22,7 @@ class TurnProfiler {
   }
 
   start() {
-    this.startTime = Date.now();
+    this.startTime = performance.now();
   }
 
   recordJsonParse(duration) {
@@ -51,26 +53,42 @@ class TurnProfiler {
 
   end() {
     if (this.startTime) {
-      this.metrics.totalTime = Date.now() - this.startTime;
+      this.metrics.totalTime = performance.now() - this.startTime;
     }
     return this.getReport();
   }
 
   getReport() {
     const report = {
-      totalTime: this.metrics.totalTime,
+      totalTime: this.formatMs(this.metrics.totalTime),
       jsonOperations: {
         parseCount: this.metrics.jsonParseCount,
-        parseTime: this.metrics.jsonParseTime,
+        parseTime: this.formatMs(this.metrics.jsonParseTime),
         stringifyCount: this.metrics.jsonStringifyCount,
-        stringifyTime: this.metrics.jsonStringifyTime,
-        totalTime: this.metrics.jsonParseTime + this.metrics.jsonStringifyTime
+        stringifyTime: this.formatMs(this.metrics.jsonStringifyTime),
+        totalTime: this.formatMs(this.metrics.jsonParseTime + this.metrics.jsonStringifyTime)
       },
       synergyLookups: this.metrics.synergyLookups,
-      attunements: this.metrics.attunementCalls,
+      attunements: this.formatAttunements(this.metrics.attunementCalls),
       summary: this.generateSummary()
     };
     return report;
+  }
+
+  formatMs(ms) {
+    return parseFloat(ms.toFixed(2));
+  }
+
+  formatAttunements(calls) {
+    const formatted = {};
+    for (const [name, data] of Object.entries(calls)) {
+      formatted[name] = {
+        count: data.count,
+        totalTime: this.formatMs(data.totalTime),
+        maxTime: this.formatMs(data.maxTime)
+      };
+    }
+    return formatted;
   }
 
   generateSummary() {
@@ -95,17 +113,40 @@ class TurnProfiler {
   }
 }
 
-// Global profiler instance
-let globalProfiler = null;
+// Null Object pattern for no-op profiler
+class NullProfiler {
+  reset() {}
+  start() {}
+  recordJsonParse() {}
+  recordJsonStringify() {}
+  recordSynergyLookup() {}
+  recordAttunementCall() {}
+  end() { return {}; }
+  getReport() { return {}; }
+}
+
+// AsyncLocalStorage for thread-safe per-request profiling
+const profilerStorage = new AsyncLocalStorage();
 
 function getProfiler() {
-  if (!globalProfiler) {
-    globalProfiler = new TurnProfiler();
-  }
-  return globalProfiler;
+  const profiler = profilerStorage.getStore();
+  return profiler || new NullProfiler();
+}
+
+function initProfiler() {
+  const profiler = new TurnProfiler();
+  profiler.start();
+  return profiler;
+}
+
+function runWithProfiler(profiler, fn) {
+  return profilerStorage.run(profiler, fn);
 }
 
 module.exports = {
   TurnProfiler,
-  getProfiler
+  NullProfiler,
+  getProfiler,
+  initProfiler,
+  runWithProfiler
 };
