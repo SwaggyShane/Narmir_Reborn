@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (Turn Processing Fix Phases 1-3a complete; Phase 3b integration in progress)
+**Last updated:** 2026-07-05 (Turn Processing Fix Phases 1, 3a, 3b complete; Phase 3c conditional optimization pending)
 
 ---
 
@@ -52,29 +52,28 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 ## Active Work — Phase 3 (Conditional CPU Optimization)
 
-### Turn Processing Fix Phase 3 — PROFILING IMPLEMENTATION STARTING
-**Status:** Phase 3a profiling infrastructure created  
-**Branch:** feature/turn-processing-phase-3a-profiling  
-**Conditional Gate:** Only proceed if Phase 1 measurement shows still >5% 502 errors at 100 concurrent OR p95 latency still >1.5s  
+### Turn Processing Fix Phase 3 — CPU OPTIMIZATION (3a–3b COMPLETE, 3c PENDING)
+**Status:** Profiling infrastructure created and integrated; conditional optimization pending  
 **Phase 1 Result:** Reduced per-turn from 1,641ms to ~924ms (44% latency reduction)  
 **Phase 2 Result:** Deferred 2b due to data corruption risk; identified critical correctness constraint  
+**Conditional Gate (Phase 3c):** Only proceed if profiling data shows JSON cost >100ms OR slow attunements >10ms OR synergy lookups >100/turn
 
-**Phase 3 Work (In Progress):**
-- **3a (Complete):** Profile CPU-bound operations to identify bottlenecks
-  - ✅ Created `game/profiling.js` - TurnProfiler utility class for metrics collection
-  - ✅ Created `game/measure-turn.js` - measurement script for turn profiling
-  - ✅ AsyncLocalStorage for thread-safe per-request context
-  - ✅ performance.now() for sub-millisecond precision
-  - Status: Merged to main as PR #837
-- **3b (Integration in progress):** Integrate profiler into processTurn
-  - ✅ Import profiler in engine.js and kingdom-gameplay.js
-  - ✅ Initialize profiler context in /turn route (AsyncLocalStorage)
-  - ✅ Wrap attunement functions (granary, vault, barracks, walls, guard tower) with measureAttunement()
-  - ⏳ PR #838 under review; remaining: extend to all 18 attunements, then conditional optimization
-- **3c (Conditional):** Optimize based on profiling results
-  - Cache parsed objects if JSON is bottleneck (>100ms or >20% of total)
-  - Refactor slow attunement functions only (>10ms each)
-  - Add caching for synergy lookups if >100/turn
+**Phase 3 Work:**
+- **3a (Complete — PR #837):** Profile CPU-bound operations to identify bottlenecks
+  - ✅ TurnProfiler class: JSON ops timing, attunement call measurements, synergy lookup counting
+  - ✅ AsyncLocalStorage for thread-safe per-request profiling
+  - ✅ performance.now() for high-resolution timing
+  - ✅ Measurement script with detailed profiling reports
+- **3b (Complete — PR #838):** Integrate profiler into processTurn and /turn route
+  - ✅ Profiler initialized and started in processTurn
+  - ✅ Profiler context propagated via AsyncLocalStorage
+  - ✅ Instrumented 5 attunement functions (granary, vault, barracks, walls, guard tower) with measureAttunement()
+  - ✅ Console logging of profiling metrics (total time, JSON costs, slow attunements)
+  - ⏳ Next step: extend instrumentation to all 18 attunements for complete profiling data
+- **3c (Conditional):** Optimize based on profiling results (deferred pending analysis)
+  - Cache parsed objects if JSON bottleneck detected (>100ms or >20% of total)
+  - Refactor identified slow attunement functions (>10ms max time each)
+  - Add caching for synergy lookups if high volume detected (>100/turn)
 
 **Profiling Infrastructure:**
 - TurnProfiler class: Tracks JSON ops, attunement calls, synergy lookups
