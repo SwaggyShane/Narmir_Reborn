@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (Turn Processing Fix / pool exhaustion complete + Gemini feedback addressed; Terrain System & Admin CSS Phase 4R verified complete; TODO audit corrections)
+**Last updated:** 2026-07-05 (Turn Processing Fix Phase 1 complete; Phase 2b in progress)
 
 ---
 
@@ -26,6 +26,17 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 - ✅ Resource Management: PASS (pool sizing/timeouts, 1-5MB limits, signature-validated uploads, bounded queries)
 
 **References:** `SECURITY_AUDIT.md`, `SQL_INJECTION_AUDIT_REPORT.md`
+
+### Turn Processing Fix Phase 2 — IN PROGRESS
+**Status:** Phase 2b optimization (remove redundant kingdom fetch)
+**Branch:** fix/turn-processing-phase-2
+**Phase 1 (Complete):** PR #834 — Moved init/refresh queries outside transaction, reduced per-turn from 1,641ms to ~924ms
+**Phase 2 Work:**
+- **2a (Complete):** Batch expedition updates with CASE/WHEN — already implemented
+- **2b (Active):** Remove redundant kingdom fetch in resolveExpeditions() — saves 40-50ms per turn
+- **2c (Complete):** Batch hero XP updates with CASE/WHEN — already implemented
+
+**Expected Phase 2 savings:** ~110-180ms additional per turn (2a+2b+2c combined)
 
 ---
 
