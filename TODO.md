@@ -56,7 +56,7 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 **Status:** Conditional CPU optimization analysis  
 **Branch:** fix/turn-processing-phase-3  
 **Conditional Gate:** Only proceed if Phase 1 measurement shows still >5% 502 errors at 100 concurrent OR p95 latency still >1.5s  
-**Phase 1 Result:** Reduced per-turn from 1,641ms to ~924ms (50% latency reduction)  
+**Phase 1 Result:** Reduced per-turn from 1,641ms to ~924ms (44% latency reduction)  
 **Phase 2 Result:** Deferred 2b due to data corruption risk; identified critical correctness constraint  
 
 **Phase 3 Work (In Progress):**
