@@ -5,8 +5,8 @@
  * database connection.
  *
  * Storage format (locked): a BigInt where bit N corresponds to one hex
- * cell. At HEX_SIZE=34 over the 900x650 map, buildHexGrid's loop covers
- * roughly col -1..17, row -1..14 (~200 cells) — the offset/stride below are
+ * cell. At HEX_SIZE=34 over the 1999x1380 enlarged map, buildHexGrid's loop covers
+ * roughly col -1..33, row -1..27 (~918 cells) — the offset/stride below are
  * generous rather than tightly packed, since BigInt bit width isn't a
  * meaningful cost at this scale.
  */
@@ -14,7 +14,7 @@
 'use strict';
 
 const CELL_INDEX_OFFSET = 8; // shifts negative col/row (buildHexGrid starts both at -1) into positive range
-const CELL_INDEX_STRIDE = 32; // must exceed the largest possible (col + OFFSET) so rows never collide
+const CELL_INDEX_STRIDE = 48; // must exceed the largest possible (col + OFFSET) so rows never collide
 
 /**
  * Map a hex cell (col, row) to a unique non-negative bit index.

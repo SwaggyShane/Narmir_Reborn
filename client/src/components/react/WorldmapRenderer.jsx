@@ -129,21 +129,21 @@ function wrapRegionName(name) {
 }
 
 // ── World map region layout ─────────────────────────────────────────────────
-// Every race's "home" seed point on the 900x650 canvas. The hex grid below
+// Every race's "home" seed point on the 1999x1380 canvas. The hex grid below
 // assigns each tile to whichever race's home is nearest, so regions tile the
 // whole map with no gaps or overlaps by construction. To add a future race:
 // add one entry here, one to RACE_TO_TERRAIN above, and one to REGION_META /
 // REGION_BONUSES in raceData.js — no other changes needed.
 const RACE_HOMES = {
-  dwarf: { x: 180, y: 230 },
-  high_elf: { x: 520, y: 160 },
-  wood_elf: { x: 720, y: 220 },
-  vampire: { x: 420, y: 330 },
-  ogre: { x: 800, y: 390 },
-  dark_elf: { x: 560, y: 430 },
-  orc: { x: 700, y: 490 },
-  human: { x: 300, y: 430 },
-  dire_wolf: { x: 130, y: 400 },
+  dwarf: { x: 400, y: 488 },
+  high_elf: { x: 1155, y: 340 },
+  wood_elf: { x: 1599, y: 467 },
+  vampire: { x: 933, y: 701 },
+  ogre: { x: 1777, y: 828 },
+  dark_elf: { x: 1243, y: 913 },
+  orc: { x: 1555, y: 1040 },
+  human: { x: 666, y: 913 },
+  dire_wolf: { x: 289, y: 849 },
 };
 
 // Regions where a dominant biome, when it isn't chosen, can plausibly bleed
@@ -233,7 +233,7 @@ function hexPath(cx, cy, size) {
 // Client-side copy of cellIndex logic (matches server game/visibility-cells.js)
 // for determining per-hex fog state from the visibility bitmaps provided by /world-map.
 const CLIENT_CELL_INDEX_OFFSET = 8;
-const CLIENT_CELL_INDEX_STRIDE = 32;
+const CLIENT_CELL_INDEX_STRIDE = 48;
 function clientCellIndex(col, row) {
   const colShifted = col + CLIENT_CELL_INDEX_OFFSET;
   const rowShifted = row + CLIENT_CELL_INDEX_OFFSET;
@@ -625,9 +625,9 @@ export function renderWorldMap(
     kingdomId,
   };
 
-        var W = 900,
+        var W = 1999,
 
-          H = 650;
+          H = 1380;
 
         var bg = "url(#oceanGrad)";
 
