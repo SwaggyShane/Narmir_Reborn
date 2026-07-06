@@ -903,9 +903,9 @@ export function renderWorldMap(
         svg += '<g class="wm-layer wm-layer-hex-interact" style="pointer-events:auto">';
         hexGrid.cells.forEach(function (cell) {
           svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="transparent" stroke="none" data-hex-x="' + Math.round(cell.x) + '" data-hex-y="' + Math.round(cell.y) + '" style="cursor:crosshair;opacity:0" />';
-          // Debug: show coordinates on hover
+          // Debug: log visible hex coordinates to console
           if (isHexSeen(cell.col, cell.row, seenBig) || isHexCurrent(cell.col, cell.row, currentBig)) {
-            svg += '<text x="' + cell.x + '" y="' + cell.y + '" text-anchor="middle" dominant-baseline="middle" font-size="8" fill="#00ff00" opacity="0.7" pointer-events="none">' + cell.col + ',' + cell.row + '</text>';
+            console.log('[VISIBILITY] Visible hex: col=' + cell.col + ', row=' + cell.row);
           }
         });
         svg += '</g>';
