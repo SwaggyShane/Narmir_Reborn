@@ -39,6 +39,33 @@ const TYPE_META = {
 const formatNum = (value) => Number(value || 0).toLocaleString();
 const repairText = (value) => cleanMessageText(repairMojibake(String(value ?? '')));
 
+// Scout ring calculator (matches game/scout-rings.js)
+const getCompletedRing = (scoutProgress) => {
+  const progress = Math.max(0, Math.floor(Number(scoutProgress) || 0));
+  let ring = 0;
+  for (let i = 1; i <= 17; i++) {
+    const turnsRequired = 20 + (i - 1) * 5; // cost for this ring
+    let totalTurns = 0;
+    for (let j = 1; j <= i; j++) {
+      totalTurns += 20 + (j - 1) * 5;
+    }
+    if (progress >= totalTurns) {
+      ring = i;
+    } else {
+      break;
+    }
+  }
+  return ring;
+};
+
+const getTotalTurnsForRing = (ring) => {
+  let total = 0;
+  for (let i = 1; i <= ring; i++) {
+    total += 20 + (i - 1) * 5;
+  }
+  return total;
+};
+
 const normalizeRewards = (rewards) => {
   if (Array.isArray(rewards)) return rewards.map((msg) => repairText(msg));
   if (typeof rewards === 'string') {
@@ -925,7 +952,14 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                 <div className="mb-3 rounded-md border-l-[3px] border-l-[var(--accent2)] bg-[rgba(120,120,200,0.1)] p-2 text-[11px] text-[var(--text2)]">
                   <div className="font-semibold">Ring Progress</div>
                   <div className="mt-1">
-                    {scout_allocation > 0 && `${formatNum(scout_allocation)} rangers allocated • Ring progress: ${formatNum(scout_progress)} turns`}
+                    {(() => {
+                      const currentRing = getCompletedRing(scout_progress);
+                      const nextRing = Math.min(currentRing + 1, 17);
+                      const turnsForNext = 20 + (nextRing - 1) * 5;
+                      const turnsPreviousDone = getTotalTurnsForRing(currentRing);
+                      const turnsIntoNext = scout_progress - turnsPreviousDone;
+                      return `${formatNum(scout_allocation)} rangers • Ring ${currentRing} (${formatNum(turnsIntoNext)} / ${formatNum(turnsForNext)} toward Ring ${nextRing})`;
+                    })()}
                   </div>
                 </div>
               )}
