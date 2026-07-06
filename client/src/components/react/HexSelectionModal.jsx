@@ -113,11 +113,19 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
     const svg = svgRef.current;
     if (!svg) return;
 
-    const rect = svg.getBoundingClientRect();
-    const svgX = e.clientX - rect.left - panX;
-    const svgY = e.clientY - rect.top - panY;
-    const { col, row } = pixelToHex(svgX, svgY);
-    handleHexClick(col, row);
+    try {
+      const rect = svg.getBoundingClientRect();
+      const svgX = e.clientX - rect.left - panX;
+      const svgY = e.clientY - rect.top - panY;
+      if (typeof pixelToHex !== 'function') {
+        throw new Error('pixelToHex is not available');
+      }
+      const { col, row } = pixelToHex(svgX, svgY);
+      handleHexClick(col, row);
+    } catch (err) {
+      console.error('[HexSelectionModal] Error converting pixel to hex:', err);
+      toast('Unable to select hex. Please try again.', 'error');
+    }
   };
 
   if (!isOpen) return null;
@@ -126,7 +134,7 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
   const isHexSeen = (col, row) => {
     if (!visibility?.seenCells) return true; // No visibility data = show all
     const CLIENT_CELL_INDEX_OFFSET = 8;
-    const CLIENT_CELL_INDEX_STRIDE = 32;
+    const CLIENT_CELL_INDEX_STRIDE = 48;
     const colShifted = col + CLIENT_CELL_INDEX_OFFSET;
     const rowShifted = row + CLIENT_CELL_INDEX_OFFSET;
     if (colShifted < 0 || colShifted >= CLIENT_CELL_INDEX_STRIDE || rowShifted < 0) return false;
