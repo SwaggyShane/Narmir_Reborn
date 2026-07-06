@@ -52,27 +52,28 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 ## Active Work — Phase 3 (Conditional CPU Optimization)
 
-### Turn Processing Fix Phase 3 — PROFILING ANALYSIS IN PROGRESS
-**Status:** Conditional CPU optimization analysis  
-**Branch:** fix/turn-processing-phase-3  
+### Turn Processing Fix Phase 3 — PROFILING IMPLEMENTATION STARTING
+**Status:** Phase 3a profiling infrastructure created  
+**Branch:** feature/turn-processing-phase-3a-profiling  
 **Conditional Gate:** Only proceed if Phase 1 measurement shows still >5% 502 errors at 100 concurrent OR p95 latency still >1.5s  
 **Phase 1 Result:** Reduced per-turn from 1,641ms to ~924ms (44% latency reduction)  
 **Phase 2 Result:** Deferred 2b due to data corruption risk; identified critical correctness constraint  
 
 **Phase 3 Work (In Progress):**
-- **3a (Active):** Profile CPU-bound operations to identify bottlenecks
-  - JSON parse/stringify operation counts and timing
-  - Attunement function execution times (18 functions)
-  - Synergy lookup counts
+- **3a (Implementing):** Profile CPU-bound operations to identify bottlenecks
+  - ✅ Created `game/profiling.js` - TurnProfiler utility class for metrics collection
+  - ✅ Created `game/measure-turn.js` - measurement script for turn profiling
+  - ⏳ Next: Integrate profiler into processTurn and run measurements
+  - Targets: JSON parse/stringify timing, attunement function times (18 functions), synergy lookups
 - **3b (Conditional):** Optimize based on profiling results
-  - Cache parsed objects if JSON is bottleneck
-  - Refactor slow attunement functions only
+  - Cache parsed objects if JSON is bottleneck (>100ms or >20% of total)
+  - Refactor slow attunement functions only (>10ms each)
   - Add caching for synergy lookups if >100/turn
 
-**Profiling Approach:**
-- Add instrumentation to measure CPU work in processTurn
-- Create profiling report showing breakdown by operation type
-- Identify which functions/operations account for >10ms
+**Profiling Infrastructure:**
+- TurnProfiler class: Tracks JSON ops, attunement calls, synergy lookups
+- Measurement script: Runs profiling on real game engine with detailed reporting
+- Report format: Total time, JSON breakdown, slow attunements, optimization targets
 
 ---
 
