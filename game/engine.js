@@ -1847,8 +1847,8 @@ async function resolveExpeditions(db, k, engine) {
     `[expedition] kingdom=${k.id} active/unclaimed: ${exps.map((e) => `${e.type}(${e.turns_left}t, claimed=${e.rewards_claimed})`).join(", ") || "none"}`,
   );
 
-  // Fetch fresh kingdom state once instead of once per expedition
-  const freshK = (await db.get("SELECT * FROM kingdoms WHERE id = $1", [k.id])) || k;
+  // Use passed-in kingdom state (already fresh from locked txn); no redundant fetch needed
+  const freshK = k;
 
   const expeditionEvents = [];
 
