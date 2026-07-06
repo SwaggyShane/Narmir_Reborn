@@ -33,12 +33,19 @@ function getRingTurnCost(ring) {
 function getRingHexes(homeHex, ring) {
   const ringNum = Math.max(1, Math.min(config.SCOUT_CONSTANTS.MAX_RING, Math.floor(Number(ring) || 1)));
 
-  const [homeCol, homeRow] = homeHex.split(',').map(Number);
+  const parts = (homeHex || '').split(',').map(s => Number(s.trim()));
+  if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
+    return [];
+  }
+  const [homeCol, homeRow] = parts;
+
   const allInRadius = getHexesInRadius(homeCol, homeRow, ringNum);
   const prevInRadius = ringNum > 1 ? getHexesInRadius(homeCol, homeRow, ringNum - 1) : [];
 
   // Ring N = all hexes in radius N minus all hexes in radius N-1
-  return allInRadius.filter(h => !prevInRadius.some(p => p.col === h.col && p.row === h.row));
+  // Use Set for O(N+M) complexity instead of O(N*M) nested lookup
+  const prevSet = new Set(prevInRadius.map(h => `${h.col},${h.row}`));
+  return allInRadius.filter(h => !prevSet.has(`${h.col},${h.row}`));
 }
 
 /**
