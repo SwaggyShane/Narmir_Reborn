@@ -486,55 +486,81 @@ function processTurn(k, db = null) {
   Object.assign(updates, guardTowerAbilityUpdates);
 
   // ── 4a-vi. Outpost attunement special abilities ───────────────────────────────
-  const outpostAbilityUpdates = processOutpostAttunements({ ...k, ...updates }, events);
+  const outpostAbilityUpdates = measureAttunement('processOutpostAttunements', () =>
+    processOutpostAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, outpostAbilityUpdates);
 
   // ── 4a-vii. Training field attunement special abilities ───────────────────────
-  const trainingAbilityUpdates = processTrainingAttunements({ ...k, ...updates }, events);
+  const trainingAbilityUpdates = measureAttunement('processTrainingAttunements', () =>
+    processTrainingAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, trainingAbilityUpdates);
 
   // ── 4a-viii. Castle attunement special abilities ──────────────────────────────
-  const castleAbilityUpdates = processCastleAttunements({ ...k, ...updates }, events);
+  const castleAbilityUpdates = measureAttunement('processCastleAttunements', () =>
+    processCastleAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, castleAbilityUpdates);
 
   // ── 4a-ix. Mausoleum attunement special abilities ─────────────────────────────
-  const mausoleumAbilityUpdates = processMausoleumAttunements({ ...k, ...updates }, events);
+  const mausoleumAbilityUpdates = measureAttunement('processMausoleumAttunements', () =>
+    processMausoleumAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, mausoleumAbilityUpdates);
 
   // ── 4a-x. Library attunement special abilities ────────────────────────────────
-  const libraryAbilityUpdates = processLibraryAttunements({ ...k, ...updates }, events);
+  const libraryAbilityUpdates = measureAttunement('processLibraryAttunements', () =>
+    processLibraryAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, libraryAbilityUpdates);
 
   // ── 4a-xi. Mage tower attunement special abilities ────────────────────────────
-  const mageTowerAbilityUpdates = processMageTowerAttunements({ ...k, ...updates }, events);
+  const mageTowerAbilityUpdates = measureAttunement('processMageTowerAttunements', () =>
+    processMageTowerAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, mageTowerAbilityUpdates);
 
   // ── 4a-xi-b. Smithy attunement special abilities ──────────────────────────────
-  const smithyAbilityUpdates = processSmithyAttunements({ ...k, ...updates }, events);
+  const smithyAbilityUpdates = measureAttunement('processSmithyAttunements', () =>
+    processSmithyAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, smithyAbilityUpdates);
 
   // ── 4a-xi-c. Market attunement special abilities ──────────────────────────────
-  const marketAbilityUpdates = processMarketAttunements({ ...k, ...updates }, events);
+  const marketAbilityUpdates = measureAttunement('processMarketAttunements', () =>
+    processMarketAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, marketAbilityUpdates);
 
   // ── 4a-xi-d. Shrine attunement special abilities ──────────────────────────────
-  const shrineAbilityUpdates = processShrineAttunements({ ...k, ...updates }, events);
+  const shrineAbilityUpdates = measureAttunement('processShrineAttunements', () =>
+    processShrineAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, shrineAbilityUpdates);
 
   // ── 4a-xi-e. Tavern attunement special abilities ──────────────────────────────
-  const tavernAbilityUpdates = processTavernAttunements({ ...k, ...updates }, events);
+  const tavernAbilityUpdates = measureAttunement('processTavernAttunements', () =>
+    processTavernAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, tavernAbilityUpdates);
 
   // ── 4a-xii. School attunement special abilities ───────────────────────────────
-  const schoolAbilityUpdates = processSchoolAttunements({ ...k, ...updates }, events);
+  const schoolAbilityUpdates = measureAttunement('processSchoolAttunements', () =>
+    processSchoolAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, schoolAbilityUpdates);
 
   // ── 4a-xiii. Farm attunement special abilities ────────────────────────────────
-  const farmAbilityUpdates = processFarmAttunements({ ...k, ...updates }, events);
+  const farmAbilityUpdates = measureAttunement('processFarmAttunements', () =>
+    processFarmAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, farmAbilityUpdates);
 
   // ── 4a-xv. Housing attunement special abilities ───────────────────────────────
-  const housingAbilityUpdates = processHousingAttunements({ ...k, ...updates }, events);
+  const housingAbilityUpdates = measureAttunement('processHousingAttunements', () =>
+    processHousingAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, housingAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
@@ -578,7 +604,9 @@ function processTurn(k, db = null) {
 
   // ── 4e-i. Scout ring progression ──────────────────────────────────────────────
   {
-    const scoutResult = processScoutProgress({ ...k, ...updates }, db);
+    const scoutResult = measureAttunement('processScoutProgress', () =>
+      processScoutProgress({ ...k, ...updates }, db)
+    );
     if (scoutResult.progress_gained > 0) {
       updates.scout_progress = scoutResult.new_total;
       if (scoutResult.ring_completed) {
