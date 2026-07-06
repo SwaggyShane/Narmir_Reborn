@@ -1415,13 +1415,13 @@ export function renderWorldMap(
           titleLines.forEach(function (line, i) {
             svg +=
               '<text x="' + cx + '" y="' + (titleTop + i * titleLineHeight) +
-              '" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="' + titleFontSize + '" fill="' + titleColor + '" opacity="1" pointer-events="none" filter="url(#glow)" style="text-transform:uppercase;letter-spacing:1.5px;text-shadow:0 2px 8px rgba(0,0,0,0.8),0 -1px 2px rgba(0,0,0,0.6);">' +
+              '" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="' + titleFontSize + '" fill="#ffffff" opacity="1" pointer-events="none" style="text-transform:uppercase;letter-spacing:1.5px;text-shadow:0 1px 3px rgba(0,0,0,0.9);">' +
               escapeHtml(line) +
               "</text>";
           });
           svg +=
             '<text x="' + cx + '" y="' + (titleTop + titleLines.length * titleLineHeight + 6) +
-            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="11" fill="#ffffff" opacity="1" pointer-events="none" filter="url(#glow)" style="text-shadow:0 1px 4px rgba(0,0,0,0.8);">' +
+            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="11" fill="#ffffff" opacity="1" pointer-events="none" style="text-shadow:0 1px 2px rgba(0,0,0,0.9);">' +
             escapeHtml(REGION_BONUSES[race] || "") +
             "</text>";
           svg += "</g>";
