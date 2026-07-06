@@ -1532,9 +1532,7 @@ module.exports = function (db) {
       } catch {}
 
       // Phase 3: load visibility for seen_cells gating (filter content to revealed hexes)
-      console.log(`[world-map] Kingdom ${k.id} visibility from DB before getKingdomVisibility:`, k.visibility);
       const vis = await getKingdomVisibility(db, k);
-      console.log(`[world-map] Kingdom ${k.id} visibility after getKingdomVisibility:`, JSON.stringify(vis));
       const seenCells = vis.seenCells;
 
       const kingdoms = await db.all(`
@@ -1595,9 +1593,6 @@ module.exports = function (db) {
       // server uses, so terrain biome patterns change across resets too.
       // Phase 4: also expose visibility bitmaps (as decimal strings) so client
       // can render fog overlay (unseen/seen/current states).
-      const visStr = seenCells.toString();
-      const currStr = (vis.currentCells || 0n).toString();
-      console.log(`[world-map] Kingdom ${k.id} visibility: seenCells=${visStr.substring(0, 50)}..., currentCells=${currStr.substring(0, 50)}...`);
       res.json({
         kingdoms: kingdomsWithCoords,
         tradeRoutes,
@@ -1605,8 +1600,8 @@ module.exports = function (db) {
         expeditions: visibleExpeditions,
         worldSeed: getWorldSeed().toString(),
         visibility: {
-          seenCells: visStr,
-          currentCells: currStr,
+          seenCells: seenCells.toString(),
+          currentCells: (vis.currentCells || 0n).toString(),
         },
       });
     } catch {

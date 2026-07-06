@@ -64,7 +64,6 @@ export async function loadWorldMap({ setLoading, setError, setKingdoms, setTrade
     // it back to BigInt itself so terrain biome patterns change per world.
     if (typeof setWorldSeed === 'function') setWorldSeed(data.worldSeed || null);
     // Phase 4: visibility bitmaps (decimal strings) for fog overlay.
-    console.log('[loadWorldMap] visibility from API:', data.visibility);
     if (typeof setVisibility === 'function') setVisibility(data.visibility || null);
   } catch (err) {
     console.error('World map fail:', err);
