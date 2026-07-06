@@ -306,7 +306,6 @@ const SCAFFOLDING_BONUS_BUILDINGS = new Set(SCAFF_BONUS);
 // ── Gameplay (purchaseUpgrade extracted to game/lib/gameplay.js) ──
 
 // Measure attunement function execution time for profiling
-// eslint-disable-next-line no-unused-vars
 function measureAttunement(name, fn) {
   const start = performance.now();
   const result = fn();
@@ -457,23 +456,33 @@ function processTurn(k, db = null) {
   Object.assign(updates, foodUpdates);
 
   // ── 4a. Granary attunement special abilities ──────────────────────────────────
-  const granaryAbilityUpdates = processGranaryAttunements({ ...k, ...updates }, events);
+  const granaryAbilityUpdates = measureAttunement('processGranaryAttunements', () =>
+    processGranaryAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, granaryAbilityUpdates);
 
   // ── 4a-ii. Vault attunement special abilities ─────────────────────────────────
-  const vaultAbilityUpdates = processVaultAttunements({ ...k, ...updates }, events);
+  const vaultAbilityUpdates = measureAttunement('processVaultAttunements', () =>
+    processVaultAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, vaultAbilityUpdates);
 
   // ── 4a-iii. Barracks attunement special abilities ─────────────────────────────
-  const barracksAbilityUpdates = processBarracksAttunements({ ...k, ...updates }, events);
+  const barracksAbilityUpdates = measureAttunement('processBarracksAttunements', () =>
+    processBarracksAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, barracksAbilityUpdates);
 
   // ── 4a-iv. Walls attunement special abilities ─────────────────────────────────
-  const wallsAbilityUpdates = processWallsAttunements({ ...k, ...updates }, events);
+  const wallsAbilityUpdates = measureAttunement('processWallsAttunements', () =>
+    processWallsAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, wallsAbilityUpdates);
 
   // ── 4a-v. Guard tower attunement special abilities ────────────────────────────
-  const guardTowerAbilityUpdates = processGuardTowerAttunements({ ...k, ...updates }, events);
+  const guardTowerAbilityUpdates = measureAttunement('processGuardTowerAttunements', () =>
+    processGuardTowerAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, guardTowerAbilityUpdates);
 
   // ── 4a-vi. Outpost attunement special abilities ───────────────────────────────
