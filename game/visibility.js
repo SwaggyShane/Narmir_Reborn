@@ -133,20 +133,20 @@ async function getKingdomVisibility(db, kingdom) {
   // Only writes when actually changed, and only outside of fog debuff current override (fog
   // intentionally shrinks current; we still ensure seen has home).
   if ((current.seenCells !== preSeen || current.currentCells !== preCurrent) && db && k.id) {
+    // Fire-and-forget async repair with proper error handling to avoid unhandled rejections.
     // Safe write that preserves any extra fields in the visibility JSON (e.g. highest_completed_ring
     // or future keys) by patching only the cell strings on the raw object.
-    (async () => {
-      try {
-        const rawRow = await db.get('SELECT visibility FROM kingdoms WHERE id = $1', [k.id]);
+    db.get('SELECT visibility FROM kingdoms WHERE id = $1', [k.id])
+      .then((rawRow) => {
         const raw = safeJsonParse(rawRow ? rawRow.visibility : null, {}, 'auto:visibility-repair');
         raw.seen_cells = current.seenCells.toString();
         raw.current_cells = current.currentCells.toString();
         if (!raw.version) raw.version = current.version || DEFAULT_VISIBILITY.version;
-        await db.run('UPDATE kingdoms SET visibility = $1 WHERE id = $2', [JSON.stringify(raw), k.id]);
-      } catch (err) {
+        return db.run('UPDATE kingdoms SET visibility = $1 WHERE id = $2', [JSON.stringify(raw), k.id]);
+      })
+      .catch((err) => {
         console.warn('[visibility] home bit repair write failed (non-fatal):', err.message);
-      }
-    })();
+      });
   }
 
   return current;
