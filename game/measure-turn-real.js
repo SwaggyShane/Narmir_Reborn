@@ -13,6 +13,9 @@ async function measureRealTurn(kingdomId) {
 
   console.log(`\n🔍 Measuring REAL turn execution for kingdom ${kingdomId}...\n`);
 
+  // Track errors separately to allow finally block to run for cleanup
+  let error = null;
+
   try {
     // Fetch kingdom from database
     const kingdom = await db.get('SELECT * FROM kingdoms WHERE id = $1', [kingdomId]);
@@ -85,12 +88,17 @@ async function measureRealTurn(kingdomId) {
     console.log(`   High Synergy Lookups: ${report.summary.profileNeeded.highSynergyLookups ? '✓ YES - Implement caching' : '✗ No'}`);
     console.log('='.repeat(70) + '\n');
 
-  } catch (error) {
-    console.error('❌ Measurement failed:', error.message);
-    console.error(error.stack);
-    process.exit(1);
+  } catch (err) {
+    error = err;
+    console.error('❌ Measurement failed:', err.message);
+    console.error(err.stack);
   } finally {
     await db.close();
+  }
+
+  // Exit only after finally block completes (db cleanup)
+  if (error) {
+    process.exit(1);
   }
 }
 
@@ -102,7 +110,7 @@ if (require.main === module) {
     process.exit(1);
   }
   measureRealTurn(parseInt(kingdomId, 10)).catch(err => {
-    console.error('Fatal error:', err);
+    console.error('Fatal error:', err.message);
     process.exit(1);
   });
 }
