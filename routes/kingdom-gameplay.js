@@ -5,7 +5,6 @@ const fs = require("fs");
 const crypto = require("crypto");
 const engine = require("../game/engine");
 const config = require("../game/config");
-const { initProfiler, runWithProfiler } = require("../game/profiling");
 const { requireAuth, requireCsrfToken } = require("./middleware");
 const { safeJsonParse, devLog } = require('../utils/helpers');
 const { validateTroopAmount } = require('../utils/numeric-validation');
@@ -575,9 +574,8 @@ module.exports = function (db) {
   // This shortens txn hold vs. original (init queries + refresh moved out) while preserving correctness.
   router.post("/turn", requireAuth, requireCsrfToken, async (req, res) => {
     const startTime = Date.now();
-    const profiler = initProfiler();
     try {
-      const result = await runWithProfiler(profiler, async () => withTurnLock(req.player.playerId, async () => {
+      const result = await withTurnLock(req.player.playerId, async () => {
         // === PREFETCH context only (outside transaction) ===
         // Context (region/alliance/heroes/trade) loaded outside to reduce txn hold time.
         // Core kingdom state for processTurn will be fetched fresh *under lock*.
@@ -674,7 +672,7 @@ module.exports = function (db) {
         console.log(`[turn] complete for player ${req.player.playerId} in ${totalTime}ms (prefetch+process+tx+postfetch)`);
 
         return { ok: true, updates: txUpdates, events: txEvents, turns_stored: txUpdates.turns_stored };
-      }));
+      });
       res.json(result);
     } catch (err) {
       console.error("[turn] failed:", err.stack || err.message);
