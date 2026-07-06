@@ -877,9 +877,8 @@ export function renderWorldMap(
         });
         svg += '</g>';
 
-        // Fog of War overlay (above terrain and rivers, below regions/labels).
+        // Fog of War overlay (after rivers, before region borders/labels).
         // Unseen: heavily obscured; seen: dimmed; current: fully visible (no overlay).
-        // Reduced motion: static (no transitions/animations), as SVG is rendered statically via dangerouslySetInnerHTML.
         svg += '<g class="wm-layer wm-layer-fog" style="pointer-events:none">';
         hexGrid.cells.forEach(function (cell) {
           const col = cell.col, row = cell.row;
