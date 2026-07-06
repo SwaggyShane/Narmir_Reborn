@@ -1411,17 +1411,17 @@ export function renderWorldMap(
           var titleLineHeight = titleFontSize + 3;
           var titleTop = cy - 8 - ((titleLines.length - 1) * titleLineHeight) / 2;
 
-          svg += '<g class="wm-region-label" filter="url(#uiShadow)" style="transition:opacity 0.3s;opacity:' + regionOpacity(race, highlightedRace) + '">';
+          svg += '<g class="wm-region-label" style="transition:opacity 0.3s;opacity:' + regionOpacity(race, highlightedRace) + '">';
           titleLines.forEach(function (line, i) {
             svg +=
               '<text x="' + cx + '" y="' + (titleTop + i * titleLineHeight) +
-              '" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="' + titleFontSize + '" fill="' + titleColor + '" opacity="0.95" pointer-events="none" style="text-transform:uppercase;letter-spacing:1.5px;">' +
+              '" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="' + titleFontSize + '" fill="' + titleColor + '" opacity="1" pointer-events="none" style="text-transform:uppercase;letter-spacing:1.5px;text-shadow:0 2px 8px rgba(0,0,0,0.8),0 -1px 2px rgba(0,0,0,0.6);">' +
               escapeHtml(line) +
               "</text>";
           });
           svg +=
             '<text x="' + cx + '" y="' + (titleTop + titleLines.length * titleLineHeight + 6) +
-            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="11" fill="#ffffff" opacity="0.95" pointer-events="none">' +
+            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="11" fill="#ffffff" opacity="1" pointer-events="none" style="text-shadow:0 1px 4px rgba(0,0,0,0.8);">' +
             escapeHtml(REGION_BONUSES[race] || "") +
             "</text>";
           svg += "</g>";
