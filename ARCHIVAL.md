@@ -2,13 +2,38 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Turn Processing Fix Phase 1 complete; Phase 2 analysis deferred due to critical correctness constraint discovered by Gemini review; All other work complete)
+**Last updated:** 2026-07-05 (Turn Processing Fix Phases 1, 3a, 3b complete; Phase 2 deferred; Phase 3c conditional optimization pending)
 
 ---
 
 ## Recent Chronology
 
 ### 2026-07-05
+
+- **Turn Processing Fix — CPU Profiling Infrastructure (Phase 3a)** (PR #837, merged `3f9c686e` 2026-07-05): Created profiling utilities to identify CPU bottlenecks in processTurn.
+  - Created `game/profiling.js` with TurnProfiler class (JSON parse/stringify counts, attunement function times, synergy lookup counts).
+  - Implemented AsyncLocalStorage for thread-safe per-request context (eliminates global singleton concurrency hazard).
+  - Used performance.now() for sub-millisecond precision measurements.
+  - Created `game/measure-turn.js` measurement script for detailed profiling reports.
+  - **Gemini Review (COMMENTED):** Three issues identified and fixed in follow-up PR:
+    - Thread-safety: Global singleton profiler + concurrent requests = race condition → fixed via AsyncLocalStorage.
+    - Precision: Date.now() only millisecond-level → fixed via performance.now().
+    - Formatting: Floating-point timestamps inconsistent → fixed with formatMs() (2 decimal places).
+  - **Quality Gates:** Lint ✅, Test suite (63 files) ✅, Build ✅
+  - **Files:** `game/profiling.js`, `game/measure-turn.js`, `TODO.md`
+  - **Commits:** `119090f3` (initial), `e1da5e4a` (Gemini fixes, merged as PR #837)
+
+- **Turn Processing Fix — Profiler Integration (Phase 3b)** (PR #838, merged `8bf9f322` 2026-07-05): Integrated profiler into processTurn and /turn endpoint.
+  - Imported profiler into engine.js; profiler.start()/end() wraps processTurn execution.
+  - Route initializes profiler context: `initProfiler()` + `runWithProfiler()` wrapper around turn lock.
+  - Implemented `measureAttunement()` helper to wrap attunement function calls.
+  - Instrumented first 5 attunements (granary, vault, barracks, walls, guard tower) as pattern demonstration.
+  - Profiling data logged to console: total time, JSON costs (% of total), slow attunements (>10ms).
+  - **Gemini Review (COMMENTED):** Noted measureAttunement defined but initially unused → fixed by instrumenting attunement calls.
+  - **Quality Gates:** Lint ✅, Test suite ✅, Build ✅
+  - **Files:** `game/engine.js`, `routes/kingdom-gameplay.js`, `TODO.md`
+  - **Commits:** `5e513eb0` (initial), `fa0d17a0` (Gemini fix - instrument attunements), `d84fa23f` (docs), merged as PR #838
+  - **Status:** Ready for extending to all 18 attunements and Phase 3c optimization based on profiling results
 
 - **Turn Processing Fix — Connection Pool Exhaustion (Phase 1)** (PR #834, merged `0859c68e` 2026-07-05): Refactored `/turn` endpoint to shorten DB transaction hold time (root cause of 502s at moderate concurrency). 
   - Extracted `loadTurnContext()` (parallel init queries for region/alliance/heroes + trade) and `commitTurnResults()` (writes + side effects).
