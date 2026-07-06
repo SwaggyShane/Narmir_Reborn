@@ -1407,8 +1407,8 @@ export function renderWorldMap(
           var cy = home.y;
           var titleColor = darkenHexColor(meta.color || '#333333', 0.35);
           var titleLines = wrapRegionName(meta.name);
-          var titleFontSize = 15;
-          var titleLineHeight = titleFontSize + 3;
+          var titleFontSize = 34;
+          var titleLineHeight = titleFontSize + 6;
           var titleTop = cy - 8 - ((titleLines.length - 1) * titleLineHeight) / 2;
 
           svg += '<g class="wm-region-label" style="transition:opacity 0.3s;opacity:' + regionOpacity(race, highlightedRace) + '">';
@@ -1420,8 +1420,8 @@ export function renderWorldMap(
               "</text>";
           });
           svg +=
-            '<text x="' + cx + '" y="' + (titleTop + titleLines.length * titleLineHeight + 6) +
-            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="11" fill="#ffffff" opacity="1" pointer-events="none" style="text-shadow:0 1px 2px rgba(0,0,0,0.9);">' +
+            '<text x="' + cx + '" y="' + (titleTop + titleLines.length * titleLineHeight + 12) +
+            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="24" fill="#ffffff" opacity="1" pointer-events="none" style="text-shadow:0 1px 2px rgba(0,0,0,0.9);">' +
             escapeHtml(REGION_BONUSES[race] || "") +
             "</text>";
           svg += "</g>";
