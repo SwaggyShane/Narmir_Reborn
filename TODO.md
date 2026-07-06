@@ -50,6 +50,32 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 ---
 
+## Active Work — Phase 3 (Conditional CPU Optimization)
+
+### Turn Processing Fix Phase 3 — PROFILING ANALYSIS IN PROGRESS
+**Status:** Conditional CPU optimization analysis  
+**Branch:** fix/turn-processing-phase-3  
+**Conditional Gate:** Only proceed if Phase 1 measurement shows still >5% 502 errors at 100 concurrent OR p95 latency still >1.5s  
+**Phase 1 Result:** Reduced per-turn from 1,641ms to ~924ms (50% latency reduction)  
+**Phase 2 Result:** Deferred 2b due to data corruption risk; identified critical correctness constraint  
+
+**Phase 3 Work (In Progress):**
+- **3a (Active):** Profile CPU-bound operations to identify bottlenecks
+  - JSON parse/stringify operation counts and timing
+  - Attunement function execution times (18 functions)
+  - Synergy lookup counts
+- **3b (Conditional):** Optimize based on profiling results
+  - Cache parsed objects if JSON is bottleneck
+  - Refactor slow attunement functions only
+  - Add caching for synergy lookups if >100/turn
+
+**Profiling Approach:**
+- Add instrumentation to measure CPU work in processTurn
+- Create profiling report showing breakdown by operation type
+- Identify which functions/operations account for >10ms
+
+---
+
 ## Deferred Work — Post-Beta / Future Phases
 
 ### Elevation System Plan (Complete Spec) — POST-BETA
