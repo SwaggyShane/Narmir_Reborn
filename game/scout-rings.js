@@ -26,17 +26,26 @@ function getRingTurnCost(ring) {
  * Get all hexes in a specific ring around the kingdom's home hex.
  * Ring N includes hexes at distance N from home (not rings 1..N).
  *
- * @param {number} homeHex - Kingdom's home hex (pixel key)
+ * @param {string} homeHex - Kingdom's home hex as "col,row" string
  * @param {number} ring - Ring number (1-17)
- * @returns {array} Array of hex keys in this ring
+ * @returns {array} Array of hex objects in this ring
  */
 function getRingHexes(homeHex, ring) {
   const ringNum = Math.max(1, Math.min(config.SCOUT_CONSTANTS.MAX_RING, Math.floor(Number(ring) || 1)));
-  const allInRadius = getHexesInRadius(homeHex, ringNum);
-  const prevInRadius = ringNum > 1 ? getHexesInRadius(homeHex, ringNum - 1) : [];
+
+  const parts = (homeHex || '').split(',').map(s => Number(s.trim()));
+  if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
+    return [];
+  }
+  const [homeCol, homeRow] = parts;
+
+  const allInRadius = getHexesInRadius(homeCol, homeRow, ringNum);
+  const prevInRadius = ringNum > 1 ? getHexesInRadius(homeCol, homeRow, ringNum - 1) : [];
 
   // Ring N = all hexes in radius N minus all hexes in radius N-1
-  return allInRadius.filter(h => !prevInRadius.includes(h));
+  // Use Set for O(N+M) complexity instead of O(N*M) nested lookup
+  const prevSet = new Set(prevInRadius.map(h => `${h.col},${h.row}`));
+  return allInRadius.filter(h => !prevSet.has(`${h.col},${h.row}`));
 }
 
 /**
@@ -48,7 +57,7 @@ function getRingHexes(homeHex, ring) {
  */
 function getTotalHexesInRings(ring) {
   const ringNum = Math.max(1, Math.min(config.SCOUT_CONSTANTS.MAX_RING, Math.floor(Number(ring) || 1)));
-  const allInRadius = getHexesInRadius('0,0', ringNum);
+  const allInRadius = getHexesInRadius(0, 0, ringNum);
   return allInRadius.length;
 }
 

@@ -2,11 +2,28 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Turn Processing Fix Phases 1, 3a, 3b, 3c complete; Phase 2 deferred; measurement infrastructure deployed)
+**Last updated:** 2026-07-06 (Fog of War Scout Ring Visibility Bugs Fixed; Turn Processing Profiling Infrastructure Complete)
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-06
+
+- **Fog of War Scout Ring Visibility Bugs Fixed** (PR #840, merged `860e5abb` 2026-07-06): Fixed critical visibility calculation bugs in scout ring progression that caused random hexes to be revealed and visual state mismatches.
+  - **Issues Fixed:**
+    1. Random hex to southwest uncovered without cause — getRingHexes calling getHexesInRadius with wrong parameters (string hex key instead of separate col/row/radius arguments)
+    2. Visual state mismatch (17 rings reported uncovered but fog persisted) — incorrect ring hex calculation due to parameter mismatch
+  - **Root Cause:** `getRingHexes()` and `getTotalHexesInRings()` in `game/scout-rings.js` were passing hex coordinates as a single string parameter to `getHexesInRadius()`, which expects three separate numeric parameters: `(centerCol, centerRow, radius)`
+  - **Fix Applied:**
+    - Parse 'col,row' hex string into separate numeric values before calling getHexesInRadius()
+    - Added defensive error handling for invalid/missing hex strings
+    - Optimized ring filtering from O(N*M) to O(N+M) using Set-based lookup instead of nested array traversal
+  - **Gemini Review (COMMENTED):** Provided feedback on error handling and performance optimization; all suggestions implemented
+  - **Quality Gates:** Lint ✅, Full test suite (63 files) ✅, Build ✅ (all 3 CI checks: Lint/Test/Build, Security Configuration, Text Encoding all PASS)
+  - **Files:** `game/scout-rings.js`
+  - **Commits:** `a98254f8` (initial fix), `860e5abb` (error handling + performance optimization)
+  - **Impact:** Scout rings now correctly reveal all hexes at the specified ring distance; visibility bitmaps accurately reflect completed rings; client fog rendering matches server state
 
 ### 2026-07-05
 
