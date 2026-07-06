@@ -60,23 +60,41 @@ function serializeVisibility({ seenCells, currentCells, version }) {
 function getInitialVisibility(kingdom) {
   const { map_x, map_y } = getKingdomMapCoords(kingdom);
   const hex = pixelToHex(map_x, map_y);
+  console.log(`[K${kingdom?.id}-VIS] getKingdomMapCoords(race=${kingdom?.race}) -> (${map_x}, ${map_y}) -> hex (${hex.col}, ${hex.row})`);
   const bitmap = encodeCellSet([cellIndex(hex.col, hex.row)]);
   return { seenCells: bitmap, currentCells: bitmap, version: DEFAULT_VISIBILITY.version };
 }
 
 /**
  * Read a kingdom's visibility, lazily seeding it to "home hex only" and
- * persisting that if it has never been set (seen_cells === 0). `kingdom`
- * must include at least { id, race, visibility }.
+ * persisting that if it has never been set (seen_cells === 0).
+ * The passed `kingdom` should include id (race is required for correct
+ * home hex via getKingdomMapCoords; fetched if missing).
  */
 async function getKingdomVisibility(db, kingdom) {
-  const current = parseVisibility(kingdom.visibility);
+  if (!kingdom || !kingdom.id) {
+    return { seenCells: 0n, currentCells: 0n, version: DEFAULT_VISIBILITY.version };
+  }
+
+  // Ensure we have `race` for correct home-hex computation in getInitialVisibility / getKingdomMapCoords.
+  // Some call sites (e.g. early /world-map paths) historically omitted it, causing home hex to be
+  // seeded using the wrong RACE_HOMES anchor (defaulting to 'human'). This made the always-visible
+  // home hex land at a different hex than the kingdom's actual position.
+  let k = kingdom;
+  if (!k.race && db) {
+    const fresh = await db.get('SELECT id, race, visibility, active_effects FROM kingdoms WHERE id = $1', [kingdom.id]);
+    if (fresh) {
+      k = { ...k, ...fresh };
+    }
+  }
+
+  const current = parseVisibility(k.visibility);
   let initial = null;
   if (current.seenCells === 0n) {
-    initial = getInitialVisibility(kingdom);
+    initial = getInitialVisibility(k);
     await db.run(
       'UPDATE kingdoms SET visibility = $1 WHERE id = $2',
-      [JSON.stringify(serializeVisibility(initial)), kingdom.id],
+      [JSON.stringify(serializeVisibility(initial)), k.id],
     );
     current.seenCells = initial.seenCells;
     current.currentCells = initial.currentCells;
@@ -84,16 +102,51 @@ async function getKingdomVisibility(db, kingdom) {
   }
 
   // Apply fog_of_war debuff (if active): reduces currentCells to debuffRadius (locked 0 = home hex only).
-  // Does not touch seenCells. Fetch active_effects if missing from passed row.
-  let activeEffectsStr = kingdom.active_effects;
-  if (!activeEffectsStr && db && kingdom.id) {
-    const row = await db.get('SELECT active_effects FROM kingdoms WHERE id = $1', [kingdom.id]);
+  // Does not touch seenCells. active_effects may have been pre-fetched above.
+  let activeEffectsStr = k.active_effects;
+  if (!activeEffectsStr && db && k.id) {
+    const row = await db.get('SELECT active_effects FROM kingdoms WHERE id = $1', [k.id]);
     activeEffectsStr = row ? row.active_effects : '{}';
   }
   const effects = safeJsonParse(activeEffectsStr || '{}', {}, 'auto:active_effects');
   if (effects.fog_of_war) {
-    if (!initial) initial = getInitialVisibility(kingdom);
+    if (!initial) initial = getInitialVisibility(k);
     current.currentCells = initial.currentCells;
+  }
+
+  // Guarantee: the kingdom's own home hex is always present in seen_cells and current_cells.
+  // This is the locked rule ("own kingdom always visible", "Ring 0 = home hex only (always visible)").
+  // Defensive against prior bad seeds (wrong race at init time), manual edits, or any path that
+  // failed to include the home bit. Uses the authoritative coords for *this* k (with race).
+  if (!initial) {
+    initial = getInitialVisibility(k);
+  }
+  const preSeen = current.seenCells;
+  const preCurrent = current.currentCells;
+  current.seenCells = current.seenCells | initial.seenCells;
+  if (!effects.fog_of_war) {
+    current.currentCells = current.currentCells | initial.currentCells;
+  }
+
+  // One-time persist of the home bit if it was missing (repairs kingdoms that were seeded
+  // with the wrong home hex due to missing `race` in the SELECT passed to getKingdomVisibility).
+  // Only writes when actually changed, and only outside of fog debuff current override (fog
+  // intentionally shrinks current; we still ensure seen has home).
+  if ((current.seenCells !== preSeen || current.currentCells !== preCurrent) && db && k.id) {
+    // Safe write that preserves any extra fields in the visibility JSON (e.g. highest_completed_ring
+    // or future keys) by patching only the cell strings on the raw object.
+    (async () => {
+      try {
+        const rawRow = await db.get('SELECT visibility FROM kingdoms WHERE id = $1', [k.id]);
+        const raw = safeJsonParse(rawRow ? rawRow.visibility : null, {}, 'auto:visibility-repair');
+        raw.seen_cells = current.seenCells.toString();
+        raw.current_cells = current.currentCells.toString();
+        if (!raw.version) raw.version = current.version || DEFAULT_VISIBILITY.version;
+        await db.run('UPDATE kingdoms SET visibility = $1 WHERE id = $2', [JSON.stringify(raw), k.id]);
+      } catch (err) {
+        console.warn('[visibility] home bit repair write failed (non-fatal):', err.message);
+      }
+    })();
   }
 
   return current;
