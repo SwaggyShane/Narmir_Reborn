@@ -578,7 +578,9 @@ function processTurn(k, db = null) {
 
   // ── 4e-i. Scout ring progression ──────────────────────────────────────────────
   {
-    const scoutResult = processScoutProgress({ ...k, ...updates }, db);
+    const scoutResult = measureAttunement('processScoutProgress', () =>
+      processScoutProgress({ ...k, ...updates }, db)
+    );
     if (scoutResult.progress_gained > 0) {
       updates.scout_progress = scoutResult.new_total;
       if (scoutResult.ring_completed) {
