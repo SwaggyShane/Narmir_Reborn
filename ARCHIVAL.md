@@ -2,13 +2,26 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-06 (Map Enlargement + cellIndex Stride Fix Applied; Ring 17 Visibility Now Correct)
+**Last updated:** 2026-07-06 (Kingdom 1 Home Hex Visibility Fixed; Map Enlargement + cellIndex Stride Fix Applied; Ring 17 Visibility Now Correct)
 
 ---
 
 ## Recent Chronology
 
 ### 2026-07-06
+
+- **Kingdom 1 Home Hex Visibility Fix** (PR #842, pending merge; commit `4dcc27b6` 2026-07-06): Fixed kingdom 1 displaying incorrect home hex visibility.
+  - **Problem:** Production database had incorrect visibility bitmap, causing client to display wrong hex far from kingdom position instead of home hex.
+  - **Root Cause:** Earlier debugging/testing had set visibility to incorrect bit value (589 instead of 633).
+  - **Solution:** Created migration script that:
+    - Preserves existing visibility object fields (scout ring progress, version)
+    - Updates seen_cells and current_cells to show only home hex (col=1, row=5, bit 633)
+    - Uses db.get/db.run for consistency with codebase patterns
+  - **Gemini Review:** COMMENTED with feedback on field preservation and database adapter consistency — all suggestions implemented.
+  - **Quality Gates:** Lint ✅, Test suite (63 files) ✅, Build ✅, Security Configuration ✅, Text Encoding ✅
+  - **Files:** `game/fix-kingdom-1-visibility.js` (new migration script)
+  - **Commits:** `c98c0f16` (initial), `4dcc27b6` (address Gemini feedback)
+  - **Impact:** Kingdom 1 now displays correct home hex visibility; production deployment of this script will sync production database state to match expected visibility
 
 - **Fog of War Scout Ring Visibility Bugs Fixed** (PR #840, merged `860e5abb` 2026-07-06): Fixed critical visibility calculation bugs in scout ring progression that caused random hexes to be revealed and visual state mismatches.
   - **Issues Fixed:**
