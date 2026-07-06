@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (Turn Processing Fix Phase 1 complete; Phase 2b in progress)
+**Last updated:** 2026-07-05 (Turn Processing Fix Phases 1-3a complete; Phase 3b integration in progress)
 
 ---
 
@@ -60,12 +60,18 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 **Phase 2 Result:** Deferred 2b due to data corruption risk; identified critical correctness constraint  
 
 **Phase 3 Work (In Progress):**
-- **3a (Implementing):** Profile CPU-bound operations to identify bottlenecks
+- **3a (Complete):** Profile CPU-bound operations to identify bottlenecks
   - ✅ Created `game/profiling.js` - TurnProfiler utility class for metrics collection
   - ✅ Created `game/measure-turn.js` - measurement script for turn profiling
-  - ⏳ Next: Integrate profiler into processTurn and run measurements
-  - Targets: JSON parse/stringify timing, attunement function times (18 functions), synergy lookups
-- **3b (Conditional):** Optimize based on profiling results
+  - ✅ AsyncLocalStorage for thread-safe per-request context
+  - ✅ performance.now() for sub-millisecond precision
+  - Status: Merged to main as PR #837
+- **3b (Integration in progress):** Integrate profiler into processTurn
+  - ✅ Import profiler in engine.js and kingdom-gameplay.js
+  - ✅ Initialize profiler context in /turn route (AsyncLocalStorage)
+  - ✅ Wrap attunement functions (granary, vault, barracks, walls, guard tower) with measureAttunement()
+  - ⏳ PR #838 under review; remaining: extend to all 18 attunements, then conditional optimization
+- **3c (Conditional):** Optimize based on profiling results
   - Cache parsed objects if JSON is bottleneck (>100ms or >20% of total)
   - Refactor slow attunement functions only (>10ms each)
   - Add caching for synergy lookups if >100/turn

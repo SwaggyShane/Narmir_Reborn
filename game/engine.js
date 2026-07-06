@@ -23,6 +23,7 @@ const { revealRingHexes } = require("./visibility");
 const { safeJsonParse, clearParseCache } = require('../utils/helpers');
 const { EPOCH_NOW } = require('../lib/db-sql');
 const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
+const { getProfiler } = require('./profiling');
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so
@@ -304,7 +305,19 @@ const SCAFFOLDING_BONUS_BUILDINGS = new Set(SCAFF_BONUS);
 
 // ── Gameplay (purchaseUpgrade extracted to game/lib/gameplay.js) ──
 
+// Measure attunement function execution time for profiling
+function measureAttunement(name, fn) {
+  const start = performance.now();
+  const result = fn();
+  const duration = performance.now() - start;
+  const profiler = getProfiler();
+  profiler.recordAttunementCall(name, duration);
+  return result;
+}
+
 function processTurn(k, db = null) {
+  const profiler = getProfiler();
+  profiler.start();
   clearParseCache();
 
   // Defensive: heal k.troop_levels from any nested stringification at the start of the turn
@@ -443,23 +456,33 @@ function processTurn(k, db = null) {
   Object.assign(updates, foodUpdates);
 
   // ── 4a. Granary attunement special abilities ──────────────────────────────────
-  const granaryAbilityUpdates = processGranaryAttunements({ ...k, ...updates }, events);
+  const granaryAbilityUpdates = measureAttunement('processGranaryAttunements', () =>
+    processGranaryAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, granaryAbilityUpdates);
 
   // ── 4a-ii. Vault attunement special abilities ─────────────────────────────────
-  const vaultAbilityUpdates = processVaultAttunements({ ...k, ...updates }, events);
+  const vaultAbilityUpdates = measureAttunement('processVaultAttunements', () =>
+    processVaultAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, vaultAbilityUpdates);
 
   // ── 4a-iii. Barracks attunement special abilities ─────────────────────────────
-  const barracksAbilityUpdates = processBarracksAttunements({ ...k, ...updates }, events);
+  const barracksAbilityUpdates = measureAttunement('processBarracksAttunements', () =>
+    processBarracksAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, barracksAbilityUpdates);
 
   // ── 4a-iv. Walls attunement special abilities ─────────────────────────────────
-  const wallsAbilityUpdates = processWallsAttunements({ ...k, ...updates }, events);
+  const wallsAbilityUpdates = measureAttunement('processWallsAttunements', () =>
+    processWallsAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, wallsAbilityUpdates);
 
   // ── 4a-v. Guard tower attunement special abilities ────────────────────────────
-  const guardTowerAbilityUpdates = processGuardTowerAttunements({ ...k, ...updates }, events);
+  const guardTowerAbilityUpdates = measureAttunement('processGuardTowerAttunements', () =>
+    processGuardTowerAttunements({ ...k, ...updates }, events)
+  );
   Object.assign(updates, guardTowerAbilityUpdates);
 
   // ── 4a-vi. Outpost attunement special abilities ───────────────────────────────
@@ -1689,7 +1712,8 @@ function processTurn(k, db = null) {
     updates.active_effects = cleanedKingdom.active_effects;
   }
 
-  return { updates, events: events.map(cleanNewsEvent) };
+  const report = profiler.end();
+  return { updates, events: events.map(cleanNewsEvent), _profileReport: report };
 }
 
 // ── Level-based caps ──────────────────────────────────────────────────────────
