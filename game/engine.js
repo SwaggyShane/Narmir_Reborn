@@ -1847,8 +1847,11 @@ async function resolveExpeditions(db, k, engine) {
     `[expedition] kingdom=${k.id} active/unclaimed: ${exps.map((e) => `${e.type}(${e.turns_left}t, claimed=${e.rewards_claimed})`).join(", ") || "none"}`,
   );
 
-  // Use passed-in kingdom state (already fresh from locked txn); no redundant fetch needed
-  const freshK = k;
+  // Fetch fresh kingdom state once instead of once per expedition to prevent data corruption.
+  // Rationale: processTurn returns an updates object but doesn't mutate the original kingdom in-place.
+  // If we use the pre-fetched kingdom without merging all updates, resolveExpeditions will use stale
+  // values when calculating XP/rewards and silently corrupt the database with outdated data.
+  const freshK = (await db.get("SELECT * FROM kingdoms WHERE id = $1", [k.id])) || k;
 
   const expeditionEvents = [];
 
