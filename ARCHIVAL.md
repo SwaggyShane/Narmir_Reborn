@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Turn Processing Fix complete + Gemini addressed; Test infrastructure fixed; Worldmap features restored and Gemini feedback addressed; Terrain System Phases 1-3, Admin CSS Phase 4R verified complete; TODO audit completed; Performance regression fixed)
+**Last updated:** 2026-07-05 (Turn Processing Fix Phase 1 complete; Phase 2 analysis deferred due to critical correctness constraint discovered by Gemini review; All other work complete)
 
 ---
 
@@ -21,6 +21,21 @@
   - **Files:** `routes/kingdom-gameplay.js`
   - **References:** `TURN_PROCESSING_FIX_PLAN.md`
   - **Commits:** `a7a50174` (initial), `acb300be` (Gemini fixes)
+
+- **Turn Processing Fix — Phase 2 Analysis (DEFERRED)** (PR #835, merged `ee17d828` 2026-07-05): Analyzed Phase 2 optimizations; discovered critical correctness constraint via Gemini review.
+  - **Investigation:** Phase 2 aimed to optimize write transaction with 3 changes (2a batch expeditions, 2b remove kingdom fetch, 2c batch heroes).
+  - **Finding:** Phase 2b (remove redundant kingdom fetch) is UNSAFE. Gemini's review identified CRITICAL DATA CORRUPTION RISK:
+    - processTurn() returns updates object but does NOT mutate the passed-in kingdom in-place
+    - applyUpdates() writes to database but does NOT modify in-memory kingdom object in caller's scope
+    - Without fresh database fetch, resolveExpeditions uses stale base values and silently overwrites fresh database values
+    - Result: Silent data loss (turn XP, level ups, gold earned during turn are lost)
+  - **Resolution:** Reverted 2b change and retained database fetch with detailed correctness comment explaining the constraint
+  - **Confirmation:** Gemini review validated the correctness finding; fix committed and all CI checks passed
+  - **Key Lesson:** The optimization assumption (kingdom state is fresh from lock) is INCORRECT for resolveExpeditions phase. A deep merge of all updates would be required to make 2b safe.
+  - **Status:** Phase 2a & 2c remain implemented (safe batch optimizations). Phase 2b DEFERRED; may revisit if update-merge pattern is refactored.
+  - **Quality Gates:** Lint ✅, full test suite (63 files) ✅, CI ✅ (re-ran on fix commit)
+  - **Files:** `game/engine.js` (retained database fetch with correctness documentation)
+  - **Commits:** `2b32ade2` (initial attempt), `ee17d828` (Gemini fix — revert to safe state)
 
 - **Fog of War & Scout Ring Visibility Fixes Restored** (pushed to main `84016bb` 2026-07-05): Restored two critical visibility fixes that were reverted.
   - **Issue:** Fog of war layer was appearing behind region names (not on top), and scout ring completions weren't notifying the client to refresh the worldmap.

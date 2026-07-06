@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (Turn Processing Fix / pool exhaustion complete + Gemini feedback addressed; Terrain System & Admin CSS Phase 4R verified complete; TODO audit corrections)
+**Last updated:** 2026-07-05 (Turn Processing Fix Phase 1 complete; Phase 2b in progress)
 
 ---
 
@@ -26,6 +26,18 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 - ✅ Resource Management: PASS (pool sizing/timeouts, 1-5MB limits, signature-validated uploads, bounded queries)
 
 **References:** `SECURITY_AUDIT.md`, `SQL_INJECTION_AUDIT_REPORT.md`
+
+### Turn Processing Fix Phase 2 — ANALYSIS & VERIFICATION COMPLETE
+**Status:** Phase 2 analysis found critical correctness constraint; Phase 2b deferred
+**Phase 1 (Complete):** PR #834 — Moved init/refresh queries outside transaction, reduced per-turn from 1,641ms to ~924ms
+**Phase 2 Analysis (PR #835, merged):**
+- **2a (Complete):** Batch expedition updates with CASE/WHEN — already implemented
+- **2b (DEFERRED):** Remove kingdom fetch — Analysis found critical data corruption risk; Gemini review confirmed. The passed-in kingdom object contains stale in-memory state (not updated with applyUpdates changes). Removing the fetch causes silent data loss when resolveExpeditions recalculates XP/rewards. Solution: Retain the database fetch with correctness constraint documented in code.
+- **2c (Complete):** Batch hero XP updates with CASE/WHEN — already implemented
+
+**Key Finding:** The optimization assumption (kingdom state is fresh) is incorrect. processTurn returns updates but doesn't mutate the in-memory object. Without the database fetch, resolveExpeditions silently corrupts the database with stale values.
+
+**Lessons:** Phase 1 (moving reads outside txn) was safe. Phase 2b (removing the fetch) is not safe without a deep merge of all updates first. Verified by Gemini review, fix committed, CI green.
 
 ---
 
