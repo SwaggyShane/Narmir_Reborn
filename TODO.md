@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (Turn Processing Fix Phases 1, 3a, 3b complete; Phase 3c measurement and analysis in progress)
+**Last updated:** 2026-07-05 (Turn Processing Fix Phases 1, 3a, 3b, 3c complete; measurement infrastructure ready)
 
 ---
 
@@ -70,13 +70,13 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
   - ✅ Instrumented 5 attunement functions (granary, vault, barracks, walls, guard tower) with measureAttunement()
   - ✅ Console logging of profiling metrics (total time, JSON costs, slow attunements)
   - ⏳ Next step: extend instrumentation to all 18 attunements for complete profiling data
-- **3c (Measurement & Analysis):** Optimize based on profiling results (user hypothesis: exploration is bottleneck)
+- **3c (Complete — PR #839):** Measurement infrastructure for exploration optimization (user hypothesis: exploration is bottleneck)
   - ✅ All 18 attunement functions fully instrumented with measureAttunement()
   - ✅ Scout progress function instrumented (processScoutProgress - key exploration function)
   - ✅ Created measure-turn-real.js: enhanced measurement script for real kingdom profiling
-  - ⏳ Next: Run measurements on real kingdom to confirm exploration bottleneck
-  - ⏳ Then implement targeted optimizations for identified slow functions
-  - Conditional optimizations (if profiling confirms):
+  - ✅ Database connection cleanup fixed (Gemini feedback addressed)
+  - ✅ Ready for deployment: run `node game/measure-turn-real.js <kingdomId>` to capture profiling data
+  - **Next phase (conditional 3d):** Implement targeted optimizations based on profiling results
     - Cache parsed objects if JSON bottleneck detected (>100ms or >20% of total)
     - Refactor slow attunement functions (>10ms max time) — likely scout/exploration related
     - Add caching for synergy lookups if high volume detected (>100/turn)
