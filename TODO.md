@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-05 (Turn Processing Fix Phases 1, 3a, 3b complete; Phase 3c conditional optimization pending)
+**Last updated:** 2026-07-05 (Turn Processing Fix Phases 1, 3a, 3b, 3c complete; measurement infrastructure ready)
 
 ---
 
@@ -70,10 +70,16 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
   - ✅ Instrumented 5 attunement functions (granary, vault, barracks, walls, guard tower) with measureAttunement()
   - ✅ Console logging of profiling metrics (total time, JSON costs, slow attunements)
   - ⏳ Next step: extend instrumentation to all 18 attunements for complete profiling data
-- **3c (Conditional):** Optimize based on profiling results (deferred pending analysis)
-  - Cache parsed objects if JSON bottleneck detected (>100ms or >20% of total)
-  - Refactor identified slow attunement functions (>10ms max time each)
-  - Add caching for synergy lookups if high volume detected (>100/turn)
+- **3c (Complete — PR #839):** Measurement infrastructure for exploration optimization (user hypothesis: exploration is bottleneck)
+  - ✅ All 18 attunement functions fully instrumented with measureAttunement()
+  - ✅ Scout progress function instrumented (processScoutProgress - key exploration function)
+  - ✅ Created measure-turn-real.js: enhanced measurement script for real kingdom profiling
+  - ✅ Database connection cleanup fixed (Gemini feedback addressed)
+  - ✅ Ready for deployment: run `node game/measure-turn-real.js <kingdomId>` to capture profiling data
+  - **Next phase (conditional 3d):** Implement targeted optimizations based on profiling results
+    - Cache parsed objects if JSON bottleneck detected (>100ms or >20% of total)
+    - Refactor slow attunement functions (>10ms max time) — likely scout/exploration related
+    - Add caching for synergy lookups if high volume detected (>100/turn)
 
 **Profiling Infrastructure:**
 - TurnProfiler class: Tracks JSON ops, attunement calls, synergy lookups
