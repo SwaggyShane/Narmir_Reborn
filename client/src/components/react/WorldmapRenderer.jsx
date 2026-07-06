@@ -902,7 +902,7 @@ export function renderWorldMap(
         // Invisible clickable hexes (for exploration mode)
         svg += '<g class="wm-layer wm-layer-hex-interact" style="pointer-events:auto">';
         hexGrid.cells.forEach(function (cell) {
-          svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="transparent" stroke="none" data-hex-x="' + Math.round(cell.x) + '" data-hex-y="' + Math.round(cell.y) + '" style="cursor:crosshair;opacity:0" />';
+          svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="transparent" stroke="none" data-hex-x="' + Math.round(cell.x) + '" data-hex-y="' + Math.round(cell.y) + '" title="col=' + cell.col + ', row=' + cell.row + '" style="cursor:crosshair;opacity:0" />';
         });
         svg += '</g>';
 
