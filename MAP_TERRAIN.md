@@ -10,7 +10,7 @@ Terrain adds strategic depth and visual interest to the world map. It affects **
 - Easy to extend and toggle.
 
 **Current Foundation** (from code review):
-- SVG rendering in `client/src/components/react/WorldmapRenderer.jsx` (900×650 viewBox, layered `<g class="wm-layer">`).
+- SVG rendering in `client/src/components/react/WorldmapRenderer.jsx` (1999×1380 viewBox, layered `<g class="wm-layer">`).
 - Background: ocean gradient, grid, vignette, region paths with water shelves/coastlines.
 - Layers: kingdoms, nodes, routes, expeditions (toggleable).
 - GSAP (`client/src/utils/worldMapGsap.js`): staggered entrance, node selection (scale + halo), line draw-in/flow, pulsing, reduced-motion support.

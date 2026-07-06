@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-06 (Fog of War Scout Ring Visibility Bugs Fixed; Turn Processing Profiling Infrastructure Complete)
+**Last updated:** 2026-07-06 (Map Enlargement + cellIndex Stride Fix Applied; Ring 17 Visibility Now Correct)
 
 ---
 
@@ -24,6 +24,21 @@
   - **Files:** `game/scout-rings.js`
   - **Commits:** `a98254f8` (initial fix), `860e5abb` (error handling + performance optimization)
   - **Impact:** Scout rings now correctly reveal all hexes at the specified ring distance; visibility bitmaps accurately reflect completed rings; client fog rendering matches server state
+
+- **Map Enlargement & cellIndex Stride Fix** (PR #841, pending merge; commit `bb0c8612` 2026-07-06): Fixed critical Root Cause of Ring 17 visibility failure — map was enlarged to 1999×1380 but cellIndex stride not updated.
+  - **Problem Identified:** Map was enlarged from 900×650 to 1999×1380 pixels (documented in EXPLORATION_SYSTEM_LOCKED.md) to futureproof hex grid. However, cellIndex stride remained at 32, which only accommodates columns -8 to 23 (32 possible values after offset). With new map dimensions (~34 columns wide), hexes beyond column 23 failed cellIndex validation and were silently not added to visibility bitmaps. Result: Ring 17 hexes (extending to ~column 33) largely invisible; only ~1 hex at edge of valid range showed.
+  - **Root Cause:** Previous attempt to fix visibility with a bounds check on rowShifted was incorrect — the real issue was undersized stride for enlarged map.
+  - **Fix Applied:**
+    - Updated canvas viewBox: 900×650 → 1999×1380 in WorldmapRenderer.jsx (both comment and actual W/H variables)
+    - Scaled RACE_HOMES coordinates proportionally (2.22x width, 2.12x height scale factors)
+    - Increased cellIndex stride: 32 → 48 on both server (game/visibility-cells.js) and client (WorldmapRenderer.jsx)
+    - Updated outdated comment in visibility-cells.js (was referencing old ~200 cells, now ~918 cells)
+    - Updated documentation in MAP_TERRAIN.md to reflect 1999×1380 dimensions
+  - **Quality Gates:** Lint ✅, Full test suite (63 files) ✅, Build ✅, Security Configuration ✅, Text Encoding ✅
+  - **Files:** `client/src/components/react/WorldmapRenderer.jsx`, `game/visibility-cells.js`, `MAP_TERRAIN.md`
+  - **Commits:** `bb0c8612` (map dimension & stride fix)
+  - **Gemini Review:** Reviewed previous bounds-check attempt on commit 320f6480 (identified the discrepancy); new commit addresses root cause
+  - **Impact:** Ring 17 (and all rings) now render correctly with all hexes visible per their bitmap state; cellIndex no longer rejects valid hexes beyond column 23; visibility matches server state perfectly
 
 ### 2026-07-05
 
