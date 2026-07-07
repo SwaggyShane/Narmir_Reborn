@@ -115,9 +115,6 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const [prospectingDuration, setProspectingDuration] = useState(null);
   const [prospectingTargetHex, setProspectingTargetHex] = useState(null);
   const [landExpansionRangers, setLandExpansionRangers] = useState(0);
-  const [landExpansionTerrain, setLandExpansionTerrain] = useState('grassland');
-  const [landExpansionDuration, setLandExpansionDuration] = useState(null);
-  const [landExpansionTargetHex, setLandExpansionTargetHex] = useState(null);
   // Hex selection modal state
   const [hexModalOpen, setHexModalOpen] = useState(false);
   const [hexModalContext, setHexModalContext] = useState(null); // { type: 'hunting'|'prospecting'|'land_expansion'|'epic_trek', duration: ... }
@@ -300,110 +297,51 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   }, []);
 
   // Handler for hex selection modal result — immediately trigger the action
-  const handleHexSelected = useCallback(async (hex) => {
+  const handleHexSelected = useCallback((hex) => {
     if (!hexModalContext) return;
 
-    const { type } = hexModalContext;
+    const { type, duration } = hexModalContext;
     setHexModalOpen(false);
     setHexModalContext(null);
 
-    // Immediately execute the action when hex is selected
+    // Record selected hex and duration, then trigger the appropriate handler
     if (type === 'hunting') {
-      try {
-        const result = await apiCall('/api/kingdom/expedition/hunting', {
-          method: 'POST',
-          body: { rangers: huntingRangers, terrain: huntingTerrain, target_x: hex.x, target_y: hex.y },
-        });
-
-        if (result.error) {
-          if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
-          return;
-        }
-
-        applyResult(result, 'hunting');
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Hunting expedition started!', 'success');
-        const foodGained = result.reward?.foodReward || 0;
-        logInstantEntry('🥩', 'Hunting expedition', `${formatNum(huntingRangers)} rangers sent to (${hex.x}, ${hex.y}) returned with ${formatNum(foodGained)} food`);
-        setHuntingRangers(0);
-        setHuntingTargetHex(null);
-        await refreshAll();
-      } catch (err) {
-        console.error('[expedition/hunting] failed:', err);
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast('Hunting failed — please try again', 'error');
-      }
+      setHuntingTargetHex(hex);
+      setHuntingDuration(duration);
     } else if (type === 'prospecting') {
-      try {
-        const result = await apiCall('/api/kingdom/expedition/prospecting', {
-          method: 'POST',
-          body: { engineers: prospectingEngineers, terrain: prospectingTerrain, target_x: hex.x, target_y: hex.y },
-        });
-
-        if (result.error) {
-          if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
-          return;
-        }
-
-        applyResult(result, 'prospecting');
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Prospecting expedition started!', 'success');
-        const goldGained = result.reward?.goldReward || 0;
-        logInstantEntry('⛏️', 'Prospecting expedition', `${formatNum(prospectingEngineers)} engineers sent to (${hex.x}, ${hex.y}) returned with ${formatNum(goldGained)} gold`);
-        setProspectingEngineers(0);
-        setProspectingTargetHex(null);
-        await refreshAll();
-      } catch (err) {
-        console.error('[expedition/prospecting] failed:', err);
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast('Prospecting failed — please try again', 'error');
-      }
-    } else if (type === 'land_expansion') {
-      try {
-        const result = await apiCall('/api/kingdom/expedition/land-expansion', {
-          method: 'POST',
-          body: { rangers: landExpansionRangers, terrain: landExpansionTerrain, target_x: hex.x, target_y: hex.y },
-        });
-
-        if (result.error) {
-          if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
-          return;
-        }
-
-        applyResult(result, 'land-expansion');
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Land expansion started!', 'success');
-        const popCost = result.reward?.populationUsed || 0;
-        const landsFound = result.reward?.landsDiscovered || 0;
-        logInstantEntry('🗺️', 'Land expansion', `Rangers sent to (${hex.x}, ${hex.y}): Discovered ${formatNum(landsFound)} new lands (used ${formatNum(popCost)} population)`);
-        setLandExpansionRangers(0);
-        setLandExpansionTargetHex(null);
-        await refreshAll();
-      } catch (err) {
-        console.error('[expedition/land-expansion] failed:', err);
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast('Land expansion failed — please try again', 'error');
-      }
+      setProspectingTargetHex(hex);
+      setProspectingDuration(duration);
     } else if (type === 'epic_trek') {
-      try {
-        const result = await apiCall('/api/kingdom/expedition/epic-trek', {
-          method: 'POST',
-          body: { target_x: hex.x, target_y: hex.y },
-        });
+      // Epic trek still executes immediately
+      (async () => {
+        try {
+          const result = await apiCall('/api/kingdom/expedition/epic-trek', {
+            method: 'POST',
+            body: { target_x: hex.x, target_y: hex.y },
+          });
 
-        if (result.error) {
-          if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
-          return;
+          if (result.error) {
+            if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+            return;
+          }
+
+          applyResult(result, 'epic-trek-start');
+          if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Epic Trek launched!', 'success');
+          logInstantEntry('🛤️', 'Epic Trek', `Heading to (${hex.x}, ${hex.y}) — ${result.path_hexes} hexes, ${result.turns_left} turns`);
+          await refreshAll();
+        } catch (err) {
+          console.error('[expedition/epic-trek] failed:', err);
+          if (typeof window !== 'undefined' && typeof toast === 'function') toast('Epic Trek failed — please try again', 'error');
         }
-
-        applyResult(result, 'epic-trek-start');
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Epic Trek launched!', 'success');
-        logInstantEntry('🛤️', 'Epic Trek', `Heading to (${hex.x}, ${hex.y}) — ${result.path_hexes} hexes, ${result.turns_left} turns`);
-        await refreshAll();
-      } catch (err) {
-        console.error('[expedition/epic-trek] failed:', err);
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast('Epic Trek failed — please try again', 'error');
-      }
+      })();
     }
-  }, [hexModalContext, huntingRangers, huntingTerrain, prospectingEngineers, prospectingTerrain, landExpansionRangers, landExpansionTerrain, applyResult, logInstantEntry, refreshAll]);
+  }, [hexModalContext, applyResult, logInstantEntry, refreshAll]);
 
   // Phase 1: Turn-based resource gathering handlers
   const handleHunting = useCallback(async () => {
     const r = Number(huntingRangers || 0);
+    const duration = huntingDuration || 'instant';
+
     if (r < 1) {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Send at least 1 ranger', 'error');
       return;
@@ -412,15 +350,17 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Not enough available rangers', 'error');
       return;
     }
-    if ((turns_stored || 0) < 5) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Hunting requires 5 turns', 'warn');
-      return;
-    }
 
     try {
+      const body = { rangers: r, terrain: huntingTerrain, duration };
+      if (huntingTargetHex && duration !== 'instant') {
+        body.target_x = huntingTargetHex.x;
+        body.target_y = huntingTargetHex.y;
+      }
+
       const result = await apiCall('/api/kingdom/expedition/hunting', {
         method: 'POST',
-        body: { rangers: r, terrain: huntingTerrain },
+        body,
       });
 
       if (result.error) {
@@ -429,19 +369,24 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       }
 
       applyResult(result, 'hunting');
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Hunting expedition complete!', 'success');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Hunting expedition started!', 'success');
       const foodGained = result.reward?.foodReward || 0;
-      logInstantEntry('🥩', 'Hunting expedition', `${formatNum(r)} rangers returned with ${formatNum(foodGained)} food`);
+      logInstantEntry('🥩', 'Hunting expedition', `${formatNum(r)} rangers sent, will return with ${formatNum(foodGained)} food in ${result.turnCost} turns`);
       setHuntingRangers(0);
+      setHuntingTargetHex(null);
+      setHuntingDuration(null);
+      setHexModalOpen(false);
       await refreshAll();
     } catch (err) {
       console.error('[expedition/hunting] failed:', err);
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Hunting failed — please try again', 'error');
     }
-  }, [huntingRangers, huntingTerrain, availableRangers, turns_stored, applyResult, logInstantEntry, refreshAll]);
+  }, [huntingRangers, huntingTerrain, huntingDuration, huntingTargetHex, availableRangers, applyResult, logInstantEntry, refreshAll]);
 
   const handleProspecting = useCallback(async () => {
     const e = Number(prospectingEngineers || 0);
+    const duration = prospectingDuration || 'instant';
+
     if (e < 1) {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Send at least 1 engineer', 'error');
       return;
@@ -450,15 +395,17 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Not enough available engineers', 'error');
       return;
     }
-    if ((turns_stored || 0) < 5) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Prospecting requires 5 turns', 'warn');
-      return;
-    }
 
     try {
+      const body = { engineers: e, terrain: prospectingTerrain, duration };
+      if (prospectingTargetHex && duration !== 'instant') {
+        body.target_x = prospectingTargetHex.x;
+        body.target_y = prospectingTargetHex.y;
+      }
+
       const result = await apiCall('/api/kingdom/expedition/prospecting', {
         method: 'POST',
-        body: { engineers: e, terrain: prospectingTerrain },
+        body,
       });
 
       if (result.error) {
@@ -467,16 +414,19 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       }
 
       applyResult(result, 'prospecting');
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Prospecting expedition complete!', 'success');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Prospecting expedition started!', 'success');
       const goldGained = result.reward?.goldReward || 0;
-      logInstantEntry('⛏️', 'Prospecting expedition', `${formatNum(e)} engineers returned with ${formatNum(goldGained)} gold`);
+      logInstantEntry('⛏️', 'Prospecting expedition', `${formatNum(e)} engineers sent, will return with ${formatNum(goldGained)} gold in ${result.turnCost} turns`);
       setProspectingEngineers(0);
+      setProspectingTargetHex(null);
+      setProspectingDuration(null);
+      setHexModalOpen(false);
       await refreshAll();
     } catch (err) {
       console.error('[expedition/prospecting] failed:', err);
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Prospecting failed — please try again', 'error');
     }
-  }, [prospectingEngineers, prospectingTerrain, availableEngineers, turns_stored, applyResult, logInstantEntry, refreshAll]);
+  }, [prospectingEngineers, prospectingTerrain, prospectingDuration, prospectingTargetHex, availableEngineers, applyResult, logInstantEntry, refreshAll]);
 
   const handleLandExpansion = useCallback(async () => {
     const r = Number(landExpansionRangers || 0);
@@ -489,19 +439,10 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       return;
     }
 
-    // Estimate population cost (rough: ~5% per ranger)
-    const estimatedPopCost = Math.ceil(r * 0.05);
-    if (availablePopulation < estimatedPopCost) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') {
-        toast(`⚠️ Land expansion needs ~${formatNum(estimatedPopCost)} population but you only have ${formatNum(availablePopulation)}. This would harm your kingdom!`, 'warn');
-      }
-      return;
-    }
-
     try {
       const result = await apiCall('/api/kingdom/expedition/land-expansion', {
         method: 'POST',
-        body: { rangers: r, terrain: landExpansionTerrain },
+        body: { rangers: r },
       });
 
       if (result.error) {
@@ -511,7 +452,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
 
       applyResult(result, 'land-expansion');
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Land expanded!', 'success');
-      const popCost = result.reward?.populationUsed || estimatedPopCost;
+      const popCost = result.reward?.populationCost || 0;
       const landsFound = result.reward?.landsDiscovered || 0;
       logInstantEntry('🗺️', 'Land expansion', `Discovered ${formatNum(landsFound)} new lands (used ${formatNum(popCost)} population)`);
       setLandExpansionRangers(0);
@@ -520,7 +461,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       console.error('[expedition/land-expansion] failed:', err);
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Land expansion failed — please try again', 'error');
     }
-  }, [landExpansionRangers, landExpansionTerrain, availableRangers, applyResult, logInstantEntry, refreshAll]);
+  }, [landExpansionRangers, applyResult, logInstantEntry, refreshAll]);
 
   // Phase 2E: Scout allocation handlers
   const handleScoutAllocate = useCallback(async () => {
@@ -832,7 +773,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                     </div>
                   ) : null}
                   <div className="flex gap-1">
-                    <button className="base-btn flex-1 bg-[rgba(76,175,130,0.2)] text-[11px]" onClick={handleHunting}>
+                    <button className="base-btn flex-1 bg-[rgba(76,175,130,0.2)] text-[11px]" onClick={() => { setHuntingDuration('instant'); setHuntingTargetHex(null); }}>
                       Instant
                     </button>
                     <button className="base-btn flex-1 bg-[rgba(76,175,130,0.2)] text-[11px]" onClick={() => openHexModal('hunting', '5')}>
@@ -842,6 +783,11 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       25
                     </button>
                   </div>
+                  {huntingDuration === 'instant' ? (
+                    <button className="base-btn w-full mt-2 bg-[rgba(76,175,130,0.3)] text-[11px] font-semibold" onClick={handleHunting}>
+                      Send Rangers
+                    </button>
+                  ) : null}
                   {huntingTargetHex && huntingDuration && (huntingDuration === '5' || huntingDuration === '25') ? (
                     <button className="base-btn w-full mt-2 bg-[rgba(76,175,130,0.3)] text-[11px] font-semibold" onClick={handleHunting}>
                       Launch Hunting Expedition
@@ -875,7 +821,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                     </div>
                   ) : null}
                   <div className="flex gap-1">
-                    <button className="base-btn flex-1 bg-[rgba(180,60,0,0.2)] text-[11px]" onClick={handleProspecting}>
+                    <button className="base-btn flex-1 bg-[rgba(180,60,0,0.2)] text-[11px]" onClick={() => { setProspectingDuration('instant'); setProspectingTargetHex(null); }}>
                       Instant
                     </button>
                     <button className="base-btn flex-1 bg-[rgba(180,60,0,0.2)] text-[11px]" onClick={() => openHexModal('prospecting', '5')}>
@@ -885,6 +831,11 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       25
                     </button>
                   </div>
+                  {prospectingDuration === 'instant' ? (
+                    <button className="base-btn w-full mt-2 bg-[rgba(180,60,0,0.3)] text-[11px] font-semibold" onClick={handleProspecting}>
+                      Send Engineers
+                    </button>
+                  ) : null}
                   {prospectingTargetHex && prospectingDuration && (prospectingDuration === '5' || prospectingDuration === '25') ? (
                     <button className="base-btn w-full mt-2 bg-[rgba(180,60,0,0.3)] text-[11px] font-semibold" onClick={handleProspecting}>
                       Launch Prospecting Expedition
@@ -895,7 +846,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                 {/* Land Expansion Card */}
                 <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3">
                   <div className="mb-2 font-semibold text-[var(--text)]">🗺️ Land Expansion</div>
-                  <div className="mb-3 text-[11px] text-[var(--text3)]">Rangers discover new land. Costs population.</div>
+                  <div className="mb-3 text-[11px] text-[var(--text3)]">Rangers discover new land from home hex. Costs population. Diminishing returns apply.</div>
                   <div className="mb-2 text-[12px]">
                     <label className="block text-[var(--text3)] mb-1">Rangers</label>
                     <div className="flex gap-1">
@@ -912,27 +863,9 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       </button>
                     </div>
                   </div>
-                  {landExpansionTargetHex && landExpansionDuration ? (
-                    <div className="mb-2 rounded bg-[var(--gold)]/10 px-2 py-1 text-[11px] text-[var(--gold)]">
-                      Target: ({landExpansionTargetHex.x}, {landExpansionTargetHex.y}) — {landExpansionDuration} turns
-                    </div>
-                  ) : null}
-                  <div className="flex gap-1">
-                    <button className="base-btn flex-1 bg-[rgba(218,165,32,0.2)] text-[11px]" onClick={handleLandExpansion}>
-                      Instant
-                    </button>
-                    <button className="base-btn flex-1 bg-[rgba(218,165,32,0.2)] text-[11px]" onClick={() => openHexModal('land_expansion', '5')}>
-                      5
-                    </button>
-                    <button className="base-btn flex-1 bg-[rgba(218,165,32,0.2)] text-[11px]" onClick={() => openHexModal('land_expansion', '25')}>
-                      25
-                    </button>
-                  </div>
-                  {landExpansionTargetHex && landExpansionDuration && (landExpansionDuration === '5' || landExpansionDuration === '25') ? (
-                    <button className="base-btn w-full mt-2 bg-[rgba(218,165,32,0.3)] text-[11px] font-semibold" onClick={handleLandExpansion}>
-                      Launch Land Expansion
-                    </button>
-                  ) : null}
+                  <button className="base-btn w-full bg-[rgba(218,165,32,0.2)] text-[11px]" onClick={handleLandExpansion}>
+                    Send Rangers
+                  </button>
                 </div>
               </div>
             </div>
