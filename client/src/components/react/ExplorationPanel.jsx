@@ -921,15 +921,14 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                 >
                   Allocate
                 </button>
-                {scout_allocation > 0 && (
-                  <button
-                    className="base-btn px-3 text-[12px] text-[var(--text3)]"
-                    onClick={handleScoutReleaseAll}
-                    title="Release all scouts and stop ring progression"
-                  >
-                    Release
-                  </button>
-                )}
+                <button
+                  className="base-btn flex-1 text-[12px] text-[var(--text3)]"
+                  onClick={handleScoutReleaseAll}
+                  disabled={scout_allocation === 0}
+                  title="Release all scouts and stop ring progression"
+                >
+                  Release
+                </button>
               </div>
             </div>
 
