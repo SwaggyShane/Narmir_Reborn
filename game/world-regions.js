@@ -15,15 +15,15 @@
 const { pixelToHex } = require('./hex-utils');
 
 const RACE_HOMES = {
-  dwarf: { x: 400, y: 488 },
-  high_elf: { x: 1155, y: 340 },
-  wood_elf: { x: 1599, y: 467 },
-  vampire: { x: 932, y: 701 },
-  ogre: { x: 1777, y: 828 },
-  dark_elf: { x: 1244, y: 913 },
-  orc: { x: 1555, y: 1039 },
-  human: { x: 666, y: 913 },
-  dire_wolf: { x: 289, y: 849 },
+  dwarf: { x: 180, y: 230 },
+  high_elf: { x: 520, y: 160 },
+  wood_elf: { x: 720, y: 220 },
+  vampire: { x: 420, y: 330 },
+  ogre: { x: 800, y: 390 },
+  dark_elf: { x: 560, y: 430 },
+  orc: { x: 700, y: 490 },
+  human: { x: 300, y: 430 },
+  dire_wolf: { x: 130, y: 400 },
 };
 
 const OCEAN_BASE_ROW = 2;

@@ -1,6 +1,6 @@
 /**
  * Shared world-map coordinate helpers.
- * Map space matches WorldmapRenderer viewBox: 1999 x 1380.
+ * Map space matches WorldmapRenderer viewBox: 900 x 650.
  *
  * Phase 1.5 (Fog of War): kingdom/node placement used to come from fixed
  * REGION_SEEDS arrays — fully deterministic forever, which Phase 1's
@@ -19,8 +19,8 @@ const { getWorldSeed } = require('./world-seed');
 const { RACE_HOMES, nearestRaceHome, isWaterPoint } = require('./world-regions');
 const { pixelToHex, hexCenter } = require('./hex-utils');
 
-const MAP_WIDTH = 1999;
-const MAP_HEIGHT = 1380;
+const MAP_WIDTH = 900;
+const MAP_HEIGHT = 650;
 
 const DISTANCE_MIN = 600;
 const DISTANCE_MAX = 28800;
