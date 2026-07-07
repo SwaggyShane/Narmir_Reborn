@@ -709,12 +709,19 @@ module.exports = function (db) {
           allocated: result.allocated,
           scoutAllocation: status.allocated,
           availableRangers: status.available,
+          updates: {
+            scout_allocation: result.newTotal,
+            rangers: status.available,
+          },
         };
       });
 
       res.json({
         ok: true,
-        ...k,
+        allocated: k.allocated,
+        scoutAllocation: k.scoutAllocation,
+        availableRangers: k.availableRangers,
+        updates: k.updates,
       });
     } catch (err) {
       console.error('[scout/allocate]', err.message);
