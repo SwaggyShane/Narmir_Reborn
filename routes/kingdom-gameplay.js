@@ -3214,15 +3214,18 @@ module.exports = function (db) {
   // (useful after map expansions or visibility migrations)
   router.post('/fix-visibility', requireAuth, async (req, res) => {
     try {
+      console.log('[fix-visibility] Starting for player:', req.player.playerId);
       const { resetCurrentCellsToHome } = require('../game/visibility');
       const k = await db.get('SELECT id, race FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
+      console.log('[fix-visibility] Resetting for kingdom:', k.id, 'race:', k.race);
       const updated = await resetCurrentCellsToHome(db, k);
-      res.json({ message: 'Visibility reset to home hex only', visibility: updated });
+      console.log('[fix-visibility] Updated visibility. currentCells:', updated.currentCells.toString());
+      res.json({ message: 'Visibility reset to home hex only', visibility: { seenCells: updated.seenCells.toString(), currentCells: updated.currentCells.toString() } });
     } catch (err) {
-      console.error('[fix-visibility] failed:', err.message);
-      res.status(500).json({ error: 'Failed to fix visibility' });
+      console.error('[fix-visibility] failed:', err.message, err.stack);
+      res.status(500).json({ error: 'Failed to fix visibility: ' + err.message });
     }
   });
 
