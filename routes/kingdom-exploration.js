@@ -254,7 +254,7 @@ module.exports = function (db) {
     if (r < 1) return res.status(400).json({ error: 'Send at least 1 ranger' });
 
     try {
-      const { updates, reward, turnCost } = await db.withTransaction(async () => {
+      const { updates, reward } = await db.withTransaction(async () => {
         const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
           req.player.playerId,
         ]);
@@ -304,29 +304,47 @@ module.exports = function (db) {
 
         const reward = calculateHuntingReward(r, k.ranger_level || 1, t, k.race, d);
 
-        await db.run(
-          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1) WHERE id = $2',
-          [totalTurns, k.id],
-        );
+        if (d === 'instant') {
+          // Instant: apply reward immediately
+          await db.run(
+            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - 1), food = food + $1 WHERE id = $2',
+            [reward.foodReward, k.id],
+          );
+          return {
+            updates: {
+              turns_stored: Math.max(0, k.turns_stored - 1),
+              food: k.food + reward.foodReward,
+            },
+            reward,
+          };
+        } else {
+          // 5 or 25: create pending expedition
+          await db.run(
+            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1) WHERE id = $2',
+            [totalTurns, k.id],
+          );
 
-        await db.run(
-          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-          [k.id, 'hunting', totalTurns, r, 0, 0, JSON.stringify({ food: reward.foodReward }), 0],
-        );
+          await db.run(
+            'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [k.id, 'hunting', totalTurns, r, 0, 0, JSON.stringify({ food: reward.foodReward }), 0],
+          );
 
-        let updates = {
-          turns_stored: Math.max(0, k.turns_stored - totalTurns),
-        };
-
-        return { updates, reward, turnCost: totalTurns };
+          return {
+            updates: { turns_stored: Math.max(0, k.turns_stored - totalTurns) },
+            reward,
+          };
+        }
       });
+
+      const msg = d === 'instant'
+        ? `Rangers immediately returned with ${reward.foodReward.toLocaleString()} food.`
+        : `${updates.turns_stored >= 0 ? 'Expedition' : 'Expedition'} started. Rangers will return with ${reward.foodReward.toLocaleString()} food in ${d}-turn expedition.`;
 
       res.json({
         ok: true,
         updates: updates,
         reward: reward,
-        turnCost: turnCost,
-        message: `${turnCost} turn expedition started. Rangers will return with ${reward.foodReward.toLocaleString()} food.`,
+        message: msg,
       });
     } catch (err) {
       console.error('[expedition/hunting] failed:', err.message);
@@ -346,7 +364,7 @@ module.exports = function (db) {
     if (e < 1) return res.status(400).json({ error: 'Send at least 1 engineer' });
 
     try {
-      const { updates, reward, turnCost } = await db.withTransaction(async () => {
+      const { updates, reward } = await db.withTransaction(async () => {
         const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
           req.player.playerId,
         ]);
@@ -402,30 +420,51 @@ module.exports = function (db) {
           throw error;
         }
 
-        await db.run(
-          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = GREATEST(0, food - $2) WHERE id = $3',
-          [totalTurns, reward.foodCost, k.id],
-        );
+        if (d === 'instant') {
+          // Instant: apply reward immediately
+          await db.run(
+            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - 1), food = GREATEST(0, food - $1), gold = gold + $2 WHERE id = $3',
+            [reward.foodCost, reward.goldReward, k.id],
+          );
+          return {
+            updates: {
+              turns_stored: Math.max(0, k.turns_stored - 1),
+              food: Math.max(0, k.food - reward.foodCost),
+              gold: k.gold + reward.goldReward,
+            },
+            reward,
+          };
+        } else {
+          // 5 or 25: create pending expedition
+          await db.run(
+            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = GREATEST(0, food - $2) WHERE id = $3',
+            [totalTurns, reward.foodCost, k.id],
+          );
 
-        await db.run(
-          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-          [k.id, 'prospecting', totalTurns, 0, 0, reward.foodCost, JSON.stringify({ gold: reward.goldReward }), 0],
-        );
+          await db.run(
+            'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, engineers, fighters, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+            [k.id, 'prospecting', totalTurns, 0, e, 0, reward.foodCost, JSON.stringify({ gold: reward.goldReward }), 0],
+          );
 
-        let updates = {
-          turns_stored: Math.max(0, k.turns_stored - totalTurns),
-          food: Math.max(0, k.food - reward.foodCost),
-        };
-
-        return { updates, reward, turnCost: totalTurns };
+          return {
+            updates: {
+              turns_stored: Math.max(0, k.turns_stored - totalTurns),
+              food: Math.max(0, k.food - reward.foodCost),
+            },
+            reward,
+          };
+        }
       });
+
+      const msg = d === 'instant'
+        ? `Engineers immediately returned with ${reward.goldReward.toLocaleString()} gold.`
+        : `${d}-turn expedition started. Engineers will return with ${reward.goldReward.toLocaleString()} gold.`;
 
       res.json({
         ok: true,
         updates: updates,
         reward: reward,
-        turnCost: turnCost,
-        message: `${turnCost} turn expedition started. Prospectors will return with ${reward.goldReward.toLocaleString()} gold.`,
+        message: msg,
       });
     } catch (err) {
       console.error('[expedition/prospecting] failed:', err.message);
