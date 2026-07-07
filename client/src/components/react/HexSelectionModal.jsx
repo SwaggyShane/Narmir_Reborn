@@ -260,7 +260,9 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
           fogState = 'seen';
         }
 
-        if (fogState === 'seen') {
+        if (fogState === 'current') {
+          console.log('[NO-FOG] Current hex:', cell.col, cell.row);
+        } else if (fogState === 'seen') {
           fogElements.push(
             <polygon
               key={`fog-${cell.col}-${cell.row}`}
