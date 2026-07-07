@@ -40,7 +40,7 @@ module.exports = function (db) {
     if (username.length < 3 || username.length > 20)
       return res
         .status(400)
-        .json({ error: "Username must be 3–20 characters" });
+        .json({ error: "Username must be 3-20 characters" });
     if (!/^[a-zA-Z0-9_]+$/.test(username))
       return res
         .status(400)
@@ -50,7 +50,7 @@ module.exports = function (db) {
     if (kingdomName.length < 3 || kingdomName.length > 50)
       return res
         .status(400)
-        .json({ error: "Kingdom name must be 3–50 characters" });
+        .json({ error: "Kingdom name must be 3-50 characters" });
     if (!/^[a-zA-Z0-9\s'-]+$/.test(kingdomName))
       return res
         .status(400)

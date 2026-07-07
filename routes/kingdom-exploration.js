@@ -30,11 +30,11 @@ function repairMojibake(value) {
   }
   text = text
     .replace(/Â/g, '')
-    .replace(/â€”/g, '—')
-    .replace(/â€“/g, '-')
+    .replace(/â€"/g, '—')
+    .replace(/â€"/g, '-')
     .replace(/â€¢/g, '•')
-    .replace(/â€˜|â€™/g, '’')
-    .replace(/â€œ/g, '“');
+    .replace(/â€˜|â€™/g, "'")
+    .replace(/â€œ/g, '"');
   return text;
 }
 
@@ -243,7 +243,7 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/hunting — Turn-based hunting for food with travel time
+  // POST /expedition/hunting - Turn-based hunting for food with travel time
   router.post('/expedition/hunting', requireAuth, requireCsrfToken, async (req, res) => {
     const { rangers, terrain, target_x, target_y } = req.body;
     const r = Math.max(0, parseInt(rangers) || 0);
@@ -325,7 +325,7 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/prospecting — Turn-based prospecting for gold with travel time
+  // POST /expedition/prospecting - Turn-based prospecting for gold with travel time
   router.post('/expedition/prospecting', requireAuth, requireCsrfToken, async (req, res) => {
     const { engineers, terrain, target_x, target_y } = req.body;
     const e = Math.max(0, parseInt(engineers) || 0);
@@ -414,7 +414,7 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/land-expansion — Land discovery with travel time
+  // POST /expedition/land-expansion - Land discovery with travel time
   router.post('/expedition/land-expansion', requireAuth, requireCsrfToken, async (req, res) => {
     const { rangers, terrain, target_x, target_y } = req.body;
     const r = Math.max(0, parseInt(rangers) || 0);

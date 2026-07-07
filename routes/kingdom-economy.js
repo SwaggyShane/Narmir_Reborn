@@ -661,7 +661,7 @@ module.exports = function (db) {
       [
         k.id,
         "system",
-        `âš”ï¸ Hired ${result.hired.count} ${result.hired.tier} ${result.hired.unitType} (Lv ${result.hired.level}) for ${result.hired.cost.toLocaleString()} gold. Contract: ${result.hired.duration} turns.`,
+        `âš"ï¸ Hired ${result.hired.count} ${result.hired.tier} ${result.hired.unitType} (Lv ${result.hired.level}) for ${result.hired.cost.toLocaleString()} gold. Contract: ${result.hired.duration} turns.`,
         k.turn,
       ],
     );
@@ -769,7 +769,7 @@ module.exports = function (db) {
       [
         target.id,
         "system",
-        `ðŸ“¦ Trade offer from ${k.name} â€” check your Economy panel to accept or decline.`,
+        `📦 Trade offer from ${k.name} — check your Economy panel to accept or decline.`,
         k.turn,
       ],
     );

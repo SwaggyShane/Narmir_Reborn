@@ -1847,7 +1847,7 @@ async function resolveEpicTrek(db, exp, kingdom) {
       if (newKingdoms.length > 0) {
         const { getKingdomMapCoords } = require('./world-map-coords');
         const { pixelToHex } = require('./hex-utils');
-        const otherKingdoms = await db.all('SELECT id, race FROM kingdoms WHERE id != $1', [kingdom.id]);
+        const otherKingdoms = await db.all('SELECT id, race, name FROM kingdoms WHERE id != $1', [kingdom.id]);
 
         let disc = {};
         try {
@@ -1863,7 +1863,7 @@ async function resolveEpicTrek(db, exp, kingdom) {
           });
 
           if (match && !disc[match.id]) {
-            disc[match.id] = { found: true, discovered_turn: discovered.discovered_turn };
+            disc[match.id] = { found: true, discovered_turn: discovered.discovered_turn, name: match.name };
             discoveredCount++;
           }
         }

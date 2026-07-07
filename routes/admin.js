@@ -136,7 +136,7 @@ const upload = multer({
       return cb(new Error("Only .mp3 and .wav files are allowed"));
     }
     if (file.mimetype && !ALLOWED_SOUND_MIME.has(file.mimetype)) {
-      return cb(new Error("Invalid file type — only audio files are allowed"));
+      return cb(new Error("Invalid file type - only audio files are allowed"));
     }
     cb(null, true);
   },
@@ -225,7 +225,7 @@ module.exports = function (db, io) {
     return requireCsrfToken(req, res, next);
   });
 
-  // GET /api/admin/kingdoms — all kingdoms with player info
+  // GET /api/admin/kingdoms - all kingdoms with player info
   router.get("/kingdoms", async (_req, res) => {
     const rows = await db.all(`
       SELECT k.id, k.name, k.race, k.land, k.gold, k.turn, k.turns_stored,
@@ -237,7 +237,7 @@ module.exports = function (db, io) {
     res.json(rows);
   });
 
-  // GET /api/admin/stats — server overview
+  // GET /api/admin/stats - server overview
   router.get("/stats", async (_req, res) => {
     const playerCount = await db.get("SELECT COUNT(*) as c FROM players");
     const kingdomCount = await db.get("SELECT COUNT(*) as c FROM kingdoms");
@@ -259,7 +259,7 @@ module.exports = function (db, io) {
     });
   });
 
-  // POST /api/admin/ban — ban a player
+  // POST /api/admin/ban - ban a player
   router.post("/ban", async (req, res) => {
     const { playerId, reason } = req.body;
     if (!playerId) return res.status(400).json({ error: "playerId required" });
@@ -270,7 +270,7 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
-  // POST /api/admin/unban — unban a player
+  // POST /api/admin/unban - unban a player
   router.post("/unban", async (req, res) => {
     const { playerId } = req.body;
     if (!playerId) return res.status(400).json({ error: "playerId required" });
@@ -281,7 +281,7 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
-  // POST /api/admin/reset-turns — reset a kingdom's turns to 400
+  // POST /api/admin/reset-turns - reset a kingdom's turns to 400
   router.post("/reset-turns", async (req, res) => {
     const { kingdomId } = req.body;
     if (!kingdomId)
@@ -292,7 +292,7 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
-  // POST /api/admin/reset-turns-all — give all kingdoms full turns
+  // POST /api/admin/reset-turns-all - give all kingdoms full turns
   router.post("/reset-turns-all", async (_req, res) => {
     await db.run("UPDATE kingdoms SET turns_stored = 400");
     res.json({ ok: true });
@@ -401,7 +401,7 @@ module.exports = function (db, io) {
     await db.run("DELETE FROM spy_reports WHERE kingdom_id = $1 OR target_id = $2", [kingdomId, kingdomId]);
   };
 
-  // POST /api/admin/reset-kingdom — wipe a single kingdom back to starting stats
+  // POST /api/admin/reset-kingdom - wipe a single kingdom back to starting stats
   router.post("/reset-kingdom", async (req, res) => {
     const { kingdomId } = req.body;
     if (!kingdomId)
@@ -415,7 +415,7 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
-  // POST /api/admin/reset-all-kingdoms — wipe all kingdoms back to starting stats
+  // POST /api/admin/reset-all-kingdoms - wipe all kingdoms back to starting stats
   router.post("/reset-all-kingdoms", async (_req, res) => {
     // Reset values are race-dependent, so batch with one UPDATE per race
     // instead of nine queries per kingdom.
@@ -543,7 +543,7 @@ module.exports = function (db, io) {
     });
   });
 
-  // POST /api/admin/set-gold — set a kingdom's gold
+  // POST /api/admin/set-gold - set a kingdom's gold
   router.post("/set-gold", async (req, res) => {
     const { kingdomId, amount } = req.body;
     if (!kingdomId || amount === undefined)
@@ -555,7 +555,7 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
-  // POST /api/admin/set-building — set a specific building count on a kingdom
+  // POST /api/admin/set-building - set a specific building count on a kingdom
   router.post("/set-building", async (req, res) => {
     const { kingdomId, building, amount } = req.body;
     if (!kingdomId || !building || amount === undefined)
@@ -588,7 +588,7 @@ module.exports = function (db, io) {
     res.json(banned);
   });
 
-  // POST /api/admin/chat-mod — promote/demote
+  // POST /api/admin/chat-mod - promote/demote
   router.post("/chat-mod", async (req, res) => {
     const { username, action } = req.body; // action: 'promote' | 'demote'
     if (!username || !action)
@@ -617,7 +617,7 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
-  // GET /api/admin/kingdom-detail/:id — fetch single kingdom with all fields
+  // GET /api/admin/kingdom-detail/:id - fetch single kingdom with all fields
   router.get("/kingdom-detail/:id", async (req, res) => {
     try {
       const k = await db.get(
@@ -635,7 +635,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // POST /api/admin/promote — make a player admin
+  // POST /api/admin/promote - make a player admin
   router.post("/promote", async (req, res) => {
     const { playerId, username } = req.body;
     if (!playerId && !username)
@@ -850,7 +850,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // POST /api/admin/announce — persist to global chat + every kingdom's news feed
+  // POST /api/admin/announce - persist to global chat + every kingdom's news feed
   router.post("/announce", async (req, res) => {
     try {
       const text = (req.body.message || "").trim();
@@ -906,7 +906,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // GET /api/admin/ai-hiatus — check current AI hiatus status
+  // GET /api/admin/ai-hiatus - check current AI hiatus status
   router.get("/ai-hiatus", async (_req, res) => {
     try {
       const row = await db.get("SELECT value FROM server_state WHERE key = 'ai_hiatus'");
@@ -916,7 +916,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // POST /api/admin/ai-hiatus — update AI hiatus status
+  // POST /api/admin/ai-hiatus - update AI hiatus status
   router.post("/ai-hiatus", async (req, res) => {
     try {
       const { hiatus } = req.body;
@@ -931,7 +931,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // GET /api/admin/ai/synopsis — per-AI kingdom dashboard stats
+  // GET /api/admin/ai/synopsis - per-AI kingdom dashboard stats
   router.get("/ai/synopsis", async (_req, res) => {
     try {
       const rows = await db.all(`
@@ -982,7 +982,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // POST /api/admin/ai/seed — create AI players+kingdoms for each race (idempotent)
+  // POST /api/admin/ai/seed - create AI players+kingdoms for each race (idempotent)
   router.post("/ai/seed", async (req, res) => {
     try {
       const passwordHash = await bcrypt.hash('ai_narmir_internal_2026', BCRYPT_SALT_ROUNDS);
@@ -1048,7 +1048,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // POST /api/admin/ai/reset — reset all AI kingdoms to starting values
+  // POST /api/admin/ai/reset - reset all AI kingdoms to starting values
   router.post("/ai/reset", async (_req, res) => {
     try {
       const aiKingdoms = await db.all(
@@ -1064,7 +1064,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // GET /api/admin/ai/presets — list available preset IDs and labels
+  // GET /api/admin/ai/presets - list available preset IDs and labels
   router.get("/ai/presets", (_req, res) => {
     const list = PRESET_IDS.map(id => ({
       id,
@@ -1074,7 +1074,7 @@ module.exports = function (db, io) {
     res.json(list);
   });
 
-  // POST /api/admin/ai/apply-preset — apply a preset to one kingdom
+  // POST /api/admin/ai/apply-preset - apply a preset to one kingdom
   router.post("/ai/apply-preset", async (req, res) => {
     try {
       const { kingdomId, presetId, force } = req.body;
@@ -1107,7 +1107,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // DELETE /api/admin/kingdom/:id — delete a kingdom and all related records
+  // DELETE /api/admin/kingdom/:id - delete a kingdom and all related records
   router.delete("/kingdom/:id", async (req, res) => {
     const kid = req.params.id;
     try {
@@ -1588,7 +1588,7 @@ module.exports = function (db, io) {
     });
   });
 
-  // POST /api/admin/goals/edit — update an existing goal definition
+  // POST /api/admin/goals/edit - update an existing goal definition
   router.post("/goals/edit", async (req, res) => {
     const { tier, goalId, label, minTarget, maxTarget, prizeType, prizeMultiplier } = req.body;
 
@@ -1679,7 +1679,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // POST /api/admin/goals/add — add a new goal
+  // POST /api/admin/goals/add - add a new goal
   router.post("/goals/add", async (req, res) => {
     const { tier, goalId, label, minTarget, maxTarget, prizeType, prizeMultiplier } = req.body;
 
@@ -1730,7 +1730,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // POST /api/admin/goals/remove — soft-delete a goal
+  // POST /api/admin/goals/remove - soft-delete a goal
   router.post("/goals/remove", async (req, res) => {
     const { tier, goalId } = req.body;
 
@@ -1852,7 +1852,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // POST /api/admin/security-audit-full — recursive scan of entire codebase
+  // POST /api/admin/security-audit-full - recursive scan of entire codebase
   router.post("/security-audit-full", async (req, res) => {
     try {
       const AuditReportGenerator = require("../tools/security-auditor/report-generator");
@@ -1959,7 +1959,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // POST /api/admin/repair-json-rows — repair corrupted JSON data
+  // POST /api/admin/repair-json-rows - repair corrupted JSON data
   router.post("/repair-json-rows", async (req, res) => {
     try {
       const { repairJsonRows } = require("../db/schema");
@@ -1988,7 +1988,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // GET /api/admin/repair-json-rows/status — get repair status/info
+  // GET /api/admin/repair-json-rows/status - get repair status/info
   router.get("/repair-json-rows/status", async (req, res) => {
     try {
       res.json({
@@ -2013,7 +2013,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // GET /api/admin/audit-notifications/settings — get notification configuration
+  // GET /api/admin/audit-notifications/settings - get notification configuration
   router.get("/audit-notifications/settings", async (req, res) => {
     try {
       const settings = await db.get(
@@ -2044,7 +2044,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // POST /api/admin/audit-notifications/settings — update notification configuration
+  // POST /api/admin/audit-notifications/settings - update notification configuration
   router.post("/audit-notifications/settings", async (req, res) => {
     try {
       const { notify_on_new_issues, min_severity, discord_channel_id } = req.body;
@@ -2084,7 +2084,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // GET /api/admin/audit-notifications/recent — get recent notifications
+  // GET /api/admin/audit-notifications/recent - get recent notifications
   router.get("/audit-notifications/recent", async (req, res) => {
     try {
       let limit = parseInt(req.query.limit || "10", 10);
@@ -2244,7 +2244,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // POST /api/admin/security-audit/sql-injection — scan for SQL injection vulnerabilities
+  // POST /api/admin/security-audit/sql-injection - scan for SQL injection vulnerabilities
   router.post("/security-audit/sql-injection", async (req, res) => {
     try {
       const SQLInjectionAnalyzer = require("../tools/security-auditor/sql-injection-analyzer");
@@ -2292,7 +2292,7 @@ module.exports = function (db, io) {
     }
   });
 
-  // GET /api/admin/security-audit/sql-injection/status — get SQL injection scanner status
+  // GET /api/admin/security-audit/sql-injection/status - get SQL injection scanner status
   router.get("/security-audit/sql-injection/status", async (req, res) => {
     try {
       res.json({
