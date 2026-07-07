@@ -1444,6 +1444,12 @@ async function initDb(options = {}) {
     await addColumn('expeditions', 'extra_data', 'TEXT');
   }
 
+  // Expeditions — engineers column (for prospecting expeditions)
+  const expCols4 = await getTableColumns('expeditions');
+  if (expCols4.length > 0 && !expCols4.includes('engineers')) {
+    await addColumn('expeditions', 'engineers', 'INTEGER NOT NULL DEFAULT 0');
+  }
+
   // Resource expeditions — food_taken column
   const resExpCols = await getTableColumns('resource_expeditions');
   if (resExpCols.length > 0 && !resExpCols.includes('food_taken')) {
