@@ -13,11 +13,13 @@ vi.mock('../../../utils/toast.js', () => ({
 }));
 
 vi.mock('../../../utils/api.mjs', () => ({
+  apiCall: vi.fn(),
   getCsrfToken: vi.fn(() => 'test-csrf-token'),
 }));
 
 import { useResearchStore } from '../../../stores';
 import { toast } from '../../../utils/toast.js';
+import { apiCall } from '../../../utils/api.mjs';
 import { ResearchFocusSection } from '../StudiesTabs/ResearchFocusSection.jsx';
 
 describe('ResearchFocusSection', () => {
@@ -27,12 +29,9 @@ describe('ResearchFocusSection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useResearchStore.getState.mockReturnValue({ setResearchFocus });
-    global.fetch = vi.fn();
+    apiCall.mockResolvedValue({});
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
 
   const baseProps = {
     studiesData: { school_upgrades: {} },
@@ -51,23 +50,16 @@ describe('ResearchFocusSection', () => {
 
   it('sends only the primary focus when repository is unavailable', async () => {
     const user = userEvent.setup();
-    fetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ research_focus: ['economy'] }),
-    });
+    apiCall.mockResolvedValue({ research_focus: ['economy'] });
 
     render(<ResearchFocusSection {...baseProps} />);
     await user.click(screen.getByRole('button', { name: /save focus/i }));
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/kingdom/research-focus', expect.objectContaining({
+      expect(apiCall).toHaveBeenCalledWith('/api/kingdom/research-focus', {
         method: 'POST',
-        headers: expect.objectContaining({
-          'Content-Type': 'application/json',
-          'x-csrf-token': 'test-csrf-token',
-        }),
-        body: JSON.stringify({ focus: ['economy'] }),
-      }));
+        body: { focus: ['economy'] },
+      });
     });
     expect(setResearchFocus).toHaveBeenCalledWith(['economy']);
     expect(toast).toHaveBeenCalledWith('Research focus saved — economy', 'success');
@@ -75,10 +67,7 @@ describe('ResearchFocusSection', () => {
 
   it('renders and submits both focuses when repository is unlocked', async () => {
     const user = userEvent.setup();
-    fetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ research_focus: ['economy', 'weapons'] }),
-    });
+    apiCall.mockResolvedValue({ research_focus: ['economy', 'weapons'] });
 
     render(
       <ResearchFocusSection
@@ -91,9 +80,10 @@ describe('ResearchFocusSection', () => {
     await user.click(screen.getByRole('button', { name: /save focus/i }));
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/kingdom/research-focus', expect.objectContaining({
-        body: JSON.stringify({ focus: ['economy', 'weapons'] }),
-      }));
+      expect(apiCall).toHaveBeenCalledWith('/api/kingdom/research-focus', {
+        method: 'POST',
+        body: { focus: ['economy', 'weapons'] },
+      });
     });
     expect(setResearchFocus).toHaveBeenCalledWith(['economy', 'weapons']);
   });
