@@ -84,7 +84,7 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
     let mounted = true;
     const fetchMapData = async () => {
       try {
-        const res = await fetch('/api/world-map');
+        const res = await fetch('/api/kingdom/world-map');
         console.log('[HexSelectionModal] Fetch response status:', res.status);
         if (res.ok) {
           const data = await res.json();
