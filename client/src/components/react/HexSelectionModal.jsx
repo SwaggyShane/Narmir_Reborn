@@ -57,6 +57,7 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
   const [selectedHex, setSelectedHex] = useState(null);
   const [worldSeed, setWorldSeed] = useState(null);
   const [visibility, setVisibility] = useState(null); // { seenCells, currentCells }
+  const [playerKingdomHex, setPlayerKingdomHex] = useState(null); // { col, row } - player's home location (no fog)
   const svgRef = useRef(null);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
@@ -93,6 +94,14 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
             } catch (e) {
               console.error('Failed to parse visibility:', e);
               setVisibility(null);
+            }
+            // Get player's kingdom location (home hex, always visible - no fog)
+            if (data.kingdoms && data.kingdoms.length > 0) {
+              const playerKingdom = data.kingdoms[0]; // First kingdom is the player's own
+              if (playerKingdom.map_x !== undefined && playerKingdom.map_y !== undefined) {
+                const homeHex = pixelToHex(playerKingdom.map_x, playerKingdom.map_y);
+                setPlayerKingdomHex(homeHex);
+              }
             }
           }
         } else if (mounted) {
@@ -235,37 +244,41 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
       );
 
       // Render fog overlay with three states: current (none), seen (dimmed), unseen (opaque)
-      const seenBig = visibility?.seenCells || 0n;
-      const currentBig = visibility?.currentCells || 0n;
-      let fogState = 'unseen';
-      if (isHexCurrent(cell.col, cell.row, currentBig)) {
-        fogState = 'current';
-      } else if (isHexSeen(cell.col, cell.row, seenBig)) {
-        fogState = 'seen';
-      }
+      // Player's kingdom home hex is always visible (no fog)
+      const isHomeHex = playerKingdomHex && cell.col === playerKingdomHex.col && cell.row === playerKingdomHex.row;
+      if (!isHomeHex) {
+        const seenBig = visibility?.seenCells || 0n;
+        const currentBig = visibility?.currentCells || 0n;
+        let fogState = 'unseen';
+        if (isHexCurrent(cell.col, cell.row, currentBig)) {
+          fogState = 'current';
+        } else if (isHexSeen(cell.col, cell.row, seenBig)) {
+          fogState = 'seen';
+        }
 
-      if (fogState === 'seen') {
-        fogElements.push(
-          <polygon
-            key={`fog-${cell.col}-${cell.row}`}
-            points={cornerStr}
-            fill="rgb(15,20,35)"
-            opacity="0.65"
-            stroke="none"
-            pointerEvents="none"
-          />
-        );
-      } else if (fogState === 'unseen') {
-        fogElements.push(
-          <polygon
-            key={`fog-${cell.col}-${cell.row}`}
-            points={cornerStr}
-            fill="rgb(0,0,0)"
-            opacity="0.92"
-            stroke="none"
-            pointerEvents="none"
-          />
-        );
+        if (fogState === 'seen') {
+          fogElements.push(
+            <polygon
+              key={`fog-${cell.col}-${cell.row}`}
+              points={cornerStr}
+              fill="rgb(15,20,35)"
+              opacity="0.65"
+              stroke="none"
+              pointerEvents="none"
+            />
+          );
+        } else if (fogState === 'unseen') {
+          fogElements.push(
+            <polygon
+              key={`fog-${cell.col}-${cell.row}`}
+              points={cornerStr}
+              fill="rgb(0,0,0)"
+              opacity="0.92"
+              stroke="none"
+              pointerEvents="none"
+            />
+          );
+        }
       }
 
       // Draw region boundaries (lines between hexes of different races)
