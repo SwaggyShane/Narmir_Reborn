@@ -40,6 +40,15 @@ export async function loadKingdom() {
       },
       { reason: 'kingdom-refresh' },
     );
+
+    const scouts = await apiCall('/api/kingdom/scouts');
+    console.log('[auth] Fetched scouts:', scouts);
+    if (scouts && !scouts.error) {
+      console.log('[auth] Updating profile store with scouts:', scouts);
+      useProfileStore.getState().receiveServerSnapshot(scouts);
+    } else {
+      console.warn('[auth] Scouts fetch failed or errored:', scouts?.error || 'no data');
+    }
   }
   return kingdom;
 }
