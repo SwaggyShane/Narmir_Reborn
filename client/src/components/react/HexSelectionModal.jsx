@@ -56,7 +56,7 @@ const WORLD_MAX_ROW = 1379;
 const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
   const [selectedHex, setSelectedHex] = useState(null);
   const [worldSeed, setWorldSeed] = useState(null);
-  const [visibility, setVisibility] = useState(null);
+  const [visibility, setVisibility] = useState(null); // { seenCells, currentCells }
   const svgRef = useRef(null);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
@@ -85,15 +85,14 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
           const data = await res.json();
           if (mounted) {
             setWorldSeed(data.worldSeed || 0);
-            // Parse visibility bitmap
-            if (data.visibility?.seenCells) {
-              try {
-                const seenBig = BigInt(data.visibility.seenCells);
-                setVisibility({ seenCells: seenBig });
-              } catch (e) {
-                console.error('Failed to parse visibility:', e);
-                setVisibility(null);
-              }
+            // Parse visibility bitmaps
+            try {
+              const seenBig = BigInt(data.visibility?.seenCells || '0');
+              const currentBig = BigInt(data.visibility?.currentCells || '0');
+              setVisibility({ seenCells: seenBig, currentCells: currentBig });
+            } catch (e) {
+              console.error('Failed to parse visibility:', e);
+              setVisibility(null);
             }
           }
         } else if (mounted) {
@@ -175,16 +174,27 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
 
   if (!isOpen) return null;
 
-  // Helper to check if a cell is visible (seen)
-  const isHexSeen = (col, row) => {
-    if (!visibility?.seenCells) return true; // No visibility data = show all
-    const CLIENT_CELL_INDEX_OFFSET = 8;
-    const CLIENT_CELL_INDEX_STRIDE = 48;
+  // Client-side fog of war helpers (matches WorldmapRenderer fog logic)
+  const CLIENT_CELL_INDEX_OFFSET = 8;
+  const CLIENT_CELL_INDEX_STRIDE = 48;
+
+  const clientCellIndex = (col, row) => {
     const colShifted = col + CLIENT_CELL_INDEX_OFFSET;
     const rowShifted = row + CLIENT_CELL_INDEX_OFFSET;
-    if (colShifted < 0 || colShifted >= CLIENT_CELL_INDEX_STRIDE || rowShifted < 0) return false;
-    const idx = rowShifted * CLIENT_CELL_INDEX_STRIDE + colShifted;
-    return (visibility.seenCells & (1n << BigInt(idx))) !== 0n;
+    if (colShifted < 0 || colShifted >= CLIENT_CELL_INDEX_STRIDE || rowShifted < 0) return -1;
+    return rowShifted * CLIENT_CELL_INDEX_STRIDE + colShifted;
+  };
+
+  const isHexSeen = (col, row, seenBig) => {
+    const idx = clientCellIndex(col, row);
+    if (idx < 0 || !seenBig) return false;
+    return (seenBig & (1n << BigInt(idx))) !== 0n;
+  };
+
+  const isHexCurrent = (col, row, currentBig) => {
+    const idx = clientCellIndex(col, row);
+    if (idx < 0 || !currentBig) return false;
+    return (currentBig & (1n << BigInt(idx))) !== 0n;
   };
 
   // Build SVG elements from terrain grid
@@ -224,13 +234,34 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
         />
       );
 
-      // Render fog overlay for unseen hexes
-      if (!isHexSeen(cell.col, cell.row)) {
+      // Render fog overlay with three states: current (none), seen (dimmed), unseen (opaque)
+      const seenBig = visibility?.seenCells || 0n;
+      const currentBig = visibility?.currentCells || 0n;
+      let fogState = 'unseen';
+      if (isHexCurrent(cell.col, cell.row, currentBig)) {
+        fogState = 'current';
+      } else if (isHexSeen(cell.col, cell.row, seenBig)) {
+        fogState = 'seen';
+      }
+
+      if (fogState === 'seen') {
         fogElements.push(
           <polygon
             key={`fog-${cell.col}-${cell.row}`}
             points={cornerStr}
-            fill="rgba(0, 0, 0, 0.7)"
+            fill="rgb(15,20,35)"
+            opacity="0.65"
+            stroke="none"
+            pointerEvents="none"
+          />
+        );
+      } else if (fogState === 'unseen') {
+        fogElements.push(
+          <polygon
+            key={`fog-${cell.col}-${cell.row}`}
+            points={cornerStr}
+            fill="rgb(0,0,0)"
+            opacity="0.92"
             stroke="none"
             pointerEvents="none"
           />
