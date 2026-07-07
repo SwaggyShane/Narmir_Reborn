@@ -18,10 +18,10 @@ const RACE_HOMES = {
   dwarf: { x: 400, y: 488 },
   high_elf: { x: 1155, y: 340 },
   wood_elf: { x: 1599, y: 467 },
-  vampire: { x: 932, y: 701 },
+  vampire: { x: 933, y: 701 },
   ogre: { x: 1777, y: 828 },
-  dark_elf: { x: 1244, y: 913 },
-  orc: { x: 1555, y: 1039 },
+  dark_elf: { x: 1243, y: 913 },
+  orc: { x: 1555, y: 1040 },
   human: { x: 666, y: 913 },
   dire_wolf: { x: 289, y: 849 },
 };
