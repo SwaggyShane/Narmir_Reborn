@@ -414,28 +414,28 @@ module.exports = function (db) {
 
         const reward = calculateProspectingReward(e, k.engineer_level || 1, t, k.race, d);
 
-        if (k.food < reward.foodCost) {
+        // Food cost only for 5/25, not instant
+        if (d !== 'instant' && k.food < reward.foodCost) {
           const error = new Error(`Prospecting requires ${reward.foodCost.toLocaleString()} food (you have ${k.food.toLocaleString()})`);
           error.statusCode = 400;
           throw error;
         }
 
         if (d === 'instant') {
-          // Instant: apply reward immediately
+          // Instant: apply reward immediately, no food cost
           await db.run(
-            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - 1), food = GREATEST(0, food - $1), gold = gold + $2 WHERE id = $3',
-            [reward.foodCost, reward.goldReward, k.id],
+            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - 1), gold = gold + $1 WHERE id = $2',
+            [reward.goldReward, k.id],
           );
           return {
             updates: {
               turns_stored: Math.max(0, k.turns_stored - 1),
-              food: Math.max(0, k.food - reward.foodCost),
               gold: k.gold + reward.goldReward,
             },
             reward,
           };
         } else {
-          // 5 or 25: create pending expedition
+          // 5 or 25: create pending expedition, deduct food cost
           await db.run(
             'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = GREATEST(0, food - $2) WHERE id = $3',
             [totalTurns, reward.foodCost, k.id],
