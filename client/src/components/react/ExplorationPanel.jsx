@@ -40,10 +40,11 @@ const formatNum = (value) => Number(value || 0).toLocaleString();
 const repairText = (value) => cleanMessageText(repairMojibake(String(value ?? '')));
 
 // Scout ring calculator (matches game/scout-rings.js)
+const MAX_SCOUT_RING = 25; // Must match game/config.js SCOUT_CONSTANTS.MAX_RING (stride 48: 1.5× old stride 32)
 const getCompletedRing = (scoutProgress) => {
   const progress = Math.max(0, Math.floor(Number(scoutProgress) || 0));
   let ring = 0;
-  for (let i = 1; i <= 17; i++) {
+  for (let i = 1; i <= MAX_SCOUT_RING; i++) {
     const turnsRequired = 20 + (i - 1) * 5; // cost for this ring
     let totalTurns = 0;
     for (let j = 1; j <= i; j++) {
@@ -85,6 +86,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const turns_stored = useProfileStore((state) => state.turns_stored);
   const scout_allocation = useProfileStore((state) => state.scout_allocation);
   const scout_progress = useProfileStore((state) => state.scout_progress);
+  const first_dungeon_found_turn = useProfileStore((state) => state.first_dungeon_found_turn);
+  const first_mountain_found_turn = useProfileStore((state) => state.first_mountain_found_turn);
   const population = usePopulationStore((state) => state.population);
   useGameMutationEvents();
 
@@ -763,12 +766,12 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               <div className="mb-4 text-[12px] text-[var(--text3)]">
                 Send specialists on expeditions to gather resources. Terrain affects returns. Durations scale from instant scouts to extended expeditions.
               </div>
-              <div className="grid gap-4 md:grid-cols-3 items-end">
+              <div className="grid gap-4 md:grid-cols-3 items-stretch">
                 {/* Hunting Card */}
-                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3 flex flex-col">
+                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3 flex flex-col justify-between">
                   <div className="mb-2 font-semibold text-[var(--text)]">🥩 Hunting</div>
                   <div className="mb-3 text-[11px] text-[var(--text3)]">Rangers hunt for food. Forest terrain is ideal.</div>
-                  <div className="mb-2 text-[12px] flex-1">
+                  <div className="mb-2 text-[12px]">
                     <label className="block text-[var(--text3)] mb-1">Rangers</label>
                     <div className="flex gap-1">
                       <input
@@ -808,10 +811,10 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                 </div>
 
                 {/* Prospecting Card */}
-                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3 flex flex-col">
+                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3 flex flex-col justify-between">
                   <div className="mb-2 font-semibold text-[var(--text)]">⛏️ Prospecting</div>
                   <div className="mb-3 text-[11px] text-[var(--text3)]">Engineers prospect for gold. Mountains are ideal.</div>
-                  <div className="mb-2 text-[12px] flex-1">
+                  <div className="mb-2 text-[12px]">
                     <label className="block text-[var(--text3)] mb-1">Engineers</label>
                     <div className="flex gap-1">
                       <input
@@ -851,10 +854,10 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                 </div>
 
                 {/* Land Expansion Card */}
-                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3 flex flex-col">
+                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3 flex flex-col justify-between">
                   <div className="mb-2 font-semibold text-[var(--text)]">🗺️ Land Expansion</div>
                   <div className="mb-3 text-[11px] text-[var(--text3)]">Rangers discover new land from home hex. Costs population. Diminishing returns apply.</div>
-                  <div className="mb-2 text-[12px] flex-1">
+                  <div className="mb-2 text-[12px]">
                     <label className="block text-[var(--text3)] mb-1">Rangers</label>
                     <div className="flex gap-1">
                       <input
@@ -894,7 +897,10 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                   <div className="mt-1">
                     {(() => {
                       const currentRing = getCompletedRing(scout_progress);
-                      const nextRing = Math.min(currentRing + 1, 17);
+                      if (currentRing >= MAX_SCOUT_RING) {
+                        return `${formatNum(scout_allocation)} rangers • Ring ${MAX_SCOUT_RING} (Complete)`;
+                      }
+                      const nextRing = currentRing + 1;
                       const turnsForNext = 20 + (nextRing - 1) * 5;
                       const turnsPreviousDone = getTotalTurnsForRing(currentRing);
                       const turnsIntoNext = scout_progress - turnsPreviousDone;
@@ -993,6 +999,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               </div>
             )}
 
+            {/* Dungeon/Mountain expeditions - visible once discovered */}
+            {(first_dungeon_found_turn !== null && first_dungeon_found_turn !== undefined) || (first_mountain_found_turn !== null && first_mountain_found_turn !== undefined) ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
               <div className="card border-l-[3px] border-l-[var(--red)]">
                 <div className="mb-2 flex items-center justify-between gap-3">
@@ -1092,6 +1100,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                 </button>
               </div>
             </div>
+            ) : null}
 
           </div>
 

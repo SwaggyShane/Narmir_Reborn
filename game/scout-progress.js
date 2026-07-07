@@ -15,10 +15,8 @@ const { pixelToHex } = require('./hex-utils');
 function getScoutProgressThisTurn(kingdom) {
   const allocated = Math.max(0, Math.floor(Number(kingdom.scout_allocation) || 0));
   if (allocated === 0) {
-    console.log('[scout-progress] No scouts allocated', { kingdom_id: kingdom.id, scout_allocation: kingdom.scout_allocation });
     return 0;
   }
-  console.log('[scout-progress] Processing scouts', { kingdom_id: kingdom.id, allocated, level: kingdom.ranger_level, race: kingdom.race });
 
   let rangerLevel = 1;
   if (kingdom.troop_levels) {
@@ -29,8 +27,8 @@ function getScoutProgressThisTurn(kingdom) {
   }
   const race = kingdom.race || 'human';
 
-  // Base: 1 scout-turn per allocated ranger
-  let progress = allocated;
+  // Base: 0.001 scout-turns per allocated ranger (1000 rangers = 1 turn of progress)
+  let progress = allocated * 0.001;
 
   // Ranger level multiplier: level increases scout efficiency
   // Formula: 1 + (level - 1) * 0.1 (so L1 = 1x, L2 = 1.1x, L10 = 1.9x)
@@ -40,14 +38,14 @@ function getScoutProgressThisTurn(kingdom) {
   // Race modifiers (from exploration spec): scout_rate
   const RACE_MODIFIERS = {
     human: 1.0,
-    orc: 1.1,           // Orcs are better scouts
-    high_elf: 1.15,     // Elves are best scouts
-    dark_elf: 1.15,
-    wood_elf: 1.15,
+    orc: 1.05,          // 5% faster scouts
+    high_elf: 0.95,     // Slightly lower than human
+    dark_elf: 0.95,     // Just above dwarf
+    wood_elf: 1.15,     // 15% faster scouts
     dwarf: 0.9,         // Dwarves prefer underground
-    dire_wolf: 1.0,
-    vampire: 1.0,
-    ogre: 1.0,
+    dire_wolf: 1.1,     // 10% faster scouts
+    vampire: 0.98,      // 2% slower
+    ogre: 0.8,          // 20% slower
   };
   const raceModifier = RACE_MODIFIERS[race.toLowerCase()] || 1.0;
   progress *= raceModifier;
@@ -68,7 +66,6 @@ function processScoutProgress(kingdom, db = null) {
   const previousRing = getCompletedRing(Number(kingdom.scout_progress) || 0);
   const progressGained = getScoutProgressThisTurn(kingdom);
   const newTotal = (Number(kingdom.scout_progress) || 0) + progressGained;
-  console.log('[scout-progress] Result', { kingdom_id: kingdom.id, previous_progress: Number(kingdom.scout_progress) || 0, progress_gained: progressGained, new_total: newTotal });
   const newRing = getCompletedRing(newTotal);
 
   const result = {

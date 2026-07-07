@@ -207,7 +207,7 @@ async function updateKingdomVisibility(db, kingdomId, updater) {
  * @returns {Promise} Resolves when visibility is updated
  */
 async function revealRingHexes(db, kingdomId, kingdom, ring) {
-  if (!kingdom || !kingdomId || !ring || ring < 1 || ring > 17) {
+  if (!kingdom || !kingdomId || !ring || ring < 1 || ring > config.SCOUT_CONSTANTS.MAX_RING) {
     return null;
   }
 
