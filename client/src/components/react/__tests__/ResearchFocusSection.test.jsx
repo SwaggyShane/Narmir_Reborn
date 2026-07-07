@@ -12,6 +12,10 @@ vi.mock('../../../utils/toast.js', () => ({
   toast: vi.fn(),
 }));
 
+vi.mock('../../../utils/api.mjs', () => ({
+  getCsrfToken: vi.fn(() => 'test-csrf-token'),
+}));
+
 import { useResearchStore } from '../../../stores';
 import { toast } from '../../../utils/toast.js';
 import { ResearchFocusSection } from '../StudiesTabs/ResearchFocusSection.jsx';
@@ -58,7 +62,10 @@ describe('ResearchFocusSection', () => {
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith('/api/kingdom/research-focus', expect.objectContaining({
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+          'x-csrf-token': 'test-csrf-token',
+        }),
         body: JSON.stringify({ focus: ['economy'] }),
       }));
     });
