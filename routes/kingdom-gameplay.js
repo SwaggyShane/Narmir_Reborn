@@ -3230,6 +3230,21 @@ module.exports = function (db) {
     }
   });
 
+  router.get("/debug/scouts", requireAuth, async (req, res) => {
+    try {
+      const k = await db.get("SELECT scout_allocation, scout_progress FROM kingdoms WHERE player_id = $1", [req.player.playerId]);
+      if (!k) {
+        return res.status(404).json({ error: "Kingdom not found" });
+      }
+      res.json({
+        scout_allocation: k.scout_allocation,
+        scout_progress: k.scout_progress,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   return router;
 };
 

@@ -157,8 +157,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   }, [syncKingdomData]);
 
   const refreshAll = useCallback(async () => {
-    await Promise.all([refreshInventory(), refreshExpeditions(), refreshProfile()]);
-  }, [refreshExpeditions, refreshInventory, refreshProfile]);
+    await Promise.all([refreshInventory(), refreshExpeditions()]);
+  }, [refreshExpeditions, refreshInventory]);
 
   useEffect(() => {
     void refreshAll();
