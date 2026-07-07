@@ -1,5 +1,11 @@
 // Terrain utilities for worldmap rendering (shared between WorldmapRenderer and HexSelectionModal)
 
+// Import hex geometry from hexMap library (consolidation from Phase 1)
+import { hexCenter, hexCorners, HEX_SIZE, HEX_W, HEX_VERT } from './hexMap/HexGeometry.ts';
+
+// Re-export for backward compatibility
+export { hexCenter, hexCorners, HEX_SIZE, HEX_W, HEX_VERT };
+
 export const RACE_TO_TERRAIN = {
   dwarf: 'mountains',
   high_elf: 'forest',
@@ -48,10 +54,6 @@ const RACE_HOMES = {
   dire_wolf: { x: 130, y: 400 },
 };
 
-const HEX_SIZE = 34;
-const HEX_W = Math.sqrt(3) * HEX_SIZE;
-const HEX_VERT = HEX_SIZE * 1.5;
-
 const OCEAN_BASE_ROW = 2;
 const OCEAN_THICKNESS = 2;
 const SOUTH_BAND_FRAC = 0.15;
@@ -72,23 +74,6 @@ export function seedToInt32(worldSeed) {
   }
 }
 
-export function hexCenter(col, row) {
-  const x = col * HEX_W + (row % 2 !== 0 ? HEX_W / 2 : 0);
-  const y = row * HEX_VERT;
-  return { x, y };
-}
-
-export function hexCorners(cx, cy, size = HEX_SIZE) {
-  const pts = [];
-  for (let i = 0; i < 6; i++) {
-    const angle = (Math.PI / 180) * (60 * i - 30);
-    pts.push([
-      Math.round((cx + size * Math.cos(angle)) * 10) / 10,
-      Math.round((cy + size * Math.sin(angle)) * 10) / 10,
-    ]);
-  }
-  return pts;
-}
 
 function oceanBandForColumn(col) {
   const wave = Math.sin(col * 0.35) * 1.0 + Math.sin(col * 0.9 + 1.3) * 0.4;
