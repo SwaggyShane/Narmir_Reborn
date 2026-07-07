@@ -102,8 +102,15 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
               const playerKingdom = data.kingdoms.find((k) => k.id === playerKingdomId);
               if (playerKingdom && playerKingdom.map_x !== undefined && playerKingdom.map_y !== undefined) {
                 const homeHex = pixelToHex(playerKingdom.map_x, playerKingdom.map_y);
+                console.log('[HexSelectionModal] Player kingdom:', playerKingdom.id, playerKingdom.name);
+                console.log('[HexSelectionModal] Home location - map_x:', playerKingdom.map_x, 'map_y:', playerKingdom.map_y);
+                console.log('[HexSelectionModal] Home hex - col:', homeHex.col, 'row:', homeHex.row);
                 setPlayerKingdomHex(homeHex);
+              } else {
+                console.log('[HexSelectionModal] Could not find player kingdom. playerKingdomId:', playerKingdomId, 'kingdoms:', data.kingdoms?.length);
               }
+            } else {
+              console.log('[HexSelectionModal] No kingdoms or playerKingdomId. playerKingdomId:', playerKingdomId);
             }
           }
         } else if (mounted) {
@@ -248,6 +255,9 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
       // Render fog overlay with three states: current (none), seen (dimmed), unseen (opaque)
       // Player's kingdom home hex is always visible (no fog)
       const isHomeHex = playerKingdomHex && cell.col === playerKingdomHex.col && cell.row === playerKingdomHex.row;
+      if (isHomeHex) {
+        console.log('[HexSelectionModal] Skipping fog for home hex:', cell.col, cell.row);
+      }
       if (!isHomeHex) {
         const seenBig = visibility?.seenCells || 0n;
         const currentBig = visibility?.currentCells || 0n;
