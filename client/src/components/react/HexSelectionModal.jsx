@@ -80,12 +80,15 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
   useEffect(() => {
     if (!isOpen) return;
 
+    console.log('[HexSelectionModal] Modal opened, fetching map data. playerKingdomId:', playerKingdomId);
     let mounted = true;
     const fetchMapData = async () => {
       try {
         const res = await fetch('/api/world-map');
+        console.log('[HexSelectionModal] Fetch response status:', res.status);
         if (res.ok) {
           const data = await res.json();
+          console.log('[HexSelectionModal] Data received. kingdoms count:', data.kingdoms?.length);
           if (mounted) {
             setWorldSeed(data.worldSeed || 0);
             // Parse visibility bitmaps
