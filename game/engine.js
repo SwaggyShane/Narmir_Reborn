@@ -604,9 +604,11 @@ function processTurn(k, db = null) {
 
   // ── 4e-i. Scout ring progression ──────────────────────────────────────────────
   {
+    console.log('[turn] Scout processing:', { kingdom_id: k.id, scout_allocation: k.scout_allocation, scout_progress: k.scout_progress });
     const scoutResult = measureAttunement('processScoutProgress', () =>
       processScoutProgress({ ...k, ...updates }, db)
     );
+    console.log('[turn] Scout result:', { progress_gained: scoutResult.progress_gained, new_total: scoutResult.new_total });
     if (scoutResult.progress_gained > 0) {
       updates.scout_progress = scoutResult.new_total;
       if (scoutResult.ring_completed) {
