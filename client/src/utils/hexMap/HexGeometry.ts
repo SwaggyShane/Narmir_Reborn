@@ -1,5 +1,8 @@
 import { HEX_SIZE, HEX_W, HEX_VERT } from './HexMapConfig';
 
+// Re-export for convenience
+export { HEX_SIZE, HEX_W, HEX_VERT } from './HexMapConfig';
+
 /**
  * Convert flat array index to hex coordinates.
  */
