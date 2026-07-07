@@ -763,12 +763,12 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               <div className="mb-4 text-[12px] text-[var(--text3)]">
                 Send specialists on expeditions to gather resources. Terrain affects returns. Durations scale from instant scouts to extended expeditions.
               </div>
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-3 items-end">
                 {/* Hunting Card */}
-                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3">
+                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3 flex flex-col">
                   <div className="mb-2 font-semibold text-[var(--text)]">🥩 Hunting</div>
                   <div className="mb-3 text-[11px] text-[var(--text3)]">Rangers hunt for food. Forest terrain is ideal.</div>
-                  <div className="mb-2 text-[12px]">
+                  <div className="mb-2 text-[12px] flex-1">
                     <label className="block text-[var(--text3)] mb-1">Rangers</label>
                     <div className="flex gap-1">
                       <input
@@ -808,10 +808,10 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                 </div>
 
                 {/* Prospecting Card */}
-                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3">
+                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3 flex flex-col">
                   <div className="mb-2 font-semibold text-[var(--text)]">⛏️ Prospecting</div>
                   <div className="mb-3 text-[11px] text-[var(--text3)]">Engineers prospect for gold. Mountains are ideal.</div>
-                  <div className="mb-2 text-[12px]">
+                  <div className="mb-2 text-[12px] flex-1">
                     <label className="block text-[var(--text3)] mb-1">Engineers</label>
                     <div className="flex gap-1">
                       <input
@@ -851,10 +851,10 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                 </div>
 
                 {/* Land Expansion Card */}
-                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3">
+                <div className="rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.03)] p-3 flex flex-col">
                   <div className="mb-2 font-semibold text-[var(--text)]">🗺️ Land Expansion</div>
                   <div className="mb-3 text-[11px] text-[var(--text3)]">Rangers discover new land from home hex. Costs population. Diminishing returns apply.</div>
-                  <div className="mb-2 text-[12px]">
+                  <div className="mb-2 text-[12px] flex-1">
                     <label className="block text-[var(--text3)] mb-1">Rangers</label>
                     <div className="flex gap-1">
                       <input
