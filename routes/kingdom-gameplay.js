@@ -1594,6 +1594,7 @@ module.exports = function (db) {
       // Phase 4: also expose visibility bitmaps (as decimal strings) so client
       // can render fog overlay (unseen/seen/current states).
       res.json({
+        playerKingdomId: k.id,  // Client needs to know which kingdom is the player's
         kingdoms: kingdomsWithCoords,
         tradeRoutes,
         nodes: visibleNodes,
