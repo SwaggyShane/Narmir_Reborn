@@ -243,10 +243,11 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/hunting - Turn-based hunting for food with travel time
+  // POST /expedition/hunting - Hunting for food (instant/5/25 turn variants)
   router.post('/expedition/hunting', requireAuth, requireCsrfToken, async (req, res) => {
-    const { rangers, terrain, target_x, target_y } = req.body;
+    const { rangers, terrain, duration, target_x, target_y } = req.body;
     const r = Math.max(0, parseInt(rangers) || 0);
+    const d = ['instant', '5', '25'].includes(duration) ? duration : 'instant';
     const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
     const t = terrain && validTerrains.includes(terrain) ? terrain : 'forest';
 
@@ -259,15 +260,24 @@ module.exports = function (db) {
         ]);
         if (!k) throw new Error('Kingdom not found');
 
-        // Calculate turn cost: base + travel time
-        let totalTurns = config.HUNTING_CONSTANTS.TURN_COST;
-        if (target_x !== undefined && target_y !== undefined) {
-          const { hexUnitDistance } = require('../game/hex-utils');
-          const { getKingdomMapCoords } = require('../game/world-map-coords');
-          const kingdomCoords = getKingdomMapCoords(k);
-          const distance = hexUnitDistance(kingdomCoords.map_x, kingdomCoords.map_y, Number(target_x), Number(target_y));
-          const travelTime = Math.ceil(distance * 1.0); // 1 turn per hex
-          totalTurns = config.HUNTING_CONSTANTS.TURN_COST + (travelTime * 2); // round trip
+        const { calculateTravelTime, calculateExpeditionDuration } = require('../game/expedition-mechanics');
+        let totalTurns, targetCol, targetRow;
+
+        if (d === 'instant') {
+          totalTurns = 1;
+        } else {
+          // 5 or 25: require target hex and validate explored
+          if (target_x === undefined || target_y === undefined) {
+            const error = new Error('Target hex required for 5 or 25-turn expeditions');
+            error.statusCode = 400;
+            throw error;
+          }
+
+          targetCol = Math.floor(Number(target_x) || 0);
+          targetRow = Math.floor(Number(target_y) || 0);
+
+          const travelTurns = calculateTravelTime(k.map_x, k.map_y, targetCol, targetRow);
+          totalTurns = calculateExpeditionDuration(d, travelTurns);
         }
 
         if (k.turns_stored < totalTurns) {
@@ -292,7 +302,7 @@ module.exports = function (db) {
           throw error;
         }
 
-        const reward = calculateHuntingReward(r, k.ranger_level || 1, t, k.race);
+        const reward = calculateHuntingReward(r, k.ranger_level || 1, t, k.race, d);
 
         await db.run(
           'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1) WHERE id = $2',
@@ -325,10 +335,11 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/prospecting - Turn-based prospecting for gold with travel time
+  // POST /expedition/prospecting - Prospecting for gold (instant/5/25 turn variants)
   router.post('/expedition/prospecting', requireAuth, requireCsrfToken, async (req, res) => {
-    const { engineers, terrain, target_x, target_y } = req.body;
+    const { engineers, terrain, duration, target_x, target_y } = req.body;
     const e = Math.max(0, parseInt(engineers) || 0);
+    const d = ['instant', '5', '25'].includes(duration) ? duration : 'instant';
     const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
     const t = terrain && validTerrains.includes(terrain) ? terrain : 'mountain';
 
@@ -341,15 +352,24 @@ module.exports = function (db) {
         ]);
         if (!k) throw new Error('Kingdom not found');
 
-        // Calculate turn cost: base + travel time
-        let totalTurns = config.PROSPECTING_CONSTANTS.TURN_COST;
-        if (target_x !== undefined && target_y !== undefined) {
-          const { hexUnitDistance } = require('../game/hex-utils');
-          const { getKingdomMapCoords } = require('../game/world-map-coords');
-          const kingdomCoords = getKingdomMapCoords(k);
-          const distance = hexUnitDistance(kingdomCoords.map_x, kingdomCoords.map_y, Number(target_x), Number(target_y));
-          const travelTime = Math.ceil(distance * 1.0);
-          totalTurns = config.PROSPECTING_CONSTANTS.TURN_COST + (travelTime * 2);
+        const { calculateTravelTime, calculateExpeditionDuration } = require('../game/expedition-mechanics');
+        let totalTurns, targetCol, targetRow;
+
+        if (d === 'instant') {
+          totalTurns = 1;
+        } else {
+          // 5 or 25: require target hex and validate explored
+          if (target_x === undefined || target_y === undefined) {
+            const error = new Error('Target hex required for 5 or 25-turn expeditions');
+            error.statusCode = 400;
+            throw error;
+          }
+
+          targetCol = Math.floor(Number(target_x) || 0);
+          targetRow = Math.floor(Number(target_y) || 0);
+
+          const travelTurns = calculateTravelTime(k.map_x, k.map_y, targetCol, targetRow);
+          totalTurns = calculateExpeditionDuration(d, travelTurns);
         }
 
         if (k.turns_stored < totalTurns) {
@@ -374,7 +394,7 @@ module.exports = function (db) {
           throw error;
         }
 
-        const reward = calculateProspectingReward(e, k.engineer_level || 1, t, k.race);
+        const reward = calculateProspectingReward(e, k.engineer_level || 1, t, k.race, d);
 
         if (k.food < reward.foodCost) {
           const error = new Error(`Prospecting requires ${reward.foodCost.toLocaleString()} food (you have ${k.food.toLocaleString()})`);
@@ -414,35 +434,25 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/land-expansion - Land discovery with travel time
+  // POST /expedition/land-expansion - Land discovery (home hex only, instant)
   router.post('/expedition/land-expansion', requireAuth, requireCsrfToken, async (req, res) => {
-    const { rangers, terrain, target_x, target_y } = req.body;
+    const { rangers } = req.body;
     const r = Math.max(0, parseInt(rangers) || 0);
-    const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
-    const t = terrain && validTerrains.includes(terrain) ? terrain : 'grassland';
 
     if (r < 1) return res.status(400).json({ error: 'Send at least 1 ranger' });
 
     try {
-      const { updates, reward, turnCost } = await db.withTransaction(async () => {
+      const { updates, reward } = await db.withTransaction(async () => {
         const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
           req.player.playerId,
         ]);
         if (!k) throw new Error('Kingdom not found');
 
-        // Calculate turn cost: base (0 for instant) + travel time
-        let totalTurns = config.LAND_EXPANSION_CONSTANTS.TURN_COST;
-        if (target_x !== undefined && target_y !== undefined) {
-          const { hexUnitDistance } = require('../game/hex-utils');
-          const { getKingdomMapCoords } = require('../game/world-map-coords');
-          const kingdomCoords = getKingdomMapCoords(k);
-          const distance = hexUnitDistance(kingdomCoords.map_x, kingdomCoords.map_y, Number(target_x), Number(target_y));
-          const travelTime = Math.ceil(distance * 1.0);
-          totalTurns = config.LAND_EXPANSION_CONSTANTS.TURN_COST + (travelTime * 2);
-        }
+        // Land expansion is instant (1 turn) and uses home hex only
+        const totalTurns = 1;
 
         if (k.turns_stored < totalTurns) {
-          const error = new Error(`Land expansion requires ${totalTurns} turns (you have ${k.turns_stored})`);
+          const error = new Error(`Land expansion requires ${totalTurns} turn (you have ${k.turns_stored})`);
           error.statusCode = 429;
           throw error;
         }
@@ -453,7 +463,10 @@ module.exports = function (db) {
           throw error;
         }
 
-        const reward = calculateLandExpansionReward(r, k.ranger_level || 1, t, k.race, k.population);
+        // Get home hex terrain for modifier (query grid terrain)
+        // For now, use grassland as default. In future, could query hex grid.
+        const homeHexTerrain = 'grassland';
+        const reward = calculateLandExpansionReward(r, k.ranger_level || 1, homeHexTerrain, k.race, k.population, k.lands || 0);
 
         if (reward.landsDiscovered === 0) {
           const error = new Error('No land discovered (insufficient population or rangers)');
@@ -462,8 +475,8 @@ module.exports = function (db) {
         }
 
         await db.run(
-          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), population = GREATEST(0, population - $2) WHERE id = $3',
-          [totalTurns, reward.populationCost, k.id],
+          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), population = GREATEST(0, population - $2), lands = lands + $3 WHERE id = $4',
+          [totalTurns, reward.populationCost, reward.landsDiscovered, k.id],
         );
 
         await db.run(
@@ -474,17 +487,17 @@ module.exports = function (db) {
         let updates = {
           turns_stored: Math.max(0, k.turns_stored - totalTurns),
           population: Math.max(0, k.population - reward.populationCost),
+          lands: (k.lands || 0) + reward.landsDiscovered,
         };
 
-        return { updates, reward, turnCost: totalTurns };
+        return { updates, reward };
       });
 
       res.json({
         ok: true,
         updates: updates,
         reward: reward,
-        turnCost: turnCost,
-        message: `${turnCost} turn expedition started. Rangers will discover ${reward.landsDiscovered.toLocaleString()} new lands.`,
+        message: `Rangers discovered ${reward.landsDiscovered.toLocaleString()} new lands.`,
       });
     } catch (err) {
       console.error('[expedition/land-expansion] failed:', err.message);
