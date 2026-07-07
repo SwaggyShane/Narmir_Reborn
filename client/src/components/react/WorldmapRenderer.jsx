@@ -1,6 +1,7 @@
 import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
 import { NODE_TYPE_META, getNodeRadius } from '../../utils/worldMapNodeMeta.js';
+import { hexCenter, hexCorners, HEX_SIZE, HEX_W, HEX_VERT } from '../../utils/hexMap/HexGeometry.ts';
 
 function regionOpacity(race, highlightedRace, dim = '0.3') {
   if (!highlightedRace) return '1';
@@ -159,9 +160,6 @@ const BIOME_MIX_ALTERNATES = {
   coast: ['plains', 'swamp'],
 };
 
-const HEX_SIZE = 34; // center-to-corner radius
-const HEX_W = Math.sqrt(3) * HEX_SIZE;
-const HEX_VERT = HEX_SIZE * 1.5;
 const SOUTH_BAND_FRAC = 0.15; // bottom strip of the map -> desert/volcanic
 
 const OCEAN_BASE_ROW = 2;
@@ -207,23 +205,6 @@ function seedToInt32(worldSeed) {
   }
 }
 
-function hexCenter(col, row) {
-  const x = col * HEX_W + (row % 2 !== 0 ? HEX_W / 2 : 0);
-  const y = row * HEX_VERT;
-  return { x, y };
-}
-
-function hexCorners(cx, cy, size) {
-  const pts = [];
-  for (let i = 0; i < 6; i++) {
-    const angle = (Math.PI / 180) * (60 * i - 30);
-    pts.push([
-      Math.round((cx + size * Math.cos(angle)) * 10) / 10,
-      Math.round((cy + size * Math.sin(angle)) * 10) / 10,
-    ]);
-  }
-  return pts;
-}
 
 function hexPath(cx, cy, size) {
   const pts = hexCorners(cx, cy, size);
