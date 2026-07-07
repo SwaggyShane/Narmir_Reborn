@@ -371,8 +371,10 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       applyResult(result, 'hunting');
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Hunting expedition started!', 'success');
       const foodGained = result.reward?.foodReward || 0;
-      const durationText = huntingDuration === 'instant' ? '' : ` in ${result.turnCost} turns`;
-      logInstantEntry('🥩', 'Hunting expedition', `${formatNum(r)} rangers sent, will return with ${formatNum(foodGained)} food${durationText}`);
+      const logMsg = huntingDuration === 'instant'
+        ? `${formatNum(r)} rangers found ${formatNum(foodGained)} food`
+        : `${formatNum(r)} rangers sent, will return with ${formatNum(foodGained)} food in ${result.turnCost} turns`;
+      logInstantEntry('🥩', 'Hunting expedition', logMsg);
       setHuntingRangers(0);
       setHuntingTargetHex(null);
       setHuntingDuration(null);
@@ -417,8 +419,10 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       applyResult(result, 'prospecting');
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Prospecting expedition started!', 'success');
       const goldGained = result.reward?.goldReward || 0;
-      const durationText = prospectingDuration === 'instant' ? '' : ` in ${result.turnCost} turns`;
-      logInstantEntry('⛏️', 'Prospecting expedition', `${formatNum(e)} engineers sent, will return with ${formatNum(goldGained)} gold${durationText}`);
+      const logMsg = prospectingDuration === 'instant'
+        ? `${formatNum(e)} engineers found ${formatNum(goldGained)} gold`
+        : `${formatNum(e)} engineers sent, will return with ${formatNum(goldGained)} gold in ${result.turnCost} turns`;
+      logInstantEntry('⛏️', 'Prospecting expedition', logMsg);
       setProspectingEngineers(0);
       setProspectingTargetHex(null);
       setProspectingDuration(null);
@@ -775,7 +779,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                     </div>
                   ) : null}
                   <div className="flex gap-1">
-                    <button className="base-btn flex-1 bg-[rgba(76,175,130,0.2)] text-[11px]" onClick={() => { setHuntingDuration('instant'); setHuntingTargetHex(null); }}>
+                    <button className="base-btn flex-1 bg-[rgba(76,175,130,0.3)] text-[11px] font-semibold" onClick={() => { setHuntingDuration('instant'); setHuntingTargetHex(null); setTimeout(() => handleHunting(), 0); }}>
                       Instant
                     </button>
                     <button className="base-btn flex-1 bg-[rgba(76,175,130,0.2)] text-[11px]" onClick={() => openHexModal('hunting', '5')}>
@@ -785,11 +789,6 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       25
                     </button>
                   </div>
-                  {huntingDuration === 'instant' && !huntingTargetHex ? (
-                    <button className="base-btn w-full mt-2 bg-[rgba(76,175,130,0.3)] text-[11px] font-semibold" onClick={handleHunting}>
-                      Hunt
-                    </button>
-                  ) : null}
                   {huntingTargetHex && huntingDuration && (huntingDuration === '5' || huntingDuration === '25') ? (
                     <button className="base-btn w-full mt-2 bg-[rgba(76,175,130,0.3)] text-[11px] font-semibold" onClick={handleHunting}>
                       Launch Expedition
@@ -823,7 +822,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                     </div>
                   ) : null}
                   <div className="flex gap-1">
-                    <button className="base-btn flex-1 bg-[rgba(180,60,0,0.2)] text-[11px]" onClick={() => { setProspectingDuration('instant'); setProspectingTargetHex(null); }}>
+                    <button className="base-btn flex-1 bg-[rgba(180,60,0,0.3)] text-[11px] font-semibold" onClick={() => { setProspectingDuration('instant'); setProspectingTargetHex(null); setTimeout(() => handleProspecting(), 0); }}>
                       Instant
                     </button>
                     <button className="base-btn flex-1 bg-[rgba(180,60,0,0.2)] text-[11px]" onClick={() => openHexModal('prospecting', '5')}>
@@ -833,11 +832,6 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       25
                     </button>
                   </div>
-                  {prospectingDuration === 'instant' && !prospectingTargetHex ? (
-                    <button className="base-btn w-full mt-2 bg-[rgba(180,60,0,0.3)] text-[11px] font-semibold" onClick={handleProspecting}>
-                      Prospect
-                    </button>
-                  ) : null}
                   {prospectingTargetHex && prospectingDuration && (prospectingDuration === '5' || prospectingDuration === '25') ? (
                     <button className="base-btn w-full mt-2 bg-[rgba(180,60,0,0.3)] text-[11px] font-semibold" onClick={handleProspecting}>
                       Launch Expedition
