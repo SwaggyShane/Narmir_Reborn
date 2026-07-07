@@ -51,6 +51,15 @@ sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'smoke';"
 psql postgresql://postgres:smoke@localhost/narmir_local
 ```
 
+### Database Debugging with pgAdmin
+
+**pgAdmin is available for direct database inspection and testing.** Use it when:
+- Data persistence issues occur (run SELECT to verify actual DB state)
+- Testing if updates are accepted by the database (run manual UPDATE)
+- Verifying schema (columns, types, constraints)
+
+Do not rely solely on application logs when debugging persistence issues. Direct database queries are the source of truth.
+
 ---
 
 ## Architecture Overview
