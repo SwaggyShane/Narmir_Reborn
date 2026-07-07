@@ -33,7 +33,7 @@ function repairMojibake(value) {
     .replace(/â€"/g, '—')
     .replace(/â€"/g, '-')
     .replace(/â€¢/g, '•')
-    .replace(/â€˜|â€™/g, ''')
+    .replace(/â€˜|â€™/g, "'")
     .replace(/â€œ/g, '"');
   return text;
 }
