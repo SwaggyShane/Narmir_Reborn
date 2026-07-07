@@ -2262,7 +2262,10 @@ async function applyKingdomUpdates(kingdomId, updates) {
   if (process.env.NODE_ENV !== 'production') {
     console.log('[applyKingdomUpdates] Updating', { kingdomId, fields: cols, safe });
   }
-  await _db.run(`UPDATE "kingdoms" SET ${setClause} WHERE id = $${cols.length + 1}`, vals);
+  const result = await _db.run(`UPDATE "kingdoms" SET ${setClause} WHERE id = $${cols.length + 1}`, vals);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[applyKingdomUpdates] UPDATE completed', { kingdomId, rowsAffected: result?.rowCount || 'unknown' });
+  }
   return Object.keys(safe);
 }
 

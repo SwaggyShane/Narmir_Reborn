@@ -222,6 +222,20 @@ const _KINGDOM_ATTACK = `${KINGDOM_CORE}, fighters, rangers, mages, thieves, nin
 const _KINGDOM_ECONOMY = `${KINGDOM_CORE}, gold, market_upgrades, bank_upgrades, farm_upgrades, discovered_kingdoms`;
 
 module.exports = function (db) {
+  router.get('/scouts', requireAuth, async (req, res) => {
+    try {
+      const k = await db.get('SELECT scout_allocation, scout_progress FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
+      console.log('[scouts] Fetched for player:', req.player.playerId, { scout_allocation: k?.scout_allocation, scout_progress: k?.scout_progress });
+      if (!k) {
+        return res.status(404).json({ error: 'Kingdom not found' });
+      }
+      res.json(k);
+    } catch (err) {
+      console.error('[scouts] Error:', err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   router.get('/chat/global', requireAuth, async (req, res) => {
     const limit = Math.max(1, Math.min(200, Number(req.query.limit) || 100));
     const rows = await db.all(
