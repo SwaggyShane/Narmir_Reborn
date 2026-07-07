@@ -943,6 +943,56 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               </div>
             </div>
 
+            {/* Epic Trek visible when Ring 2 complete: Ring 1 (20 turns) + Ring 2 (25 turns) = 45 scout-turns */}
+            {scout_progress >= 45 && (
+              <div className="card">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="card-title !mb-0">🛤️ Epic Trek</div>
+                  <span className="rounded-full bg-[rgba(200,120,120,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--accent2)]">
+                    Phase 3
+                  </span>
+                </div>
+                <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
+                  Send rangers on a long expedition to a chosen location. Reveals fog along the path and discovers kingdoms & locations en route.
+                </div>
+                <div className="mb-2 grid grid-cols-2 gap-2 text-[12px]">
+                  <div>
+                    <div className="name mb-0.5">Target X</div>
+                    <input
+                      type="number"
+                      className="input w-full"
+                      value={epicTrekTargetX}
+                      onChange={(e) => setEpicTrekTargetX(e.target.value)}
+                      placeholder="e.g. 500"
+                      min="0"
+                      max="1999"
+                    />
+                  </div>
+                  <div>
+                    <div className="name mb-0.5">Target Y</div>
+                    <input
+                      type="number"
+                      className="input w-full"
+                      value={epicTrekTargetY}
+                      onChange={(e) => setEpicTrekTargetY(e.target.value)}
+                      placeholder="e.g. 300"
+                      min="0"
+                      max="1379"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button className="base-btn variant-accent flex-1" onClick={handleEpicTrek}>
+                    Launch Epic Trek
+                  </button>
+                  <button className="base-btn flex-1" onClick={() => openHexModal('epic_trek', null)}>
+                    Select on Map
+                  </button>
+                </div>
+                <div className="mt-2 text-[10px] text-[var(--text3)]">Click "Select on Map" to choose coordinates visually, or enter them manually.</div>
+              </div>
+            )}
+
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
               <div className="card border-l-[3px] border-l-[var(--red)]">
                 <div className="mb-2 flex items-center justify-between gap-3">
@@ -1043,55 +1093,6 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               </div>
             </div>
 
-            {/* Epic Trek visible when Ring 2 complete: Ring 1 (20 turns) + Ring 2 (25 turns) = 45 scout-turns */}
-            {scout_progress >= 45 && (
-              <div className="card">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <div className="card-title !mb-0">🛤️ Epic Trek</div>
-                <span className="rounded-full bg-[rgba(200,120,120,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--accent2)]">
-                  Phase 3
-                </span>
-              </div>
-              <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
-                Send rangers on a long expedition to a chosen location. Reveals fog along the path and discovers kingdoms & locations en route.
-              </div>
-              <div className="mb-2 grid grid-cols-2 gap-2 text-[12px]">
-                <div>
-                  <div className="name mb-0.5">Target X</div>
-                  <input
-                    type="number"
-                    className="input w-full"
-                    value={epicTrekTargetX}
-                    onChange={(e) => setEpicTrekTargetX(e.target.value)}
-                    placeholder="e.g. 500"
-                    min="0"
-                    max="1999"
-                  />
-                </div>
-                <div>
-                  <div className="name mb-0.5">Target Y</div>
-                  <input
-                    type="number"
-                    className="input w-full"
-                    value={epicTrekTargetY}
-                    onChange={(e) => setEpicTrekTargetY(e.target.value)}
-                    placeholder="e.g. 300"
-                    min="0"
-                    max="1379"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button className="base-btn variant-accent flex-1" onClick={handleEpicTrek}>
-                  Launch Epic Trek
-                </button>
-                <button className="base-btn flex-1" onClick={() => openHexModal('epic_trek', null)}>
-                  Select on Map
-                </button>
-              </div>
-              <div className="mt-2 text-[10px] text-[var(--text3)]">Click "Select on Map" to choose coordinates visually, or enter them manually.</div>
-            </div>
-            )}
           </div>
 
           <div className="card flex min-h-[780px] flex-col">
