@@ -251,6 +251,37 @@ async function revealRingHexes(db, kingdomId, kingdom, ring) {
   }
 }
 
+/**
+ * Fix visibility corruption: reset currentCells to just the home hex.
+ * Useful after map expansions or visibility migrations that corrupted the bitmap.
+ * Preserves seenCells (what the kingdom has discovered).
+ */
+async function resetCurrentCellsToHome(db, kingdom) {
+  if (!kingdom || !kingdom.id) return null;
+
+  let k = kingdom;
+  if (!k.race && db) {
+    const fresh = await db.get('SELECT id, race, visibility FROM kingdoms WHERE id = $1', [kingdom.id]);
+    if (fresh) k = { ...k, ...fresh };
+  }
+
+  const initial = getInitialVisibility(k);
+  const current = parseVisibility(k.visibility);
+
+  const updated = {
+    seenCells: current.seenCells,
+    currentCells: initial.currentCells,
+    version: current.version,
+  };
+
+  if (db && k.id) {
+    const raw = { seen_cells: updated.seenCells.toString(), current_cells: updated.currentCells.toString(), version: updated.version };
+    await db.run('UPDATE kingdoms SET visibility = $1 WHERE id = $2', [JSON.stringify(raw), k.id]);
+  }
+
+  return updated;
+}
+
 module.exports = {
   parseVisibility,
   serializeVisibility,
@@ -258,4 +289,5 @@ module.exports = {
   getKingdomVisibility,
   updateKingdomVisibility,
   revealRingHexes,
+  resetCurrentCellsToHome,
 };

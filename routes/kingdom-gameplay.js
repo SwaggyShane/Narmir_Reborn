@@ -3210,6 +3210,22 @@ module.exports = function (db) {
     }
   });
 
+  // Fix visibility corruption: reset currentCells to just the home hex
+  // (useful after map expansions or visibility migrations)
+  router.post('/fix-visibility', requireAuth, async (req, res) => {
+    try {
+      const { resetCurrentCellsToHome } = require('../game/visibility');
+      const k = await db.get('SELECT id, race FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+
+      const updated = await resetCurrentCellsToHome(db, k);
+      res.json({ message: 'Visibility reset to home hex only', visibility: updated });
+    } catch (err) {
+      console.error('[fix-visibility] failed:', err.message);
+      res.status(500).json({ error: 'Failed to fix visibility' });
+    }
+  });
+
   return router;
 };
 
