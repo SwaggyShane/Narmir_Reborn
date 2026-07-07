@@ -34,7 +34,7 @@ function convertCellIndex(oldIndex) {
 /**
  * Decode a BigInt bitmap with given stride to array of cell indices.
  */
-function decodeBitmapWithStride(bitmap, stride) {
+function decodeBitmapWithStride(bitmap, _stride) {
   const indices = [];
   let remaining = BigInt(bitmap);
   let index = 0;
