@@ -1,63 +1,18 @@
-import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { toast } from '../../utils/toast.js';
-import { buildHexGrid, TERRAIN_COLORS, seedToInt32 } from '../../utils/terrainUtils.js';
-
-const HEX_SIZE = 34;
-const HEX_W = Math.sqrt(3) * HEX_SIZE;
-const HEX_VERT = HEX_SIZE * 1.5;
-
-function pixelToHex(x, y) {
-  const r = y / HEX_VERT;
-  const q = x / HEX_W - r / 2;
-  const cubeX = q;
-  const cubeZ = r;
-  const cubeY = -cubeX - cubeZ;
-  let rx = Math.round(cubeX);
-  let ry = Math.round(cubeY);
-  let rz = Math.round(cubeZ);
-  const dx = Math.abs(rx - cubeX);
-  const dy = Math.abs(ry - cubeY);
-  const dz = Math.abs(rz - cubeZ);
-  if (dx > dy && dx > dz) {
-    rx = -ry - rz;
-  } else if (dy > dz) {
-    ry = -rx - rz;
-  } else {
-    rz = -rx - ry;
-  }
-  const row = rz + 0;
-  const col = rx + (rz - (rz & 1)) / 2 + 0;
-  return { col, row };
-}
-
-function hexCenter(col, row) {
-  const x = col * HEX_W + (row % 2 !== 0 ? HEX_W / 2 : 0);
-  const y = row * HEX_VERT;
-  return { x, y };
-}
-
-function hexCorners(cx, cy, size = HEX_SIZE) {
-  const pts = [];
-  for (let i = 0; i < 6; i++) {
-    const angle = (Math.PI / 180) * (60 * i - 30);
-    pts.push([
-      Math.round((cx + size * Math.cos(angle)) * 10) / 10,
-      Math.round((cy + size * Math.sin(angle)) * 10) / 10,
-    ]);
-  }
-  return pts;
-}
+import { pixelToHex, hexCorners } from '../../utils/hexMap/HexGeometry.ts';
+import { TERRAIN_COLORS } from '../../utils/hexMap/HexMapConfig.ts';
+import { HexMapProvider, useHexMap } from '../../utils/hexMap/HexMapProvider.tsx';
 
 const WORLD_WIDTH = 1999;
 const WORLD_HEIGHT = 1380;
 const WORLD_MAX_COL = 1999;
 const WORLD_MAX_ROW = 1379;
 
-const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
+// Inner component that uses HexMapProvider context
+const HexSelectionModalContent = ({ context, onHexSelected, onClose, visibility, playerKingdomHex }) => {
+  const hexMap = useHexMap();
   const [selectedHex, setSelectedHex] = useState(null);
-  const [worldSeed, setWorldSeed] = useState(null);
-  const [visibility, setVisibility] = useState(null); // { seenCells, currentCells }
-  const [playerKingdomHex, setPlayerKingdomHex] = useState(null); // { col, row } - player's home location (no fog)
   const svgRef = useRef(null);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
@@ -74,67 +29,12 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
   const contextLabel = contextLabels[context?.type] || { icon: '🗺️', name: 'Target Selection', desc: 'Click on a hex' };
   const durationLabel = context?.duration ? `${context.duration} turns` : 'Target Selection';
 
-  // Fetch worldSeed and visibility on mount
-  useEffect(() => {
-    if (!isOpen) return;
-
-    let mounted = true;
-    const fetchMapData = async () => {
-      try {
-        const res = await fetch('/api/kingdom/world-map');
-        if (res.ok) {
-          const data = await res.json();
-          if (mounted) {
-            setWorldSeed(data.worldSeed || 0);
-            // Parse visibility bitmaps
-            try {
-              const seenBig = BigInt(data.visibility?.seenCells || '0');
-              const currentBig = BigInt(data.visibility?.currentCells || '0');
-              setVisibility({ seenCells: seenBig, currentCells: currentBig });
-            } catch (e) {
-              console.error('Failed to parse visibility:', e);
-              setVisibility(null);
-            }
-            // Get player's kingdom location (home hex, always visible - no fog)
-            if (data.kingdoms && data.playerKingdomId) {
-              const playerKingdom = data.kingdoms.find((k) => k.id === data.playerKingdomId);
-              if (playerKingdom && playerKingdom.map_x !== undefined && playerKingdom.map_y !== undefined) {
-                const homeHex = pixelToHex(playerKingdom.map_x, playerKingdom.map_y);
-                console.log('[HOME HEX] Player:', playerKingdom.name, 'Race:', playerKingdom.race, 'Map coords:', playerKingdom.map_x, playerKingdom.map_y, '-> Hex:', homeHex.col, homeHex.row);
-                setPlayerKingdomHex(homeHex);
-              }
-            }
-          }
-        } else if (mounted) {
-          setWorldSeed(0);
-          setVisibility(null);
-        }
-      } catch (err) {
-        console.error('Failed to fetch map data:', err);
-        if (mounted) {
-          setWorldSeed(0);
-          setVisibility(null);
-        }
-      }
-    };
-
-    fetchMapData();
-    return () => { mounted = false; };
-  }, [isOpen]);
-
-  // Build hex grid with terrain once worldSeed is available
-  const hexGrid = useMemo(() => {
-    if (!isOpen || worldSeed === undefined || worldSeed === null) return null;
-    return buildHexGrid(WORLD_WIDTH, WORLD_HEIGHT, worldSeed);
-  }, [isOpen, worldSeed, visibility]);
-
   const handleHexClick = useCallback((col, row) => {
     if (col < 0 || col > WORLD_MAX_COL || row < 0 || row > WORLD_MAX_ROW) {
       return;
     }
     const hex = { x: col, y: row };
     setSelectedHex(hex);
-    // Immediately trigger the action when hex is selected
     onHexSelected(hex);
   }, [onHexSelected]);
 
@@ -171,9 +71,6 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
       const rect = svg.getBoundingClientRect();
       const svgX = e.clientX - rect.left - panX;
       const svgY = e.clientY - rect.top - panY;
-      if (typeof pixelToHex !== 'function') {
-        throw new Error('pixelToHex is not available');
-      }
       const { col, row } = pixelToHex(svgX, svgY);
       handleHexClick(col, row);
     } catch (err) {
@@ -182,9 +79,9 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
     }
   };
 
-  if (!isOpen) return null;
+  if (!hexMap.grid) return null;
 
-  // Client-side fog of war helpers (matches WorldmapRenderer fog logic)
+  // Server-specific fog logic (preserves existing visibility handling)
   const CLIENT_CELL_INDEX_OFFSET = 8;
   const CLIENT_CELL_INDEX_STRIDE = 48;
 
@@ -207,123 +104,67 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
     return (currentBig & (1n << BigInt(idx))) !== 0n;
   };
 
-  // Build SVG elements from terrain grid
   const hexElements = [];
-  const borderElements = [];
   const fogElements = [];
 
-  if (hexGrid) {
-    const { cells, cellMap } = hexGrid;
-    const HEX_SIZE_RENDER = 34;
-    const HEX_W = Math.sqrt(3) * HEX_SIZE_RENDER;
-    const HEX_VERT = HEX_SIZE_RENDER * 1.5;
+  // Render all hexes with fog overlay
+  hexMap.grid.cells.forEach((cell) => {
+    const isSelected = selectedHex && selectedHex.x === cell.col && selectedHex.y === cell.row;
+    const cornerStr = hexCorners(cell.x, cell.y).map(([px, py]) => `${px},${py}`).join(' ');
 
-    // Render terrain hexes
-    cells.forEach((cell) => {
-      const { x: cx, y: cy } = hexCenter(cell.col, cell.row);
-      const corners = hexCorners(cx, cy, HEX_SIZE_RENDER);
-      const cornerStr = corners.map(([px, py]) => `${px},${py}`).join(' ');
-      const isSelected = selectedHex && selectedHex.x === cell.col && selectedHex.y === cell.row;
-      const terrainColor = TERRAIN_COLORS[cell.terrain] || '#556b2f';
+    hexElements.push(
+      <polygon
+        key={`hex-${cell.col}-${cell.row}`}
+        points={cornerStr}
+        fill={isSelected ? 'rgba(255, 200, 87, 0.8)' : (TERRAIN_COLORS[cell.terrain] || '#556b2f')}
+        stroke={isSelected ? 'var(--gold)' : 'rgba(255, 255, 255, 0.1)'}
+        strokeWidth={isSelected ? 2 : 0.5}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleHexClick(cell.col, cell.row);
+        }}
+        style={{ cursor: 'pointer', transition: 'fill 0.1s' }}
+      />
+    );
 
-      // Lighten terrain color slightly
-      const baseColor = isSelected ? 'rgba(255, 200, 87, 0.8)' : terrainColor;
+    // Render fog overlay
+    const isHomeHex = playerKingdomHex && cell.col === playerKingdomHex.col && cell.row === playerKingdomHex.row;
+    if (!isHomeHex && visibility) {
+      const seenBig = visibility.seenCells || 0n;
+      const currentBig = visibility.currentCells || 0n;
+      let fogState = 'unseen';
 
-      hexElements.push(
-        <polygon
-          key={`hex-${cell.col}-${cell.row}`}
-          points={cornerStr}
-          fill={baseColor}
-          stroke={isSelected ? 'var(--gold)' : 'rgba(255, 255, 255, 0.1)'}
-          strokeWidth={isSelected ? 2 : 0.5}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleHexClick(cell.col, cell.row);
-          }}
-          style={{ cursor: 'pointer', transition: 'fill 0.1s' }}
-        />
-      );
-
-      // Render fog overlay with three states: current (none), seen (dimmed), unseen (opaque)
-      // Player's kingdom home hex is always visible (no fog)
-      const isHomeHex = playerKingdomHex && cell.col === playerKingdomHex.col && cell.row === playerKingdomHex.row;
-      if (isHomeHex) {
-        console.log('[FOG] Skipping fog for home hex:', cell.col, cell.row);
-      }
-      if (!isHomeHex) {
-        const seenBig = visibility?.seenCells || 0n;
-        const currentBig = visibility?.currentCells || 0n;
-        let fogState = 'unseen';
-        if (isHexCurrent(cell.col, cell.row, currentBig)) {
-          fogState = 'current';
-        } else if (isHexSeen(cell.col, cell.row, seenBig)) {
-          fogState = 'seen';
-        }
-
-        if (fogState === 'current') {
-          console.log('[NO-FOG] Current hex:', cell.col, cell.row);
-        } else if (fogState === 'seen') {
-          fogElements.push(
-            <polygon
-              key={`fog-${cell.col}-${cell.row}`}
-              points={cornerStr}
-              fill="rgb(15,20,35)"
-              opacity="0.65"
-              stroke="none"
-              pointerEvents="none"
-            />
-          );
-        } else if (fogState === 'unseen') {
-          fogElements.push(
-            <polygon
-              key={`fog-${cell.col}-${cell.row}`}
-              points={cornerStr}
-              fill="rgb(0,0,0)"
-              opacity="0.92"
-              stroke="none"
-              pointerEvents="none"
-            />
-          );
-        }
+      if (isHexCurrent(cell.col, cell.row, currentBig)) {
+        fogState = 'current';
+      } else if (isHexSeen(cell.col, cell.row, seenBig)) {
+        fogState = 'seen';
       }
 
-      // Draw region boundaries (lines between hexes of different races)
-      const parity = cell.row & 1;
-      const neighbors = [
-        [cell.col + 1, cell.row],
-        [cell.col + (parity ? 0 : -1), cell.row - 1],
-        [cell.col + (parity ? -1 : -1), cell.row - 1],
-        [cell.col - 1, cell.row],
-        [cell.col + (parity ? -1 : -1), cell.row + 1],
-        [cell.col + (parity ? 0 : -1), cell.row + 1],
-      ];
-
-      neighbors.forEach((nPos, idx) => {
-        const neighbor = cellMap.get(`${nPos[0]},${nPos[1]}`);
-        if (neighbor && neighbor.race !== cell.race) {
-          // Draw a line between shared edge corners
-          const edgeCornerIndices = [
-            [0, 1], [5, 0], [4, 5], [3, 4], [2, 3], [1, 2],
-          ][idx];
-          const [c1, c2] = edgeCornerIndices;
-          const p1 = corners[c1];
-          const p2 = corners[c2];
-          borderElements.push(
-            <line
-              key={`border-${cell.col}-${cell.row}-${idx}`}
-              x1={p1[0]}
-              y1={p1[1]}
-              x2={p2[0]}
-              y2={p2[1]}
-              stroke="rgba(200, 200, 200, 0.4)"
-              strokeWidth="1.5"
-              pointerEvents="none"
-            />
-          );
-        }
-      });
-    });
-  }
+      if (fogState === 'seen') {
+        fogElements.push(
+          <polygon
+            key={`fog-${cell.col}-${cell.row}`}
+            points={cornerStr}
+            fill="rgb(15,20,35)"
+            opacity="0.65"
+            stroke="none"
+            pointerEvents="none"
+          />
+        );
+      } else if (fogState === 'unseen') {
+        fogElements.push(
+          <polygon
+            key={`fog-${cell.col}-${cell.row}`}
+            points={cornerStr}
+            fill="rgb(0,0,0)"
+            opacity="0.92"
+            stroke="none"
+            pointerEvents="none"
+          />
+        );
+      }
+    }
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -379,16 +220,9 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
           >
             {/* Terrain hexes */}
             {hexElements}
-            {/* Region boundaries */}
-            {borderElements}
             {/* Fog of war overlay */}
             {fogElements}
           </svg>
-          {!hexGrid && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-[var(--text3)]">Loading map...</div>
-            </div>
-          )}
         </div>
 
         {/* Instructions */}
@@ -405,6 +239,77 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
         </button>
       </div>
     </div>
+  );
+};
+
+// Outer wrapper that handles data fetching and provides context
+const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
+  const [worldSeed, setWorldSeed] = useState(null);
+  const [visibility, setVisibility] = useState(null);
+  const [playerKingdomHex, setPlayerKingdomHex] = useState(null);
+
+  // Fetch worldSeed and visibility on mount
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let mounted = true;
+    const fetchMapData = async () => {
+      try {
+        const res = await fetch('/api/kingdom/world-map');
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted) {
+            setWorldSeed(data.worldSeed || 0);
+            // Parse visibility bitmaps
+            try {
+              const seenBig = BigInt(data.visibility?.seenCells || '0');
+              const currentBig = BigInt(data.visibility?.currentCells || '0');
+              setVisibility({ seenCells: seenBig, currentCells: currentBig });
+            } catch (e) {
+              console.error('Failed to parse visibility:', e);
+              setVisibility(null);
+            }
+            // Get player's kingdom location (home hex, always visible - no fog)
+            if (data.kingdoms && data.playerKingdomId) {
+              const playerKingdom = data.kingdoms.find((k) => k.id === data.playerKingdomId);
+              if (playerKingdom && playerKingdom.map_x !== undefined && playerKingdom.map_y !== undefined) {
+                const homeHex = pixelToHex(playerKingdom.map_x, playerKingdom.map_y);
+                setPlayerKingdomHex(homeHex);
+              }
+            }
+          }
+        } else if (mounted) {
+          setWorldSeed(0);
+          setVisibility(null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch map data:', err);
+        if (mounted) {
+          setWorldSeed(0);
+          setVisibility(null);
+        }
+      }
+    };
+
+    fetchMapData();
+    return () => { mounted = false; };
+  }, [isOpen]);
+
+  if (!isOpen || worldSeed === null || worldSeed === undefined) return null;
+
+  return (
+    <HexMapProvider
+      gameState={{ seed: worldSeed, width: WORLD_WIDTH, height: WORLD_HEIGHT }}
+      visibility={visibility || { seenCells: 0n, currentCells: 0n }}
+    >
+      <HexSelectionModalContent
+        context={context}
+        onHexSelected={onHexSelected}
+        onClose={onClose}
+        visibility={visibility}
+        playerKingdomHex={playerKingdomHex}
+      />
+    </HexMapProvider>
   );
 };
 
