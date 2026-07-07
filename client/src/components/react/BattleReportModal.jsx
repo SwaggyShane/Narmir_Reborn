@@ -231,7 +231,7 @@ export default function BattleReportModal({ data, onClose }) {
         autoAlpha: 0,
         y: 10,
       });
-      gsap.set(rowRefs.current, { autoAlpha: 0, y: 12 });
+      gsap.set(rowRefs.current.filter(Boolean), { autoAlpha: 0, y: 12 });
       if (attackBarRef.current) gsap.set(attackBarRef.current, { width: '0%' });
       if (defenseBarRef.current) gsap.set(defenseBarRef.current, { width: '0%' });
       if (wallBarRef.current) gsap.set(wallBarRef.current, { width: '0%' });
@@ -248,7 +248,7 @@ export default function BattleReportModal({ data, onClose }) {
           autoAlpha: 1,
           y: 0,
         });
-        gsap.set(rowRefs.current, { autoAlpha: 1, y: 0 });
+        gsap.set(rowRefs.current.filter(Boolean), { autoAlpha: 1, y: 0 });
         if (attackBarRef.current) gsap.set(attackBarRef.current, { width: `${atkPct}%` });
         if (defenseBarRef.current) gsap.set(defenseBarRef.current, { width: `${defPct}%` });
         if (wallBarRef.current && showWallState) gsap.set(wallBarRef.current, { width: `${wallPct}%` });
@@ -308,7 +308,7 @@ export default function BattleReportModal({ data, onClose }) {
       }
 
       if (showSummary) {
-        const summaryNodes = modal.querySelectorAll?.('[data-summary-card="true"]') || [];
+        const summaryNodes = Array.from(modal.querySelectorAll?.('[data-summary-card="true"]') || []);
         if (summaryNodes.length > 0) {
           tl.fromTo(
             summaryNodes,
@@ -331,7 +331,7 @@ export default function BattleReportModal({ data, onClose }) {
 
       if (rowRefs.current.length > 0) {
         tl.to(
-          rowRefs.current,
+          rowRefs.current.filter(Boolean),
           {
             autoAlpha: 1,
             y: 0,
