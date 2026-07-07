@@ -41,14 +41,14 @@ npm run route-smoke:combat-v2 # Test route persistence for combat
 ```bash
 # Using Docker (recommended):
 docker run --name postgres -e POSTGRES_PASSWORD=smoke -p 5432:5432 postgres:15
-docker exec postgres psql -U postgres -c "CREATE DATABASE narmir_smoke;"
+docker exec postgres psql -U postgres -c "CREATE DATABASE narmir_local;"
 
 # Or system postgres:
-sudo -u postgres createdb narmir_smoke
+sudo -u postgres createdb narmir_local
 sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'smoke';"
 
 # Test connection:
-psql postgresql://postgres:smoke@localhost/narmir_smoke
+psql postgresql://postgres:smoke@localhost/narmir_local
 ```
 
 ---
