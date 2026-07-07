@@ -1,10 +1,5 @@
 // Import the existing terrain generation utility
-// We'll call buildHexGrid from the existing terrainUtils
-declare function buildHexGridCore(
-  width: number,
-  height: number,
-  seed: number
-): { width: number; height: number; seed: number; cells: HexCell[] };
+import { buildHexGrid as buildHexGridCore } from '../terrainUtils.js';
 
 export interface HexCell {
   col: number;
@@ -31,17 +26,11 @@ export function buildHexGrid(
   height: number,
   seed: number
 ): HexGridData {
-  // In actual implementation, this will call buildHexGridCore from terrainUtils
-  // For now, we'll use a placeholder that can be replaced
-  const grid = {
+  const grid = buildHexGridCore(width, height, seed);
+  return Object.freeze({
     width,
     height,
     seed,
-    cells: [],
-  };
-
-  return Object.freeze({
-    ...grid,
     cells: Object.freeze([...grid.cells]),
   }) as HexGridData;
 }
