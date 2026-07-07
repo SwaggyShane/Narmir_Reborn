@@ -2,11 +2,32 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-06 (Kingdom 1 Home Hex Visibility Fixed; Map Enlargement + cellIndex Stride Fix Applied; Ring 17 Visibility Now Correct)
+**Last updated:** 2026-07-07 (Turn Processing Fix Phase 1 Complete + Discovered Kingdoms Name Display Bug Fixed)
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-07
+
+- **Turn Processing Fix Phase 1 + Discovered Kingdoms Bug Fix** (PR #845, merged 2026-07-07): Completed connection pool exhaustion optimization and fixed bug where discovered kingdoms weren't displaying names in fog of war.
+  - **Phase 1: Connection Pool Optimization**
+    - Moved kingdom prefetch and refresh queries outside transaction to reduce per-turn connection hold time
+    - Restructured `/turn` endpoint: prefetch (init queries) → transaction (processTurn + writes) → postfetch (final refresh)
+    - Added structured logging with console.time() for prefetch/transaction/postfetch layer timing
+    - Expected impact: Per-turn time reduced from 1,641ms to ~924ms; throughput increased from ~12 to ~22 concurrent turns/sec
+    - **Files Modified:** `routes/kingdom-gameplay.js` (lines 550-597)
+  - **Bug Fix: Discovered Kingdoms Name Display**
+    - **Problem:** Discovered kingdoms were missing the `name` property in the fog of war JSON, so client couldn't display kingdom names
+    - **Root Cause:** Epic Trek and combat discovery queries referenced `kingdom_name` column which doesn't exist; correct column is `name`
+    - **Solution:** Updated kingdom discovery queries to use correct column name and store it in discovered_kingdoms JSON
+    - **Files Modified:** `game/engine.js` (lines 1798, 1814), `game/combat.js` (line 1153)
+  - **Additional Fixes:** Corrected mojibake (double-encoded UTF-8) patterns and restored proper UTF-8 byte sequences in regex replacements
+    - **Files:** `routes/kingdom-exploration.js` (line 36), `routes/kingdom-research.js` (line 63)
+  - **Gemini Review:** Code review identified critical column name bug and mojibake issues; all feedback addressed
+  - **Quality Gates:** Lint ✅, Test suite (63 files) ✅, Build ✅, Security Configuration ✅, Text Encoding ✅
+  - **Commits:** `c674ce5` (kingdom discovery name fix), `e62d133` (mojibake restoration), `9b30600` (critical review fixes), `a1048e4` (quote character fix)
+  - **Impact:** 502 errors from connection pool exhaustion should cease at moderate concurrency; discovered kingdoms now display properly in fog of war UI with correct names
 
 ### 2026-07-06
 
