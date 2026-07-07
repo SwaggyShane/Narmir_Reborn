@@ -13,7 +13,7 @@ const config = require('./config');
 
 function levelMultiplier(rangerLevel) {
   const level = Math.max(1, Math.floor(Number(rangerLevel) || 1));
-  return 1 + (level - 1) * 0.05; // 5% per level above 1
+  return 1 + (level - 1) * 0.25; // 25% per level above 1
 }
 
 /**
@@ -55,18 +55,35 @@ function applyRaceModifier(baseReward, race) {
 }
 
 /**
- * Full hunting calculation: turns, food cost, reward.
- * Returns { turns, foodCost, foodReward }.
+ * Apply duration scaling to hunting reward.
+ * Instant: 1x (1 turn, home hex)
+ * 5-turn: 3x (travel + 5 turns + return)
+ * 25-turn: 10x (travel + 25 turns + return)
  */
-function calculateHuntingReward(rangerCount, rangerLevel, terrain, race) {
+function applyDurationScaling(baseReward, durationVariant) {
+  const scalars = {
+    instant: 1,
+    '5': 3,
+    '25': 10,
+  };
+  const scalar = scalars[durationVariant] || 1;
+  return Math.floor(baseReward * scalar);
+}
+
+/**
+ * Full hunting calculation: turns, food cost, reward with duration scaling.
+ * Returns { foodReward, scalingMultiplier }.
+ * Caller determines turns based on duration variant.
+ */
+function calculateHuntingReward(rangerCount, rangerLevel, terrain, race, durationVariant = 'instant') {
   const baseReward = huntingBaseReward(rangerCount, rangerLevel);
   const withTerrain = applyTerrainModifier(baseReward, terrain);
   const withRace = applyRaceModifier(withTerrain, race);
+  const withDuration = applyDurationScaling(withRace, durationVariant);
 
   return {
-    turns: config.HUNTING_CONSTANTS.TURN_COST,
-    foodCost: config.HUNTING_CONSTANTS.FOOD_COST, // Always 0
-    foodReward: Math.max(1, withRace), // At least 1 food
+    foodReward: Math.max(1, withDuration),
+    scalingMultiplier: { instant: 1, '5': 3, '25': 10 }[durationVariant] || 1,
   };
 }
 
@@ -75,5 +92,6 @@ module.exports = {
   huntingBaseReward,
   applyTerrainModifier,
   applyRaceModifier,
+  applyDurationScaling,
   calculateHuntingReward,
 };
