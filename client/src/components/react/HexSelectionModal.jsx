@@ -48,8 +48,8 @@ function hexCorners(cx, cy, size = HEX_SIZE) {
   return pts;
 }
 
-const WORLD_WIDTH = 900;
-const WORLD_HEIGHT = 650;
+const WORLD_WIDTH = 1999;
+const WORLD_HEIGHT = 1380;
 const WORLD_MAX_COL = 1999;
 const WORLD_MAX_ROW = 1379;
 
