@@ -1,7 +1,10 @@
 import React, { createContext, useMemo, ReactNode } from 'react';
-import { buildHexGrid, HexGridData } from './HexGrid';
+import { HexGridData } from './HexGrid';
 import { createVisibilityLookup, buildVisibilityArray, FogState } from './HexVisibility';
 import { getHexNeighbors } from './HexSpatial';
+// Import directly from terrainUtils to avoid circular dependency with HexGrid
+// @ts-ignore - terrainUtils is JS, not TS
+import { buildHexGrid } from '../terrainUtils.js';
 
 export interface HexContextValue {
   grid: HexGridData | null;
