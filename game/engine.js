@@ -611,17 +611,16 @@ function processTurn(k, db = null) {
     console.log('[turn] Scout result:', { progress_gained: scoutResult.progress_gained, new_total: scoutResult.new_total });
     if (scoutResult.progress_gained > 0) {
       updates.scout_progress = scoutResult.new_total;
-      if (scoutResult.ring_completed) {
-        events.push({
-          type: "system",
-          message: `🔍 Scouts have completed Ring ${scoutResult.completed_ring_number}! ${scoutResult.new_total - scoutResult.progress_gained} → ${scoutResult.new_total} scout-turns.`,
-        });
-        // Defer visibility update to happen after turn is processed (async, non-blocking)
-        if (db && k.id) {
-          revealRingHexes(db, k.id, { ...k, ...updates }, scoutResult.completed_ring_number).catch(err =>
-            console.error(`[engine] Failed to reveal scout ring ${scoutResult.completed_ring_number}: ${err.message}`)
-          );
-        }
+      // Always log scout progress
+      events.push({
+        type: "system",
+        message: `🔍 Scouts: +${Math.floor(scoutResult.progress_gained)} turns (Ring ${scoutResult.previous_ring} → ${scoutResult.ring_completed ? scoutResult.completed_ring_number : scoutResult.previous_ring})`,
+      });
+      // Reveal new ring hexes if ring was completed
+      if (scoutResult.ring_completed && db && k.id) {
+        revealRingHexes(db, k.id, { ...k, ...updates }, scoutResult.completed_ring_number).catch(err =>
+          console.error(`[engine] Failed to reveal scout ring ${scoutResult.completed_ring_number}: ${err.message}`)
+        );
       }
     }
   }

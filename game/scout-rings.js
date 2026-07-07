@@ -83,7 +83,7 @@ function getTotalTurnsToCompleteRing(ring) {
  * they're 1 scout-turn complete (Ring 1 requires 20 turns).
  *
  * @param {number} scoutProgress - Total scout-turns accumulated (rangers × turns_in_turn)
- * @returns {number} Highest completed ring (0 if not started, 1-17 if completed)
+ * @returns {number} Highest completed ring (0 if not started, 1 to MAX_RING if completed)
  */
 function getCompletedRing(scoutProgress) {
   const progress = Math.max(0, Math.floor(Number(scoutProgress) || 0));
