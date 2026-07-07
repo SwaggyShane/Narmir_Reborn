@@ -1809,12 +1809,12 @@ async function start() {
     process.exit(1);
   });
 
+  isBooted = true;
+  console.log('[boot] Startup sequence complete. Server is ready.');
+
   server.listen(PORT, HOST, () => {
     console.log(`[boot] Server listening on http://localhost:${PORT}`);
   });
-
-  isBooted = true;
-  console.log('[boot] Startup sequence complete. Server is ready.');
     } catch (err) {
       bootError = err;
       console.error('[boot] FATAL startup error:', err);
