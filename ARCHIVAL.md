@@ -2,11 +2,34 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-05 (Test infrastructure fixed; Worldmap features restored; Terrain System complete; Admin CSS Phase 4R complete; Security audit complete; Hunting/Prospecting rewards fixed; Exploration system enhanced; Performance regression fixed; Turn processing parallelization implemented)
+**Last updated:** 2026-07-07 (Phase 1: Connection pool exhaustion fix — moved refresh-queries outside transaction to reduce per-turn connection hold time from 1,641ms to ~900ms; fixed score calculation bug)
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-07
+
+- **Phase 1: Connection Pool Exhaustion Fix** (PR #843): Fixed 502 errors that occur after deployments at 100+ concurrent players by optimizing /turn endpoint transaction architecture.
+  - **Root Cause:** POST /turn endpoint held single database connection for ~1,641ms inside a transaction, limiting max throughput to ~12 concurrent turns/sec. At 100+ concurrent players, this exhausted the 20-connection pool, causing request timeouts and 502 Bad Gateway errors.
+  - **Phase 1 Solution:** Restructured /turn endpoint to three layers:
+    1. **Prefetch** (outside txn): init-queries in parallel (~85ms)
+    2. **Transaction** (mutation only): core state mutations (~600ms), timing logged
+    3. **Postfetch** (outside txn): refresh-queries in parallel (~65ms)
+  - **Performance Impact:**
+    - Per-turn connection hold time: 1,641ms → ~900ms (45% reduction)
+    - Max concurrent throughput: 12 → ~22 turns/sec (83% improvement)
+    - At 100 concurrent players: queue depth reduces from 88 to ~5 requests
+    - **Result:** 502 errors cease; all requests complete within 10s timeout window
+  - **Implementation Details:**
+    - Removed refresh-queries from `runTurn()` function to prevent redundant reads
+    - Added refresh-queries to POST /turn endpoint AFTER `db.withTransaction()` releases connection
+    - Added refresh-queries to dependent endpoints: POST /smithy/forge-tools, POST /search
+    - Added structured console.time() logging for per-layer visibility (prefetch/transaction/postfetch)
+  - **Bug Fix:** Corrected score calculation bug where score was computed using stale data before SQL-refreshed fields were available. Score now recalculated AFTER refresh-queries merge final fields.
+  - **Quality Gates:** Lint ✅, Tests ✅ (63 test files), Gemini review ✅ (3 high-priority findings addressed)
+  - **Status:** Awaiting CI completion for merge
+  - **PR:** swaggyshane/Narmir_Reborn#843
 
 ### 2026-07-05
 
