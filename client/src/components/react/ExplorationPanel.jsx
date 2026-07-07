@@ -145,9 +145,20 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     }
   }, []);
 
+  const refreshProfile = useCallback(async () => {
+    try {
+      const data = await apiCall('/api/kingdom/me');
+      if (data) {
+        syncKingdomData(data);
+      }
+    } catch (err) {
+      console.error('Failed to load profile:', err);
+    }
+  }, [syncKingdomData]);
+
   const refreshAll = useCallback(async () => {
-    await Promise.all([refreshInventory(), refreshExpeditions()]);
-  }, [refreshExpeditions, refreshInventory]);
+    await Promise.all([refreshInventory(), refreshExpeditions(), refreshProfile()]);
+  }, [refreshExpeditions, refreshInventory, refreshProfile]);
 
   useEffect(() => {
     void refreshAll();
