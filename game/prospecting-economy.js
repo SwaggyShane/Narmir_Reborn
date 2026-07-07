@@ -14,7 +14,7 @@ const config = require('./config');
 
 function levelMultiplier(engineerLevel) {
   const level = Math.max(1, Math.floor(Number(engineerLevel) || 1));
-  return 1 + (level - 1) * 0.05; // 5% per level above 1
+  return 1 + (level - 1) * 0.25; // 25% per level above 1
 }
 
 /**
@@ -56,6 +56,22 @@ function applyRaceModifier(baseReward, race) {
 }
 
 /**
+ * Apply duration scaling to prospecting reward.
+ * Instant: 1x (1 turn, home hex)
+ * 5-turn: 3x (travel + 5 turns + return)
+ * 25-turn: 10x (travel + 25 turns + return)
+ */
+function applyDurationScaling(baseReward, durationVariant) {
+  const scalars = {
+    instant: 1,
+    '5': 3,
+    '25': 10,
+  };
+  const scalar = scalars[durationVariant] || 1;
+  return Math.floor(baseReward * scalar);
+}
+
+/**
  * Calculate food cost for prospecting action.
  * Base formula: engineer_count × level_multiplier × (base_per_unit)
  * Similar to Deep Expedition scaling.
@@ -71,19 +87,21 @@ function calculateFoodCost(engineerCount, engineerLevel) {
 }
 
 /**
- * Full prospecting calculation: turns, food cost, reward.
- * Returns { turns, foodCost, goldReward }.
+ * Full prospecting calculation: turns, food cost, reward with duration scaling.
+ * Returns { goldReward, foodCost, scalingMultiplier }.
+ * Caller determines turns based on duration variant.
  */
-function calculateProspectingReward(engineerCount, engineerLevel, terrain, race) {
+function calculateProspectingReward(engineerCount, engineerLevel, terrain, race, durationVariant = 'instant') {
   const baseReward = prospectingBaseReward(engineerCount, engineerLevel);
   const withTerrain = applyTerrainModifier(baseReward, terrain);
   const withRace = applyRaceModifier(withTerrain, race);
+  const withDuration = applyDurationScaling(withRace, durationVariant);
   const foodCost = calculateFoodCost(engineerCount, engineerLevel);
 
   return {
-    turns: config.PROSPECTING_CONSTANTS.TURN_COST,
+    goldReward: Math.max(1, withDuration),
     foodCost: foodCost,
-    goldReward: Math.max(1, withRace), // At least 1 gold
+    scalingMultiplier: { instant: 1, '5': 3, '25': 10 }[durationVariant] || 1,
   };
 }
 
@@ -92,6 +110,7 @@ module.exports = {
   prospectingBaseReward,
   applyTerrainModifier,
   applyRaceModifier,
+  applyDurationScaling,
   calculateFoodCost,
   calculateProspectingReward,
 };
