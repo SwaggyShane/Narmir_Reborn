@@ -769,7 +769,7 @@ module.exports = function (db) {
       [
         target.id,
         "system",
-        `ðŸ"¦ Trade offer from ${k.name} -" check your Economy panel to accept or decline.`,
+        `📦 Trade offer from ${k.name} — check your Economy panel to accept or decline.`,
         k.turn,
       ],
     );

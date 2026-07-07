@@ -1150,7 +1150,7 @@ function resolveMilitaryAttack(
     {},
     "resolveMilitaryAttack:defender_discovered_kingdoms",
   ) || {};
-  defDisc[attacker.id] = { found: true, mapped: true, name: attacker.kingdom_name }; // Attackers leave maps
+  defDisc[attacker.id] = { found: true, mapped: true, name: attacker.name }; // Attackers leave maps
   defenderUpdates.discovered_kingdoms = JSON.stringify(defDisc);
 
   const atkLines = [];
