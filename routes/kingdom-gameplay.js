@@ -545,7 +545,7 @@ module.exports = function (db) {
     // Refresh fields that resolveExpeditions may have updated via SQL
     console.time(`[turn-${k.id}] refresh-queries`);
     const refreshed = await db.get(
-      "SELECT rangers, fighters, gold, mana, land, scrolls, maps, blueprints_stored, troop_levels, library_progress, tower_progress, racial_bonuses_unlocked FROM kingdoms WHERE id = $1",
+      "SELECT rangers, fighters, gold, mana, land, scrolls, maps, blueprints_stored, troop_levels, library_progress, tower_progress, racial_bonuses_unlocked, scout_progress FROM kingdoms WHERE id = $1",
       [k.id],
     );
     if (refreshed) Object.assign(finalUpdates, refreshed);
