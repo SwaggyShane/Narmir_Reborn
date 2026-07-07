@@ -371,7 +371,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       applyResult(result, 'hunting');
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Hunting expedition started!', 'success');
       const foodGained = result.reward?.foodReward || 0;
-      logInstantEntry('🥩', 'Hunting expedition', `${formatNum(r)} rangers sent, will return with ${formatNum(foodGained)} food in ${result.turnCost} turns`);
+      const durationText = huntingDuration === 'instant' ? '' : ` in ${result.turnCost} turns`;
+      logInstantEntry('🥩', 'Hunting expedition', `${formatNum(r)} rangers sent, will return with ${formatNum(foodGained)} food${durationText}`);
       setHuntingRangers(0);
       setHuntingTargetHex(null);
       setHuntingDuration(null);
@@ -416,7 +417,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       applyResult(result, 'prospecting');
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Prospecting expedition started!', 'success');
       const goldGained = result.reward?.goldReward || 0;
-      logInstantEntry('⛏️', 'Prospecting expedition', `${formatNum(e)} engineers sent, will return with ${formatNum(goldGained)} gold in ${result.turnCost} turns`);
+      const durationText = prospectingDuration === 'instant' ? '' : ` in ${result.turnCost} turns`;
+      logInstantEntry('⛏️', 'Prospecting expedition', `${formatNum(e)} engineers sent, will return with ${formatNum(goldGained)} gold${durationText}`);
       setProspectingEngineers(0);
       setProspectingTargetHex(null);
       setProspectingDuration(null);
@@ -783,14 +785,14 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       25
                     </button>
                   </div>
-                  {huntingDuration === 'instant' ? (
+                  {huntingDuration === 'instant' && !huntingTargetHex ? (
                     <button className="base-btn w-full mt-2 bg-[rgba(76,175,130,0.3)] text-[11px] font-semibold" onClick={handleHunting}>
-                      Send Rangers
+                      Hunt
                     </button>
                   ) : null}
                   {huntingTargetHex && huntingDuration && (huntingDuration === '5' || huntingDuration === '25') ? (
                     <button className="base-btn w-full mt-2 bg-[rgba(76,175,130,0.3)] text-[11px] font-semibold" onClick={handleHunting}>
-                      Launch Hunting Expedition
+                      Launch Expedition
                     </button>
                   ) : null}
                 </div>
@@ -831,14 +833,14 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                       25
                     </button>
                   </div>
-                  {prospectingDuration === 'instant' ? (
+                  {prospectingDuration === 'instant' && !prospectingTargetHex ? (
                     <button className="base-btn w-full mt-2 bg-[rgba(180,60,0,0.3)] text-[11px] font-semibold" onClick={handleProspecting}>
-                      Send Engineers
+                      Prospect
                     </button>
                   ) : null}
                   {prospectingTargetHex && prospectingDuration && (prospectingDuration === '5' || prospectingDuration === '25') ? (
                     <button className="base-btn w-full mt-2 bg-[rgba(180,60,0,0.3)] text-[11px] font-semibold" onClick={handleProspecting}>
-                      Launch Prospecting Expedition
+                      Launch Expedition
                     </button>
                   ) : null}
                 </div>
