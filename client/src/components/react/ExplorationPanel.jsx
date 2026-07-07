@@ -373,7 +373,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       const foodGained = result.reward?.foodReward || 0;
       const logMsg = huntingDuration === 'instant'
         ? `${formatNum(r)} rangers found ${formatNum(foodGained)} food`
-        : `${formatNum(r)} rangers sent, will return with ${formatNum(foodGained)} food in ${result.turnCost} turns`;
+        : `${formatNum(r)} rangers sent, returned with ${formatNum(foodGained)} food`;
       logInstantEntry('🥩', 'Hunting expedition', logMsg);
       setHuntingRangers(0);
       setHuntingTargetHex(null);
@@ -421,7 +421,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       const goldGained = result.reward?.goldReward || 0;
       const logMsg = prospectingDuration === 'instant'
         ? `${formatNum(e)} engineers found ${formatNum(goldGained)} gold`
-        : `${formatNum(e)} engineers sent, will return with ${formatNum(goldGained)} gold in ${result.turnCost} turns`;
+        : `${formatNum(e)} engineers sent, returned with ${formatNum(goldGained)} gold`;
       logInstantEntry('⛏️', 'Prospecting expedition', logMsg);
       setProspectingEngineers(0);
       setProspectingTargetHex(null);
