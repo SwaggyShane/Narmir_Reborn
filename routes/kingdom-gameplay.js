@@ -537,10 +537,6 @@ module.exports = function (db) {
       // If no transaction: log but don't throw (prevent lost turns)
     }
 
-    // Calculate score from current state (updates may be incomplete; callers handle final refresh)
-    const prelimState = { ...k, ...updates };
-    updates.score = engine.calculateScore(prelimState);
-
     console.timeEnd(`[turn-${k.id}] total`);
     return { updates, events: allEvents };
   }
@@ -608,7 +604,10 @@ module.exports = function (db) {
         console.timeEnd('[turn] refresh-queries');
 
         const finalUpdates = { ...txResult.updates };
-        if (refreshed) Object.assign(finalUpdates, refreshed);
+        if (refreshed) {
+          Object.assign(finalUpdates, refreshed);
+          finalUpdates.score = engine.calculateScore({ ...k, ...finalUpdates });
+        }
         finalUpdates.unread_news = unread?.c || 0;
 
         return { ok: true, updates: finalUpdates, events: txResult.events, turns_stored: finalUpdates.turns_stored };
@@ -739,7 +738,10 @@ module.exports = function (db) {
         "SELECT rangers, fighters, gold, mana, land, scrolls, maps, blueprints_stored, troop_levels, library_progress, tower_progress, racial_bonuses_unlocked FROM kingdoms WHERE id = $1",
         [k.id],
       );
-      if (refreshed) Object.assign(updates, refreshed);
+      if (refreshed) {
+        Object.assign(updates, refreshed);
+        updates.score = engine.calculateScore({ ...k, ...updates });
+      }
 
       const kAfterTurn = { ...k, ...updates };
       const toolResult = engine.forgeTools(
@@ -793,7 +795,10 @@ module.exports = function (db) {
         "SELECT rangers, fighters, gold, mana, land, scrolls, maps, blueprints_stored, troop_levels, library_progress, tower_progress, racial_bonuses_unlocked, res_military, discovered_kingdoms FROM kingdoms WHERE id = $1",
         [k.id],
       );
-      if (refreshed) Object.assign(updates, refreshed);
+      if (refreshed) {
+        Object.assign(updates, refreshed);
+        updates.score = engine.calculateScore({ ...k, ...updates });
+      }
 
       const kAfterTurn = { ...k, ...updates };
       const tacticsMult = 1 + (kAfterTurn.res_military || 0) / 1000;
