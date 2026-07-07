@@ -573,6 +573,7 @@ module.exports = function (db) {
   // - Context merged onto lockedK to preserve hero XP, bonuses, etc.
   // This shortens txn hold vs. original (init queries + refresh moved out) while preserving correctness.
   router.post("/turn", requireAuth, requireCsrfToken, async (req, res) => {
+    console.log('[turn] POST /turn called for player:', req.player.playerId);
     const startTime = Date.now();
     try {
       const result = await withTurnLock(req.player.playerId, async () => {
