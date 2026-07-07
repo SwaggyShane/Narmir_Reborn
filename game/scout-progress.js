@@ -14,7 +14,11 @@ const { pixelToHex } = require('./hex-utils');
  */
 function getScoutProgressThisTurn(kingdom) {
   const allocated = Math.max(0, Math.floor(Number(kingdom.scout_allocation) || 0));
-  if (allocated === 0) return 0;
+  if (allocated === 0) {
+    console.log('[scout-progress] No scouts allocated', { kingdom_id: kingdom.id, scout_allocation: kingdom.scout_allocation });
+    return 0;
+  }
+  console.log('[scout-progress] Processing scouts', { kingdom_id: kingdom.id, allocated, level: kingdom.ranger_level, race: kingdom.race });
 
   let rangerLevel = 1;
   if (kingdom.troop_levels) {
@@ -64,6 +68,7 @@ function processScoutProgress(kingdom, db = null) {
   const previousRing = getCompletedRing(Number(kingdom.scout_progress) || 0);
   const progressGained = getScoutProgressThisTurn(kingdom);
   const newTotal = (Number(kingdom.scout_progress) || 0) + progressGained;
+  console.log('[scout-progress] Result', { kingdom_id: kingdom.id, previous_progress: Number(kingdom.scout_progress) || 0, progress_gained: progressGained, new_total: newTotal });
   const newRing = getCompletedRing(newTotal);
 
   const result = {
