@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-07 (Turn Processing Fix Phase 1 complete + Discovered Kingdoms Bug Fix merged to PR #845)
+**Last updated:** 2026-07-07 (502 Error Root Cause Fix complete — PR #847 merged to main)
 
 ---
 

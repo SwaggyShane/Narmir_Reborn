@@ -2,13 +2,21 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-07 (Turn Processing Fix Phase 1 Complete + Discovered Kingdoms Name Display Bug Fixed)
+**Last updated:** 2026-07-07 (502 Error Root Cause Fix merged — PR #847)
 
 ---
 
 ## Recent Chronology
 
 ### 2026-07-07
+
+- **Production 502 Error Root Cause Fix** (PR #847, merged 2026-07-07): Fixed persistent 502 errors that occurred on every production deployment by moving `server.listen()` to execute AFTER all startup initialization completes.
+  - **Root Cause:** The server was calling `listen()` before database connection, seeding, lore refresh, JSON repair, goals loading, constants loading, and audit scheduler initialization were complete. HTTP requests could arrive during this 1-2 second initialization window, finding `isBooted = false` and returning 502 Bad Gateway errors.
+  - **Production Impact:** Every deployment experienced 502 errors for 30-60 seconds; all requests arriving during initialization window failed immediately.
+  - **Fix Applied:** Moved `server.listen(PORT, HOST, callback)` from before startup sequence to after all initialization completes, after `isBooted = true` is set.
+  - **Quality Gates:** Lint ✅ (fixed unused parameter warning), Smoke test ✅, Tests ✅ (63 files), CI ✅ (all 3 checks pass)
+  - **Expected Impact:** 502 errors cease on first request after deployment; all requests complete within timeout window.
+  - **Files Changed:** `index.js` (server.listen timing), `game/migrate-visibility-stride.js` (lint fix)
 
 - **Turn Processing Fix Phase 1 + Discovered Kingdoms Bug Fix** (PR #845, merged 2026-07-07): Completed connection pool exhaustion optimization and fixed bug where discovered kingdoms weren't displaying names in fog of war.
   - **Phase 1: Connection Pool Optimization**
