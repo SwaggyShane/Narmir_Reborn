@@ -1948,7 +1948,27 @@ module.exports = function (db) {
       const namePool = RESOURCE_NODE_NAMES[nodeType] || RESOURCE_NODE_NAMES.wood;
       const name = namePool[Math.floor(Math.random() * namePool.length)];
 
-      const terrain = getTerrainForRace(k.race);
+      // Get home coordinates to determine biome generation seed
+      const home = getKingdomMapCoords({ id: k.id, race: k.race });
+      const hex = pixelToHex(home.map_x, home.map_y);
+
+      // Generate mixed biomes for this region (deterministic based on race)
+      // Seed with race and region to ensure consistency
+      const regionSeed = k.race.charCodeAt(0) * 101 + hex.col * 97 + hex.row * 73;
+      const seedRandom = (seed) => {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+      };
+
+      // Generate 6-8 biome patches for the region
+      const patchCount = 6 + Math.floor(seedRandom(regionSeed) * 3);
+      const { generateMixedBiomes, selectTerrainFromBiomes } = require('../game/terrain');
+      const regionBiomes = generateMixedBiomes(k.race, patchCount);
+
+      // Select terrain from biome mix based on distance (pseudo-random but deterministic per location)
+      const nodeSeed = distance * 37 + k.race.charCodeAt(1) * 89;
+      const terrainIndex = Math.floor(seedRandom(nodeSeed) * regionBiomes.length);
+      const terrain = regionBiomes[terrainIndex];
       let result;
       await db.run("BEGIN TRANSACTION");
       try {
@@ -1962,7 +1982,6 @@ module.exports = function (db) {
           'INSERT INTO resource_nodes (kingdom_id, name, type, distance, richness, terrain) VALUES ($1, $2, $3, $4, $5, $6)',
           [k.id, name, nodeType, distance, richness, terrain]
         );
-        const home = getKingdomMapCoords({ id: k.id, race: k.race });
         const nodeCoords = placeResourceNodeCoords({
           kingdomId: k.id,
           nodeId: result.lastID,

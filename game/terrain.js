@@ -162,6 +162,65 @@ function getTerrainColor(terrain) {
   return (TERRAIN_DATA[terrain] || TERRAIN_DATA.plains).color;
 }
 
+/**
+ * Generate a mix of terrains for a region, weighted toward the dominant race terrain.
+ * Returns an array of terrain types to be distributed as patches within the region.
+ * @param {string} race - Kingdom race
+ * @param {number} patchCount - Number of terrain patches to generate (default 5-8)
+ * @returns {array} Array of terrain types for the region
+ */
+function generateMixedBiomes(race, patchCount = 0) {
+  if (patchCount === 0) {
+    patchCount = 5 + Math.floor(Math.random() * 4); // 5-8 patches
+  }
+
+  const dominantTerrain = getTerrainForRace(race);
+  const complementaryTerrains = {
+    mountains: ['hills', 'forest', 'tundra'],
+    forest: ['hills', 'plains', 'swamp'],
+    plains: ['hills', 'coast', 'forest'],
+    hills: ['plains', 'forest', 'mountains'],
+    swamp: ['forest', 'plains', 'lake'],
+  };
+
+  const companions = complementaryTerrains[dominantTerrain] || ['plains', 'hills'];
+  const biomes = [dominantTerrain]; // Always start with dominant
+
+  // Fill remaining patches (60% dominant, 40% mixed)
+  const dominantCount = Math.ceil(patchCount * 0.6);
+  for (let i = 1; i < patchCount; i++) {
+    if (i < dominantCount) {
+      biomes.push(dominantTerrain);
+    } else {
+      biomes.push(companions[Math.floor(Math.random() * companions.length)]);
+    }
+  }
+
+  // Shuffle for natural distribution
+  return biomes.sort(() => Math.random() - 0.5);
+}
+
+/**
+ * Select terrain from a region's mixed biome based on node position.
+ * Uses a pseudo-random but deterministic approach for consistency.
+ * @param {array} biomes - Array of terrain types for the region
+ * @param {number} nodeX - Node x coordinate
+ * @param {number} nodeY - Node y coordinate
+ * @returns {string} Selected terrain type
+ */
+function selectTerrainFromBiomes(biomes, nodeX, nodeY) {
+  if (!biomes || biomes.length === 0) {
+    return 'plains';
+  }
+  if (biomes.length === 1) {
+    return biomes[0];
+  }
+
+  // Use node coordinates as seed for pseudo-random but deterministic selection
+  const seed = Math.abs(Math.round(nodeX * 73 + nodeY * 97)) % biomes.length;
+  return biomes[seed];
+}
+
 module.exports = {
   TERRAIN_TYPES,
   TERRAIN_DATA,
@@ -170,4 +229,6 @@ module.exports = {
   getTerrainModifiers,
   getTerrainDisplayName,
   getTerrainColor,
+  generateMixedBiomes,
+  selectTerrainFromBiomes,
 };
