@@ -64,7 +64,9 @@ export function useGameActions() {
       const updatedState = gameStateManager.getState();
       useProfileStore.getState().receiveServerSnapshot({
         turn: updatedState.turn,
-        turns_stored: updatedState.turns_stored
+        turns_stored: updatedState.turns_stored,
+        scout_progress: updatedState.scout_progress,
+        scout_allocation: updatedState.scout_allocation
       });
 
       let completedBuildingsMsg = '';

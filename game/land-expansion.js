@@ -15,7 +15,7 @@ const config = require('./config');
 
 function levelMultiplier(rangerLevel) {
   const level = Math.max(1, Math.floor(Number(rangerLevel) || 1));
-  return 1 + (level - 1) * 0.05; // 5% per level above 1
+  return 1 + (level - 1) * 0.25; // 25% per level above 1
 }
 
 /**
@@ -59,6 +59,19 @@ function applyRaceModifier(baseLands, race) {
 }
 
 /**
+ * Apply exponential diminishing returns to land expansion.
+ * Formula: yield = base_yield / (1 + current_lands / (base_yield × K))
+ * where K = 4.7 (diminishing returns scaling factor)
+ */
+function applyDiminishingReturns(baseYield, currentLands) {
+  if (baseYield === 0) return 0;
+  const K = 4.7;
+  const divisor = 1 + (currentLands / (baseYield * K));
+  const final = baseYield / divisor;
+  return Math.max(0, Math.floor(final));
+}
+
+/**
  * Calculate population cost for land expansion.
  * cost = lands_discovered × 100
  */
@@ -69,15 +82,17 @@ function calculatePopulationCost(landsDiscovered) {
 
 /**
  * Full land expansion calculation: land reward, population cost.
- * Instant action (no turn cost).
+ * Instant action (no turn cost). Applies exponential diminishing returns.
  * Returns { turns, populationCost, landsDiscovered }.
  */
-function calculateLandExpansionReward(rangerCount, rangerLevel, terrain, race, availablePopulation) {
+function calculateLandExpansionReward(rangerCount, rangerLevel, terrain, race, availablePopulation, currentLands) {
   const baseReward = landExpansionBaseReward(rangerCount, rangerLevel);
   const withTerrain = applyTerrainModifier(baseReward, terrain);
   const withRace = applyRaceModifier(withTerrain, race);
 
-  let landsToDiscover = Math.max(0, withRace);
+  // Apply diminishing returns based on lands already owned
+  const currentLandsCount = Math.max(0, Math.floor(Number(currentLands) || 0));
+  let landsToDiscover = applyDiminishingReturns(withRace, currentLandsCount);
 
   // Clamp to available population
   const maxAffordable = Math.floor(availablePopulation / config.LAND_EXPANSION_CONSTANTS.POPULATION_COST_PER_LAND);
@@ -96,5 +111,6 @@ module.exports = {
   applyTerrainModifier,
   applyRaceModifier,
   calculatePopulationCost,
+  applyDiminishingReturns,
   calculateLandExpansionReward,
 };
