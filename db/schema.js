@@ -2241,14 +2241,29 @@ let _kingdomCols = null;
 
 async function getKingdomCols() {
   if (!_kingdomCols) {
-    _kingdomCols = new Set(await getTableColumns('kingdoms'));
+    const cols = await getTableColumns('kingdoms');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[getKingdomCols] Loaded', cols.length, 'columns. Includes scout_progress:', cols.includes('scout_progress'));
+    }
+    _kingdomCols = new Set(cols);
   }
   return _kingdomCols;
 }
 
-async function applyKingdomUpdates(kingdomId, updates) {
+async function applyKingdomUpdates(kingdomId, updates, db = null) {
   if (!updates || Object.keys(updates).length === 0) return [];
+  // Force refresh cache if scout_progress is in updates but not in cached columns
+  if (updates.scout_progress !== undefined && _kingdomCols && !_kingdomCols.has('scout_progress')) {
+    console.warn('[applyKingdomUpdates] scout_progress not in cache, forcing refresh');
+    _kingdomCols = null;
+  }
   const validCols = await getKingdomCols();
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[applyKingdomUpdates] validCols includes scout_progress:', validCols.has('scout_progress'), 'total cols:', validCols.size);
+    if (updates.scout_progress !== undefined) {
+      console.log('[applyKingdomUpdates] scout_progress in updates:', updates.scout_progress, 'is valid col:', validCols.has('scout_progress'));
+    }
+  }
   const safe = Object.fromEntries(
     Object.entries(updates).filter(([col, val]) => validCols.has(col) && val !== undefined && val !== null)
   );
@@ -2259,12 +2274,19 @@ async function applyKingdomUpdates(kingdomId, updates) {
   const cols = Object.keys(safe);
   const setClause = pgSetClause(cols);
   const vals = [...Object.values(safe), kingdomId];
+  const sql = `UPDATE "kingdoms" SET ${setClause} WHERE id = $${cols.length + 1}`;
   if (process.env.NODE_ENV !== 'production') {
-    console.log('[applyKingdomUpdates] Updating', { kingdomId, fields: cols, safe });
+    console.log('[applyKingdomUpdates] Updating', { kingdomId, fields: cols, sql, vals });
   }
-  const result = await _db.run(`UPDATE "kingdoms" SET ${setClause} WHERE id = $${cols.length + 1}`, vals);
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[applyKingdomUpdates] UPDATE completed', { kingdomId, rowsAffected: result?.rowCount || 'unknown' });
+  const dbConnection = db || _db;
+  try {
+    const result = await dbConnection.run(sql, vals);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[applyKingdomUpdates] UPDATE completed', { kingdomId, rowsAffected: result?.rowCount || 'unknown', usedTxDb: !!db });
+    }
+  } catch (err) {
+    console.error('[applyKingdomUpdates] UPDATE failed', { kingdomId, sql, err: err.message });
+    throw err;
   }
   return Object.keys(safe);
 }

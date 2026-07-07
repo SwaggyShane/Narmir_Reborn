@@ -3278,8 +3278,8 @@ async function applyUpdates(db, kingdomId, updates) {
   if (updatesForDb.troop_levels && typeof updatesForDb.troop_levels === 'object') {
     updatesForDb.troop_levels = JSON.stringify(updatesForDb.troop_levels);
   }
-  // We pass db parameter as usual, but applyKingdomUpdates just works directly against the global db object via schema
-  await applyKingdomUpdates(kingdomId, updatesForDb);
+  // Pass the transaction-aware db connection so updates happen inside the transaction context
+  await applyKingdomUpdates(kingdomId, updatesForDb, db);
 }
 
 // Insert multiple news rows in a single query â€” much faster than N sequential inserts
