@@ -1,6 +1,7 @@
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { toast } from '../../utils/toast.js';
 import { buildHexGrid, TERRAIN_COLORS, seedToInt32 } from '../../utils/terrainUtils.js';
+import { useKingdomId } from '../../stores/profileStore.js';
 
 const HEX_SIZE = 34;
 const HEX_W = Math.sqrt(3) * HEX_SIZE;
@@ -54,6 +55,7 @@ const WORLD_MAX_COL = 1999;
 const WORLD_MAX_ROW = 1379;
 
 const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
+  const playerKingdomId = useKingdomId();
   const [selectedHex, setSelectedHex] = useState(null);
   const [worldSeed, setWorldSeed] = useState(null);
   const [visibility, setVisibility] = useState(null); // { seenCells, currentCells }
@@ -96,9 +98,9 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
               setVisibility(null);
             }
             // Get player's kingdom location (home hex, always visible - no fog)
-            if (data.kingdoms && data.kingdoms.length > 0) {
-              const playerKingdom = data.kingdoms[0]; // First kingdom is the player's own
-              if (playerKingdom.map_x !== undefined && playerKingdom.map_y !== undefined) {
+            if (data.kingdoms && playerKingdomId) {
+              const playerKingdom = data.kingdoms.find((k) => k.id === playerKingdomId);
+              if (playerKingdom && playerKingdom.map_x !== undefined && playerKingdom.map_y !== undefined) {
                 const homeHex = pixelToHex(playerKingdom.map_x, playerKingdom.map_y);
                 setPlayerKingdomHex(homeHex);
               }
