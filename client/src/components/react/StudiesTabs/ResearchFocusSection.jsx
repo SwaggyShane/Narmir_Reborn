@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import clsx from 'clsx';
 import { useResearchStore } from '../../../stores';
 import { toast } from '../../../utils/toast.js';
+import { apiCall } from '../../../utils/api.mjs';
 
 const DISC_COLS = {
   economy: "res_economy",
@@ -51,16 +52,10 @@ export const ResearchFocusSection = ({
     const hasRepo = !!(studiesData?.school_upgrades || {}).repository;
     const focus = hasRepo && focus2Value ? [focus1Value, focus2Value] : [focus1Value];
 
-    const result = await fetch('/api/kingdom/research-focus', {
+    const data = await apiCall('/api/kingdom/research-focus', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ focus }),
+      body: { focus },
     });
-    if (!result.ok) {
-      toast('Failed to save research focus', 'error');
-      return;
-    }
-    const data = await result.json();
     if (data.error) {
       toast(data.error, 'error');
       return;
