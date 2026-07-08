@@ -73,10 +73,69 @@ Create `ARCHITECTURE.md` that describes:
 - [ ] All team members read and sign off
 - [ ] No unexplained manager responsibilities
 
-### 1.2 Identify Coupling Points
+### 1.2 Current Turn Pipeline Diagram
+Create a detailed diagram showing how a turn flows TODAY (before refactoring):
+
+```
+Input (keyboard, UI button, API)
+    ↓
+Route/Handler (routes/*.js)
+    ↓
+Game Logic (game/turn.js, game/engine.js)
+    ↓
+Database Write (db/schema.js queries)
+    ↓
+Socket.io Broadcast (game/sockets.js)
+    ↓
+Client Receives (socket-client.js)
+    ↓
+React Update (Zustand store)
+    ↓
+Render
+```
+
+**Deliverable:** Diagram with:
+- Timing estimates per stage (e.g., "turn.js processes in <100ms")
+- Which files are involved at each stage
+- Where state lives (memory vs. PostgreSQL vs. client)
+- Potential bottlenecks (from memory: /turn endpoint ~3000ms on production)
+
+**Acceptance criteria:**
+- [ ] Diagram matches actual code flow (verify with git log + code reading)
+- [ ] Shows where turn state is persisted (DB)
+- [ ] Shows where broadcasting happens (Socket.io)
+- [ ] Team can walk through it and predict where refactoring impacts
+
+**Why:** This is the flow you're about to refactor. If you don't understand it first, you'll miss coupling and break things.
+
+### 1.3 State Persistence Model
+Define how game state persists to PostgreSQL and how it syncs with events:
+
+**Create a table showing:**
+| State Change | Triggered By | Handler | DB Update | Event Broadcast | Client Update |
+|---|---|---|---|---|---|
+| Troops recruited | Command | engine.js | UPDATE troops SET count = X | troops:recruited | React rerenders |
+| Health changed | Damage event | combat.js | UPDATE entities SET health = X | entity:damaged | Health bar updates |
+| Turn incremented | Tick | turn.js | UPDATE turns SET current = X | turn:incremented | UI shows turn 47 |
+
+**Design decisions to document:**
+- Are events persisted to a log table? (For replay, auditing)
+- Transaction isolation: If a command fails halfway, how is rollback handled?
+- Ordering: Are events applied before or after DB writes?
+- Race conditions: If two commands try to recruit at the same time, what happens?
+
+**Acceptance criteria:**
+- [ ] State ownership is clear (who writes what to DB)
+- [ ] Transaction model is defined (atomic? eventual consistent?)
+- [ ] Event ↔ DB relationship is explicit (1-to-1? 1-to-many?)
+- [ ] Team understands rollback/failure scenarios
+
+**Why:** Phase 2 events will broadcast over Socket.io. If you don't know how they connect to DB persistence now, you'll have a mess when you wire up Phase 2. (CRITICAL)
+
+### 1.4 Identify Coupling Points
 Quick audit of codebase for:
 - Modules that import from 5+ other modules
-- Circular dependencies (use static analysis)
+- Circular dependencies (use `npm ls` or static analysis)
 - Cross-system method calls
 
 **Output:** A coupling map (simple spreadsheet) showing:
@@ -87,8 +146,9 @@ Quick audit of codebase for:
 - [ ] Coupling map lists 10+ dependencies
 - [ ] Identifies the 3-5 most coupled pairs
 - [ ] Suggests which to decouple first
+- [ ] Assessment of whether movement is a good Phase 2 pilot (does it connect to visibility, terrain, etc.?)
 
-**Why:** Take 3-4 days max. You don't need a perfect map, just enough to identify problem areas and the safest system to refactor first.
+**Why:** Take 3-4 days max. Movement might be perfect OR too thin depending on what it touches. This audit will tell you.
 
 ---
 
@@ -96,13 +156,50 @@ Quick audit of codebase for:
 
 **Owner:** Combat/Engine Lead  
 **Timeline:** 3 weeks (not 4)  
-**Goal:** Pick ONE system (movement), decouple it completely. Validate the pattern works.
+**Goal:** Pick ONE system (movement), decouple it completely. Validate the pattern works. CRITICAL: Establish Command/Event contract and Socket.io serialization rules.
+
+### 2.0 Define Command & Event TypeScript Interfaces (Week 3, Day 1)
+Before any implementation, define the contracts:
+
+**Create `types/commands.ts`:**
+```typescript
+// All possible commands in the game
+export type Command =
+  | { type: 'MOVE'; entityId: string; targetPos: { x: number; y: number } }
+  | { type: 'ATTACK'; attackerId: string; targetId: string }
+  | { type: 'USE_ITEM'; entityId: string; itemId: string }
+  | // ... more as game grows
+
+// Command handler returns events + new state
+export type CommandHandler = (world: World, cmd: Command) => Event[];
+```
+
+**Create `types/events.ts`:**
+```typescript
+// All possible events
+export type GameEvent =
+  | { type: 'entity:moved'; entityId: string; position: { x: number; y: number }; timestamp: number }
+  | { type: 'entity:damaged'; entityId: string; amount: number; sourceId: string; timestamp: number }
+  | // ... more as game grows
+
+// CRITICAL: Events must be JSON-serializable for Socket.io broadcast
+// Rule: No circular refs, class instances, functions, Dates (use timestamps instead)
+```
+
+**Acceptance criteria:**
+- [ ] Command union type covers 80% of current game actions
+- [ ] All events are JSON-serializable (no class instances, functions, Dates)
+- [ ] TypeScript compiler confirms types are correct
+- [ ] Events include timestamp for ordering
+
+**Why:** This is the contract Phase 2-5 rest on. Do it first so you catch design problems before coding.
 
 ### 2.1 Refactor Movement to Use Commands + Events
 Pick movement because:
 - Smallest scope (fewer dependents)
 - Validates command + event pattern
 - Isolatable test surface
+- **Coupling audit (Phase 1.4) will confirm this is appropriate**
 
 **Do:**
 1. Create `command/moveCommand.ts` 
@@ -110,37 +207,71 @@ Pick movement because:
 3. Simulation processes MoveCommand → MoveExecuted event
 4. Update UI via event listener, not method calls
 5. Write test: MoveCommand → MoveExecuted event
+6. **Verify: Events broadcast over Socket.io correctly (serialize to JSON, no errors)**
 
 **Don't:**
 - Refactor combat yet (too big)
 - Refactor inventory (depends on items)
 - Add undo/redo (future optimization)
+- Use non-serializable data types in events
 
 ```typescript
 // All this is new; old movement code stays untouched for now
-type MoveCommand = { type: 'MOVE'; entityId: string; targetPos: Vector };
-function processMove(world: World, cmd: MoveCommand): Event[] {
+type MoveCommand = { type: 'MOVE'; entityId: string; targetPos: { x: number; y: number } };
+function processMove(world: World, cmd: MoveCommand): GameEvent[] {
   const entity = world.getEntity(cmd.entityId);
   if (!entity || !isValidMove(entity, cmd.targetPos)) return [];
   
   entity.position = cmd.targetPos;
-  return [{ type: 'entity:moved', entityId: entity.id, position: cmd.targetPos }];
+  // CRITICAL: Event must be serializable for Socket.io
+  return [{ 
+    type: 'entity:moved', 
+    entityId: entity.id, 
+    position: cmd.targetPos,
+    timestamp: Date.now() // Use timestamp, not Date object
+  }];
 }
 ```
 
 **Acceptance criteria:**
 - [ ] Movement works without calling into UI directly
 - [ ] Events are emitted for all move outcomes (success, blocked, out-of-range)
+- [ ] **Events serialize to JSON and deserialize without data loss (Socket.io compatibility)**
 - [ ] 3+ test cases pass (valid move, blocked move, out of range)
 - [ ] No breaking changes to existing movement (old code still works)
 
-### 2.2 Introduce Event Broadcasting for Movement Results
+### 2.2 Introduce Event Broadcasting for Movement Results (CRITICAL: Socket.io serialization)
 Only movement systems emit/listen to events for now. Don't touch combat or inventory yet.
+
+**CRITICAL CONSTRAINT:** Events will broadcast over Socket.io to clients.
+- Test: `JSON.stringify(event)` succeeds for all events
+- No circular refs, class instances, functions, Date objects
+- Use timestamps (numbers) instead of Date objects
+- Use enums/strings instead of Map/Set
+
+**Implementation:**
+```typescript
+// Server emits event
+events.emit('entity:moved', { 
+  type: 'entity:moved',
+  entityId: 'hero_1',
+  position: { x: 5, y: 10 },
+  timestamp: Date.now() // Number, not Date
+});
+
+// Socket.io broadcasts it (must be JSON-serializable)
+socket.on('game:event', (event) => {
+  // Client receives and processes
+  handleMoveEvent(event);
+});
+```
 
 **Acceptance criteria:**
 - [ ] UI updates via `events.on('entity:moved', ...)`
 - [ ] Quest system can listen to `entity:moved` without touching movement code
-- [ ] Event system is documented (what events exist, what data they carry)
+- [ ] **Events JSON-serialize correctly for Socket.io broadcast (no serialization errors)**
+- [ ] Client receives events over Socket.io and processes them
+- [ ] Event system is documented (what events exist, what data they carry, serialization rules)
 
 ### 2.3 (Skip for now)
 Don't reduce manager responsibilities yet. That comes after Phase 3 when patterns are proven.
@@ -241,11 +372,26 @@ Define testing approach for each component type:
 Move item definitions out of code into `data/items.json`:
 
 **Deliverables:**
-1. `data/items.json` schema + examples (with 10+ existing items)
-2. `game/loaders/ItemLoader.js` (parses JSON, returns usable items)
-3. `game/behaviors/itemBehaviors.js` (lookup table: `weapon:basic_damage` → function)
-4. Validation: `scripts/validate-items.js` (checks IDs, behavior references)
-5. Test: 5+ test cases (item creation, behavior execution, edge cases)
+1. **Item data schema (Zod or JSON Schema):** Define valid structure for items (required fields, types, constraints)
+   ```typescript
+   // Using Zod (recommended)
+   const ItemSchema = z.object({
+     id: z.string().regex(/^item_/),
+     type: z.enum(['weapon', 'armor', 'potion']),
+     name: z.string().min(1),
+     damage: z.number().min(0),
+     rarity: z.enum(['common', 'uncommon', 'rare']),
+     behavior: z.string(), // Must match a registered behavior
+   });
+   ```
+2. `data/items.json` with 10+ existing items (validated against schema)
+3. `game/loaders/ItemLoader.js` (parses JSON, validates with Zod, returns usable items)
+4. `game/behaviors/itemBehaviors.js` (lookup table: `weapon:basic_damage` → function, registered at startup)
+5. **Validation script:** `scripts/validate-items.js` 
+   - Checks IDs (no duplicates, match naming convention)
+   - Checks behavior references (all behaviors exist)
+   - Uses same Zod schema as runtime
+6. Test: 5+ test cases (item creation, behavior execution, invalid data caught)
 
 **Acceptance criteria:**
 - [ ] All existing items are in `data/items.json`
@@ -270,17 +416,30 @@ Move item definitions out of code into `data/items.json`:
 Same pattern as items:
 
 **Deliverables:**
-1. `data/monsters.json` schema + examples
-2. `game/loaders/MonsterLoader.js`
-3. `game/behaviors/aiPatterns.js` (lookup: `monster:basic_aggro` → function)
-4. Validation: `scripts/validate-monsters.js`
-5. Test: 5+ test cases
+1. **Monster data schema (Zod):** Define valid structure
+   ```typescript
+   const MonsterSchema = z.object({
+     id: z.string().regex(/^monster_/),
+     type: z.string(),
+     name: z.string(),
+     health: z.number().min(1),
+     damage: z.number().min(0),
+     ai: z.string(), // Must match registered AI pattern
+     loot: z.array(z.string()), // Each must be valid item ID
+   });
+   ```
+2. `data/monsters.json` with all current monsters (validated against schema)
+3. `game/loaders/MonsterLoader.js` (parses, validates, returns)
+4. `game/behaviors/aiPatterns.js` (lookup: `monster:basic_aggro` → function)
+5. Validation: `scripts/validate-monsters.js` (checks item references, AI patterns exist)
+6. Test: 5+ test cases
 
 **Acceptance criteria:**
 - [ ] All existing monsters are in `data/monsters.json`
 - [ ] MonsterLoader produces functionally identical objects to old system
 - [ ] AI behaviors execute correctly from JSON reference
-- [ ] Validation catches invalid item references in loot
+- [ ] **Validation catches invalid item references in loot (using Zod schema)**
+- [ ] Zod schema reused in validation script (schema is source of truth)
 
 **Example monster in JSON:**
 ```json
@@ -299,16 +458,33 @@ Same pattern as items:
 Same pattern for map/world data:
 
 **Deliverables:**
-1. `data/locations.json` with all map data
-2. `game/loaders/LocationLoader.js`
-3. Validation: check all location connections point to valid locations
-4. Test: 5+ test cases (connections, spawns, terrain)
+1. **Location data schema (Zod):** Define valid structure
+   ```typescript
+   const LocationSchema = z.object({
+     id: z.string().regex(/^location_/),
+     name: z.string(),
+     terrain: z.enum(['forest', 'mountain', 'plains']), // from real spec
+     biome: z.enum(['temperate', 'desert', 'arctic']),
+     connections: z.record(z.string()), // north, south, east, west → location IDs
+     spawns: z.array(z.object({
+       monsterId: z.string(), // Must be valid monster ID
+       weight: z.number().min(0).max(1),
+     })),
+   });
+   ```
+2. `data/locations.json` with all map data (validated against schema)
+3. `game/loaders/LocationLoader.js`
+4. Validation: `scripts/validate-locations.js`
+   - Check all location connections point to valid locations
+   - Check all monster references are valid
+   - Uses Zod schema (schema is source of truth)
+5. Test: 5+ test cases (connections, spawns, terrain, cross-location refs)
 
 **Acceptance criteria:**
 - [ ] All world locations in `data/locations.json`
 - [ ] LocationLoader produces identical terrain/connection data
-- [ ] Validation catches broken location references
-- [ ] Can add a new location by editing JSON
+- [ ] **Validation catches broken location references and invalid monsters (Zod validation)**
+- [ ] Can add a new location by editing JSON only
 
 **Example location in JSON:**
 ```json
