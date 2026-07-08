@@ -44,6 +44,8 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 ## Completed Systems (See ARCHIVAL.md)
 
 - **Visibility Unification (M1-2) + Container/DB Stability** (complete 2026-07-08, PR #850) — Unified server/client cellIndex (removed duplicate, added bounds). Fixed hardcoded PORT and shutdown issues causing restarts and SSL errors in logs. See ARCHIVAL.md.
+- **Turn Healing Extraction (M1-3)** (complete on feature/turn-healing-local) — Expanded healKingdomForTurn to cover 15+ JSON fields, added ensureArray/getXpSources, extracted logic from processTurn, dedicated tests. Local only per instructions.
+- **Router Order Reduction (M1-1)** (started on feature/router-order-local) — Made sub-router mounting explicit via ordered array in kingdom.js to reduce shadowing. Enhanced precedence test. Limited commits.
 - **DB Schema Modularization / Bloat Reduction** (complete 2026-07-08, PR #849) — Major extraction of monolithic db/schema.js. All CREATE TABLEs moved to ddl.js, seeds and column initializers to init-data.js, helpers extracted. See ARCHIVAL.md.
 - **Fog of War System** (5 phases, all complete) — See ARCHIVAL.md for phase-by-phase details
 - **Terrain System** (3 phases, all complete) — PR #751 (Phase 1+2), commit b22962f (Phase 3)

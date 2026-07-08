@@ -11,6 +11,8 @@
 ### 2026-07-08
 
 - **Visibility Unification & Container/DB Restart Fixes** (PR #850, created 2026-07-08): Started M1-2 visibility unification by removing duplicate client cellIndex logic and ensuring consistent bounds. Also fixed root causes of repeated container restarts and Postgres SSL connection errors seen in deployment logs.
+
+- **Turn Healing (M1-3) + Router Order (M1-1 start)** (local branches, 2026-07-08): Finished M1-3 by expanding healing module and extracting from processTurn. Started M1-1 by making router mounts explicit array-based. Bounties column migration for prod error. Limited to ~5 commits per branch. Tests + lint passed. See feature/turn-healing-local and feature/router-order-local.
   - **Visibility changes:**
     - Removed duplicate/outdated `clientCellIndex` in `game/expedition-mechanics.js`; now uses canonical from `game/lib/hex.js`
     - Added missing upper-bound row check (<512) in `cellIndex` and `isValidCell` on both server (`game/lib/hex.js`) and client (`client/src/utils/hex-constants.js`)
