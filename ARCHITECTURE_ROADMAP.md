@@ -108,29 +108,51 @@ Render
 
 **Why:** This is the flow you're about to refactor. If you don't understand it first, you'll miss coupling and break things.
 
-### 1.3 State Persistence Model
-Define how game state persists to PostgreSQL and how it syncs with events:
+### 1.3 State Persistence Model: Command → DB → Event → Socket.io
+Define how game state persists to PostgreSQL and how it syncs with events. **CRITICAL: This phase establishes the transaction boundary that prevents client/server desync.**
 
-**Create a table showing:**
-| State Change | Triggered By | Handler | DB Update | Event Broadcast | Client Update |
-|---|---|---|---|---|---|
-| Troops recruited | Command | engine.js | UPDATE troops SET count = X | troops:recruited | React rerenders |
-| Health changed | Damage event | combat.js | UPDATE entities SET health = X | entity:damaged | Health bar updates |
-| Turn incremented | Tick | turn.js | UPDATE turns SET current = X | turn:incremented | UI shows turn 47 |
+**Problem to solve:**
+If you write to DB first, then emit Socket.io event, a crash in between leaves the client permanently out of sync:
+1. Command "recruit 5 troops" → DB write succeeds (count = 55)
+2. Event emission starts... CRASH
+3. Client still shows 50 troops
+4. User refreshes → sees 55 (from DB)
+5. Inconsistency and support burden
 
-**Design decisions to document:**
-- Are events persisted to a log table? (For replay, auditing)
-- Transaction isolation: If a command fails halfway, how is rollback handled?
-- Ordering: Are events applied before or after DB writes?
-- Race conditions: If two commands try to recruit at the same time, what happens?
+**Solution: Outbox Pattern with Atomic Transactions**
+
+```
+Command → Atomic Transaction {
+  1. Apply state change in memory
+  2. Generate GameEvent
+  3. Write state + event to DB (single transaction)
+  4. Return (success, event)
+} → Async Background {
+  5. Read pending events from outbox table
+  6. Broadcast via Socket.io
+  7. Mark as sent (or retry on failure)
+}
+```
+
+**Design decisions to document (create table):**
+
+| Decision | Your Approach | Rationale |
+|---|---|---|
+| Transaction boundary | Commands + events atomic in DB | Prevents inconsistency |
+| Event persistence | Events stored in outbox table | For audit, replay, recovery |
+| Broadcast timing | After DB commit succeeds | Client only sees confirmed state |
+| Failure handling | Async retry loop on broadcast failures | Client syncs on next turn tick |
+| Event ordering | Timestamp + sequence number in DB | Prevents duplicate/out-of-order processing |
 
 **Acceptance criteria:**
-- [ ] State ownership is clear (who writes what to DB)
-- [ ] Transaction model is defined (atomic? eventual consistent?)
-- [ ] Event ↔ DB relationship is explicit (1-to-1? 1-to-many?)
-- [ ] Team understands rollback/failure scenarios
+- [ ] State ownership clear (who writes what to DB)
+- [ ] Outbox pattern documented (or alternative transaction model)
+- [ ] Diagram shows: Command → Atomic(State + Event) → Async Broadcast → Retry
+- [ ] Team understands: DB write succeeds BEFORE Socket.io broadcast
+- [ ] Rollback scenarios defined (what happens if DB transaction fails?)
+- [ ] Client sync strategy defined (how does client recover if broadcast fails?)
 
-**Why:** Phase 2 events will broadcast over Socket.io. If you don't know how they connect to DB persistence now, you'll have a mess when you wire up Phase 2. (CRITICAL)
+**Why:** This is CRITICAL for a persistent multiplayer game. Without atomic transactions between state + events, you'll have silent desync bugs that only show up under load or network failure.
 
 ### 1.4 Identify Coupling Points
 Quick audit of codebase for:
@@ -158,8 +180,8 @@ Quick audit of codebase for:
 **Timeline:** 3 weeks (not 4)  
 **Goal:** Pick ONE system (movement), decouple it completely. Validate the pattern works. CRITICAL: Establish Command/Event contract and Socket.io serialization rules.
 
-### 2.0 Define Command & Event TypeScript Interfaces (Week 3, Day 1)
-Before any implementation, define the contracts:
+### 2.0 Define Command & Event TypeScript Interfaces + Serialization Testing (Week 3, Day 1)
+Before any implementation, define the contracts AND the serialization test utility:
 
 **Create `types/commands.ts`:**
 ```typescript
@@ -186,13 +208,45 @@ export type GameEvent =
 // Rule: No circular refs, class instances, functions, Dates (use timestamps instead)
 ```
 
+**Create `test/helpers/assertSerializable.ts` (CRITICAL for Socket.io safety):**
+```typescript
+// Utility: Test that data survives JSON round-trip
+// Catches: Date objects becoming strings, functions being dropped, circular refs
+export function assertSerializable<T>(data: T): void {
+  const serialized = JSON.stringify(data);
+  const deserialized = JSON.parse(serialized);
+  
+  // Verify structure matches exactly after round-trip
+  expect(deserialized).toEqual(JSON.parse(JSON.stringify(data)));
+  
+  // If this fails, the event won't work over Socket.io
+  // Common culprits: new Date(), function, Map, Set, circular references
+}
+```
+
+**Usage in Phase 2 tests:**
+```typescript
+// Every event test MUST verify serialization
+test('entity:moved event is Socket.io safe', () => {
+  const event: GameEvent = {
+    type: 'entity:moved',
+    entityId: 'hero_1',
+    position: { x: 5, y: 10 },
+    timestamp: Date.now(), // ✓ number, not Date object
+  };
+  
+  assertSerializable(event); // Fails if event can't JSON.stringify
+});
+```
+
 **Acceptance criteria:**
 - [ ] Command union type covers 80% of current game actions
-- [ ] All events are JSON-serializable (no class instances, functions, Dates)
+- [ ] All events are JSON-serializable (verified by assertSerializable utility)
+- [ ] `assertSerializable<T>` utility exists and is used in every event test
 - [ ] TypeScript compiler confirms types are correct
-- [ ] Events include timestamp for ordering
+- [ ] Events include timestamp (number, not Date) for ordering
 
-**Why:** This is the contract Phase 2-5 rest on. Do it first so you catch design problems before coding.
+**Why:** Events work locally in Node.js but fail silently over Socket.io if they contain non-serializable types. This utility catches that before production.
 
 ### 2.1 Refactor Movement to Use Commands + Events
 Pick movement because:
@@ -236,8 +290,26 @@ function processMove(world: World, cmd: MoveCommand): GameEvent[] {
 **Acceptance criteria:**
 - [ ] Movement works without calling into UI directly
 - [ ] Events are emitted for all move outcomes (success, blocked, out-of-range)
-- [ ] **Events serialize to JSON and deserialize without data loss (Socket.io compatibility)**
-- [ ] 3+ test cases pass (valid move, blocked move, out of range)
+- [ ] **Events serialize to JSON and deserialize without data loss (Socket.io compatibility, use assertSerializable)**
+- [ ] **3+ test cases verify ACTUAL WORLD STATE MUTATION (not just event generation):**
+  ```typescript
+  // BAD: Only tests event, not state change
+  test('move command generates event', () => {
+    const events = processMove(world, cmd);
+    expect(events[0].type).toBe('entity:moved'); // Passes but world may not change
+  });
+  
+  // GOOD: Tests actual state mutation
+  test('move command changes entity position', () => {
+    const entity = world.getEntity('hero_1');
+    const originalPos = entity.position;
+    
+    const events = processMove(world, cmd);
+    
+    expect(entity.position).not.toEqual(originalPos); // ACTUAL state changed
+    expect(events[0].type).toBe('entity:moved');
+  });
+  ```
 - [ ] No breaking changes to existing movement (old code still works)
 
 ### 2.2 Introduce Event Broadcasting for Movement Results (CRITICAL: Socket.io serialization)
@@ -368,8 +440,66 @@ Define testing approach for each component type:
 **Timeline:** 4 weeks  
 **Goal:** Prove that content can be data-only; no code changes needed to add items/monsters
 
+### 3.0 Establish GameDataManager with Explicit Loading Order (Week 6, Day 1 - CRITICAL)
+**Problem:** If MonsterLoader and ItemLoader run in parallel, MonsterLoader might try to validate loot item references before ItemLoader has populated the item registry. Validation fails or passes incorrectly.
+
+**Solution:** Centralized GameDataManager with strict loading sequence:
+
+```typescript
+// game/loaders/GameDataManager.ts
+class GameDataManager {
+  async loadAll(): Promise<void> {
+    // MUST load in this exact order
+    console.log('Loading items...');
+    await this.loadItems(); // Items must be first (no dependencies)
+    
+    console.log('Loading monsters...');
+    await this.loadMonsters(); // Monsters depend on items (loot references)
+    
+    console.log('Loading locations...');
+    await this.loadLocations(); // Locations depend on monsters (spawns)
+    
+    console.log('Data loaded successfully');
+  }
+
+  private async loadItems() {
+    const itemsData = require('../data/items.json');
+    this.itemRegistry = itemsData.map(validateAndCreateItem);
+    // ValidationScript also runs in this order
+  }
+
+  private async loadMonsters() {
+    const monstersData = require('../data/monsters.json');
+    // At this point, this.itemRegistry is fully populated
+    this.monsterRegistry = monstersData.map(m => validateMonster(m, this.itemRegistry));
+  }
+
+  private async loadLocations() {
+    const locationsData = require('../data/locations.json');
+    // At this point, both registries are populated
+    this.locationRegistry = locationsData.map(l => validateLocation(l, this.monsterRegistry));
+  }
+}
+```
+
+**Validation scripts must also respect this order:**
+```bash
+# scripts/validate-content.js
+validate-items.js    # First
+validate-monsters.js # Second (can reference items)
+validate-locations.js # Third (can reference monsters)
+```
+
+**Acceptance criteria:**
+- [ ] `GameDataManager` exists and loads in strict order: Items → Monsters → Locations
+- [ ] Validation scripts follow same order
+- [ ] If loading fails at any stage, error message is clear (e.g., "Monster goblin references invalid item item_does_not_exist")
+- [ ] Cross-file references can only fail if data is actually broken, not due to loading order
+
+**Why:** Prevents race conditions and silent validation failures. Ensures that when MonsterLoader references an item, that item is guaranteed to exist.
+
 ### 3.1 Migrate Items to JSON (Week 6)
-Move item definitions out of code into `data/items.json`:
+Move item definitions out of code into `data/items.json`. **Items load FIRST via GameDataManager (no dependencies).**
 
 **Deliverables:**
 1. **Item data schema (Zod or JSON Schema):** Define valid structure for items (required fields, types, constraints)
@@ -391,13 +521,16 @@ Move item definitions out of code into `data/items.json`:
    - Checks IDs (no duplicates, match naming convention)
    - Checks behavior references (all behaviors exist)
    - Uses same Zod schema as runtime
-6. Test: 5+ test cases (item creation, behavior execution, invalid data caught)
+   - **Runs FIRST in validation sequence (no dependencies)**
+6. Integration with GameDataManager: `GameDataManager.loadItems()` calls ItemLoader and validates
+7. Test: 5+ test cases (item creation, behavior execution, invalid data caught)
 
 **Acceptance criteria:**
 - [ ] All existing items are in `data/items.json`
 - [ ] ItemLoader produces functionally identical item objects to old system
 - [ ] Can add a new item (edit JSON) without touching code
-- [ ] Validation script catches bad behavior references
+- [ ] Validation script catches bad behavior references (uses Zod schema)
+- [ ] ItemLoader integrated into GameDataManager.loadItems()
 - [ ] All 5 tests pass
 
 **Example item in JSON:**
@@ -413,7 +546,7 @@ Move item definitions out of code into `data/items.json`:
 ```
 
 ### 3.2 Migrate Monsters to JSON (Week 7)
-Same pattern as items:
+Same pattern as items. **Monsters load SECOND via GameDataManager (depends on items being loaded first).**
 
 **Deliverables:**
 1. **Monster data schema (Zod):** Define valid structure
@@ -431,14 +564,19 @@ Same pattern as items:
 2. `data/monsters.json` with all current monsters (validated against schema)
 3. `game/loaders/MonsterLoader.js` (parses, validates, returns)
 4. `game/behaviors/aiPatterns.js` (lookup: `monster:basic_aggro` → function)
-5. Validation: `scripts/validate-monsters.js` (checks item references, AI patterns exist)
-6. Test: 5+ test cases
+5. Validation: `scripts/validate-monsters.js` 
+   - Checks item references (guaranteed valid because items loaded first)
+   - Checks AI patterns exist
+   - **Runs SECOND in validation sequence (after items)**
+6. Integration with GameDataManager: `GameDataManager.loadMonsters()` validates against itemRegistry
+7. Test: 5+ test cases
 
 **Acceptance criteria:**
 - [ ] All existing monsters are in `data/monsters.json`
 - [ ] MonsterLoader produces functionally identical objects to old system
 - [ ] AI behaviors execute correctly from JSON reference
-- [ ] **Validation catches invalid item references in loot (using Zod schema)**
+- [ ] **Validation catches invalid item references in loot (uses Zod schema + itemRegistry)**
+- [ ] MonsterLoader integrated into GameDataManager.loadMonsters()
 - [ ] Zod schema reused in validation script (schema is source of truth)
 
 **Example monster in JSON:**
@@ -455,7 +593,7 @@ Same pattern as items:
 ```
 
 ### 3.3 Migrate Locations/World to JSON (Week 8-9)
-Same pattern for map/world data:
+Same pattern for map/world data. **Locations load THIRD via GameDataManager (depends on monsters being loaded first).**
 
 **Deliverables:**
 1. **Location data schema (Zod):** Define valid structure
@@ -476,14 +614,17 @@ Same pattern for map/world data:
 3. `game/loaders/LocationLoader.js`
 4. Validation: `scripts/validate-locations.js`
    - Check all location connections point to valid locations
-   - Check all monster references are valid
+   - Check all monster references are valid (guaranteed valid because monsters loaded first)
    - Uses Zod schema (schema is source of truth)
-5. Test: 5+ test cases (connections, spawns, terrain, cross-location refs)
+   - **Runs THIRD in validation sequence (after items and monsters)**
+5. Integration with GameDataManager: `GameDataManager.loadLocations()` validates against monsterRegistry
+6. Test: 5+ test cases (connections, spawns, terrain, cross-location refs)
 
 **Acceptance criteria:**
 - [ ] All world locations in `data/locations.json`
 - [ ] LocationLoader produces identical terrain/connection data
 - [ ] **Validation catches broken location references and invalid monsters (Zod validation)**
+- [ ] LocationLoader integrated into GameDataManager.loadLocations()
 - [ ] Can add a new location by editing JSON only
 
 **Example location in JSON:**
