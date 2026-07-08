@@ -59,4 +59,4 @@ function createMockDb() {
   // Additional check for explicit order in new array-based mounting (M1-1)
   console.log('✓ Router order-dependency reduced via explicit ordered list in kingdom.js');
 }
-}
+
