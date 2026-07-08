@@ -430,6 +430,9 @@ async function initDb(options = {}) {
     min: minPool,
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
+    // Keep TCP connections alive through proxies / load balancers (Railway, etc.)
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
     // Abort any single query that runs longer than 30s — no game query should take
     // that long, and a stuck one would otherwise pin a connection (was 120s).
     statement_timeout: 30000,
@@ -522,6 +525,18 @@ async function initDb(options = {}) {
   if (txnReaperInterval.unref) txnReaperInterval.unref();
   process.on('SIGTERM', () => clearInterval(txnReaperInterval));
   process.on('SIGINT', () => clearInterval(txnReaperInterval));
+
+  // Graceful pool shutdown on container stop (Railway sends SIGTERM)
+  const shutdownPool = async () => {
+    try {
+      await pool.end();
+      console.log('[db] Pool closed gracefully');
+    } catch (e) {
+      console.error('[db] Error closing pool:', e.message);
+    }
+  };
+  process.on('SIGTERM', shutdownPool);
+  process.on('SIGINT', shutdownPool);
 
   // Core schema CREATEs live in db/ddl.js (applySchema)
 

@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, EmbedBuilder, ChannelType, AttachmentBuilder, PermissionFlagsBits } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, ChannelType, AttachmentBuilder, PermissionFlagsBits, Events } = require('discord.js');
 const path = require('path');
 require('dotenv').config();
 
@@ -48,7 +48,7 @@ if (DISCORD_TOKEN.length < 50) {
   process.exit(1);
 }
 
-client.once('ready', async () => {
+client.once(Events.ClientReady, async () => {
   console.log(`✅ Discord Bot logged in as ${client.user.tag}`);
   console.log(`📢 Updates channel ID: ${UPDATES_CHANNEL_ID || 'Not configured'}`);
   console.log(`🐛 Bug reports channel ID: ${BUG_REPORTS_CHANNEL_ID || 'Not configured (will try #bug-reports by name)'}`);
@@ -615,3 +615,41 @@ client.login(DISCORD_TOKEN).catch(error => {
   }
   process.exit(1);
 });
+
+// Graceful shutdown for Railway (SIGTERM)
+const shutdown = async () => {
+  console.log('🛑 Received shutdown signal, cleaning up...');
+  try {
+    if (client) {
+      client.destroy();
+      console.log('  Discord client destroyed');
+    }
+    if (db && db.pool) {
+      await db.pool.end();
+      console.log('  DB pool closed');
+    }
+  } catch (e) {
+    console.error('Error during shutdown:', e.message);
+  }
+  process.exit(0);
+};
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
+
+// If running as a Railway web service (expects $PORT), provide a minimal health endpoint
+// (otherwise, configure the service as a Worker/Background in Railway to avoid this)
+if (process.env.PORT) {
+  const http = require('http');
+  http.createServer((req, res) => {
+    if (req.url === '/health' || req.url === '/') {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('ok');
+    } else {
+      res.writeHead(404);
+      res.end();
+    }
+  }).listen(process.env.PORT, '0.0.0.0', () => {
+    console.log(`[bot] Health server listening on port ${process.env.PORT}`);
+  });
+}

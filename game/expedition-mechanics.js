@@ -1,5 +1,7 @@
 'use strict';
 
+const { cellIndex, isValidCell } = require('./lib/hex');
+
 /**
  * Expedition mechanics: travel time, hex validation, turn calculations.
  * Core formulas:
@@ -63,18 +65,9 @@ function isHexExplored(playerHomeCol, playerHomeRow, targetCol, targetRow, seenC
     return true;
   }
 
-  const CLIENT_CELL_INDEX_OFFSET = 8;
-  const CLIENT_CELL_INDEX_STRIDE = 48;
+  if (!isValidCell(targetCol, targetRow)) return false;
 
-  const clientCellIndex = (col, row) => {
-    const colShifted = col + CLIENT_CELL_INDEX_OFFSET;
-    const rowShifted = row + CLIENT_CELL_INDEX_OFFSET;
-    if (colShifted < 0 || colShifted >= CLIENT_CELL_INDEX_STRIDE || rowShifted < 0) return -1;
-    return rowShifted * CLIENT_CELL_INDEX_STRIDE + colShifted;
-  };
-
-  const idx = clientCellIndex(targetCol, targetRow);
-  if (idx < 0) return false;
+  const idx = cellIndex(targetCol, targetRow);
 
   if (currentCells) {
     const seenBig = typeof currentCells === 'bigint' ? currentCells : BigInt(currentCells || 0);

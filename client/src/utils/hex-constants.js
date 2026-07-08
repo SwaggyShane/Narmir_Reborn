@@ -1,7 +1,8 @@
 // Client mirror of game/lib/hex.js
 // See ARCHITECTURE.md for rationale (build system separation).
 //
-// Keep this in sync with the server canonical version.
+// Keep this in sync with the server canonical version (game/lib/hex.js).
+// The test/hex-visibility-consistency.test.js enforces this.
 
 export const CELL_INDEX_OFFSET = 8;
 export const CELL_INDEX_STRIDE = 48;
