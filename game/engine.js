@@ -23,7 +23,19 @@ const { revealRingHexes } = require("./visibility");
 const { safeJsonParse, clearParseCache } = require('../utils/helpers');
 const { EPOCH_NOW } = require('../lib/db-sql');
 const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
-const { getProfiler } = require('./profiling');
+const { getProfiler, resetDevProfiler } = require('./profiling');
+
+// Helper extracted from processTurn for healing nested stringified JSON (M1-3)
+function cleanNestedJson(raw, fallback, context, returnString = false) {
+  let val = safeJsonParse(raw, fallback, context);
+  while (typeof val === "string") {
+    val = safeJsonParse(val, fallback, context + '_nested');
+  }
+  if (val && typeof val === "object" && !Array.isArray(val)) {
+    return returnString ? JSON.stringify(val) : val;
+  }
+  return raw;
+}
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so
@@ -320,16 +332,8 @@ function processTurn(k, db = null) {
   profiler.start();
   clearParseCache();
 
-  // Defensive: heal k.troop_levels from any nested stringification at the start of the turn
-  // This ensures ALL subsequent code (combat, training, racial bonuses, etc.) receives clean data
-  let cleanTroopLevels = safeJsonParse(k.troop_levels, {}, "processTurn:init_troop_levels");
-  while (typeof cleanTroopLevels === "string") {
-    cleanTroopLevels = safeJsonParse(cleanTroopLevels, {}, "processTurn:init_troop_levels_nested");
-  }
-  // Validate that cleanTroopLevels is a non-null, non-array object before stringifying
-  if (cleanTroopLevels && typeof cleanTroopLevels === "object" && !Array.isArray(cleanTroopLevels)) {
-    k.troop_levels = JSON.stringify(cleanTroopLevels);
-  }
+  // Defensive healing extracted for clarity (see cleanNestedJson)
+  k.troop_levels = cleanNestedJson(k.troop_levels, {}, "processTurn:init_troop_levels", true);
 
   const events = [];
   const updates = {
@@ -340,12 +344,8 @@ function processTurn(k, db = null) {
   progressGoal(k, updates, 'turn_taken', 1);
 
   // Initialize XP source tracking at the very beginning
-  // Defensive: heal from any nested stringification (same pattern as troop_levels above)
   const XP_SOURCES_DEFAULT = { turn: 0, gold_earned: 0, combat_win: 0, combat_loss: 0, research: 0, construction: 0, exploration: 0, spell_cast: 0, covert_op: 0 };
-  let xpSourcesAccum = safeJsonParse(k.xp_sources, XP_SOURCES_DEFAULT, "processTurn:xp_sources");
-  while (typeof xpSourcesAccum === "string") {
-    xpSourcesAccum = safeJsonParse(xpSourcesAccum, XP_SOURCES_DEFAULT, "processTurn:xp_sources_nested");
-  }
+  let xpSourcesAccum = cleanNestedJson(k.xp_sources, XP_SOURCES_DEFAULT, "processTurn:xp_sources", false);
   if (!xpSourcesAccum || typeof xpSourcesAccum !== "object" || Array.isArray(xpSourcesAccum)) {
     xpSourcesAccum = { ...XP_SOURCES_DEFAULT };
   }
@@ -604,11 +604,9 @@ function processTurn(k, db = null) {
 
   // ── 4e-i. Scout ring progression ──────────────────────────────────────────────
   {
-    console.log('[turn] Scout processing:', { kingdom_id: k.id, scout_allocation: k.scout_allocation, scout_progress: k.scout_progress });
     const scoutResult = measureAttunement('processScoutProgress', () =>
       processScoutProgress({ ...k, ...updates }, db)
     );
-    console.log('[turn] Scout result:', { progress_gained: scoutResult.progress_gained, new_total: scoutResult.new_total });
     if (scoutResult.progress_gained > 0) {
       updates.scout_progress = scoutResult.new_total;
       // Always log scout progress
@@ -673,11 +671,7 @@ function processTurn(k, db = null) {
   }
 
   // ── 5b. Building completion ───────────────────────────────────────────────────
-  let buildQueue = safeJsonParse(k.build_queue || "{}", {}, "processTurn:build_queue");
-  // Defensive: handle arbitrary levels of nested stringification
-  while (typeof buildQueue === "string") {
-    buildQueue = safeJsonParse(buildQueue, {}, "processTurn:build_queue_nested_parse");
-  }
+  let buildQueue = cleanNestedJson(k.build_queue || "{}", {}, "processTurn:build_queue", false);
   // Fallback: ensure buildQueue is always a non-null object
   if (!buildQueue || typeof buildQueue !== "object") {
     buildQueue = {};
@@ -1742,6 +1736,26 @@ function processTurn(k, db = null) {
   }
 
   const report = profiler.end();
+
+  // Dev always-on profiler: surface budget warnings
+  if (process.env.NODE_ENV !== 'production' && report && report.summary && report.summary.profileNeeded) {
+    const needed = report.summary.profileNeeded;
+    const { BUDGETS } = require('./profiling');  // local require to avoid top-level cycle
+    if (needed.jsonHighCost) {
+      console.warn(`[profiler] JSON high cost: ${report.jsonOperations.totalTime}ms (budget ${BUDGETS.jsonHighCostMs}ms)`);
+    }
+    if (needed.highSynergyLookups) {
+      console.warn(`[profiler] High synergy lookups: ${report.synergyLookups} (budget ${BUDGETS.highSynergyLookups})`);
+    }
+    if (needed.slowAttunementExists) {
+      console.warn('[profiler] Slow attunements detected (see _profileReport)');
+    }
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    try { resetDevProfiler(); } catch {}
+  }
+
   return { updates, events: events.map(cleanNewsEvent), _profileReport: report };
 }
 

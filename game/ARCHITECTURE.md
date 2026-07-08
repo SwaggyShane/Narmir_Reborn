@@ -63,6 +63,19 @@ Both implement identical transformation logic. When the server version changes, 
 
 The sync requirement applies to: input validation (whitespace trim), date parsing logic, format templates. The timezone difference is intentional and documented.
 
+### Visibility / Fog of War Representations
+
+The codebase intentionally uses two different representations for hex visibility/fog of war because they serve different performance and persistence needs:
+
+- **Server (persistent bitmap):** `game/visibility-cells.js` + `game/visibility.js` stores discovered hexes as a compact BigInt bitmap using `CELL_INDEX_STRIDE = 48` (and `CELL_INDEX_OFFSET = 8`). Used for DB storage, scouting, and ring-based discovery. Throws on invalid cells to prevent silent corruption.
+- **Client (fast render grid):** `client/src/utils/hexMap/HexVisibility.ts` (and related HexGeometry) uses a Uint8Array for O(1) fog state lookup (Unseen/Seen/Current) during map rendering. Rebuilt from server data on sync.
+
+**Why dual?** Bitmap is space-efficient for long-term per-kingdom state. Array is optimal for real-time React/SVG rendering. Direct cross-import is impossible due to module system split (see above).
+
+**Consistency requirement:** Changes to map size, stride, or hex math must update both sides and the bridging test. Historical bugs (e.g. stride 32 vs enlarged map) were caused by drift.
+
+See: visibility-cells.js, WorldmapRenderer.jsx, HexSelectionModal.jsx, ARCHIVAL.md (stride migration), and the dedicated consistency test.
+
 ### 2. Consolidating Data Transformations
 
 Pure data transformation functions (no I/O, no state mutations) are consolidated in `game/lib/data-transformations.js` rather than scattered through engine.js. This enables:

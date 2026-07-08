@@ -23,6 +23,7 @@ const { migrateVisibility, DEFAULT_VISIBILITY } = require('./visibility-migratio
 const { encodeCellSet, cellIndex } = require('./visibility-cells');
 const { pixelToHex } = require('./hex-utils');
 const { getKingdomMapCoords } = require('./world-map-coords');
+const config = require('./config');
 
 /**
  * Parse a kingdom row's raw `visibility` column value into BigInts.

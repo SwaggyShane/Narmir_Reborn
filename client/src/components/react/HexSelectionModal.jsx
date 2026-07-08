@@ -3,6 +3,19 @@ import { toast } from '../../utils/toast.js';
 import { buildHexGrid, TERRAIN_COLORS, seedToInt32 } from '../../utils/terrainUtils.js';
 import { pixelToHex, hexCenter, hexCorners } from '../../utils/hexMap/HexGeometry.ts';
 import { useKingdomId } from '../../stores/profileStore.js';
+import { cellIndex as clientCellIndex } from '../../utils/hex-constants.js';
+
+const isHexSeen = (col, row, seenBig) => {
+  const idx = clientCellIndex(col, row);
+  if (idx < 0 || !seenBig) return false;
+  return (seenBig & (1n << BigInt(idx))) !== 0n;
+};
+
+const isHexCurrent = (col, row, currentBig) => {
+  const idx = clientCellIndex(col, row);
+  if (idx < 0 || !currentBig) return false;
+  return (currentBig & (1n << BigInt(idx))) !== 0n;
+};
 
 const WORLD_WIDTH = 1999;
 const WORLD_HEIGHT = 1380;
@@ -136,28 +149,7 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
 
   if (!isOpen) return null;
 
-  // Client-side fog of war helpers
-  const CLIENT_CELL_INDEX_OFFSET = 8;
-  const CLIENT_CELL_INDEX_STRIDE = 48;
-
-  const clientCellIndex = (col, row) => {
-    const colShifted = col + CLIENT_CELL_INDEX_OFFSET;
-    const rowShifted = row + CLIENT_CELL_INDEX_OFFSET;
-    if (colShifted < 0 || colShifted >= CLIENT_CELL_INDEX_STRIDE || rowShifted < 0) return -1;
-    return rowShifted * CLIENT_CELL_INDEX_STRIDE + colShifted;
-  };
-
-  const isHexSeen = (col, row, seenBig) => {
-    const idx = clientCellIndex(col, row);
-    if (idx < 0 || !seenBig) return false;
-    return (seenBig & (1n << BigInt(idx))) !== 0n;
-  };
-
-  const isHexCurrent = (col, row, currentBig) => {
-    const idx = clientCellIndex(col, row);
-    if (idx < 0 || !currentBig) return false;
-    return (currentBig & (1n << BigInt(idx))) !== 0n;
-  };
+  // Client-side fog of war helpers (uses canonical mirror)
 
   // Build SVG elements from terrain grid
   const hexElements = [];

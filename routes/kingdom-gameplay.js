@@ -5,6 +5,7 @@ const fs = require("fs");
 const crypto = require("crypto");
 const engine = require("../game/engine");
 const config = require("../game/config");
+const { initProfiler, runWithProfiler } = require("../game/profiling");
 const { requireAuth, requireCsrfToken } = require("./middleware");
 const { safeJsonParse, devLog } = require('../utils/helpers');
 const { validateTroopAmount } = require('../utils/numeric-validation');
@@ -19,7 +20,7 @@ const { decorateNewsMessage } = require("../game/news-emoji");
 const { EPOCH_NOW } = require("../lib/db-sql");
 const { pgInList, pgValueTuples } = require("../lib/pg-placeholders");
 const { getKingdomMapCoords, placeResourceNodeCoords } = require("../game/world-map-coords");
-const { getTerrainForRace, getTerrainModifiers } = require("../game/terrain");
+const { getTerrainForRace, getTerrainModifiers, generateMixedBiomes } = require("../game/terrain");
 const { getWorldSeed } = require("../game/world-seed");
 const { getKingdomVisibility, updateKingdomVisibility } = require('../game/visibility');
 const { safeBitmapHasCell, safeBitmapAddCell, isValidCell } = require('../game/visibility-cells');
@@ -158,7 +159,7 @@ const upload = multer({
       return cb(new Error("Only image files (jpg, png, gif, webp) are allowed"));
     }
     if (!ALLOWED_PORTRAIT_MIME.has(file.mimetype)) {
-      return cb(new Error("Invalid file type â€” only image files are allowed"));
+      return cb(new Error("Invalid file type - only image files are allowed"));
     }
     cb(null, true);
   },
@@ -174,7 +175,7 @@ const uploadWithErrorHandling = (req, res, next) => {
   });
 };
 
-// â”€â”€ Per-player turn processing lock â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— Per-player turn processing lock —————————————————————————
 // Prevents client-side race conditions from multiple simultaneous turn requests
 const turnsInProgress = new Map(); // playerId -> Promise
 
@@ -225,7 +226,6 @@ module.exports = function (db) {
   router.get('/scouts', requireAuth, async (req, res) => {
     try {
       const k = await db.get('SELECT scout_allocation, scout_progress FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
-      console.log('[scouts] Fetched for player:', req.player.playerId, { scout_allocation: k?.scout_allocation, scout_progress: k?.scout_progress });
       if (!k) {
         return res.status(404).json({ error: 'Kingdom not found' });
       }
@@ -329,12 +329,12 @@ module.exports = function (db) {
     return k;
   }
 
-  // â”€â”€ Load turn input context (init queries + trade routes) â€” can run outside txn â”€â”€â”€â”€â”€â”€
+  // —— Load turn input context (init queries + trade routes) - can run outside txn ———
   async function loadTurnContext(db, k) {
     if (!k) throw new Error('Kingdom not found');
     console.time(`[turn-${k.id}] init-queries`);
     // Inject region ownership status for bonuses
-    // All 3 queries are independent â€” run them in parallel
+    // All 3 queries are independent - run them in parallel
     const [regionStatus, myAlliance, heroes] = await Promise.all([
       db.get(
         "SELECT owner_alliance_id, bonus_type FROM regions WHERE name = $1",
@@ -362,7 +362,7 @@ module.exports = function (db) {
     return { heroes };
   }
 
-  // â”€â”€ Commit turn side-effects (applies, hero XP, news, expeditions, resources) â”€â”€â”€â”€
+  // —— Commit turn side-effects (applies, hero XP, news, expeditions, resources) ————
   // These are the DB writes that benefit from being inside a short transaction.
   // Called from both legacy runTurn and the optimized /turn path.
   async function commitTurnResults(db, k, updates, incomingEvents) {
@@ -378,7 +378,7 @@ module.exports = function (db) {
 
     updates.turns_stored = k.turns_stored - 1;
 
-    // Dedup news â€” only insert if we haven't already sent this EXACT message recently
+    // Dedup news - only insert if we haven't already sent this EXACT message recently
     const filteredEvents = [];
     // Batch check for duplicate news instead of N+1 queries
     const existingMessages = {};
@@ -491,13 +491,13 @@ module.exports = function (db) {
               [
                 k.id,
                 "system",
-                repairMojibake(`ðŸ”­ Your Surveyors discovered the kingdom of ${other.name}!`),
+                repairMojibake(`ðŸ"­ Your Surveyors discovered the kingdom of ${other.name}!`),
                 turnNum,
               ],
             );
             events.push({
               type: "system",
-              message: repairMojibake(`ðŸ”­ Your Surveyors discovered the kingdom of ${other.name}!`),
+              message: repairMojibake(`ðŸ"­ Your Surveyors discovered the kingdom of ${other.name}!`),
             });
           }
         }
@@ -544,7 +544,69 @@ module.exports = function (db) {
     return { updates, events: allEvents };
   }
 
-  // â”€â”€ Shared turn runner â€” used by ALL routes that consume a turn â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— Process turn effects without deducting another turn (for instant actions like hunt) ——
+  async function processTurnEffectsOnly(db, k) {
+    if (!k) throw new Error('Kingdom not found');
+    console.time(`[turn-${k.id}] effects-only`);
+
+    // Load context before transaction
+    await loadTurnContext(db, k);
+
+    console.time(`[turn-${k.id}] effects-only-transaction`);
+    const { updates: finalUpdates, events: finalEvents } = await db.withTransaction(async () => {
+      // Re-fetch with FOR UPDATE for row lock in transaction
+      let lockedK = await db.get("SELECT * FROM kingdoms WHERE id = $1 FOR UPDATE", [k.id]);
+      if (!lockedK) throw new Error('Kingdom not found');
+
+      // Merge the pre-fetched context onto the fresh lockedK
+      Object.assign(lockedK, {
+        _region_owned_by_my_alliance: k._region_owned_by_my_alliance,
+        _region_bonus_type: k._region_bonus_type,
+        heroes: k.heroes,
+        _trade_routes: k._trade_routes,
+      });
+
+      console.time(`[turn-${k.id}] engine.processTurn`);
+      const { updates, events } = engine.processTurn(lockedK, db);
+      console.timeEnd(`[turn-${k.id}] engine.processTurn`);
+
+      // Don't deduct a turn (it was already deducted by the action that called this)
+      updates.turns_stored = lockedK.turns_stored;
+
+      const { updates: txUpdates, events: txEvents } = await commitTurnResults(db, lockedK, updates, events);
+
+      // Fix turns_stored since commitTurnResults would have deducted another turn
+      txUpdates.turns_stored = lockedK.turns_stored;
+
+      return { updates: txUpdates, events: txEvents };
+    });
+    console.timeEnd(`[turn-${k.id}] effects-only-transaction`);
+
+    // Refresh fields that resolveExpeditions may have updated via SQL
+    console.time(`[turn-${k.id}] refresh-queries`);
+    const refreshed = await db.get(
+      "SELECT rangers, fighters, gold, mana, land, scrolls, maps, blueprints_stored, troop_levels, library_progress, tower_progress, racial_bonuses_unlocked, scout_progress FROM kingdoms WHERE id = $1",
+      [k.id],
+    );
+    if (refreshed) Object.assign(finalUpdates, refreshed);
+
+    // Fetch unread news count
+    const unread = await db.get(
+      "SELECT COUNT(*) as c FROM news WHERE kingdom_id = $1 AND is_read = 0",
+      [k.id],
+    );
+    console.timeEnd(`[turn-${k.id}] refresh-queries`);
+    finalUpdates.unread_news = unread.c;
+
+    // Calculate new score after turn
+    const finalState = { ...k, ...finalUpdates };
+    finalUpdates.score = engine.calculateScore(finalState);
+
+    console.timeEnd(`[turn-${k.id}] effects-only`);
+    return { updates: finalUpdates, events: finalEvents };
+  }
+
+  // —— Shared turn runner - used by ALL routes that consume a turn ————————————
   async function runTurn(db, k) {
     if (!k) throw new Error('Kingdom not found');
     console.time(`[turn-${k.id}] total`);
@@ -580,14 +642,13 @@ module.exports = function (db) {
     return { updates: finalUpdates, events: finalEvents };
   }
 
-  // â”€â”€ Take turn (advance game state) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— Take turn (advance game state) ——————————————————————————
   // Optimized to minimize time holding DB transaction/connection (Phase 1):
   // - Prefetch of context (region/alliance/heroes + trade) + final refresh happen outside txn.
   // - Inside txn: FOR UPDATE lock + fresh kingdom snapshot + processTurn (on locked state) + writes.
   // - Context merged onto lockedK to preserve hero XP, bonuses, etc.
   // This shortens txn hold vs. original (init queries + refresh moved out) while preserving correctness.
   router.post("/turn", requireAuth, requireCsrfToken, async (req, res) => {
-    console.log('[turn] POST /turn called for player:', req.player.playerId);
     const startTime = Date.now();
     try {
       const result = await withTurnLock(req.player.playerId, async () => {
@@ -602,7 +663,7 @@ module.exports = function (db) {
           throw new Error("Kingdom not found");
         }
         if (k.turns_stored < 1) {
-          throw new Error("No turns available â€” next +7 turns in 25 minutes");
+          throw new Error("No turns available - next +7 turns in 25 minutes");
         }
 
         // Load context (init-queries + trade-routes) OUTSIDE txn — parallel reads
@@ -622,7 +683,7 @@ module.exports = function (db) {
               throw new Error("Kingdom not found");
             }
             if (lockedK.turns_stored < 1) {
-              throw new Error("No turns available â€” next +7 turns in 25 minutes");
+              throw new Error("No turns available - next +7 turns in 25 minutes");
             }
 
             // Merge the pre-fetched context/heroes onto the fresh lockedK.
@@ -637,16 +698,23 @@ module.exports = function (db) {
             // Run processTurn on the *locked* snapshot (prevents stale absolute updates
             // and lost concurrent modifications from non-turn actions).
             console.time(`[turn-${lockedK.id}] engine.processTurn`);
-            const { updates, events, _profileReport } = engine.processTurn(lockedK, db);
+            let turnResult;
+            if (process.env.NODE_ENV !== 'production') {
+              const p = initProfiler();
+              turnResult = runWithProfiler(p, () => engine.processTurn(lockedK, db));
+            } else {
+              turnResult = engine.processTurn(lockedK, db);
+            }
+            const { updates, events, _profileReport } = turnResult;
             if (_profileReport && _profileReport.totalTime > 0) {
               console.log(`[profiling] Turn ${updates.turn}: ${_profileReport.totalTime}ms total`);
-              if (_profileReport.summary?.jsonPercentOfTotal > 10) {
-                console.log(`[profiling] JSON cost: ${_profileReport.jsonOperations.totalTime}ms (${_profileReport.summary.jsonPercentOfTotal}% of total)`);
+              const { BUDGETS } = require('../game/profiling');
+              const b = BUDGETS || { jsonHighCostMs: 100, slowAttunementMs: 10 };
+              if (_profileReport.summary?.jsonPercentOfTotal > 10 || _profileReport.jsonOperations.totalTime > b.jsonHighCostMs) {
+                console.log(`[profiling] JSON cost: ${_profileReport.jsonOperations.totalTime}ms (${_profileReport.summary.jsonPercentOfTotal}% of total) (budget ${b.jsonHighCostMs}ms)`);
               }
-              if (_profileReport.summary?.slowAttunements) {
-                _profileReport.summary.slowAttunements.forEach(([name, data]) => {
-                  console.log(`[profiling] Slow attunement: ${name} max ${data.maxTime}ms`);
-                });
+              if (_profileReport.summary?.slowAttunements || Object.values(_profileReport.attunements || {}).some(a => a.maxTime > b.slowAttunementMs)) {
+                console.log(`[profiling] Slow attunements detected (budget ${b.slowAttunementMs}ms)`);
               }
             }
             console.timeEnd(`[turn-${lockedK.id}] engine.processTurn`);
@@ -704,13 +772,13 @@ module.exports = function (db) {
         ? (err.stack || err.message)
         : undefined;
       res.status(500).json({
-        error: "Turn processing failed â€” please try again",
+        error: "Turn processing failed - please try again",
         ...(detail ? { detail } : {}),
       });
     }
   });
 
-  // â”€â”€ Hire units â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— Hire units ————————————————————————————————————————————————
   router.post("/hire", requireAuth, requireCsrfToken, async (req, res) => {
     const { unit, amount } = req.body;
 
@@ -766,20 +834,20 @@ module.exports = function (db) {
     }
   });
 
-  // â”€â”€ Research â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // â”€â”€ Queue buildings â€” charges gold, no turn cost â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— Research ——————————————————————————————————————————————————
+  // —— Queue buildings - charges gold, no turn cost —————————————â"€
 
-  // â”€â”€ Get training allocation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— Get training allocation ———————————————————————————————
 
-  // â”€â”€ Save training allocation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— Save training allocation ———————————————————————————————
 
 
 
-  // â”€â”€ Build structures â€” start construction with engineer allocation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— Build structures - start construction with engineer allocation ——————
 
-  // â”€â”€ Cancel building â€” refund resources â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— Cancel building - refund resources —————————————————————
 
-  // â”€â”€ Forge tools â€” costs 1 turn + gold for scaffolding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— Forge tools - costs 1 turn + gold for scaffolding ————————————
   router.post("/smithy/forge-tools", requireAuth, requireCsrfToken, async (req, res) => {
     const { toolType, quantity } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1", [
@@ -829,15 +897,15 @@ module.exports = function (db) {
       });
     } catch (err) {
       console.error("[smithy/forge-tools] failed:", err.message);
-      res.status(500).json({ error: "Forging failed â€” please try again" });
+      res.status(500).json({ error: "Forging failed - please try again" });
     }
   });
 
-  // â”€â”€ Smithy â€” buy hammers for gold â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— Smithy - buy hammers for gold —————————————————————————
 
-  // â”€â”€ Smithy â€” buy scaffolding for gold â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— Smithy - buy scaffolding for gold —————————————————————
 
-  // â”€â”€ Trade Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Trade Routes â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.post("/search", requireAuth, requireCsrfToken, async (req, res) => {
     const { type, rangers } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1", [
@@ -1013,19 +1081,19 @@ module.exports = function (db) {
       });
     } catch (err) {
       console.error("[search] failed:", err.message);
-      res.status(500).json({ error: "Search failed â€” please try again" });
+      res.status(500).json({ error: "Search failed — please try again" });
     }
   });
 
-  // â”€â”€ Mage tower allocation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Mage tower allocation â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 
-  // â”€â”€ Shrine allocation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Shrine allocation â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
-  // â”€â”€ Mausoleum allocation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Mausoleum allocation â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 
-  // â”€â”€ Library allocation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Library allocation â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.post("/library-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
     if (!allocation || typeof allocation !== "object")
@@ -1074,7 +1142,7 @@ module.exports = function (db) {
 
   // library-cancel has been replaced by library-allocation.
   // Admin: clear ALL expeditions for a kingdom (debug tool)
-  // â”€â”€ Options â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Options â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.post("/options", requireAuth, requireCsrfToken, async (req, res) => {
     const { tax, name } = req.body;
     const k = await db.get("SELECT id FROM kingdoms WHERE player_id = $1", [
@@ -1085,7 +1153,7 @@ module.exports = function (db) {
     if (tax !== undefined) {
       const t = Number(tax);
       if (t < 0 || t > 100)
-        return res.status(400).json({ error: "Tax must be 0â€“100" });
+        return res.status(400).json({ error: "Tax must be 0—100" });
       updates.tax = t;
     }
     if (name !== undefined) {
@@ -1096,7 +1164,7 @@ module.exports = function (db) {
     await applyUpdates(db, k.id, updates);
     res.json({ ok: true, updates });
   });
-  // â”€â”€ Season info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Season info â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.get("/season", requireAuth, async (_req, res) => {
     const sRow = await db.get(
       "SELECT value FROM server_state WHERE key='current_season'",
@@ -1140,7 +1208,7 @@ module.exports = function (db) {
     });
   });
 
-  // â”€â”€ Location â€” get my discovered kingdoms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Location — get my discovered kingdoms â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.get("/locations", requireAuth, async (req, res) => {
     const k = await db.get(
       "SELECT discovered_kingdoms, location_maps_wip FROM kingdoms WHERE player_id=$1",
@@ -1474,10 +1542,10 @@ module.exports = function (db) {
     }
   });
 
-  // â”€â”€ Market â€” Buying resources â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Market — Buying resources â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
-  // â”€â”€ Research focus â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // â”€â”€ Studies overview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Research focus â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+  // â"€â"€ Studies overview â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.get("/profile/:name", requireAuth, async (req, res) => {
     try {
       const k = await db.get(
@@ -1532,7 +1600,7 @@ module.exports = function (db) {
     }
   });
 
-  // â”€â”€ World map data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ World map data â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.get("/world-map", requireAuth, async (req, res) => {
     try {
       const k = await db.get(
@@ -1621,7 +1689,7 @@ module.exports = function (db) {
         },
       });
     } catch {
-      // region column may not exist yet â€” fallback query
+      // region column may not exist yet — fallback query
       try {
         const k = await db.get(
           "SELECT id, race, discovered_kingdoms, visibility FROM kingdoms WHERE player_id = $1",
@@ -1873,9 +1941,9 @@ module.exports = function (db) {
 
 
 
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   // RESOURCE GATHERING SYSTEM
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
   const {
     initItemsArray,
@@ -1884,7 +1952,7 @@ module.exports = function (db) {
 
   const { RARE_RESOURCE_ITEMS, RESOURCE_NODE_NAMES, HARVEST_DURATION_BY_RICHNESS } = config;
 
-  // GET /resource-nodes â€” list all discovered nodes for this kingdom
+  // GET /resource-nodes — list all discovered nodes for this kingdom
   router.get('/resource-nodes', requireAuth, async (req, res) => {
     try {
       const k = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
@@ -1897,7 +1965,7 @@ module.exports = function (db) {
     }
   });
 
-  // GET /expeditions â€” list all resource expeditions for this kingdom
+  // GET /expeditions — list all resource expeditions for this kingdom
   router.get('/resource-expeditions', requireAuth, async (req, res) => {
     try {
       const k = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
@@ -1917,7 +1985,7 @@ module.exports = function (db) {
     }
   });
 
-  // POST /scout-node â€” pay 500 gold, generate a random resource node
+  // POST /scout-node — pay 500 gold, generate a random resource node
   router.post('/scout-node', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const k = await db.get('SELECT id, gold, race FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
@@ -1941,7 +2009,7 @@ module.exports = function (db) {
       else if (rRoll < 0.95) richness = 4;
       else richness = 5;
 
-      // Random distance 600â€“28800 seconds
+      // Random distance 600—28800 seconds
       const distance = Math.floor(Math.random() * 28200) + 600;
 
       // Pick name from pool
@@ -1962,11 +2030,10 @@ module.exports = function (db) {
 
       // Generate 6-8 biome patches for the region
       const patchCount = 6 + Math.floor(seedRandom(regionSeed) * 3);
-      const { generateMixedBiomes, selectTerrainFromBiomes } = require('../game/terrain');
       const regionBiomes = generateMixedBiomes(k.race, patchCount);
 
       // Select terrain from biome mix based on distance (pseudo-random but deterministic per location)
-      const nodeSeed = distance * 37 + k.race.charCodeAt(1) * 89;
+      const nodeSeed = distance * 37 + k.race.charCodeAt(Math.min(1, k.race.length - 1)) * 89;
       const terrainIndex = Math.floor(seedRandom(nodeSeed) * regionBiomes.length);
       const terrain = regionBiomes[terrainIndex];
       let result;
@@ -2178,7 +2245,7 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/launch â€” start a resource expedition to a discovered node
+  // POST /expedition/launch — start a resource expedition to a discovered node
   router.post('/expedition/launch', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const { nodeId, populationSent } = req.body;
@@ -2189,7 +2256,7 @@ module.exports = function (db) {
       const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [req.player.playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
-      // Free population cap â€” max 25% of free pop can go on an expedition
+      // Free population cap — max 25% of free pop can go on an expedition
       // Also subtract population already deployed on active expeditions (belt-and-suspenders)
       const onExp = await db.get(
         "SELECT SUM(population_sent) as total FROM resource_expeditions WHERE kingdom_id = $1 AND status NOT IN ('completed','intercepted')",
@@ -2276,7 +2343,7 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/intercept â€” orc-only interception
+  // POST /expedition/intercept — orc-only interception
   router.post('/expedition/intercept', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const { expeditionId, fighters } = req.body;
@@ -2318,13 +2385,13 @@ module.exports = function (db) {
         if (Object.keys(lootUpdates).length > 0) {
           await applyKingdomUpdates(k.id, lootUpdates);
         }
-      newsMessages.push({ kingdom_id: k.id, message: repairMojibake(`âš”ï¸ Your warriors intercepted an expedition! You seized: ${JSON.stringify(loot)}.`) });
+      newsMessages.push({ kingdom_id: k.id, message: repairMojibake(`âš"ï¸ Your warriors intercepted an expedition! You seized: ${JSON.stringify(loot)}.`) });
       newsMessages.push({ kingdom_id: exp.kingdom_id, message: repairMojibake(`ðŸš¨ Orc raiders from ${k.name} intercepted your expedition and stole your loot! Your ${exp.population_sent.toLocaleString()} people fled home.`) });
       } else {
         // Attacker takes casualties
         const casualties = Math.floor(fighters * 0.3);
         await db.run('UPDATE kingdoms SET fighters = fighters - $1 WHERE id = $2', [casualties, k.id]);
-        newsMessages.push({ kingdom_id: k.id, message: repairMojibake(`âš”ï¸ Your warriors failed to intercept the expedition. Lost ${casualties} fighters.`) });
+        newsMessages.push({ kingdom_id: k.id, message: repairMojibake(`âš"ï¸ Your warriors failed to intercept the expedition. Lost ${casualties} fighters.`) });
         newsMessages.push({ kingdom_id: exp.kingdom_id, message: repairMojibake(`ðŸ›¡ï¸ Your expedition successfully repelled Orc raiders from ${k.name}!`) });
       }
 
@@ -2339,7 +2406,7 @@ module.exports = function (db) {
     }
   });
 
-  // GET /expeditions/visible â€” orc-only, returns other kingdoms' active expeditions
+  // GET /expeditions/visible — orc-only, returns other kingdoms' active expeditions
   router.get('/expeditions/visible', requireAuth, async (req, res) => {
     try {
       const k = await db.get('SELECT id, race FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
@@ -2363,7 +2430,7 @@ module.exports = function (db) {
     }
   });
 
-  // POST /resource-upgrade â€” purchase stage 2 or 3 upgrade for a resource type
+  // POST /resource-upgrade — purchase stage 2 or 3 upgrade for a resource type
   router.post('/resource-upgrade', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const { type, toStage } = req.body;
@@ -2445,7 +2512,7 @@ module.exports = function (db) {
     }
   });
 
-  // â”€â”€ Process resource expeditions (called lazily from processTurn endpoint) â”€â”€â”€â”€
+  // â"€â"€ Process resource expeditions (called lazily from processTurn endpoint) â"€â"€â"€â"€
   async function processResourceExpeditionsDb(kingdomId, k) {
     const now = Math.floor(Date.now() / 1000);
     const exps = await db.all(
@@ -2541,7 +2608,7 @@ module.exports = function (db) {
   // Attach this helper to be callable from the processTurn route
   router._processResourceExpeditions = processResourceExpeditionsDb;
 
-  // â”€â”€ Inventory â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Inventory â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.get('/inventory', requireAuth, async (req, res) => {
     try {
       const k = await db.get('SELECT id, items FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
@@ -2584,9 +2651,9 @@ module.exports = function (db) {
     }
   });
 
-  // â”€â”€ WORLD FRAGMENT ATTUNEMENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ WORLD FRAGMENT ATTUNEMENTS â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
-  // GET /api/kingdom/attunements â€” Get current attunement status
+  // GET /api/kingdom/attunements — Get current attunement status
   router.get('/attunements', requireAuth, async (req, res) => {
     try {
       const kingdom = await db.get("SELECT id, fragment_bonuses, world_fragments FROM kingdoms WHERE player_id = $1", [
@@ -2606,7 +2673,7 @@ module.exports = function (db) {
     }
   });
 
-  // GET /api/kingdom/available-attunements â€” Get available attunement options
+  // GET /api/kingdom/available-attunements — Get available attunement options
   router.get('/available-attunements', requireAuth, async (req, res) => {
     try {
       const kingdom = await db.get(
@@ -2631,7 +2698,7 @@ module.exports = function (db) {
     }
   });
 
-  // POST /api/kingdom/attune-fragment â€” Apply a fragment attunement to a building
+  // POST /api/kingdom/attune-fragment — Apply a fragment attunement to a building
   router.post('/attune-fragment', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const { fragmentName, buildingType } = req.body;
@@ -2687,7 +2754,7 @@ module.exports = function (db) {
     }
   });
 
-  // POST /api/kingdom/remove-attunement â€” Remove fragment attunement from building
+  // POST /api/kingdom/remove-attunement — Remove fragment attunement from building
   router.post('/remove-attunement', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const { buildingType } = req.body;
@@ -2706,7 +2773,7 @@ module.exports = function (db) {
           return res.status(404).json({ error: "Kingdom not found" });
         }
 
-        // Check if any synergy cooldown is active â€” if so, block removal to prevent synergy-hopping
+        // Check if any synergy cooldown is active — if so, block removal to prevent synergy-hopping
         const now = Math.floor(Date.now() / 1000);
         const activeCooldown = await db.get(
           "SELECT synergy_id FROM synergy_cooldowns WHERE kingdom_id = $1 AND cooldown_until > $2 LIMIT 1",
@@ -2763,9 +2830,9 @@ module.exports = function (db) {
     }
   });
 
-  // GET /api/kingdom/contributing-synergies â€” Check which synergies a building/fragment contributes to
+  // GET /api/kingdom/contributing-synergies — Check which synergies a building/fragment contributes to
   // Returns an opaque "resonance" tier instead of the synergy recipes so the
-  // client can't reveal the formula via devtools â€” players discover combos
+  // client can't reveal the formula via devtools — players discover combos
   // by experimentation, not by reading network responses.
   router.get('/contributing-synergies', requireAuth, async (req, res) => {
     try {
@@ -2804,7 +2871,7 @@ module.exports = function (db) {
       }
 
       res.json({
-        // Keep names/emojis out â€” they would let players reverse-engineer
+        // Keep names/emojis out — they would let players reverse-engineer
         // which combos contribute. Only signal whether ANY contribution exists.
         contributes: contributing.length > 0,
         contributingCount: contributing.length,
@@ -2816,7 +2883,7 @@ module.exports = function (db) {
     }
   });
 
-  // GET /api/kingdom/synergy-status â€” Get active synergy and near-activation hints
+  // GET /api/kingdom/synergy-status — Get active synergy and near-activation hints
   router.get('/synergy-status', requireAuth, async (req, res) => {
     try {
       const kingdom = await db.get(
@@ -2835,7 +2902,7 @@ module.exports = function (db) {
     }
   });
 
-  // GET /api/kingdom/synergy-cooldown â€” Check cooldown status for a synergy ability
+  // GET /api/kingdom/synergy-cooldown — Check cooldown status for a synergy ability
   router.get('/synergy-cooldown', requireAuth, async (req, res) => {
     try {
       const { synergy_id } = req.query;
@@ -2898,7 +2965,7 @@ module.exports = function (db) {
     }
   });
 
-  // POST /api/kingdom/activate-synergy-ability â€” Activate a synergy's active ability
+  // POST /api/kingdom/activate-synergy-ability — Activate a synergy's active ability
   router.post('/activate-synergy-ability', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const { synergy_id } = req.body;
@@ -3270,6 +3337,13 @@ module.exports = function (db) {
     }
   });
 
+  // Export helper functions for use in other routes
+  router.withTurnLock = withTurnLock;
+  router.runTurn = runTurn;
+  router.processTurnEffectsOnly = processTurnEffectsOnly;
+  router.loadTurnContext = loadTurnContext;
+  router.commitTurnResults = commitTurnResults;
+
   return router;
 };
 
@@ -3293,7 +3367,7 @@ async function applyUpdates(db, kingdomId, updates) {
   await applyKingdomUpdates(kingdomId, updatesForDb, db);
 }
 
-// Insert multiple news rows in a single query â€” much faster than N sequential inserts
+// Insert multiple news rows in a single query — much faster than N sequential inserts
 async function bulkInsertNews(db, rows) {
   if (!rows || rows.length === 0) return;
   const placeholders = pgValueTuples(rows.length, 4);
@@ -3309,7 +3383,7 @@ async function bulkInsertNews(db, rows) {
   );
 }
 
-// Prune old news â€” keep only the most recent N rows per kingdom
+// Prune old news — keep only the most recent N rows per kingdom
 async function pruneNews(db, kingdomId, keep = 200) {
   await db.run(
     `
