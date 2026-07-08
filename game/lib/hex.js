@@ -10,7 +10,7 @@ const CELL_INDEX_STRIDE = 48; // must exceed the largest possible (col + OFFSET)
 function cellIndex(col, row) {
   const colShifted = col + CELL_INDEX_OFFSET;
   const rowShifted = row + CELL_INDEX_OFFSET;
-  if (colShifted < 0 || colShifted >= CELL_INDEX_STRIDE || rowShifted < 0) {
+  if (colShifted < 0 || colShifted >= CELL_INDEX_STRIDE || rowShifted < 0 || rowShifted >= 512) {
     throw new Error(`Invalid hex cell coordinates: (${col}, ${row})`);
   }
   return rowShifted * CELL_INDEX_STRIDE + colShifted;
@@ -25,7 +25,7 @@ function cellIndexToColRow(index) {
 function isValidCell(col, row) {
   const colShifted = col + CELL_INDEX_OFFSET;
   const rowShifted = row + CELL_INDEX_OFFSET;
-  return colShifted >= 0 && colShifted < CELL_INDEX_STRIDE && rowShifted >= 0;
+  return colShifted >= 0 && colShifted < CELL_INDEX_STRIDE && rowShifted >= 0 && rowShifted < 512;
 }
 
 module.exports = {

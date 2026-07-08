@@ -248,27 +248,36 @@ module.exports = function (db, kingdomGameplayRouter) {
     const { duration } = req.body;
     const d = ['instant', '5', '25'].includes(duration) ? duration : 'instant';
 
-    // For instant: just process a turn (identical to turn button)
+    // For instant: use hunting reward calc, deduct 1 turn, apply food (no full turn processing)
     if (d === 'instant') {
-      if (!kingdomGameplayRouter?.runTurn) {
-        return res.status(500).json({ error: 'Turn processing unavailable' });
-      }
       try {
-        const result = await kingdomGameplayRouter.withTurnLock(req.player.playerId, async () => {
-          let k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
+        const { updates, reward } = await db.withTransaction(async () => {
+          let k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [req.player.playerId]);
           if (!k) throw new Error('Kingdom not found');
           if (k.turns_stored < 1) throw new Error('No turns available - next +7 turns in 25 minutes');
 
-          const { updates, events } = await kingdomGameplayRouter.runTurn(db, k);
-          // Include dummy reward so client logging works (instant is just a turn, no real reward)
-          return { ok: true, updates, events, message: 'Turn completed', reward: { foodReward: 0 } };
+          const r = Math.max(0, parseInt(req.body.rangers) || 0);
+          const t = req.body.terrain || 'forest';
+          if (r < 1) throw new Error('Send at least 1 ranger');
+
+          const reward = calculateHuntingReward(r, k.ranger_level || 1, t, k.race, 'instant');
+
+          const newFood = Math.max(0, (k.food || 0) + reward.foodReward);
+          const newTurns = Math.max(0, k.turns_stored - 1);
+
+          await db.run('UPDATE kingdoms SET food = $1, turns_stored = $2 WHERE id = $3', [newFood, newTurns, k.id]);
+
+          return {
+            updates: { food: newFood, turns_stored: newTurns },
+            reward,
+          };
         });
-        return res.json(result);
+        return res.json({ ok: true, updates, reward, message: `Instant hunt: +${reward.foodReward} food` });
       } catch (err) {
         if (err.message.includes('No turns available')) {
           return res.status(429).json({ error: err.message });
         }
-        return res.status(500).json({ error: 'Turn processing failed - please try again' });
+        return res.status(500).json({ error: 'Hunting failed - please try again' });
       }
     }
 
@@ -370,27 +379,36 @@ module.exports = function (db, kingdomGameplayRouter) {
     const { duration } = req.body;
     const d = ['instant', '5', '25'].includes(duration) ? duration : 'instant';
 
-    // For instant: just process a turn (identical to turn button)
+    // For instant: use prospecting reward calc, deduct 1 turn, apply gold (no full turn processing)
     if (d === 'instant') {
-      if (!kingdomGameplayRouter?.runTurn) {
-        return res.status(500).json({ error: 'Turn processing unavailable' });
-      }
       try {
-        const result = await kingdomGameplayRouter.withTurnLock(req.player.playerId, async () => {
-          let k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
+        const { updates, reward } = await db.withTransaction(async () => {
+          let k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [req.player.playerId]);
           if (!k) throw new Error('Kingdom not found');
           if (k.turns_stored < 1) throw new Error('No turns available - next +7 turns in 25 minutes');
 
-          const { updates, events } = await kingdomGameplayRouter.runTurn(db, k);
-          // Include dummy reward so client logging works (instant is just a turn, no real reward)
-          return { ok: true, updates, events, message: 'Turn completed', reward: { goldReward: 0 } };
+          const e = Math.max(0, parseInt(req.body.engineers) || 0);
+          const t = req.body.terrain || 'mountain';
+          if (e < 1) throw new Error('Send at least 1 engineer');
+
+          const reward = calculateProspectingReward(e, k.engineer_level || 1, t, k.race, 'instant');
+
+          const newGold = Math.max(0, (k.gold || 0) + reward.goldReward);
+          const newTurns = Math.max(0, k.turns_stored - 1);
+
+          await db.run('UPDATE kingdoms SET gold = $1, turns_stored = $2 WHERE id = $3', [newGold, newTurns, k.id]);
+
+          return {
+            updates: { gold: newGold, turns_stored: newTurns },
+            reward,
+          };
         });
-        return res.json(result);
+        return res.json({ ok: true, updates, reward, message: `Instant prospect: +${reward.goldReward} gold` });
       } catch (err) {
         if (err.message.includes('No turns available')) {
           return res.status(429).json({ error: err.message });
         }
-        return res.status(500).json({ error: 'Turn processing failed - please try again' });
+        return res.status(500).json({ error: 'Prospecting failed - please try again' });
       }
     }
 

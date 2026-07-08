@@ -4,13 +4,15 @@ const { EPOCH_NOW_TEXT } = require('../lib/db-sql');
 
 // Fires at most one seasonal event per kingdom per day, drawn from the `events` table.
 // Applies the effect and records it in event_log. Returns { updates, message } or null.
-async function fireDailyEvent(db, k, season) {
+async function fireDailyEvent(db, k, season, allEvents = null) {
   const now = Math.floor(Date.now() / 1000);
   if ((now - (k.last_event_at || 0)) < 86400) return null;
-  const allEvents = await db.all(
-    `SELECT * FROM events WHERE is_active=1 AND (season=$1 OR season='all') ORDER BY RANDOM() LIMIT 10`,
-    [season]
-  );
+  if (!allEvents) {
+    allEvents = await db.all(
+      `SELECT * FROM events WHERE is_active=1 AND (season=$1 OR season='all') ORDER BY RANDOM() LIMIT 10`,
+      [season]
+    );
+  }
   if (!allEvents.length) return null;
   const eligible = allEvents.filter(e => !e.race_only || e.race_only === k.race);
   if (!eligible.length) return null;
@@ -66,8 +68,14 @@ async function runRegen(db, io) {
   const kingdomUpdates = [];
   const eventLogInserts = [];
 
+  // Query events once to avoid N+1 per kingdom
+  const allEvents = await db.all(
+    `SELECT * FROM events WHERE is_active=1 AND (season=$1 OR season='all') ORDER BY RANDOM() LIMIT 10`,
+    [season]
+  );
+
   for (const k of kingdoms) {
-    const result = await fireDailyEvent(db, k, season);
+    const result = await fireDailyEvent(db, k, season, allEvents);
     if (result) {
       kingdomIds.push(k.id);
       kingdomUpdates.push(result.updates);
@@ -164,13 +172,13 @@ async function runRegen(db, io) {
   try {
     let totalCleaned = 0;
     let result = await db.run('DELETE FROM event_log WHERE fired_at < $1', [now - RETENTION.EVENTS * 86400]);
-    totalCleaned += result.changes;
+    totalCleaned += (result.changes || result.rowCount || 0);
     result = await db.run('DELETE FROM news WHERE created_at < $1', [now - RETENTION.NEWS * 86400]);
-    totalCleaned += result.changes;
+    totalCleaned += (result.changes || result.rowCount || 0);
     result = await db.run('DELETE FROM war_log WHERE created_at < $1', [now - RETENTION.WAR * 86400]);
-    totalCleaned += result.changes;
+    totalCleaned += (result.changes || result.rowCount || 0);
     result = await db.run('DELETE FROM spy_reports WHERE created_at < $1', [now - RETENTION.SPY * 86400]);
-    totalCleaned += result.changes;
+    totalCleaned += (result.changes || result.rowCount || 0);
 
     if (totalCleaned > 0) {
       console.log(`[db] Cleaned up ${totalCleaned} old log entries`);

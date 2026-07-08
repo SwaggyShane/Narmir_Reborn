@@ -9,7 +9,7 @@ export const CELL_INDEX_STRIDE = 48;
 export function cellIndex(col, row) {
   const colShifted = col + CELL_INDEX_OFFSET;
   const rowShifted = row + CELL_INDEX_OFFSET;
-  if (colShifted < 0 || colShifted >= CELL_INDEX_STRIDE || rowShifted < 0) {
+  if (colShifted < 0 || colShifted >= CELL_INDEX_STRIDE || rowShifted < 0 || rowShifted >= 512) {
     return -1;
   }
   return rowShifted * CELL_INDEX_STRIDE + colShifted;

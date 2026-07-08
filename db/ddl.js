@@ -241,18 +241,6 @@ const coreSchema = `
     CREATE INDEX IF NOT EXISTS idx_world_locations_region ON world_locations(region_name);
     CREATE INDEX IF NOT EXISTS idx_world_locations_type ON world_locations(type);
 
-    CREATE TABLE IF NOT EXISTS bounties (
-      id SERIAL PRIMARY KEY,
-      target_id INTEGER NOT NULL REFERENCES kingdoms(id),
-      posted_by INTEGER NOT NULL REFERENCES kingdoms(id),
-      amount INTEGER NOT NULL,
-      status TEXT NOT NULL DEFAULT 'active',
-      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
-      completed_at INTEGER
-    );
-    CREATE INDEX IF NOT EXISTS idx_bounties_target ON bounties(target_id, status);
-    CREATE INDEX IF NOT EXISTS idx_bounties_active ON bounties(status, amount DESC);
-
     CREATE TABLE IF NOT EXISTS spy_reports (
       id SERIAL PRIMARY KEY,
       kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
@@ -313,17 +301,6 @@ const coreSchema = `
     );
     CREATE INDEX IF NOT EXISTS idx_event_log_fired ON event_log(fired_at DESC);
     CREATE INDEX IF NOT EXISTS idx_event_log_kingdom ON event_log(kingdom_id);
-
-    CREATE TABLE IF NOT EXISTS happiness_events (
-      id SERIAL PRIMARY KEY,
-      kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
-      turn INTEGER NOT NULL,
-      amount INTEGER NOT NULL,
-      reason TEXT,
-      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
-    );
-    CREATE INDEX IF NOT EXISTS idx_happiness_events_kingdom_turn ON happiness_events(kingdom_id, turn DESC);
-    CREATE INDEX IF NOT EXISTS idx_happiness_events_kingdom_created ON happiness_events(kingdom_id, created_at DESC);
 
     CREATE TABLE IF NOT EXISTS synergy_cooldowns (
       id SERIAL PRIMARY KEY,
@@ -674,12 +651,14 @@ const coreSchema = `
       description TEXT NOT NULL,
       created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
+    CREATE INDEX IF NOT EXISTS idx_happiness_events_kingdom_turn ON happiness_events(kingdom_id, turn DESC);
+    CREATE INDEX IF NOT EXISTS idx_happiness_events_kingdom_created ON happiness_events(kingdom_id, created_at DESC);
 
     -- Final small tables carved from schema (bounties, events, nodes, trade_offers, lore)
     CREATE TABLE IF NOT EXISTS bounties (
       id SERIAL PRIMARY KEY,
       target_id INTEGER NOT NULL REFERENCES kingdoms(id),
-      posted_by INTEGER NOT NULL REFERENCES kingdoms(id),
+      posted_by INTEGER NOT NULL REFERENCES players(id),
       amount INTEGER NOT NULL,
       status TEXT NOT NULL DEFAULT 'active',
       created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
