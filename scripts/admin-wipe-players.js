@@ -56,7 +56,7 @@ async function wipePlayerAccounts() {
     const tables = [
       { name: 'messages', col: 'sender_id' },
       { name: 'messages', col: 'recipient_id' },
-      { name: 'bounties', col: 'placer_id' },
+      { name: 'bounties', col: 'posted_by' },
       { name: 'chat_messages', col: 'player_id' },
       { name: 'heroes', col: 'player_id' },
       { name: 'news', col: 'player_id' },

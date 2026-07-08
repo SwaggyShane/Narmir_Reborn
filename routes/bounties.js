@@ -16,7 +16,7 @@ module.exports = (db) => {
         SELECT b.*, k.name as target_name, p.username as placer_name
         FROM bounties b
         JOIN kingdoms k ON b.target_id = k.id
-        JOIN players p ON b.placer_id = p.id
+        JOIN players p ON b.posted_by = p.id
         WHERE b.status = 'active'
         ORDER BY b.amount DESC
       `);
@@ -58,7 +58,7 @@ module.exports = (db) => {
 
         await db.run('UPDATE kingdoms SET gold = gold - $1 WHERE id = $2', [amount, k.id]);
         await db.run(
-          'INSERT INTO bounties (placer_id, target_id, amount) VALUES ($1, $2, $3)',
+          'INSERT INTO bounties (posted_by, target_id, amount) VALUES ($1, $2, $3)',
           [req.player.playerId, target_id, amount]
         );
 
