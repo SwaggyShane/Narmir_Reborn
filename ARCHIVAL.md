@@ -2,11 +2,27 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-07 (502 Error Root Cause Fix merged — PR #847)
+**Last updated:** 2026-07-08 (DB Schema Modularization merged via PR #849)
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-08
+
+- **DB Schema Bloat Reduction & Modularization** (PR #849, created 2026-07-08): Completed major refactoring of db/schema.js to reduce bloat and improve maintainability.
+  - **Changes:**
+    - All `CREATE TABLE IF NOT EXISTS` moved to `db/ddl.js` (applySchema called early in initDb).
+    - Seeds, initial data, and column initializers moved to `db/init-data.js` (including large `kingdomColAdds` as `initializeKingdomColumns`).
+    - Helpers extracted: `db/column-utils.js`, `db/kingdom-updates.js`, `db/numeric-fields.js`, `db/json-repair.js`, `db/transaction.js`, `db/connection.js`.
+    - Consolidated repetitive column-add `if` blocks into data-driven loops (now 0 remaining in schema.js).
+    - Cleaned stale "merged/now handled/extracted" comments.
+    - Updated related tests for new structure.
+  - **Metrics:** schema.js reduced from ~1900+ lines to 731 lines; 0 CREATE TABLEs (except 1 internal migration); 0 col-add ifs.
+  - **Quality Gates:** Lint ✅ (0 errors), full test suite (66 files passed), boot with small pool ✅.
+  - **Gemini Review:** PR created; monitoring in progress (no review posted at creation time).
+  - **Files:** Extensive changes across db/, lib/, game/, client/, routes/, tests/.
+  - **Impact:** Schema layer is now modular and easier to maintain; prepares ground for other audit items.
 
 ### 2026-07-07
 

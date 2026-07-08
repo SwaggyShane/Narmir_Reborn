@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-07 (502 Error Root Cause Fix complete — PR #847 merged to main)
+**Last updated:** 2026-07-08 (DB Schema Bloat Reduction complete — PR #849 created)
 
 ---
 
@@ -43,6 +43,7 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 ## Completed Systems (See ARCHIVAL.md)
 
+- **DB Schema Modularization / Bloat Reduction** (complete 2026-07-08, PR #849) — Major extraction of monolithic db/schema.js. All CREATE TABLEs moved to ddl.js, seeds and column initializers to init-data.js, helpers extracted. See ARCHIVAL.md.
 - **Fog of War System** (5 phases, all complete) — See ARCHIVAL.md for phase-by-phase details
 - **Terrain System** (3 phases, all complete) — PR #751 (Phase 1+2), commit b22962f (Phase 3)
 - **Admin CSS Consolidation** (Phase 4R complete) — PR #814, Phase 4S follow-up also complete
