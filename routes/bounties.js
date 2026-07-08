@@ -13,10 +13,10 @@ module.exports = (db) => {
       }
 
       const rows = await db.all(`
-        SELECT b.*, k.name as target_name, p.username as placer_name
+        SELECT b.*, k.name as target_name, COALESCE(p.username, 'unknown') as placer_name
         FROM bounties b
         JOIN kingdoms k ON b.target_id = k.id
-        JOIN players p ON b.posted_by = p.id
+        LEFT JOIN players p ON b.posted_by = p.id
         WHERE b.status = 'active'
         ORDER BY b.amount DESC
       `);

@@ -662,7 +662,8 @@ const coreSchema = `
       amount INTEGER NOT NULL,
       status TEXT NOT NULL DEFAULT 'active',
       created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
-      completed_at INTEGER
+      completed_at INTEGER,
+      claimed_by_id INTEGER
     );
     CREATE INDEX IF NOT EXISTS idx_bounties_target ON bounties(target_id, status);
     CREATE INDEX IF NOT EXISTS idx_bounties_active ON bounties(status, amount DESC);
