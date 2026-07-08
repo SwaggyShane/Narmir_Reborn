@@ -1,10 +1,92 @@
 # Game Architecture Roadmap
 
+**Note:** This roadmap is AI-assisted. Execution will be much faster than timelines suggest (likely 1-3 days vs. 11 weeks). Phases and acceptance criteria remain valid; timeline is conservative.
+
 ## Executive Summary
 
-The project is at an inflection point. We're moving from "a game with lots of code" to "a game engine." This requires a deliberate architectural shift to prevent coupling explosion and enable scalable content creation.
+The project is at an inflection point. We're moving from **"a game with lots of code"** to **"a game engine."** This requires a deliberate architectural shift to prevent coupling explosion and enable scalable content creation.
 
 **Key principle:** Systems should communicate through explicit data flows, not through mutual references. Content should be data-driven, not behavior-driven. Managers should fade away as systems become independent.
+
+---
+
+## Long-Term Vision: Game → Game Engine
+
+**Current mindset:**
+> "How do we implement this feature?"
+
+**Target mindset:**
+> "What engine capability does this feature require?"
+
+This shift naturally produces systems that are reusable, modular, and significantly easier to extend. Every architectural decision should be evaluated through this lens: does it move us toward a solid engine, or toward one-off features?
+
+---
+
+## Architecture Principles (The Constitution)
+
+These 10 principles are immutable. Every future design decision should respect them. They are the "constitution" that prevents architectural debates:
+
+1. **Simulation owns game truth.** The game state is the single source of truth; everything else is a view of it.
+2. **Rendering never mutates game state.** UI is read-only.
+3. **UI generates Commands only.** Input never directly calls simulation.
+4. **Simulation emits Events only.** State changes are broadcast as immutable facts.
+5. **Commands express intent.** A command says "the player wants to do X."
+6. **Events express facts.** An event says "X happened in the world."
+7. **Content is data.** Items, monsters, locations, quests live in JSON/YAML.
+8. **Behavior is code.** Logic lives in functions, not data files.
+9. **Every piece of state has exactly one owner.** No shared ownership; reduces coordination overhead.
+10. **Dependencies always point toward the simulation layer.** Never have simulation depend on UI or rendering.
+
+These principles prevent scope creep and keep the architecture coherent as the codebase grows.
+
+---
+
+## Things We Never Do (Anti-Patterns)
+
+Code review clarity: if you see these patterns, they are architectural violations:
+
+❌ **UI modifies world state** — UI calls `world.entity.health = 0` directly  
+❌ **Renderer changes simulation** — React component emits non-UI events  
+❌ **Managers calling Managers** — CombatManager calls InventoryManager  
+❌ **Circular imports** — A imports B, B imports A  
+❌ **Global mutable singleton state** — `const gameState = {...}; export gameState;`  
+❌ **Game logic inside React components** — Damage calculation in a component  
+❌ **Content files containing executable logic** — items.json has a `function` field  
+❌ **State owned by multiple systems** — Two managers both write to the same entity  
+❌ **Events that aren't JSON-serializable** — Events with Date objects or circular refs  
+❌ **Commands that query state** — A command shouldn't read the world; it should assume valid input  
+
+---
+
+---
+
+## Event Bus Ownership Rules
+
+Define who may emit what to prevent the event system from becoming unstructured as the project grows:
+
+```
+UI Layer
+    ↓ Creates
+Commands (user intent)
+
+Simulation Layer
+    ↓ Emits
+Events (facts about what happened)
+
+Renderer / Client
+    ↓ Cannot emit
+(Renderer is read-only)
+
+Database
+    ↓ Cannot emit
+(Database is a sink, not a source)
+
+Network / Socket.io
+    ↓ Translates only
+(Never generates events; broadcasts existing ones)
+```
+
+**Consequence:** If you find yourself writing an event generator outside the simulation layer, you've violated the architecture. Refactor it.
 
 ---
 
@@ -198,14 +280,34 @@ export type CommandHandler = (world: World, cmd: Command) => Event[];
 
 **Create `types/events.ts`:**
 ```typescript
-// All possible events
+// All possible events — VERSIONED for future protocol evolution
 export type GameEvent =
-  | { type: 'entity:moved'; entityId: string; position: { x: number; y: number }; timestamp: number }
-  | { type: 'entity:damaged'; entityId: string; amount: number; sourceId: string; timestamp: number }
+  | { 
+      version: 1;
+      type: 'entity:moved';
+      eventId: string; // Unique event ID for deduplication
+      entityId: string;
+      position: { x: number; y: number };
+      turnNumber: number; // Which turn this happened in
+      worldTick: number; // Global time counter
+      timestamp: number; // Unix timestamp (not Date object)
+    }
+  | { 
+      version: 1;
+      type: 'entity:damaged';
+      eventId: string;
+      entityId: string;
+      amount: number;
+      sourceId: string;
+      turnNumber: number;
+      worldTick: number;
+      timestamp: number;
+    }
   | // ... more as game grows
 
 // CRITICAL: Events must be JSON-serializable for Socket.io broadcast
 // Rule: No circular refs, class instances, functions, Dates (use timestamps instead)
+// Metadata enables: replay, deterministic debugging, multiplayer sync, duplicate detection
 ```
 
 **Create `test/helpers/assertSerializable.ts` (CRITICAL for Socket.io safety):**
@@ -244,9 +346,11 @@ test('entity:moved event is Socket.io safe', () => {
 - [ ] All events are JSON-serializable (verified by assertSerializable utility)
 - [ ] `assertSerializable<T>` utility exists and is used in every event test
 - [ ] TypeScript compiler confirms types are correct
-- [ ] Events include timestamp (number, not Date) for ordering
+- [ ] **Every event includes metadata: version, eventId, turnNumber, worldTick, timestamp**
+- [ ] **Events follow Event Bus Ownership Rules** (only Simulation emits GameEvents)
+- [ ] Events use timestamps (number, not Date) for ordering
 
-**Why:** Events work locally in Node.js but fail silently over Socket.io if they contain non-serializable types. This utility catches that before production.
+**Why:** Events work locally in Node.js but fail silently over Socket.io if they contain non-serializable types. Metadata enables replay, deterministic debugging, and multiplayer sync. Versioning allows future protocol evolution without breaking existing clients.
 
 ### 2.1 Refactor Movement to Use Commands + Events
 Pick movement because:
