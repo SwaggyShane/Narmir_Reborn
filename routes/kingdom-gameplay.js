@@ -1970,6 +1970,7 @@ module.exports = function (db) {
       const terrainIndex = Math.floor(seedRandom(nodeSeed) * regionBiomes.length);
       const terrain = regionBiomes[terrainIndex];
       let result;
+      let nodeCoords;
       await db.run("BEGIN TRANSACTION");
       try {
         // Atomic balance check: verify sufficient gold within UPDATE to prevent race conditions
@@ -1982,7 +1983,7 @@ module.exports = function (db) {
           'INSERT INTO resource_nodes (kingdom_id, name, type, distance, richness, terrain) VALUES ($1, $2, $3, $4, $5, $6)',
           [k.id, name, nodeType, distance, richness, terrain]
         );
-        const nodeCoords = placeResourceNodeCoords({
+        nodeCoords = placeResourceNodeCoords({
           kingdomId: k.id,
           nodeId: result.lastID,
           race: k.race,
@@ -2000,15 +2001,6 @@ module.exports = function (db) {
         throw txErr;
       }
 
-      const home = getKingdomMapCoords({ id: k.id, race: k.race });
-      const placed = placeResourceNodeCoords({
-        kingdomId: k.id,
-        nodeId: result.lastID,
-        race: k.race,
-        distance,
-        kingdomX: home.map_x,
-        kingdomY: home.map_y,
-      });
       res.json({
         ok: true,
         node: {
@@ -2019,8 +2011,8 @@ module.exports = function (db) {
           distance,
           richness,
           terrain,
-          map_x: placed.map_x,
-          map_y: placed.map_y,
+          map_x: nodeCoords.map_x,
+          map_y: nodeCoords.map_y,
           discovered_at: Math.floor(Date.now() / 1000),
         },
       });
