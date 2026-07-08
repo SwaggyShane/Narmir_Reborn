@@ -53,6 +53,10 @@ Renderer (consume state, display)
 
 ## Phase 1: Foundation & Visibility (Weeks 1-2)
 
+**Owner:** Lead Architect  
+**Timeline:** 2 weeks  
+**Goal:** Full visibility into current architecture and coupling points
+
 ### 1.1 Document Current Architecture
 Create `ARCHITECTURE.md` that describes:
 - Entity lifecycle (how entities are created, updated, destroyed)
@@ -62,139 +66,195 @@ Create `ARCHITECTURE.md` that describes:
 - Data flow between systems
 - Current manager responsibilities
 
-**Why first:** You can't improve what you don't understand. This also becomes the reference design document for the next 6 months.
-
 **Success criteria:** Team can read the doc and explain how a combat turn flows through the system.
 
+**Acceptance criteria:**
+- [ ] Document is 2000-3000 words, includes diagrams
+- [ ] All team members read and sign off
+- [ ] No unexplained manager responsibilities
+
 ### 1.2 Identify Coupling Points
-Audit the codebase for:
-- Classes/modules that import from 5+ other modules
-- Circular dependencies
-- Systems that call methods on each other (instead of using events)
-- State owned by multiple managers
+Quick audit of codebase for:
+- Modules that import from 5+ other modules
+- Circular dependencies (use static analysis)
+- Cross-system method calls
 
-**Output:** A coupling map (could be a simple list or diagram) showing which systems depend on which.
+**Output:** A coupling map (simple spreadsheet) showing:
+- System A depends on System B (reason: X)
+- Number of cross-system calls per system pair
 
-**Why:** You need to see the problem before you solve it. This also identifies which systems are "safest" to refactor first (ones with fewer dependents).
+**Acceptance criteria:**
+- [ ] Coupling map lists 10+ dependencies
+- [ ] Identifies the 3-5 most coupled pairs
+- [ ] Suggests which to decouple first
 
-### 1.3 Set Up Validation Tooling
-Build one quick validation script that runs pre-commit or in CI:
-
-```javascript
-// validateContent.js
-const fs = require('fs');
-const path = require('path');
-
-// Check 1: No duplicate IDs across all data files
-// Check 2: All item references point to valid items
-// Check 3: All location references point to valid locations
-// Check 4: All NPC references are valid
-// Check 5: No orphaned asset references
-
-if (errors.length > 0) {
-  console.error('Content validation failed:');
-  errors.forEach(e => console.error(`  - ${e}`));
-  process.exit(1);
-}
-```
-
-**Why now:** This catches errors early and gets people into the habit of "data quality matters." Even a basic version saves hours of debugging.
+**Why:** Take 3-4 days max. You don't need a perfect map, just enough to identify problem areas and the safest system to refactor first.
 
 ---
 
-## Phase 2: Decoupling (Weeks 3-6)
+## Phase 2: Decoupling (Weeks 3-5)
 
-### 2.1 Establish Command Pattern
-Introduce a thin command layer between input and simulation:
+**Owner:** Combat/Engine Lead  
+**Timeline:** 3 weeks (not 4)  
+**Goal:** Pick ONE system (movement), decouple it completely. Validate the pattern works.
+
+### 2.1 Refactor Movement to Use Commands + Events
+Pick movement because:
+- Smallest scope (fewer dependents)
+- Validates command + event pattern
+- Isolatable test surface
+
+**Do:**
+1. Create `command/moveCommand.ts` 
+2. Movement input → MoveCommand creation (old code stays)
+3. Simulation processes MoveCommand → MoveExecuted event
+4. Update UI via event listener, not method calls
+5. Write test: MoveCommand → MoveExecuted event
+
+**Don't:**
+- Refactor combat yet (too big)
+- Refactor inventory (depends on items)
+- Add undo/redo (future optimization)
 
 ```typescript
-// Input never calls simulation directly
-// Instead: create Command objects
-
-type Command = 
-  | { type: 'MOVE'; entityId: string; position: Vector }
-  | { type: 'ATTACK'; attackerId: string; targetId: string }
-  | { type: 'USE_ITEM'; entityId: string; itemId: string }
-  | ...
-
-// Simulation processes commands
-function processCommand(world: World, cmd: Command): Event[] {
-  switch (cmd.type) {
-    case 'MOVE': return handleMove(world, cmd);
-    case 'ATTACK': return handleAttack(world, cmd);
-    ...
-  }
+// All this is new; old movement code stays untouched for now
+type MoveCommand = { type: 'MOVE'; entityId: string; targetPos: Vector };
+function processMove(world: World, cmd: MoveCommand): Event[] {
+  const entity = world.getEntity(cmd.entityId);
+  if (!entity || !isValidMove(entity, cmd.targetPos)) return [];
+  
+  entity.position = cmd.targetPos;
+  return [{ type: 'entity:moved', entityId: entity.id, position: cmd.targetPos }];
 }
 ```
 
-**Benefits:**
-- Input doesn't know about simulation details
-- Commands can be logged, replayed, networked
-- Easy to add undo/redo or command queues
+**Acceptance criteria:**
+- [ ] Movement works without calling into UI directly
+- [ ] Events are emitted for all move outcomes (success, blocked, out-of-range)
+- [ ] 3+ test cases pass (valid move, blocked move, out of range)
+- [ ] No breaking changes to existing movement (old code still works)
 
-**Starting point:** Pick one system (movement) and refactor it to use commands. Leave everything else as-is for now.
+### 2.2 Introduce Event Broadcasting for Movement Results
+Only movement systems emit/listen to events for now. Don't touch combat or inventory yet.
 
-### 2.2 Introduce Event System
-Replace method calls with event broadcasts:
+**Acceptance criteria:**
+- [ ] UI updates via `events.on('entity:moved', ...)`
+- [ ] Quest system can listen to `entity:moved` without touching movement code
+- [ ] Event system is documented (what events exist, what data they carry)
 
-**Before:**
-```typescript
-combatManager.onEntityDamaged(entity, 30);
-uiManager.updateHealth(entity, 30);
-questManager.checkObjectives(entity, 30);
-```
-
-**After:**
-```typescript
-events.emit('entity:damaged', { entity, amount: 30 });
-// Handlers subscribe independently:
-uiManager.on('entity:damaged', (e) => updateHealth(e.entity, e.amount));
-questManager.on('entity:damaged', (e) => checkObjectives(e.entity, e.amount));
-```
-
-**Benefits:**
-- Systems don't need to know about each other
-- Adding a new system (like achievements) doesn't require modifying existing code
-- Easy to log or replay all events
-
-**Starting point:** Pick the system that currently has the most cross-system calls and refactor it to emit events instead.
-
-### 2.3 Reduce Manager Responsibilities
-Take the largest manager (probably CombatManager or WorldManager) and extract specific concerns:
-
-**Example:** If CombatManager does damage, healing, buffs, and effects:
-```
-CombatManager (orchestrates turns)
-  ↓ calls
-DamageCalculator (pure function)
-EffectApplier (pure function)
-TurnQueue (data structure)
-```
-
-Managers should *orchestrate* (decide what happens), not *execute* (do all the work).
-
-**Success criteria:** The largest manager shrinks by 30-40% in size.
+### 2.3 (Skip for now)
+Don't reduce manager responsibilities yet. That comes after Phase 3 when patterns are proven.
 
 ---
 
-## Phase 3: Data-Driven Design (Weeks 7-10)
+## Migration & Coexistence Policy
 
-### 3.1 Pick a System: Start with Items
-Move item definitions out of code into data files:
+During Phase 2 and 3, old and new systems will coexist. Here's how:
 
-**Before:**
+### Rule 1: Create Adapters, Not Rewrites
+Old code stays. New code wraps it with adapters:
+
 ```typescript
-class Sword extends Weapon {
-  name = 'Iron Sword';
-  damage = 10;
-  rarity = 'common';
-  onUse(target) {
-    target.takeDamage(this.damage);
-  }
+// OLD: CombatManager.onEntityDamaged(entity, 30) called from everywhere
+// NEW: Events are emitted instead
+// COEXISTENCE: Old code continues to work; damage pipeline gradually switches to events
+
+// Adapter layer:
+function damageEntity(world: World, entity: Entity, amount: number): Event[] {
+  // Old behavior (for backward compatibility)
+  const oldManager = world.combatManager;
+  if (oldManager) oldManager.onEntityDamaged(entity, amount); // Still works
+  
+  // New behavior (what we're moving to)
+  events.emit('entity:damaged', { entity, amount });
+  
+  return [{type: 'entity:damaged', entity, amount}];
 }
 ```
 
-**After:**
+### Rule 2: Boundary Between Old & New is Clear
+- **Old world:** CombatManager, InventoryManager, etc. call each other directly
+- **New world:** Systems emit events, don't call each other
+- **Boundary:** Adapters live in `/adapters/` directory
+- **Never mix:** Don't half-refactor a system (don't emit events AND call methods from the same code path)
+
+### Rule 3: New Content Uses New Patterns Immediately
+- Items added in Phase 3 are JSON + behavior lookup, never hardcoded classes
+- Monsters added in Phase 3 are data-driven
+- This forces a "commit point" — once Phase 3 content is added, you can't easily go back to old patterns
+
+### Rule 4: Data Files Are Never Old
+Once you create `data/items.json` in Phase 3, there's no "old item system" vs "new item system" — there's just the new one. This prevents hybrid confusion.
+
+---
+
+## State Ownership Matrix
+
+Clarify who owns what state to prevent fights during refactoring:
+
+| State | Owner System | Source of Truth | Who Can Write | Observers |
+|-------|--------------|-----------------|---------------|-----------|
+| Entity Position | World/Movement | World state | Movement command handler | UI (reads), Combat (validates range), Visibility (updates sight lines) |
+| Entity Health | Combat/Entities | Entity object in world | Damage/heal functions | UI (reflects bar), Quest system (checks objectives), Effects system |
+| Inventory Items | Inventory | Player entity's items array | Inventory add/remove functions | UI (shows items), Crafting (checks requirements), Quests |
+| Active Effects | Combat/Effects | Entity's effects array | Effect applicator | Combat (damage modifiers), UI (shows icons), Rendering |
+| World State (time, weather) | World/Sim | World object | Turn processor | Rendering (affects visuals), Spawn system (affects spawns), UI (displays) |
+| Turn Queue | Combat | Queue data structure | Turn processor | UI (shows order), Combat actions (process in order) |
+
+**Rule:** Each state has exactly ONE owner. Other systems can read, but only the owner can write.
+
+**During transition:**
+- Mark old code that violates this rule with `// DEPRECATED: use X instead`
+- Don't enforce during Phase 1-2; just document
+- Enforce in Phase 3 (new data files must follow these rules)
+
+---
+
+## Testing Strategy Matrix
+
+Define testing approach for each component type:
+
+| Component Type | Test Strategy | Tools | Examples |
+|---|---|---|---|
+| **Commands** | Unit test: input → command → events | Jest/Vitest | MoveCommand, AttackCommand, UseItemCommand |
+| **Events** | Integration test: command → event → listener side effects | Jest + event listener mocks | DamageEvent → UI updates, DamageEvent → Quest checks |
+| **Data Files (JSON)** | Validation script catches schema errors and references | Custom validator | All items.json, monsters.json reference valid behaviors |
+| **Behaviors (pure functions)** | Unit test: input → output | Jest | damage calculation, heal calculation, effect logic |
+| **Simulation (world state changes)** | Integration test: command → simulation → world state | Harness + world inspection | Move command changes position, combat changes health |
+| **UI (render state)** | End-to-end browser test | Playwright/Cypress | UI updates when damage event fires, health bar reflects state |
+| **Adapters** | Smoke test: old system + new system produce same results | Jest | Old CombatManager.onDamage + new events.emit produce same world state |
+
+**Phase 1-2 focus:** Unit tests for commands, integration tests for events, adapters  
+**Phase 3+ focus:** Expand validation scripts to catch data errors  
+
+**Budget:** If a system has 0% test coverage, start with 50% (happy path + one failure case).
+
+---
+
+## Phase 3: Data-Driven Design (Weeks 6-9)
+
+**Owner:** Content Lead  
+**Timeline:** 4 weeks  
+**Goal:** Prove that content can be data-only; no code changes needed to add items/monsters
+
+### 3.1 Migrate Items to JSON (Week 6)
+Move item definitions out of code into `data/items.json`:
+
+**Deliverables:**
+1. `data/items.json` schema + examples (with 10+ existing items)
+2. `game/loaders/ItemLoader.js` (parses JSON, returns usable items)
+3. `game/behaviors/itemBehaviors.js` (lookup table: `weapon:basic_damage` → function)
+4. Validation: `scripts/validate-items.js` (checks IDs, behavior references)
+5. Test: 5+ test cases (item creation, behavior execution, edge cases)
+
+**Acceptance criteria:**
+- [ ] All existing items are in `data/items.json`
+- [ ] ItemLoader produces functionally identical item objects to old system
+- [ ] Can add a new item (edit JSON) without touching code
+- [ ] Validation script catches bad behavior references
+- [ ] All 5 tests pass
+
+**Example item in JSON:**
 ```json
 {
   "id": "item_iron_sword",
@@ -206,40 +266,23 @@ class Sword extends Weapon {
 }
 ```
 
-```typescript
-// Behavior lookup
-const behaviors = {
-  'weapon:basic_damage': (item, target) => target.takeDamage(item.damage),
-  'weapon:fire_damage': (item, target) => {
-    target.takeDamage(item.damage);
-    target.addEffect('burning', 3);
-  },
-  ...
-};
-
-function useItem(item, target) {
-  const behavior = behaviors[item.behavior];
-  if (behavior) behavior(item, target);
-}
-```
-
-**Benefits:**
-- Adding new items = writing JSON, not code
-- Balance changes don't require recompiles
-- Easy to audit all items at once (validation scripts!)
-- Non-programmers can add content
-
-**Steps:**
-1. Create `data/items.json` with all current items
-2. Create `ItemLoader` that parses the JSON
-3. Create behavior lookup table
-4. Update code to use ItemLoader instead of hardcoded classes
-5. Add validation: ensure all behavior references are valid
-
-**Success criteria:** You can add a new item by editing JSON and it works immediately.
-
-### 3.2 Repeat for Monsters
+### 3.2 Migrate Monsters to JSON (Week 7)
 Same pattern as items:
+
+**Deliverables:**
+1. `data/monsters.json` schema + examples
+2. `game/loaders/MonsterLoader.js`
+3. `game/behaviors/aiPatterns.js` (lookup: `monster:basic_aggro` → function)
+4. Validation: `scripts/validate-monsters.js`
+5. Test: 5+ test cases
+
+**Acceptance criteria:**
+- [ ] All existing monsters are in `data/monsters.json`
+- [ ] MonsterLoader produces functionally identical objects to old system
+- [ ] AI behaviors execute correctly from JSON reference
+- [ ] Validation catches invalid item references in loot
+
+**Example monster in JSON:**
 ```json
 {
   "id": "monster_goblin",
@@ -252,8 +295,22 @@ Same pattern as items:
 }
 ```
 
-### 3.3 Repeat for Locations/World
-Same pattern for map data:
+### 3.3 Migrate Locations/World to JSON (Week 8-9)
+Same pattern for map/world data:
+
+**Deliverables:**
+1. `data/locations.json` with all map data
+2. `game/loaders/LocationLoader.js`
+3. Validation: check all location connections point to valid locations
+4. Test: 5+ test cases (connections, spawns, terrain)
+
+**Acceptance criteria:**
+- [ ] All world locations in `data/locations.json`
+- [ ] LocationLoader produces identical terrain/connection data
+- [ ] Validation catches broken location references
+- [ ] Can add a new location by editing JSON
+
+**Example location in JSON:**
 ```json
 {
   "id": "location_forest",
@@ -271,87 +328,120 @@ Same pattern for map data:
 }
 ```
 
----
-
-## Phase 4: Automation & Docs (Weeks 11-12)
-
-### 4.1 Expand Validation Scripts
-
-```javascript
-// validateContent.js (enhanced)
-
-// Check that all monster loot references valid items
-// Check that all location connections point to valid locations
-// Check for orphaned data (items with no source, locations with no path to them)
-// Check for ID collisions
-// Check that all referenced NPC IDs exist
-// Check that all quest chains are valid (steps reference valid objectives)
-// Warn if any system is unused
-
-// Output a report:
-console.log(`Validation complete:
-  ✓ 247 items verified
-  ✓ 43 monsters verified
-  ✓ 18 locations verified
-  ✗ 3 broken references found
-  ⚠ 2 unused items detected`);
-```
-
-### 4.2 Write Permanent Architecture Docs
-
-Create these files:
-
-**ARCHITECTURE.md** (already started in Phase 1)
-- System overview
-- Data flow diagrams
-- Design principles
-
-**ENTITY_LIFECYCLE.md**
-- How entities spawn
-- State transitions
-- Despawn process
-
-**TURN_PROCESSING.md**
-- Input → Command conversion
-- Simulation steps
-- Event generation
-- Rendering
-
-**COMBAT_PIPELINE.md**
-- Turn order
-- Action resolution
-- Damage/healing calculation
-- Effect application
-
-**CONTENT_AUTHORING.md**
-- How to add items
-- How to add monsters
-- How to add locations
-- Data schema reference
-
-**Why:** This becomes the onboarding document for new developers and the reference for design discussions.
-
-### 4.3 Create Content Templates
-```
-data/
-  items.json (template with examples)
-  monsters.json (template)
-  locations.json (template)
-  quests.json (template)
-  behaviors.ts (all registered behaviors, documented)
-```
+**Milestone (end of Phase 3):** 
+All core world data (items, monsters, locations) is in JSON files. Adding new content requires 0 code changes.
 
 ---
 
-## Phase 5: Content Scaling (Weeks 13+)
+## Phase 4: Automation & Docs (Weeks 10-11)
 
-Once the engine is solid, content creation should accelerate because:
-- New items = JSON
-- New monsters = JSON + existing AI
-- New locations = JSON + terrain
-- New quest types = JSON + existing quest engine
+**Owner:** QA Lead + Documentation Owner  
+**Timeline:** 2 weeks  
+**Goal:** Automate quality checks; codify design decisions
 
-This is where you see the payoff: your development velocity increases because you're mostly writing data, not debugging code.
+### 4.1 Expand Validation Scripts (Week 10)
+
+**Deliverables:**
+1. `scripts/validate-content.js` (consolidated validator)
+2. Hook into pre-commit (run validation before commit)
+3. CI integration (fail build if validation fails)
+4. Documentation of validation rules
+
+**Validation checks:**
+- [ ] No duplicate IDs across all JSON files
+- [ ] All monster loot references point to valid items
+- [ ] All location connections point to valid locations
+- [ ] All behavior references exist in behavior lookup tables
+- [ ] No orphaned data (unused items, unreachable locations)
+- [ ] No circular location connections
+- [ ] ID naming convention enforced (e.g., `item_*`, `monster_*`, `location_*`)
+
+**Acceptance criteria:**
+- [ ] Validation script catches 3+ real errors in sample data
+- [ ] Output is human-readable (shows which file, which line, what's wrong)
+- [ ] Pre-commit hook blocks commits with validation errors
+- [ ] CI fails if validation fails (gated on merge)
+
+**Example validation output:**
+```
+✓ 247 items verified
+✓ 43 monsters verified
+✓ 18 locations verified
+✗ 3 broken references found:
+  - monster.json line 45: loot references item_invalid_gold
+  - location.json line 12: connection "north" points to location_does_not_exist
+  - item.json line 89: behavior reference "weapon:fire_blaze" not found
+```
+
+### 4.2 Write Permanent Architecture Docs (Week 11)
+
+**Deliverables:**
+
+1. **ARCHITECTURE_EXECUTION.md** (from Phase 1 ARCHITECTURE.md)
+   - Finalized entity lifecycle diagrams
+   - Turn processing with timing info
+   - Data ownership rules (from migration policy)
+   - 2000 words
+
+2. **ENTITY_LIFECYCLE.md**
+   - How entities spawn (from input to world state)
+   - State transitions (alive → dead → despawned)
+   - Event timeline per transition
+   - 500 words + diagrams
+
+3. **TURN_PROCESSING.md**
+   - Input → Command → Simulation → Events → Render
+   - Timing budget per stage
+   - Concurrency rules (single-threaded? turn-locked?)
+   - 800 words + sequence diagram
+
+4. **COMBAT_PIPELINE.md**
+   - Turn order determination
+   - Action resolution (sequence of steps)
+   - Damage/heal calculation
+   - Effect application order
+   - 600 words + flowchart
+
+5. **CONTENT_AUTHORING.md**
+   - How to add items (step-by-step)
+   - How to add monsters (step-by-step)
+   - How to add locations (step-by-step)
+   - How to add behaviors (where to register, how to test)
+   - JSON schema reference
+   - 1000 words + examples
+
+**Acceptance criteria:**
+- [ ] All 5 docs exist and are linked together
+- [ ] New team member can onboard in <2 hours using these docs
+- [ ] Docs match actual code (not aspirational)
+- [ ] Diagrams are included (at least one per doc)
+
+---
+
+## Phase 5: Content Scaling (Weeks 12+)
+
+**Owner:** Game Designer / Content Team  
+**Timeline:** Ongoing  
+**Goal:** Prove engine is stable; content velocity increases
+
+**Milestones:**
+1. **Week 12:** Add 10+ new items to items.json (content team only, 0 code changes)
+2. **Week 13:** Add 5+ new monsters (content team only)
+3. **Week 14:** Add 1+ new location (designer adds it, validates with validation script)
+
+**Success criteria (end of Phase 5):**
+- [ ] 80%+ of new content additions are JSON-only
+- [ ] No new "Manager" classes created in Phase 5
+- [ ] Content validation catches all proposed errors before merge
+- [ ] Content team can work independently (no code review needed for JSON)
+
+**When this works:**
+- New items added in 5 minutes (vs. 30 min with code changes)
+- New monsters balanced by editing JSON numbers
+- New locations added without touching game code
+- Non-programmers can contribute mechanics
+
+This is where you see the payoff: development velocity increases because you're mostly writing data, not debugging code.
 
 ---
 
@@ -394,33 +484,17 @@ This is where you see the payoff: your development velocity increases because yo
 
 ---
 
-## Success Metrics
+## Phase Recap & Success Criteria
 
-### Phase 1
-- [x] Architecture document exists and matches reality
-- [x] Coupling map identifies problem areas
-- [x] Validation script catches 3+ types of errors
-
-### Phase 2
-- [x] Commands are used for 50% of input paths
-- [x] Events are used for 50% of cross-system communication
-- [x] Largest manager reduced by 30%
-
-### Phase 3
-- [x] Items are data-driven (>80% of items in JSON)
-- [x] Can add new item without touching code
-- [x] Monster definitions in JSON
-- [x] Location definitions in JSON
-
-### Phase 4
-- [x] Validation script runs in CI and catches real bugs
-- [x] Permanent architecture docs exist and are accurate
-- [x] Onboarding takes <2 hours vs. current "read the whole codebase"
-
-### Phase 5
-- [x] New content additions are data-only 80%+ of the time
-- [x] No new "Manager" classes created; orchestration via events
-- [x] Coupling map shows <5 critical dependencies (vs. current high count)
+| Phase | Owner | Weeks | Key Deliverable | Go/No-Go Criteria |
+|-------|-------|-------|---|---|
+| **Phase 1** | Lead Architect | 1-2 | ARCHITECTURE.md + coupling map | Team reads docs; no major surprises in coupling analysis |
+| **Phase 2** | Combat/Engine Lead | 3-5 | Movement refactored to commands + events | Movement works; zero regressions in existing code |
+| **Checkpoint** | — | — | **Pattern validation** | Does command + event pattern feel right? If not, iterate Phase 2 before continuing. |
+| **Phase 3** | Content Lead | 6-9 | Items, monsters, locations in JSON | 0 code changes to add new item/monster/location |
+| **Checkpoint** | — | — | **Content author test** | Non-programmer can add item by editing JSON alone |
+| **Phase 4** | QA + Docs | 10-11 | Validation in CI + 5 arch docs | Pre-commit blocks bad data; new hire onboards in <2h |
+| **Phase 5** | Content Team | 12+ | New content velocity | 80%+ of additions are JSON-only |
 
 ---
 
@@ -442,31 +516,58 @@ This is where you see the payoff: your development velocity increases because yo
 
 ## Timeline Estimate
 
-- **Phase 1:** 2 weeks (mostly documentation and analysis)
-- **Phase 2:** 4 weeks (commands + events, refactor largest manager)
+- **Phase 1:** 2 weeks (documentation, coupling analysis)
+- **Phase 2:** 3 weeks (movement only; commands + events)
+- **Checkpoint:** Team validates pattern works (1-2 days, no phase time)
 - **Phase 3:** 4 weeks (items → monsters → locations as data)
-- **Phase 4:** 2 weeks (expand validation, write permanent docs)
-- **Phase 5:** Ongoing (content scales naturally)
+- **Checkpoint:** Content author test (1-2 days)
+- **Phase 4:** 2 weeks (validation scripting + docs)
+- **Phase 5:** Ongoing (content team uses the engine)
 
-**Total:** ~12 weeks to a fundamentally more scalable architecture.
+**Total:** ~11 weeks to a fundamentally more scalable architecture.
+
+**Key difference from first plan:**
+- Phase 2 was 4 weeks (too big); now 3 weeks (movement only)
+- Phase 3 unchanged; this is where the big payoff starts
+- Checkpoints added to validate approach before investing further
 
 ---
 
-## Next Immediate Step
+## Execution Readiness Checklist
 
-**Week 1 action:** 
-1. Write `ARCHITECTURE.md` describing how things work now
-2. Create a simple coupling map (spreadsheet or diagram)
-3. Build the first validation script (ID collision checker)
-4. Pick one system (suggest: Items) as the Phase 3 pilot
+Before starting Phase 1, confirm:
+- [ ] Lead Architect assigned (owns ARCHITECTURE.md)
+- [ ] Combat/Engine Lead assigned (owns Phase 2)
+- [ ] Content Lead assigned (owns Phase 3)
+- [ ] QA Lead assigned (owns Phase 4)
+- [ ] This roadmap is read by all stakeholders
+- [ ] Checkpoints understood (pattern validation after Phase 2)
+- [ ] Timeline is realistic for team size (adjust if needed)
 
-This gives you full visibility before any refactoring, which makes all future decisions better.
+## Week 1 Action Items (Phase 1, Week 1)
+
+**Lead Architect:**
+1. Create `docs/ARCHITECTURE.md` (stub with outline)
+2. Schedule 3-4 interviews with team members: "Walk me through how a combat turn works"
+3. Create coupling map spreadsheet (columns: Module A, Module B, # of calls)
+4. Post-kickoff meeting: share initial findings, get feedback
+
+**No code changes in Week 1.** Pure documentation and discovery.
+
+---
+
+## Critical Success Factors
+
+1. **Checkpoints are go/no-go decisions.** Don't proceed to Phase 3 if Phase 2 pattern feels wrong. Fix it first.
+2. **Reduce scope, not ambition.** Phase 2 is movement ONLY (not combat). This focuses validation and lets you catch issues early.
+3. **Owners are real people with time.** If roles aren't filled, delay start. Don't proceed with "everyone owns it."
+4. **Migration policy prevents chaos.** Systems coexist during transition. Old code doesn't disappear; it adapts via bridges.
 
 ---
 
 ## Notes
 
-- This roadmap assumes the codebase is in TypeScript/JavaScript. Adjust language-specific examples as needed.
+- This roadmap assumes Node.js/TypeScript codebase. Adjust language examples as needed.
 - The phased approach is deliberate. Each phase should feel solid before starting the next.
-- Documentation is listed late but should be *kept up to date* as you work, not written at the end.
-- If you hit unexpected complexity in any phase, that's a signal to revisit the architecture doc—it means the system is more coupled than you thought.
+- Documentation should be *kept up to date during work*, not written at the end.
+- If you hit unexpected complexity, that signals the system is more coupled than your ARCHITECTURE.md reflected. Update the doc.
