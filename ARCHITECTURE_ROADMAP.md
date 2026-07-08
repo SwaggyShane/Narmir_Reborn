@@ -90,6 +90,101 @@ Network / Socket.io
 
 ---
 
+## Rapid Development Guardrails (For 1-3 Day Execution)
+
+Execution will compress an 11-week roadmap into days. These 3 operational constraints prevent common failure modes during rapid development:
+
+### 1. Outbox Cleanup Policy (Prevents Table Bloat)
+**Problem:** Rapid movement commands (10+ per second per player) bloat the outbox table instantly, causing transaction locking and performance degradation.
+
+**Solution:**
+- Background worker processes outbox table: broadcast event → mark as sent → delete record
+- Cleanup must happen **immediately after successful Socket.io broadcast** (not batched hourly)
+- If cleanup lags, monitoring will alert (outbox table size > threshold)
+
+**Implementation:**
+```typescript
+// game/services/outboxWorker.ts
+async function processOutbox() {
+  const pending = await db.query(
+    'SELECT * FROM outbox WHERE sent_at IS NULL LIMIT 100'
+  );
+  
+  for (const event of pending) {
+    try {
+      io.emit('game:event', event); // Broadcast
+      await db.query('DELETE FROM outbox WHERE id = $1', [event.id]); // Cleanup
+    } catch (err) {
+      console.error(`Outbox broadcast failed: ${err}`);
+      // Retry on next cycle
+    }
+  }
+}
+```
+
+**Acceptance:** Outbox table size stays <1000 rows even under load.
+
+---
+
+### 2. Pre-Commit Validation Hook (Prevents Bad Data)
+**Problem:** Developers might skip `npm run validate:content` in fast sprints, allowing corrupted JSON into commits (missing IDs, broken references).
+
+**Solution:**
+- Set up Git pre-commit hook on **Day 1** (Husky or native Git hook)
+- Hook runs validation automatically; blocks commits with errors
+- No manual step = no developer discretion to skip
+
+**Implementation:**
+```bash
+# .husky/pre-commit
+#!/bin/sh
+npm run validate:content
+if [ $? -ne 0 ]; then
+  echo "❌ Content validation failed. Fix errors and try again."
+  exit 1
+fi
+npm run lint
+npm test
+```
+
+Or (if Husky feels heavy):
+```bash
+# .git/hooks/pre-commit (native)
+#!/bin/sh
+node scripts/validate-content.js || exit 1
+```
+
+**Acceptance:** All commits automatically validated; zero corrupted data in history.
+
+---
+
+### 3. Adapter Isolation (Prevents Cleanup Debt)
+**Problem:** Temporary bridge adapters scatter through legacy code blocks. When deleting old systems, adapters are forgotten; codebase becomes hybrid and confusing.
+
+**Solution:**
+- **All coexistence adapters go in `/adapters/` directory.** Period.
+- Adapters are temporary; path isolation makes them visible for deletion.
+- No adapters inline with legacy code; no exceptions.
+
+**File structure:**
+```
+game/
+  adapters/
+    damageAdapter.js        // Bridge old combatManager → new event system
+    inventoryAdapter.js     // Bridge old inventory → new item registry
+    questAdapter.js         # Bridge old quest hooks → new events
+  engine.js                 # New code
+  terrain.js
+  visibility.js
+  turn.js
+```
+
+**Principle:** When Phase 3 is complete and old systems are deleted, `/adapters/` directory gets deleted entirely. Clean.
+
+**Acceptance:** No adapter code exists outside `/adapters/`. Code review enforces this.
+
+---
+
 ## Current State vs. Target State
 
 ### Current Architecture (Tangled)
