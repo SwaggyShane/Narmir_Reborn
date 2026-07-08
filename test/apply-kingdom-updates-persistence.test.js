@@ -10,7 +10,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const BAD_CALL = /await\s+applyKingdomUpdates\s*\(\s*db\s*,/g;
-const GOOD_CALL = /await\s+applyKingdomUpdates\s*\(\s*kingdomId\s*,\s*updatesForDb\s*\)/;
+const GOOD_CALL = /await\s+applyKingdomUpdates\s*\(\s*kingdomId\s*,\s*updatesForDb(\s*,\s*db)?\s*\)/;
 
 const ROUTES_WITH_APPLY_UPDATES = [
   'routes/kingdom-build.js',
@@ -29,7 +29,7 @@ for (const rel of ROUTES_WITH_APPLY_UPDATES) {
   );
   assert.ok(
     GOOD_CALL.test(src),
-    `${rel} must call applyKingdomUpdates(kingdomId, updatesForDb)`,
+    `${rel} must call applyKingdomUpdates(kingdomId, updatesForDb) [optional , db for tx]`,
   );
 }
 

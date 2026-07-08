@@ -16,6 +16,8 @@ assert.throws(
 const adapterSource = require('fs').readFileSync(require('path').join(__dirname, '../db/schema.js'), 'utf8');
 assert.ok(!/PRAGMA\s+table_info/i.test(adapterSource), 'PgDbAdapter and boot must not use PRAGMA table_info');
 assert.ok(!/PRAGMA\s+user_version/i.test(adapterSource), 'PgDbAdapter must not emulate PRAGMA user_version');
-assert.ok(adapterSource.includes('queryTableColumns'), 'schema boot should use information_schema helper');
+
+const columnUtilsSource = require('fs').readFileSync(require('path').join(__dirname, '../db/column-utils.js'), 'utf8');
+assert.ok(columnUtilsSource.includes('queryTableColumns'), 'column utils (used by schema boot) should use information_schema helper via queryTableColumns');
 
 console.log('db-schema Phase B checks passed');
