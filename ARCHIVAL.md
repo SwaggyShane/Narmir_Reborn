@@ -2,13 +2,26 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-08 (DB Schema Modularization merged via PR #849)
+**Last updated:** 2026-07-08 (Visibility unification and container/DB stability fixes via PR #850)
 
 ---
 
 ## Recent Chronology
 
 ### 2026-07-08
+
+- **Visibility Unification & Container/DB Restart Fixes** (PR #850, created 2026-07-08): Started M1-2 visibility unification by removing duplicate client cellIndex logic and ensuring consistent bounds. Also fixed root causes of repeated container restarts and Postgres SSL connection errors seen in deployment logs.
+  - **Visibility changes:**
+    - Removed duplicate/outdated `clientCellIndex` in `game/expedition-mechanics.js`; now uses canonical from `game/lib/hex.js`
+    - Added missing upper-bound row check (<512) in `cellIndex` and `isValidCell` on both server (`game/lib/hex.js`) and client (`client/src/utils/hex-constants.js`)
+    - Updated `test/hex-visibility-consistency.test.js` to verify including bounds
+  - **Stability fixes (from logs):**
+    - `lib/server.js`: Use `process.env.PORT || 3000` (was hardcoded, causing health check failures and restarts on Railway)
+    - `db/schema.js`: Added `keepAlive: true` to pool + explicit graceful `pool.end()` on SIGTERM/SIGINT
+    - `discord-bot.js`: Use `Events.ClientReady`, graceful shutdown (destroy client + end pool), minimal health server if PORT set (for web services)
+  - **Quality Gates:** Lint ✅ (0 errors), full test suite passing, local boot verified.
+  - **Gemini Review:** PR created; fixes pushed and commented on PR. Monitoring (no additional review at time of update).
+  - **Impact:** Eliminates drift in visibility bitmaps; should stop unnecessary container restarts and clean DB connection drops on SIGTERM.
 
 - **DB Schema Bloat Reduction & Modularization** (PR #849, created 2026-07-08): Completed major refactoring of db/schema.js to reduce bloat and improve maintainability.
   - **Changes:**
