@@ -2,6 +2,7 @@ import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
 import { NODE_TYPE_META, getNodeRadius } from '../../utils/worldMapNodeMeta.js';
 import { hexCenter, hexCorners, HEX_SIZE, HEX_W, HEX_VERT } from '../../utils/hexMap/HexGeometry.ts';
+import { cellIndex as clientCellIndex } from '../../utils/hex-constants.js';
 
 function regionOpacity(race, highlightedRace, dim = '0.3') {
   if (!highlightedRace) return '1';
@@ -211,16 +212,6 @@ function hexPath(cx, cy, size) {
   return 'M' + pts.map((p) => p.join(',')).join('L') + 'Z';
 }
 
-// Client-side copy of cellIndex logic (matches server game/visibility-cells.js)
-// for determining per-hex fog state from the visibility bitmaps provided by /world-map.
-const CLIENT_CELL_INDEX_OFFSET = 8;
-const CLIENT_CELL_INDEX_STRIDE = 48;
-function clientCellIndex(col, row) {
-  const colShifted = col + CLIENT_CELL_INDEX_OFFSET;
-  const rowShifted = row + CLIENT_CELL_INDEX_OFFSET;
-  if (colShifted < 0 || colShifted >= CLIENT_CELL_INDEX_STRIDE || rowShifted < 0) return -1;
-  return rowShifted * CLIENT_CELL_INDEX_STRIDE + colShifted;
-}
 function isHexSeen(col, row, seenBig) {
   const idx = clientCellIndex(col, row);
   if (idx < 0 || !seenBig) return false;
@@ -884,10 +875,6 @@ export function renderWorldMap(
         svg += '<g class="wm-layer wm-layer-hex-interact" style="pointer-events:auto">';
         hexGrid.cells.forEach(function (cell) {
           svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="transparent" stroke="none" data-hex-x="' + Math.round(cell.x) + '" data-hex-y="' + Math.round(cell.y) + '" style="cursor:crosshair;opacity:0" />';
-          // Debug: log visible hex coordinates to console
-          if (isHexSeen(cell.col, cell.row, seenBig) || isHexCurrent(cell.col, cell.row, currentBig)) {
-            console.log('[VISIBILITY] Visible hex: col=' + cell.col + ', row=' + cell.row);
-          }
         });
         svg += '</g>';
 

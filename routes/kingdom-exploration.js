@@ -38,7 +38,7 @@ function repairMojibake(value) {
   return text;
 }
 
-module.exports = function (db) {
+module.exports = function (db, kingdomGameplayRouter) {
   const router = express.Router();
   const EXP_TURNS = config.EXPEDITION_TURNS;
 
@@ -245,9 +245,45 @@ module.exports = function (db) {
 
   // POST /expedition/hunting - Hunting for food (instant/5/25 turn variants)
   router.post('/expedition/hunting', requireAuth, requireCsrfToken, async (req, res) => {
-    const { rangers, terrain, duration, target_x, target_y } = req.body;
-    const r = Math.max(0, parseInt(rangers) || 0);
+    const { duration } = req.body;
     const d = ['instant', '5', '25'].includes(duration) ? duration : 'instant';
+
+    // For instant: use hunting reward calc, deduct 1 turn, apply food (no full turn processing)
+    if (d === 'instant') {
+      try {
+        const { updates, reward } = await db.withTransaction(async () => {
+          let k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [req.player.playerId]);
+          if (!k) throw new Error('Kingdom not found');
+          if (k.turns_stored < 1) throw new Error('No turns available - next +7 turns in 25 minutes');
+
+          const r = Math.max(0, parseInt(req.body.rangers) || 0);
+          const t = req.body.terrain || 'forest';
+          if (r < 1) throw new Error('Send at least 1 ranger');
+
+          const reward = calculateHuntingReward(r, k.ranger_level || 1, t, k.race, 'instant');
+
+          const newFood = Math.max(0, (k.food || 0) + reward.foodReward);
+          const newTurns = Math.max(0, k.turns_stored - 1);
+
+          await db.run('UPDATE kingdoms SET food = $1, turns_stored = $2 WHERE id = $3', [newFood, newTurns, k.id]);
+
+          return {
+            updates: { food: newFood, turns_stored: newTurns },
+            reward,
+          };
+        });
+        return res.json({ ok: true, updates, reward, message: `Instant hunt: +${reward.foodReward} food` });
+      } catch (err) {
+        if (err.message.includes('No turns available')) {
+          return res.status(429).json({ error: err.message });
+        }
+        return res.status(500).json({ error: 'Hunting failed - please try again' });
+      }
+    }
+
+    // Non-instant: normal hunting logic
+    const { rangers, terrain, target_x, target_y } = req.body;
+    const r = Math.max(0, parseInt(rangers) || 0);
     const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
     const t = terrain && validTerrains.includes(terrain) ? terrain : 'forest';
 
@@ -304,20 +340,7 @@ module.exports = function (db) {
 
         const reward = calculateHuntingReward(r, k.ranger_level || 1, t, k.race, d);
 
-        if (d === 'instant') {
-          // Instant: apply reward immediately
-          await db.run(
-            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - 1), food = food + $1 WHERE id = $2',
-            [reward.foodReward, k.id],
-          );
-          return {
-            updates: {
-              turns_stored: Math.max(0, k.turns_stored - 1),
-              food: k.food + reward.foodReward,
-            },
-            reward,
-          };
-        } else {
+        if (d === '5' || d === '25') {
           // 5 or 25: create pending expedition
           await db.run(
             'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1) WHERE id = $2',
@@ -336,9 +359,7 @@ module.exports = function (db) {
         }
       });
 
-      const msg = d === 'instant'
-        ? `Rangers immediately returned with ${reward.foodReward.toLocaleString()} food.`
-        : `${updates.turns_stored >= 0 ? 'Expedition' : 'Expedition'} started. Rangers will return with ${reward.foodReward.toLocaleString()} food in ${d}-turn expedition.`;
+      const msg = `${updates.turns_stored >= 0 ? 'Expedition' : 'Expedition'} started. Rangers will return with ${reward.foodReward.toLocaleString()} food in ${d}-turn expedition.`;
 
       res.json({
         ok: true,
@@ -355,9 +376,45 @@ module.exports = function (db) {
 
   // POST /expedition/prospecting - Prospecting for gold (instant/5/25 turn variants)
   router.post('/expedition/prospecting', requireAuth, requireCsrfToken, async (req, res) => {
-    const { engineers, terrain, duration, target_x, target_y } = req.body;
-    const e = Math.max(0, parseInt(engineers) || 0);
+    const { duration } = req.body;
     const d = ['instant', '5', '25'].includes(duration) ? duration : 'instant';
+
+    // For instant: use prospecting reward calc, deduct 1 turn, apply gold (no full turn processing)
+    if (d === 'instant') {
+      try {
+        const { updates, reward } = await db.withTransaction(async () => {
+          let k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [req.player.playerId]);
+          if (!k) throw new Error('Kingdom not found');
+          if (k.turns_stored < 1) throw new Error('No turns available - next +7 turns in 25 minutes');
+
+          const e = Math.max(0, parseInt(req.body.engineers) || 0);
+          const t = req.body.terrain || 'mountain';
+          if (e < 1) throw new Error('Send at least 1 engineer');
+
+          const reward = calculateProspectingReward(e, k.engineer_level || 1, t, k.race, 'instant');
+
+          const newGold = Math.max(0, (k.gold || 0) + reward.goldReward);
+          const newTurns = Math.max(0, k.turns_stored - 1);
+
+          await db.run('UPDATE kingdoms SET gold = $1, turns_stored = $2 WHERE id = $3', [newGold, newTurns, k.id]);
+
+          return {
+            updates: { gold: newGold, turns_stored: newTurns },
+            reward,
+          };
+        });
+        return res.json({ ok: true, updates, reward, message: `Instant prospect: +${reward.goldReward} gold` });
+      } catch (err) {
+        if (err.message.includes('No turns available')) {
+          return res.status(429).json({ error: err.message });
+        }
+        return res.status(500).json({ error: 'Prospecting failed - please try again' });
+      }
+    }
+
+    // Non-instant: normal prospecting logic
+    const { engineers, terrain, target_x, target_y } = req.body;
+    const e = Math.max(0, parseInt(engineers) || 0);
     const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
     const t = terrain && validTerrains.includes(terrain) ? terrain : 'mountain';
 
@@ -421,20 +478,7 @@ module.exports = function (db) {
           throw error;
         }
 
-        if (d === 'instant') {
-          // Instant: apply reward immediately, no food cost
-          await db.run(
-            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - 1), gold = gold + $1 WHERE id = $2',
-            [reward.goldReward, k.id],
-          );
-          return {
-            updates: {
-              turns_stored: Math.max(0, k.turns_stored - 1),
-              gold: k.gold + reward.goldReward,
-            },
-            reward,
-          };
-        } else {
+        if (d === '5' || d === '25') {
           // 5 or 25: create pending expedition, deduct food cost
           await db.run(
             'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = GREATEST(0, food - $2) WHERE id = $3',
@@ -456,9 +500,7 @@ module.exports = function (db) {
         }
       });
 
-      const msg = d === 'instant'
-        ? `Engineers immediately returned with ${reward.goldReward.toLocaleString()} gold.`
-        : `${d}-turn expedition started. Engineers will return with ${reward.goldReward.toLocaleString()} gold.`;
+      const msg = `${d}-turn expedition started. Engineers will return with ${reward.goldReward.toLocaleString()} gold.`;
 
       res.json({
         ok: true,

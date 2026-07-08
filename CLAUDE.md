@@ -38,17 +38,24 @@ npm run route-smoke:combat-v2 # Test route persistence for combat
 
 ### Local Database Setup
 
+**Status:** PostgreSQL is running and configured.
+
+**Connection Details (in `.env`):**
+```
+postgresql://narmir_dev:narmir_local_dev@localhost:5432/narmir_local
+```
+
+If you need to reset the database or verify it's working:
 ```bash
-# Using Docker (recommended):
-docker run --name postgres -e POSTGRES_PASSWORD=smoke -p 5432:5432 postgres:15
-docker exec postgres psql -U postgres -c "CREATE DATABASE narmir_local;"
+# View database status (Windows):
+wmic process where name="postgres.exe" get processid
 
-# Or system postgres:
-sudo -u postgres createdb narmir_local
-sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'smoke';"
+# Test connection (requires psql installed):
+psql postgresql://narmir_dev:narmir_local_dev@localhost:5432/narmir_local
 
-# Test connection:
-psql postgresql://postgres:smoke@localhost/narmir_local
+# Or use app to verify connection:
+npm run dev
+# If server starts without "database connection failed" error, DB is working
 ```
 
 ### Database Debugging with pgAdmin

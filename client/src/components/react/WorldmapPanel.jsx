@@ -19,6 +19,7 @@ import { switchTab } from '../../utils/panelNav.js';
 import {
   animateMapPanelCard,
   animateWorldMap,
+  applyWorldMapLayers,
 } from '../../utils/worldMapGsap.js';
 import { useWorldMapViewport } from '../../hooks/useWorldMapViewport.js';
 
@@ -202,14 +203,20 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
 
   const mapSvg = useMemo(() => {
     if (!kingdoms.length && !nodes.length) return '';
+    // Only `terrain` in layers affects the *content* of the SVG (biome vs race-colored fills).
+    // All other layer toggles are purely visibility and are handled by applyWorldMapLayers/GSAP
+    // after the fact. Including the full `layers` object here caused full SVG re-generation
+    // (via dangerouslySetInnerHTML) on every layer toggle, contributing to excessive re-renders
+    // and the "Maximum update depth exceeded" errors seen in console_log.log.
+    const contentLayers = { ...DEFAULT_LAYERS, terrain: !!layers.terrain };
     return renderWorldMap(kingdoms, tradeRoutes, highlightedRace, currentKingdomId, {
       nodes,
       expeditions,
-      layers,
+      layers: contentLayers,
       worldSeed,
       visibility,
     });
-  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId, nodes, expeditions, layers, worldSeed, visibility]);
+  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId, nodes, expeditions, layers.terrain, worldSeed, visibility]);
 
   const mapDataKey = useMemo(
     () => `${kingdoms.length}:${nodes.length}:${expeditions.length}:${highlightedRace}:${currentKingdomId}`,
@@ -226,8 +233,12 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
     shouldSuppressClick,
   } = useWorldMapViewport({ resetKey: mapDataKey, enabled: Boolean(mapSvg && !loading && !error) });
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!mapContainerRef.current || !mapSvg) return undefined;
+    if (mapAnimatedKeyRef.current === mapDataKey) {
+      // already animated for this data key; layers changes are handled in separate effect
+      return undefined;
+    }
     const entrance = mapAnimatedKeyRef.current !== mapDataKey;
     mapAnimatedKeyRef.current = mapDataKey;
     return animateWorldMap(mapContainerRef.current, {
@@ -235,7 +246,9 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
       selectedNodeId: selectedNode?.id ?? null,
       entrance,
     });
-  }, [mapSvg, mapDataKey, layers, selectedNode?.id]);
+  }, [mapDataKey, selectedNode?.id]);  // removed layers; added key guard to prevent repeated calls for same data
+
+
 
   useLayoutEffect(() => {
     const cleanup = animateMapPanelCard(nodeCardRef.current, { visible: Boolean(selectedNode) });
@@ -252,6 +265,17 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
     }
     return cleanup;
   }, [mapCard]);
+
+  // Separate effect for layer visibility toggles (doesn't require full re-entrance animation).
+  // We deliberately avoid putting the full `layers` object into the mapSvg useMemo deps
+  // (only .terrain affects SVG *content*). Toggling other layers only runs this effect
+  // (which does cheap GSAP visibility) without blowing away the entire SVG via innerHTML.
+  // This eliminates the "Maximum update depth exceeded" render loops previously logged.
+  useEffect(() => {
+    if (mapContainerRef.current && mapSvg) {
+      applyWorldMapLayers(mapContainerRef.current, layers, { animate: true });
+    }
+  }, [layers, mapSvg]);
 
   const refreshWorldMap = useCallback(
     () => loadWorldMap({

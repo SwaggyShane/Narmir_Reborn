@@ -1,6 +1,13 @@
 // Phase 3a Profiling Utility
 // Measures CPU-bound operations in processTurn to identify optimization opportunities
 
+// Budgets for dev profiling (M2-3) — used for always-on warnings in dev
+const BUDGETS = {
+  jsonHighCostMs: 100,
+  slowAttunementMs: 10,
+  highSynergyLookups: 100
+};
+
 const { AsyncLocalStorage } = require('async_hooks');
 
 class TurnProfiler {
@@ -105,9 +112,9 @@ class TurnProfiler {
       jsonPercentOfTotal: parseFloat(jsonPercent),
       slowAttunements: slowAttunements.length > 0 ? slowAttunements : null,
       profileNeeded: {
-        jsonHighCost: json > 100,
+        jsonHighCost: json > BUDGETS.jsonHighCostMs,
         slowAttunementExists: slowAttunements.length > 0,
-        highSynergyLookups: this.metrics.synergyLookups > 100
+        highSynergyLookups: this.metrics.synergyLookups > BUDGETS.highSynergyLookups
       }
     };
   }
@@ -128,9 +135,23 @@ class NullProfiler {
 // AsyncLocalStorage for thread-safe per-request profiling
 const profilerStorage = new AsyncLocalStorage();
 
+// Dev always-on profiler (M2-3): in non-production, automatically use real TurnProfiler
+// so every processTurn gets a _profileReport and budget checks can fire.
+let devActiveProfiler = null;
+
 function getProfiler() {
-  const profiler = profilerStorage.getStore();
-  return profiler || new NullProfiler();
+  const stored = profilerStorage.getStore();
+  if (stored) return stored;
+
+  if (process.env.NODE_ENV === 'production') {
+    return new NullProfiler();
+  }
+
+  // Dev: return the active one (set by processTurn) or a fresh one
+  if (!devActiveProfiler) {
+    devActiveProfiler = new TurnProfiler();
+  }
+  return devActiveProfiler;
 }
 
 function initProfiler() {
@@ -143,10 +164,17 @@ function runWithProfiler(profiler, fn) {
   return profilerStorage.run(profiler, fn);
 }
 
+// Called by engine after a dev turn to reset the auto-profiler
+function resetDevProfiler() {
+  devActiveProfiler = null;
+}
+
 module.exports = {
   TurnProfiler,
   NullProfiler,
   getProfiler,
   initProfiler,
-  runWithProfiler
+  runWithProfiler,
+  resetDevProfiler,
+  BUDGETS
 };

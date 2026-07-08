@@ -13,8 +13,13 @@
 
 'use strict';
 
-const CELL_INDEX_OFFSET = 8; // shifts negative col/row (buildHexGrid starts both at -1) into positive range
-const CELL_INDEX_STRIDE = 48; // must exceed the largest possible (col + OFFSET) so rows never collide
+const {
+  CELL_INDEX_OFFSET,
+  CELL_INDEX_STRIDE,
+  cellIndex: _cellIndex,
+  cellIndexToColRow: _cellIndexToColRow,
+  isValidCell: _isValidCell
+} = require('./lib/hex');
 
 /**
  * Map a hex cell (col, row) to a unique non-negative bit index.
@@ -27,21 +32,18 @@ const CELL_INDEX_STRIDE = 48; // must exceed the largest possible (col + OFFSET)
  * failing loudly.
  */
 function cellIndex(col, row) {
-  const colShifted = col + CELL_INDEX_OFFSET;
-  const rowShifted = row + CELL_INDEX_OFFSET;
-  if (colShifted < 0 || colShifted >= CELL_INDEX_STRIDE || rowShifted < 0) {
-    throw new Error(`Invalid hex cell coordinates: (${col}, ${row})`);
-  }
-  return rowShifted * CELL_INDEX_STRIDE + colShifted;
+  return _cellIndex(col, row);
 }
 
 /**
  * Inverse of cellIndex: recover (col, row) from a bit index.
  */
 function cellIndexToColRow(index) {
-  const row = Math.floor(index / CELL_INDEX_STRIDE) - CELL_INDEX_OFFSET;
-  const col = (index % CELL_INDEX_STRIDE) - CELL_INDEX_OFFSET;
-  return { col, row };
+  return _cellIndexToColRow(index);
+}
+
+function isValidCell(col, row) {
+  return _isValidCell(col, row);
 }
 
 /**
@@ -91,13 +93,8 @@ function bitmapAddCell(bitmap, col, row) {
 /**
  * Safe versions for use in user-facing paths (e.g. scouting).
  * Return safe fallbacks instead of throwing on out-of-bounds hex coords.
+ * Delegates to canonical impl in game/lib/hex (avoids duplication).
  */
-function isValidCell(col, row) {
-  const colShifted = col + CELL_INDEX_OFFSET;
-  const rowShifted = row + CELL_INDEX_OFFSET;
-  return colShifted >= 0 && colShifted < CELL_INDEX_STRIDE && rowShifted >= 0;
-}
-
 function safeBitmapHasCell(bitmap, col, row) {
   if (!isValidCell(col, row)) return false;
   return bitmapHasCell(bitmap, col, row);

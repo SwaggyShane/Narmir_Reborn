@@ -200,27 +200,6 @@ function generateMixedBiomes(race, patchCount = 0) {
   return biomes.sort(() => Math.random() - 0.5);
 }
 
-/**
- * Select terrain from a region's mixed biome based on node position.
- * Uses a pseudo-random but deterministic approach for consistency.
- * @param {array} biomes - Array of terrain types for the region
- * @param {number} nodeX - Node x coordinate
- * @param {number} nodeY - Node y coordinate
- * @returns {string} Selected terrain type
- */
-function selectTerrainFromBiomes(biomes, nodeX, nodeY) {
-  if (!biomes || biomes.length === 0) {
-    return 'plains';
-  }
-  if (biomes.length === 1) {
-    return biomes[0];
-  }
-
-  // Use node coordinates as seed for pseudo-random but deterministic selection
-  const seed = Math.abs(Math.round(nodeX * 73 + nodeY * 97)) % biomes.length;
-  return biomes[seed];
-}
-
 module.exports = {
   TERRAIN_TYPES,
   TERRAIN_DATA,
@@ -230,5 +209,4 @@ module.exports = {
   getTerrainDisplayName,
   getTerrainColor,
   generateMixedBiomes,
-  selectTerrainFromBiomes,
 };

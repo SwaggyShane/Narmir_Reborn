@@ -1412,7 +1412,7 @@ module.exports = function (db, io) {
       "INSERT INTO lore_entries (key_id, category, title, content) VALUES ($1, $2, $3, $4)",
       [key_id || "", category || "general", title || "", content || ""],
     );
-    await require("../../index").refreshLore();
+    await require("../game/lore").refreshLore(db);
     res.json({ ok: true });
   });
   router.put("/lore/:id", async (req, res) => {
@@ -1427,12 +1427,12 @@ module.exports = function (db, io) {
         req.params.id,
       ],
     );
-    await require("../../index").refreshLore();
+    await require("../game/lore").refreshLore(db);
     res.json({ ok: true });
   });
   router.delete("/lore/:id", async (req, res) => {
     await db.run("DELETE FROM lore_entries WHERE id=$1", [req.params.id]);
-    await require("../../index").refreshLore();
+    await require("../game/lore").refreshLore(db);
     res.json({ ok: true });
   });
 
@@ -1444,7 +1444,7 @@ module.exports = function (db, io) {
     const content = (req.body.content || "").trim();
     if (content.length > 10000) return res.status(400).json({ error: "content cannot exceed 10000 characters" });
     await db.run("INSERT INTO random_events (content) VALUES ($1)", [content]);
-    await require("../../index").refreshLore();
+    await require("../game/lore").refreshLore(db);
     res.json({ ok: true });
   });
   dualRoute(router, "put", "/random-events/:id", "/random_events/:id", async (req, res) => {
@@ -1454,12 +1454,12 @@ module.exports = function (db, io) {
       content,
       req.params.id,
     ]);
-    await require("../../index").refreshLore();
+    await require("../game/lore").refreshLore(db);
     res.json({ ok: true });
   });
   dualRoute(router, "delete", "/random-events/:id", "/random_events/:id", async (req, res) => {
     await db.run("DELETE FROM random_events WHERE id=$1", [req.params.id]);
-    await require("../../index").refreshLore();
+    await require("../game/lore").refreshLore(db);
     res.json({ ok: true });
   });
 
@@ -1471,12 +1471,12 @@ module.exports = function (db, io) {
     const content = (req.body.content || "").trim();
     if (content.length > 10000) return res.status(400).json({ error: "content cannot exceed 10000 characters" });
     await db.run("INSERT INTO junk_events (content) VALUES ($1)", [content]);
-    await require("../../index").refreshLore();
+    await require("../game/lore").refreshLore(db);
     res.json({ ok: true });
   });
   dualRoute(router, "delete", "/junk-events/:id", "/junk_events/:id", async (req, res) => {
     await db.run("DELETE FROM junk_events WHERE id=$1", [req.params.id]);
-    await require("../../index").refreshLore();
+    await require("../game/lore").refreshLore(db);
     res.json({ ok: true });
   });
 
@@ -1488,12 +1488,12 @@ module.exports = function (db, io) {
     const content = (req.body.content || "").trim();
     if (content.length > 10000) return res.status(400).json({ error: "content cannot exceed 10000 characters" });
     await db.run("INSERT INTO tax_events (content) VALUES ($1)", [content]);
-    await require("../../index").refreshLore();
+    await require("../game/lore").refreshLore(db);
     res.json({ ok: true });
   });
   dualRoute(router, "delete", "/tax-events/:id", "/tax_events/:id", async (req, res) => {
     await db.run("DELETE FROM tax_events WHERE id=$1", [req.params.id]);
-    await require("../../index").refreshLore();
+    await require("../game/lore").refreshLore(db);
     res.json({ ok: true });
   });
 
