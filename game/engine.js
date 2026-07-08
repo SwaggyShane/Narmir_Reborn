@@ -25,17 +25,17 @@ const { EPOCH_NOW } = require('../lib/db-sql');
 const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
 const { getProfiler, resetDevProfiler } = require('./profiling');
 
-// Helper extracted from processTurn for healing nested stringified JSON (M1-3)
-function cleanNestedJson(raw, fallback, context, returnString = false) {
-  let val = safeJsonParse(raw, fallback, context);
-  while (typeof val === "string") {
-    val = safeJsonParse(val, fallback, context + '_nested');
-  }
-  if (val && typeof val === "object" && !Array.isArray(val)) {
-    return returnString ? JSON.stringify(val) : val;
-  }
-  return raw;
-}
+// Healing (M1-3): centralized defensive repair for double-/nested-stringified JSON columns.
+// Imported from canonical location in game/lib so it can be unit tested independently
+// and reused by other turn-adjacent modules.
+const {
+  cleanNestedJson,
+  healKingdomForTurn,
+  ensureObject,
+  ensureArray,
+  XP_SOURCES_DEFAULT,
+  getXpSources
+} = require('./lib/healing');
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so
@@ -332,8 +332,22 @@ function processTurn(k, db = null) {
   profiler.start();
   clearParseCache();
 
-  // Defensive healing extracted for clarity (see cleanNestedJson)
-  k.troop_levels = cleanNestedJson(k.troop_levels, {}, "processTurn:init_troop_levels", true);
+  // M1-3: Run centralized healing on input to recover from nested-stringified JSON columns.
+  // healKingdomForTurn + cleanNestedJson are the single source for this defensive logic.
+  // Expanded to cover the majority of JSON columns parsed during turn processing.
+  const healed = healKingdomForTurn(k || {});
+  // Apply healed (object/array) values for JSON fields. This makes subsequent
+  // safeJsonParse(k.xxx) calls see pre-healed data (safeJsonParse on object is cheap copy).
+  const JSON_FIELDS = [
+    'troop_levels', 'xp_sources', 'build_queue',
+    'active_effects', 'active_event', 'collected_lore',
+    'school_upgrades', 'research_focus', 'research_progress', 'milestone_bonuses',
+    'bank_deposits', 'training_allocation', 'research_allocation', 'mage_research_progress',
+    'racial_bonuses_unlocked', 'discovered_kingdoms', 'location_maps_wip'
+  ];
+  for (const f of JSON_FIELDS) {
+    if (healed[f] !== undefined) k[f] = healed[f];
+  }
 
   const events = [];
   const updates = {
@@ -343,12 +357,8 @@ function processTurn(k, db = null) {
 
   progressGoal(k, updates, 'turn_taken', 1);
 
-  // Initialize XP source tracking at the very beginning
-  const XP_SOURCES_DEFAULT = { turn: 0, gold_earned: 0, combat_win: 0, combat_loss: 0, research: 0, construction: 0, exploration: 0, spell_cast: 0, covert_op: 0 };
-  let xpSourcesAccum = cleanNestedJson(k.xp_sources, XP_SOURCES_DEFAULT, "processTurn:xp_sources", false);
-  if (!xpSourcesAccum || typeof xpSourcesAccum !== "object" || Array.isArray(xpSourcesAccum)) {
-    xpSourcesAccum = { ...XP_SOURCES_DEFAULT };
-  }
+  // Initialize XP source tracking at the very beginning (already healed via M1-3)
+  let xpSourcesAccum = getXpSources(k.xp_sources);
 
 
 
@@ -357,8 +367,9 @@ function processTurn(k, db = null) {
   updates.happiness = happinessResult.happiness;
 
   // Decay fragment happiness penalty by 1 toward 0 each turn; remove the key when it reaches 0
+  // active_effects pre-healed (M1-3)
   {
-    const decayEffects = safeJsonParse(k.active_effects, {}, 'turn:fragment_penalty_decay');
+    const decayEffects = ensureObject(k.active_effects, {});
     if ((decayEffects.fragment_happiness_penalty || 0) < 0) {
       decayEffects.fragment_happiness_penalty = Math.min(0, decayEffects.fragment_happiness_penalty + 1);
       if (decayEffects.fragment_happiness_penalty === 0) {
@@ -587,10 +598,9 @@ function processTurn(k, db = null) {
   Object.assign(updates, locUpdates);
 
   // ── 4e. Active event tick-down ────────────────────────────────────────────────
-  const activeEv2 = safeJsonParse(
+  const activeEv2 = ensureObject(
     updates.active_event || k.active_event,
-    {},
-    "processTurn:active_event",
+    {}
   );
   let changed = false;
   for (const key of Object.keys(activeEv2)) {
@@ -633,10 +643,9 @@ function processTurn(k, db = null) {
     const cat = cats[Math.floor(Math.random() * cats.length)];
     const raceLore = LORE[cat] || [];
     if (raceLore.length > 0) {
-      const loreCollected = safeJsonParse(
+      const loreCollected = ensureArray(
         updates.collected_lore || k.collected_lore,
-        [],
-        "processTurn:lore",
+        []
       );
       const lastId = updates.last_lore_id || k.last_lore_id;
 
@@ -671,11 +680,8 @@ function processTurn(k, db = null) {
   }
 
   // ── 5b. Building completion ───────────────────────────────────────────────────
-  let buildQueue = cleanNestedJson(k.build_queue || "{}", {}, "processTurn:build_queue", false);
-  // Fallback: ensure buildQueue is always a non-null object
-  if (!buildQueue || typeof buildQueue !== "object") {
-    buildQueue = {};
-  }
+  // build_queue pre-healed by healKingdomForTurn (M1-3)
+  let buildQueue = ensureObject(k.build_queue, {});
   let buildQueueChanged = false;
   const completedBuildings = [];
 
@@ -1080,16 +1086,12 @@ function processTurn(k, db = null) {
   const autoSchoolSpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'schools', 'speed');
   const autoSchoolOutputMult = fragmentBonusManager.getBonusMultiplier(k, 'schools', 'output');
   schoolBonus *= (autoSchoolSpeedMult * autoSchoolOutputMult);
-  const researchMb = safeJsonParse(k.milestone_bonuses, {}, "research:mb");
+  const researchMb = ensureObject(k.milestone_bonuses, {});
   const raceResearch = raceBonus(k, "research") * (1 + (researchMb.research_speed_pct || 0) / 100);
   const raceMagic = raceBonus(k, "magic");
   const researchers = k.researchers;
 
-  const schoolUpgrades = safeJsonParse(
-    k.school_upgrades,
-    {},
-    "processTurn:school_upgrades",
-  );
+  const schoolUpgrades = ensureObject(k.school_upgrades, {});
   const curriculumMult = schoolUpgrades.advanced_curriculum ? 1.2 : 1.0;
   const maxSlots = schoolUpgrades.repository ? 2 : 1;
 
@@ -1153,10 +1155,9 @@ function processTurn(k, db = null) {
     ];
 
     // Research focus — single or dual discipline
-    let focus = safeJsonParse(
+    let focus = ensureObject(
       k.research_focus,
-      [],
-      "processTurn:research_focus",
+      []
     );
     if (!focus.length) {
       // Auto-select highest current discipline
@@ -1179,10 +1180,9 @@ function processTurn(k, db = null) {
     // Get synergy research cost reduction (absolute value, e.g., 0.30 = 30% reduction)
     const synergyResearchCostReduction = getSynergyPassiveBonusAbsolute(k, 'research_cost_reduction');
 
-    let rProgress = safeJsonParse(
+    let rProgress = ensureObject(
       k.research_progress,
-      {},
-      "processTurn:research_progress",
+      {}
     );
     const advances = [];
     let resEstimates = [];
@@ -1248,7 +1248,7 @@ function processTurn(k, db = null) {
         "researchers",
         totalRXp,
       );
-      updates.troop_levels = typeof rXp.troop_levels === "string" ? JSON.parse(rXp.troop_levels) : rXp.troop_levels;
+      updates.troop_levels = ensureObject(rXp.troop_levels, updates.troop_levels || {});
       if (rXp.levelUps.length)
         events.push({
           type: "system",
@@ -1298,12 +1298,12 @@ function processTurn(k, db = null) {
   // ── 7b. Mage research — mages study spellbook (100+) and school_spellbook ──────
   const mages = k.mages || 0;
   if (mages > 0) {
-    let mageAlloc = safeJsonParse(k.research_allocation, {}, "processTurn:mage_allocation");
+    let mageAlloc = ensureObject(k.research_allocation, {});
     const spellbookMages = mageAlloc.spellbook_mages || 0;
     const schoolSpellbookMages = mageAlloc.school_spellbook_mages || 0;
 
     if (spellbookMages > 0 || schoolSpellbookMages > 0) {
-      let mageRProgress = safeJsonParse(k.mage_research_progress, {}, "processTurn:mage_research_progress");
+      let mageRProgress = ensureObject(k.mage_research_progress, {});
       const mageAdvances = [];
       const mageSchoolBonus = schoolBonus; // Same multiplier as researchers
       const mageMult = raceMagic; // Magic bonus for mage research
@@ -1388,7 +1388,7 @@ function processTurn(k, db = null) {
           "mages",
           totalMXp
         );
-        updates.troop_levels = typeof mXp.troop_levels === "string" ? JSON.parse(mXp.troop_levels) : mXp.troop_levels;
+        updates.troop_levels = ensureObject(mXp.troop_levels, updates.troop_levels || {});
         if (mXp.levelUps.length) {
           events.push({
             type: "system",
@@ -1450,10 +1450,10 @@ function processTurn(k, db = null) {
   }
 
   // Bank Deposits processing
-  let deposits = safeJsonParse(
+  // pre-healed (M1-3)
+  let deposits = ensureArray(
     k.bank_deposits,
-    [],
-    "processTurn:bank_deposits",
+    []
   );
   let depositPayout = 0;
   let hasCompleted = false;
@@ -1500,16 +1500,14 @@ function processTurn(k, db = null) {
   // ── 9. Training fields — passive troop XP each turn ──────────────────────────
   if (k.bld_training > 0) {
     // troop_levels is now kept as object throughout processTurn, not stringified until save
-    let troopLevels = typeof updates.troop_levels === "string"
-      ? safeJsonParse(updates.troop_levels, {}, "processTurn:troop_levels")
-      : (updates.troop_levels || safeJsonParse(k.troop_levels, {}, "processTurn:troop_levels"));
-    if (!troopLevels || typeof troopLevels !== "object") {
-      troopLevels = {};
-    }
-    const allocation = safeJsonParse(
+    // Use centralized ensureObject + prior healing (M1-3)
+    let troopLevels = ensureObject(
+      updates.troop_levels || k.troop_levels,
+      {}
+    );
+    const allocation = ensureObject(
       k.training_allocation,
-      {},
-      "processTurn:training_allocation",
+      {}
     );
 
     const TROOP_TYPES = [
@@ -1677,16 +1675,15 @@ function processTurn(k, db = null) {
   const keyUnit = RACIAL_UNITS[k.race];
   if (keyUnit) {
     // Use already-set updates value if present, else fall back to k
-    const racialData = safeJsonParse(
+    // pre-healed (M1-3)
+    const racialData = ensureObject(
       updates.racial_bonuses_unlocked || k.racial_bonuses_unlocked,
-      {},
-      "processTurn:racial_bonuses_unlocked",
+      {}
     );
     if (!racialData[keyUnit]) {
-      const tls = safeJsonParse(
+      const tls = ensureObject(
         updates.troop_levels || k.troop_levels,
-        {},
-        "processTurn:troop_levels_racial_check",
+        {}
       );
       const unitLevel = tls[keyUnit]?.level || 1;
       if (unitLevel >= 25) {
@@ -2568,4 +2565,11 @@ module.exports = {
   engineerXpForLevel,
   engineerConstructionMult,
   clearSynergyCache,
+  // M1-3 healing exports (re-exported for callers/tests that require('game/engine'))
+  cleanNestedJson,
+  healKingdomForTurn,
+  ensureObject,
+  ensureArray,
+  XP_SOURCES_DEFAULT,
+  getXpSources,
 };

@@ -154,6 +154,75 @@ function makeMinimalFixture() {
   console.log('✓ Edge zero-resources + turns_stored regression passed');
 }
 
+// M1-3 healing regression: double (or deeper) stringified JSON columns must be healed
+{
+  const k = makeMinimalFixture();
+  // Simulate the corruption case that cleanNestedJson / healKingdomForTurn targets (expanded)
+  k.troop_levels = JSON.stringify(JSON.stringify({ fighters: { level: 3, xp: 10, count: 20 } }));
+  k.xp_sources = JSON.stringify(JSON.stringify({ turn: 5, combat_win: 2 }));
+  k.build_queue = JSON.stringify(JSON.stringify({}));
+  k.active_effects = JSON.stringify(JSON.stringify({ fragment_happiness_penalty: -2 }));
+  k.research_focus = JSON.stringify(JSON.stringify(['economy']));
+  k.school_upgrades = JSON.stringify(JSON.stringify({ advanced_curriculum: true }));
+  k.bank_deposits = JSON.stringify(JSON.stringify([]));
+  k.collected_lore = JSON.stringify(JSON.stringify([1, 2]));
+
+  const result = engine.processTurn(k, null);
+  const updates = result.updates || result;
+
+  assert.strictEqual(updates.turn, k.turn + 1, 'turn should advance even with nested string inputs');
+  assert.ok(updates && typeof updates === 'object', 'updates produced despite healed nested JSON');
+
+  // Verify that healing prevented crashes on fields used in processing (happiness decay, research, etc.)
+  console.log('✓ Expanded nested/double-stringified JSON healing regression passed (M1-3)');
+}
+
+// Direct test of expanded healKingdomForTurn (M1-3)
+{
+  const h = require('../game/lib/healing');
+  const double = (v) => JSON.stringify(JSON.stringify(v));
+
+  const input = {
+    troop_levels: double({ fighters: { level: 5, xp: 0, count: 10 } }),
+    active_effects: double({ fragment_happiness_penalty: -5, other: true }),
+    collected_lore: double([101, 202]),
+    research_focus: double(['weapons', 'magic']),
+    bank_deposits: double([{ status: 'active' }]),
+    unknown_field: 'plain',
+    foo: 42
+  };
+
+  const healed = h.healKingdomForTurn(input);
+
+  assert.ok(healed && typeof healed === 'object');
+  assert.ok(Array.isArray(healed.collected_lore), 'arrays healed correctly');
+  assert.strictEqual(healed.collected_lore.length, 2);
+  assert.ok(healed.troop_levels && typeof healed.troop_levels === 'object', 'troop_levels healed to object');
+  assert.ok(healed.active_effects && typeof healed.active_effects === 'object');
+  assert.strictEqual(healed.active_effects.fragment_happiness_penalty, -5);
+  assert.ok(Array.isArray(healed.research_focus));
+  assert.ok(Array.isArray(healed.bank_deposits));
+  assert.strictEqual(healed.foo, 42, 'non-json fields preserved');
+  assert.strictEqual(healed.unknown_field, 'plain');
+
+  // Also via engine re-export
+  const e = require('../game/engine');
+  const healed2 = e.healKingdomForTurn({ xp_sources: double({ turn: 99 }) });
+  assert.ok(healed2.xp_sources && healed2.xp_sources.turn === 99);
+
+  // New helpers
+  const { ensureArray, XP_SOURCES_DEFAULT } = require('../game/lib/healing');
+  assert.deepStrictEqual(ensureArray(null), []);
+  assert.deepStrictEqual(ensureArray('["a"]'), ['a']);
+  assert.ok(XP_SOURCES_DEFAULT && 'turn' in XP_SOURCES_DEFAULT);
+
+  const { getXpSources } = require('../game/lib/healing');
+  const badXp = JSON.stringify(JSON.stringify({ turn: 7 }));
+  assert.strictEqual(getXpSources(badXp).turn, 7);
+
+  console.log('✓ Direct healKingdomForTurn expansion test passed (many fields)');
+}
+
 console.log('✓ All processTurn regression checks passed');
 
 module.exports = {}; // for runner
