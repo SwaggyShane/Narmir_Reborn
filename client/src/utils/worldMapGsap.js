@@ -43,26 +43,30 @@ export function applyWorldMapLayers(container, layers, { animate = true } = {}) 
     const visible = layers[key] !== false;
     setLayerVisible(svg.querySelector(selector), visible, { animate });
     if (key === 'nodes') {
-      const nodeGroups = svg.querySelectorAll('.wm-node-group');
-      gsap.killTweensOf(nodeGroups);
-      if (!animate) {
-        gsap.set(nodeGroups, { autoAlpha: visible ? 1 : 0, scale: 1 });
-      } else {
-        gsap.to(nodeGroups, {
-          autoAlpha: visible ? 1 : 0,
-          scale: 1,
-          duration: 0.32,
-          ease: 'power2.out',
-          overwrite: 'auto',
-        });
+      const nodeGroups = Array.from(svg.querySelectorAll('.wm-node-group'));
+      if (nodeGroups.length > 0) {
+        gsap.killTweensOf(nodeGroups);
+        if (!animate) {
+          gsap.set(nodeGroups, { autoAlpha: visible ? 1 : 0, scale: 1 });
+        } else {
+          gsap.to(nodeGroups, {
+            autoAlpha: visible ? 1 : 0,
+            scale: 1,
+            duration: 0.32,
+            ease: 'power2.out',
+            overwrite: 'auto',
+          });
+        }
       }
     }
   });
 }
 
 function primeHidden(svg, selector) {
-  const nodes = svg.querySelectorAll(selector);
-  gsap.set(nodes, { autoAlpha: 0 });
+  const nodes = Array.from(svg.querySelectorAll(selector));
+  if (nodes.length > 0) {
+    gsap.set(nodes, { autoAlpha: 0 });
+  }
   return nodes;
 }
 
@@ -114,22 +118,23 @@ export function animateWorldMap(container, options = {}) {
 
   ctx.add(() => {
     const regions = primeHidden(svg, '.wm-region');
-    const regionLabels = svg.querySelectorAll('.wm-region-label');
+    const regionLabels = Array.from(svg.querySelectorAll('.wm-region-label'));
     gsap.set(regionLabels, { autoAlpha: 0, y: 8 });
     const nodeGroups = primeHidden(svg, '.wm-node-group');
     const kingdoms = primeHidden(svg, '.wm-kingdom');
     const kingdomLabels = primeHidden(svg, '.wm-kingdom-label');
-    const expeditionLines = svg.querySelectorAll('.wm-expedition-line');
-    const tradeLines = svg.querySelectorAll('.wm-trade-line');
-    const terrainShapes = svg.querySelectorAll('.terrain-shape');
-    const forestShapes = svg.querySelectorAll('.terrain-shape[data-terrain="forest"]');
-    const mountainShapes = svg.querySelectorAll('.terrain-shape[data-terrain="mountains"]');
+    const expeditionLines = Array.from(svg.querySelectorAll('.wm-expedition-line'));
+    const tradeLines = Array.from(svg.querySelectorAll('.wm-trade-line'));
+    const terrainShapes = Array.from(svg.querySelectorAll('.terrain-shape'));
+    const forestShapes = Array.from(svg.querySelectorAll('.terrain-shape[data-terrain="forest"]'));
+    const mountainShapes = Array.from(svg.querySelectorAll('.terrain-shape[data-terrain="mountains"]'));
 
     if (!entrance) {
       applyWorldMapLayers(container, layers, { animate: true });
       highlightSelectedNode(svg, selectedNodeId, { animate: !reduced });
       if (reduced) {
-        gsap.set([regions, regionLabels, nodeGroups, kingdoms, kingdomLabels, terrainShapes], { autoAlpha: 1, y: 0 });
+        const all = [...regions, ...regionLabels, ...nodeGroups, ...kingdoms, ...kingdomLabels, ...terrainShapes].filter(el => el);
+        if (all.length) gsap.set(all, { autoAlpha: 1, y: 0 });
       }
       return;
     }
@@ -137,7 +142,8 @@ export function animateWorldMap(container, options = {}) {
     applyWorldMapLayers(container, layers, { animate: false });
 
     if (reduced) {
-      gsap.set([regions, regionLabels, nodeGroups, kingdoms, kingdomLabels, expeditionLines, tradeLines, terrainShapes], {
+      const all = [...regions, ...regionLabels, ...nodeGroups, ...kingdoms, ...kingdomLabels, ...expeditionLines, ...tradeLines, ...terrainShapes].filter(el => el);
+      if (all.length) gsap.set(all, {
         autoAlpha: 1,
         strokeDashoffset: 0,
       });
@@ -174,17 +180,21 @@ export function animateWorldMap(container, options = {}) {
         }
       }
 
-      tl.to(regions, {
-        autoAlpha: 1,
-        duration: 0.55,
-        stagger: 0.07,
-      }, 0.05)
-        .to(regionLabels, {
+      if (regions.length) {
+        tl.to(regions, {
+          autoAlpha: 1,
+          duration: 0.55,
+          stagger: 0.07,
+        }, 0.05);
+      }
+      if (regionLabels.length) {
+        tl.to(regionLabels, {
           autoAlpha: 1,
           y: 0,
           duration: 0.45,
           stagger: 0.05,
         }, 0.17);
+      }
 
       if (layers.kingdoms !== false) {
         tl.fromTo(kingdoms, {
@@ -235,7 +245,7 @@ export function animateWorldMap(container, options = {}) {
       if (flow) cleanups.push(() => flow.kill());
     }
 
-    const rings = svg.querySelectorAll('.wm-kingdom-ring');
+    const rings = Array.from(svg.querySelectorAll('.wm-kingdom-ring'));
     rings.forEach((ring) => {
       const pulse = gsap.fromTo(ring, {
         attr: { r: 10 },
@@ -265,7 +275,7 @@ export function animateWorldMap(container, options = {}) {
 // Light hover feedback on terrain shapes — small scale bump, gated on reduced motion.
 // Tooltip content (name + expedition speed modifier) lives in the SVG's native <title>.
 function bindTerrainHover(svg, reduced) {
-  const shapes = svg.querySelectorAll('.terrain-shape');
+  const shapes = Array.from(svg.querySelectorAll('.terrain-shape'));
   if (!shapes.length) return () => {};
 
   const onEnter = (event) => {
@@ -304,7 +314,7 @@ function bindTerrainHover(svg, reduced) {
 export function highlightSelectedNode(svg, selectedNodeId, { animate = true } = {}) {
   if (!svg) return;
 
-  const groups = svg.querySelectorAll('.wm-node-group');
+  const groups = Array.from(svg.querySelectorAll('.wm-node-group'));
   groups.forEach((group) => {
     const isSelected = selectedNodeId && group.getAttribute('data-node-id') === String(selectedNodeId);
     const halo = group.querySelector('.wm-node-halo');

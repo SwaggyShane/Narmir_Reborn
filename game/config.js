@@ -2384,11 +2384,9 @@ const config = {
   // Harvest duration by richness (seconds)
   HARVEST_DURATION_BY_RICHNESS: { 1: 1800, 2: 3600, 3: 7200, 4: 14400, 5: 28800 },
 
-  // Static fallback for the lore book. At boot, index.js refreshLore()
-  // replaces this with rows from the lore_entries table (which db/schema.js
-  // seeds from game/lore.js). Keeping the fallback identical to the seed
-  // means tests and pre-boot code see the same content as production.
-  LORE_EVENTS: require("./lore"),
+  // Static fallback for the lore book. At boot, refreshLore() replaces this
+  // with rows from lore_entries. We now point at the exported LORE_SEED shape.
+  LORE_EVENTS: (require("./lore-data").LORE_SEED || {}),
 
   ACHIEVEMENTS: {
     ach_founder: {
