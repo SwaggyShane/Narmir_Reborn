@@ -7,7 +7,7 @@ const { postBugReportToDiscord } = require('../lib/discord-notify');
 
 const BUG_CATEGORIES = new Set(['bug', 'ui', 'gameplay', 'performance', 'other']);
 
-module.exports = (db, io, config) => {
+module.exports = (db, _io, _config) => {
   const router = express.Router();
 
   router.post('/log-error', (req, res) => {
