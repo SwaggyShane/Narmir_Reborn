@@ -49,20 +49,42 @@ export default function KingdomsPanel({ adminFetch, onToast }) {
       title: 'Reset Kingdom',
       message: `Reset "${k.name}" back to starting stats? This wipes resources, troops, and buildings but preserves identity.`,
       onConfirm: async () => {
-        setConfirm(null);
-        const data = await adminFetch('/api/admin/reset-kingdom', { method: 'POST', body: { kingdomId: k.id } });
-        if (data?.error) { onToast('Reset failed: ' + data.error, 'error'); return; }
-        onToast(`Reset "${k.name}"`, 'success');
-        loadKingdoms();
+        try {
+          setConfirm(null);
+          const data = await adminFetch('/api/admin/reset-kingdom', { method: 'POST', body: { kingdomId: k.id } });
+          if (!data) {
+            onToast('Reset failed: No response from server', 'error');
+            return;
+          }
+          if (data.error) {
+            onToast('Reset failed: ' + data.error, 'error');
+            return;
+          }
+          onToast(`Reset "${k.name}"`, 'success');
+          await loadKingdoms();
+        } catch (err) {
+          onToast('Reset failed: ' + (err.message || 'Unknown error'), 'error');
+        }
       },
     });
   }
 
   async function handleResetTurns(k) {
-    const data = await adminFetch('/api/admin/reset-turns', { method: 'POST', body: { kingdomId: k.id } });
-    if (data?.error) { onToast('+Turns failed: ' + data.error, 'error'); return; }
-    onToast(`+Turns added to "${k.name}"`, 'success');
-    setKingdoms(prev => prev.map(r => r.id === k.id ? { ...r, turns_stored: 400 } : r));
+    try {
+      const data = await adminFetch('/api/admin/reset-turns', { method: 'POST', body: { kingdomId: k.id } });
+      if (!data) {
+        onToast('+Turns failed: No response from server', 'error');
+        return;
+      }
+      if (data.error) {
+        onToast('+Turns failed: ' + data.error, 'error');
+        return;
+      }
+      onToast(`+Turns added to "${k.name}"`, 'success');
+      setKingdoms(prev => prev.map(r => r.id === k.id ? { ...r, turns_stored: 400 } : r));
+    } catch (err) {
+      onToast('+Turns failed: ' + (err.message || 'Unknown error'), 'error');
+    }
   }
 
   function handleBan(k) {
@@ -72,20 +94,42 @@ export default function KingdomsPanel({ adminFetch, onToast }) {
       message: `Ban player "${k.username}"? This blocks their access to the game. You can unban later.`,
       input: { label: 'Reason (optional)', onChange: v => { reason = v; } },
       onConfirm: async () => {
-        setConfirm(null);
-        const data = await adminFetch('/api/admin/ban', { method: 'POST', body: { playerId: k.player_id, reason: reason || 'Banned by admin' } });
-        if (data?.error) { onToast('Ban failed: ' + data.error, 'error'); return; }
-        onToast(`Banned "${k.username}"`, 'success');
-        setKingdoms(prev => prev.map(r => r.player_id === k.player_id ? { ...r, is_banned: 1 } : r));
+        try {
+          setConfirm(null);
+          const data = await adminFetch('/api/admin/ban', { method: 'POST', body: { playerId: k.player_id, reason: reason || 'Banned by admin' } });
+          if (!data) {
+            onToast('Ban failed: No response from server', 'error');
+            return;
+          }
+          if (data.error) {
+            onToast('Ban failed: ' + data.error, 'error');
+            return;
+          }
+          onToast(`Banned "${k.username}"`, 'success');
+          setKingdoms(prev => prev.map(r => r.player_id === k.player_id ? { ...r, is_banned: 1 } : r));
+        } catch (err) {
+          onToast('Ban failed: ' + (err.message || 'Unknown error'), 'error');
+        }
       },
     });
   }
 
   async function handleUnban(k) {
-    const data = await adminFetch('/api/admin/unban', { method: 'POST', body: { playerId: k.player_id } });
-    if (data?.error) { onToast('Unban failed: ' + data.error, 'error'); return; }
-    onToast(`Unbanned "${k.username}"`, 'success');
-    setKingdoms(prev => prev.map(r => r.player_id === k.player_id ? { ...r, is_banned: 0 } : r));
+    try {
+      const data = await adminFetch('/api/admin/unban', { method: 'POST', body: { playerId: k.player_id } });
+      if (!data) {
+        onToast('Unban failed: No response from server', 'error');
+        return;
+      }
+      if (data.error) {
+        onToast('Unban failed: ' + data.error, 'error');
+        return;
+      }
+      onToast(`Unbanned "${k.username}"`, 'success');
+      setKingdoms(prev => prev.map(r => r.player_id === k.player_id ? { ...r, is_banned: 0 } : r));
+    } catch (err) {
+      onToast('Unban failed: ' + (err.message || 'Unknown error'), 'error');
+    }
   }
 
   function handleDelete(k) {
@@ -93,11 +137,22 @@ export default function KingdomsPanel({ adminFetch, onToast }) {
       title: 'Delete Kingdom',
       message: `Permanently delete "${k.name}" (player: ${k.username})? This cannot be undone.`,
       onConfirm: async () => {
-        setConfirm(null);
-        const data = await adminFetch(`/api/admin/kingdom/${k.id}`, { method: 'DELETE' });
-        if (data?.error) { onToast('Delete failed: ' + data.error, 'error'); return; }
-        onToast(`Deleted "${k.name}"`, 'success');
-        setKingdoms(prev => prev.filter(r => r.id !== k.id));
+        try {
+          setConfirm(null);
+          const data = await adminFetch(`/api/admin/kingdom/${k.id}`, { method: 'DELETE' });
+          if (!data) {
+            onToast('Delete failed: No response from server', 'error');
+            return;
+          }
+          if (data.error) {
+            onToast('Delete failed: ' + data.error, 'error');
+            return;
+          }
+          onToast(`Deleted "${k.name}"`, 'success');
+          setKingdoms(prev => prev.filter(r => r.id !== k.id));
+        } catch (err) {
+          onToast('Delete failed: ' + (err.message || 'Unknown error'), 'error');
+        }
       },
     });
   }
