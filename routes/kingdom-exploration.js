@@ -755,7 +755,7 @@ module.exports = function (db, kingdomGameplayRouter) {
         const status = getAllocationStatus(updatedKingdom);
 
         return {
-          allocated: rangerCount,
+          allocated: rangerCount - kingdom.scout_allocation,
           scoutAllocation: status.allocated,
           availableRangers: status.available,
           updates: {
