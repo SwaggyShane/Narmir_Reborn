@@ -702,9 +702,9 @@ module.exports = function (db) {
             let turnResult;
             if (process.env.NODE_ENV !== 'production') {
               const p = initProfiler();
-              turnResult = runWithProfiler(p, () => commandHandler.handle({ type: 'turn' }, { kingdom: lockedK, db }));
+              turnResult = await runWithProfiler(p, () => commandHandler.handle({ type: 'turn' }, { kingdom: lockedK, db }));
             } else {
-              turnResult = commandHandler.handle({ type: 'turn' }, { kingdom: lockedK, db });
+              turnResult = await commandHandler.handle({ type: 'turn' }, { kingdom: lockedK, db });
             }
             const { updates, events, _profileReport } = turnResult;
             if (_profileReport && _profileReport.totalTime > 0) {
