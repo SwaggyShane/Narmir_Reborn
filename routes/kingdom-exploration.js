@@ -351,15 +351,15 @@ module.exports = function (db, kingdomGameplayRouter) {
             'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
             [k.id, 'hunting', totalTurns, r, 0, 0, JSON.stringify({ food: reward.foodReward }), 0],
           );
-
-          return {
-            updates: { turns_stored: Math.max(0, k.turns_stored - totalTurns) },
-            reward,
-          };
         }
+
+        return {
+          updates: { turns_stored: Math.max(0, k.turns_stored - totalTurns) },
+          reward,
+        };
       });
 
-      const msg = `${updates.turns_stored >= 0 ? 'Expedition' : 'Expedition'} started. Rangers will return with ${reward.foodReward.toLocaleString()} food in ${d}-turn expedition.`;
+      const msg = `Expedition started. Rangers will return with ${reward.foodReward.toLocaleString()} food in ${d}-turn expedition.`;
 
       res.json({
         ok: true,
@@ -489,18 +489,18 @@ module.exports = function (db, kingdomGameplayRouter) {
             'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, engineers, fighters, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
             [k.id, 'prospecting', totalTurns, 0, e, 0, reward.foodCost, JSON.stringify({ gold: reward.goldReward }), 0],
           );
-
-          return {
-            updates: {
-              turns_stored: Math.max(0, k.turns_stored - totalTurns),
-              food: Math.max(0, k.food - reward.foodCost),
-            },
-            reward,
-          };
         }
+
+        return {
+          updates: {
+            turns_stored: Math.max(0, k.turns_stored - totalTurns),
+            food: d === '5' || d === '25' ? Math.max(0, k.food - reward.foodCost) : k.food,
+          },
+          reward,
+        };
       });
 
-      const msg = `${d}-turn expedition started. Engineers will return with ${reward.goldReward.toLocaleString()} gold.`;
+      const msg = `Expedition started. Engineers will return with ${reward.goldReward.toLocaleString()} gold.`;
 
       res.json({
         ok: true,
