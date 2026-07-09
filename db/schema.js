@@ -528,15 +528,30 @@ async function initDb(options = {}) {
   process.on('SIGINT', () => clearInterval(txnReaperInterval));
 
   // Graceful pool shutdown on container stop (Railway sends SIGTERM)
-  // Track boot completion to avoid closing pool during initialization
+  // Track boot completion and shutdown attempts to avoid infinite deferral loops
+  let shutdownAttempts = 0;
+  let shutdownTimer = null;
+
   const shutdownPool = async () => {
+    // Prevent concurrent shutdown attempts
+    if (shutdownTimer) return;
+
     try {
       // Only close pool after boot is complete to avoid interrupting initialization
-      if (_db && !_db.bootComplete) {
-        console.log('[db] SIGTERM received during boot - deferring pool close until boot completes');
+      // Limit deferral to 30 attempts (~30 seconds) to ensure process can exit
+      if (_db && !_db.bootComplete && shutdownAttempts < 30) {
+        shutdownAttempts++;
+        console.log(`[db] SIGTERM during boot - deferring pool close (attempt ${shutdownAttempts}/30)`);
         // Set a timeout to check again in 1 second (allows boot to progress)
-        setTimeout(shutdownPool, 1000);
+        shutdownTimer = setTimeout(() => {
+          shutdownTimer = null;
+          shutdownPool();
+        }, 1000);
         return;
+      }
+      // Either boot is complete or we've exceeded retry limit - close pool now
+      if (shutdownAttempts >= 30 && _db && !_db.bootComplete) {
+        console.warn('[db] Boot did not complete within 30 seconds - forcing pool closure');
       }
       await pool.end();
       console.log('[db] Pool closed gracefully');
