@@ -28,6 +28,11 @@ const { safeJsonParse } = require('../../utils/helpers');
  * @returns {object|array|string} Healed value in preferred form, or raw on unrecoverable.
  */
 function cleanNestedJson(raw, fallback = {}, context = 'unknown', returnString = false) {
+  // Early return: if already an object/array, no healing needed
+  if (raw != null && typeof raw === 'object') {
+    return returnString ? JSON.stringify(raw) : raw;
+  }
+
   let val = safeJsonParse(raw, fallback, context);
   while (typeof val === "string") {
     val = safeJsonParse(val, fallback, context + '_nested');
@@ -124,13 +129,15 @@ const XP_SOURCES_DEFAULT = {
 
 /**
  * Specialized healer + normalizer for xp_sources (very frequently used in processTurn).
+ * Merges with defaults to ensure all expected keys are present (prevents NaN bugs).
  */
 function getXpSources(raw) {
   const val = cleanNestedJson(raw, XP_SOURCES_DEFAULT, 'xp_sources', false);
   if (!val || typeof val !== "object" || Array.isArray(val)) {
     return { ...XP_SOURCES_DEFAULT };
   }
-  return val;
+  // Merge with defaults to ensure all keys present
+  return { ...XP_SOURCES_DEFAULT, ...val };
 }
 
 module.exports = {
