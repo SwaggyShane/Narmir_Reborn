@@ -233,16 +233,18 @@ async function revealRingHexes(db, kingdomId, kingdom, ring) {
         return cellIndex(hexKey.col, hexKey.row);
       });
       let newSeenCells = current.seenCells;
+      let newCurrentCells = current.currentCells;
 
       for (const idx of cellIndicesToReveal) {
         if (idx >= 0) {
           newSeenCells |= BigInt(1) << BigInt(idx);
+          newCurrentCells |= BigInt(1) << BigInt(idx);
         }
       }
 
       return {
         seenCells: newSeenCells,
-        currentCells: current.currentCells,
+        currentCells: newCurrentCells,
         version: current.version,
       };
     });
