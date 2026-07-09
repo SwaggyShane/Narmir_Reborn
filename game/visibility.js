@@ -71,8 +71,11 @@ function getInitialVisibility(kingdom) {
  * persisting that if it has never been set (seen_cells === 0).
  * The passed `kingdom` should include id (race is required for correct
  * home hex via getKingdomMapCoords; fetched if missing).
+ *
+ * @param {object} options - Optional flags: skipEffects (true to skip temporary effects like fog_of_war)
+ *   Use skipEffects=true during read-modify-write operations to prevent data loss when debuffs are active.
  */
-async function getKingdomVisibility(db, kingdom) {
+async function getKingdomVisibility(db, kingdom, options = {}) {
   if (!kingdom || !kingdom.id) {
     return { seenCells: 0n, currentCells: 0n, version: DEFAULT_VISIBILITY.version };
   }
@@ -104,15 +107,19 @@ async function getKingdomVisibility(db, kingdom) {
 
   // Apply fog_of_war debuff (if active): reduces currentCells to debuffRadius (locked 0 = home hex only).
   // Does not touch seenCells. active_effects may have been pre-fetched above.
-  let activeEffectsStr = k.active_effects;
-  if (!activeEffectsStr && db && k.id) {
-    const row = await db.get('SELECT active_effects FROM kingdoms WHERE id = $1', [k.id]);
-    activeEffectsStr = row ? row.active_effects : '{}';
-  }
-  const effects = safeJsonParse(activeEffectsStr || '{}', {}, 'auto:active_effects');
-  if (effects.fog_of_war) {
-    if (!initial) initial = getInitialVisibility(k);
-    current.currentCells = initial.currentCells;
+  // skipEffects=true skips this to prevent data loss during read-modify-write operations.
+  let effects = {};
+  if (!options.skipEffects) {
+    let activeEffectsStr = k.active_effects;
+    if (!activeEffectsStr && db && k.id) {
+      const row = await db.get('SELECT active_effects FROM kingdoms WHERE id = $1', [k.id]);
+      activeEffectsStr = row ? row.active_effects : '{}';
+    }
+    effects = safeJsonParse(activeEffectsStr || '{}', {}, 'auto:active_effects');
+    if (effects.fog_of_war) {
+      if (!initial) initial = getInitialVisibility(k);
+      current.currentCells = initial.currentCells;
+    }
   }
 
   // Guarantee: the kingdom's own home hex is always present in seen_cells and current_cells.
@@ -126,7 +133,8 @@ async function getKingdomVisibility(db, kingdom) {
   const preCurrent = current.currentCells;
   current.seenCells = current.seenCells | initial.seenCells;
   if (!effects.fog_of_war) {
-    current.currentCells = current.currentCells | initial.currentCells;
+    // No debuff: currentCells should include all discovered hexes (seenCells)
+    current.currentCells = current.currentCells | current.seenCells;
   }
 
   // One-time persist of the home bit if it was missing (repairs kingdoms that were seeded
@@ -186,7 +194,9 @@ async function updateKingdomVisibility(db, kingdomId, updater) {
     if (!row) {
       return null;
     }
-    const current = await getKingdomVisibility(db, row);
+    // skipEffects=true prevents temporary debuffs (like fog_of_war) from reducing currentCells
+    // during the update, which would cause permanent data loss when the debuff expires.
+    const current = await getKingdomVisibility(db, row, { skipEffects: true });
     const next = updater(current);
     await db.run(
       'UPDATE kingdoms SET visibility = $1 WHERE id = $2',
@@ -233,18 +243,16 @@ async function revealRingHexes(db, kingdomId, kingdom, ring) {
         return cellIndex(hexKey.col, hexKey.row);
       });
       let newSeenCells = current.seenCells;
-      let newCurrentCells = current.currentCells;
 
       for (const idx of cellIndicesToReveal) {
         if (idx >= 0) {
           newSeenCells |= BigInt(1) << BigInt(idx);
-          newCurrentCells |= BigInt(1) << BigInt(idx);
         }
       }
 
       return {
         seenCells: newSeenCells,
-        currentCells: newCurrentCells,
+        currentCells: current.currentCells,
         version: current.version,
       };
     });
