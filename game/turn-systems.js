@@ -95,8 +95,9 @@ class SystemRegistry {
 }
 
 // ── Global Registry Instance ──
-// Currently empty; systems will be registered in later slices.
 const registry = new SystemRegistry();
+
+// Systems are registered in engine.js to avoid circular dependencies
 
 module.exports = {
   registry,
