@@ -85,7 +85,7 @@ async function start() {
     setupRoutes(app, {
       db,
       io,
-      bootError,
+      getBootError: () => bootError, // Pass getter instead of stale value
       authSensitiveLimiter,
       turnLimiter,
       adminLimiter,
@@ -112,11 +112,88 @@ async function start() {
       sentryEnabled: instrument.sentryEnabled,
       db,
     });
+
+    // Mark boot as complete so SIGTERM can close the pool safely
+    if (db && db.bootComplete !== undefined) {
+      db.bootComplete = true;
+    }
     } catch (err) {
       bootError = err;
       console.error('[boot] FATAL:', err.message);
     }
   }
+
+// Graceful shutdown handler (Priority #1 for Railway stability)
+const gracefulShutdown = async (exitCode = 0) => {
+  console.log('[shutdown] Received termination signal...');
+
+  // Set a fallback timeout to force exit if graceful shutdown hangs
+  const forceExitTimeout = setTimeout(() => {
+    console.error('[shutdown] Graceful shutdown timed out after 10 seconds. Forcing exit...');
+    process.exit(exitCode);
+  }, 10000);
+  forceExitTimeout.unref(); // Don't keep process alive for this timeout
+
+  try {
+    // Stop accepting new connections
+    if (server) {
+      await new Promise((resolve) => {
+        server.close(() => {
+          console.log('[shutdown] HTTP server closed');
+          resolve();
+        });
+      });
+    }
+
+    // Close Socket.io before closing connections
+    if (io) {
+      await new Promise((resolve) => {
+        io.close(() => {
+          console.log('[shutdown] Socket.io closed');
+          resolve();
+        });
+      });
+    }
+
+    // Shutdown audit scheduler if it exists
+    if (global._audit_scheduler) {
+      try {
+        global._audit_scheduler.shutdown();
+        console.log('[shutdown] Audit scheduler shut down');
+      } catch (err) {
+        console.error('[shutdown] Error closing audit scheduler:', err.message);
+      }
+    }
+
+    console.log('[shutdown] Cleanup complete. Process will exit after all handles close.');
+    clearTimeout(forceExitTimeout); // Cancel fallback timeout
+    // Don't call process.exit() here - let process exit naturally when all handles close.
+    // This allows db/schema.js shutdownPool to complete its async pool.end() call.
+    // The fallback timeout above will force exit if it takes > 10 seconds.
+  } catch (err) {
+    console.error('[shutdown] Error during graceful shutdown:', err.message);
+    clearTimeout(forceExitTimeout);
+    // On error, use fallback timeout to force exit since it's already running
+  }
+};
+
+process.on('SIGTERM', () => gracefulShutdown(0));
+process.on('SIGINT', () => gracefulShutdown(0));
+
+// Unhandled rejection handler - log but don't crash immediately
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[CRITICAL] Unhandled Rejection at:', promise);
+  console.error('[CRITICAL] Reason:', reason instanceof Error ? reason.message : reason);
+  // Don't exit - let graceful shutdown handler manage process lifecycle
+});
+
+// Uncaught exception handler - log and trigger graceful shutdown with error code
+process.on('uncaughtException', (err) => {
+  console.error('[CRITICAL] Uncaught Exception:', err.message);
+  console.error('[CRITICAL] Stack:', err.stack);
+  // Exit with code 1 to signal container orchestrator of crash
+  gracefulShutdown(1).catch(() => process.exit(1));
+});
 
 start().catch(err => {
   console.error('Failed to start:', err);
