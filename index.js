@@ -123,9 +123,6 @@ async function start() {
     }
   }
 
-// Track boot completion for graceful shutdown
-const bootState = { complete: false };
-
 // Graceful shutdown handler (Priority #1 for Railway stability)
 const gracefulShutdown = async (exitCode = 0) => {
   console.log('[shutdown] Received termination signal...');
@@ -168,13 +165,15 @@ const gracefulShutdown = async (exitCode = 0) => {
       }
     }
 
-    console.log('[shutdown] Cleanup complete. Exiting with code', exitCode);
+    console.log('[shutdown] Cleanup complete. Process will exit after all handles close.');
     clearTimeout(forceExitTimeout); // Cancel fallback timeout
-    process.exit(exitCode);
+    // Don't call process.exit() here - let process exit naturally when all handles close.
+    // This allows db/schema.js shutdownPool to complete its async pool.end() call.
+    // The fallback timeout above will force exit if it takes > 10 seconds.
   } catch (err) {
     console.error('[shutdown] Error during graceful shutdown:', err.message);
     clearTimeout(forceExitTimeout);
-    process.exit(exitCode);
+    // On error, use fallback timeout to force exit since it's already running
   }
 };
 
