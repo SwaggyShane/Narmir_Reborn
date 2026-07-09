@@ -663,7 +663,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
     const engXpRes = awardTroopXp(
       { ...k, troop_levels: updates.troop_levels || k.troop_levels },
       "engineers",
-      totalCompleted * 10,
+      totalCompleted * 3,
     );
     updates.troop_levels = typeof engXpRes.troop_levels === "string" ? JSON.parse(engXpRes.troop_levels) : engXpRes.troop_levels;
 
