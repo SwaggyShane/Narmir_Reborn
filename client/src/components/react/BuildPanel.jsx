@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
+import { toast } from '../../utils/toast.js';
 import ProgressBar from './ProgressBar';
 import {
   useEconomyStore,
@@ -304,7 +305,7 @@ const BuildPanel = () => {
       }
     } catch (err) {
       console.error('[attunements] load failed:', err.message);
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Failed to load attunements: ${err.message}`, 'error');
+      toast(`Failed to load attunements: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -527,7 +528,7 @@ const BuildPanel = () => {
       build_allocation: {},
     });
     refreshBuildUi();
-    if (typeof window !== 'undefined' && typeof toast === 'function') toast('All engineers released', 'success');
+    toast('All engineers released', 'success');
   };
   const saveBuildAllocation = async () => {
     const allocation = {};
@@ -546,7 +547,7 @@ const BuildPanel = () => {
       build_allocation: allocation,
     });
     refreshBuildUi();
-    if (typeof window !== 'undefined' && typeof toast === 'function') toast('Engineer allocation saved | builds each turn automatically', 'success');
+    toast('Engineer allocation saved | builds each turn automatically', 'success');
   };
   const updateSmithyDisplay = () => {
     const bldSmithies = buildingCounts.smithies || 0;
@@ -594,7 +595,7 @@ const BuildPanel = () => {
     });
     setSmithyInputs({ hammers: 0, scaffolding: 0 });
     refreshBuildUi();
-    if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Purchased ${result.bought} ${type} for ${fmt(result.cost)} GC`, 'success');
+    toast(`Purchased ${result.bought} ${type} for ${fmt(result.cost)} GC`, 'success');
   };
   const demolishB = async (type) => {
     const key = type === 'wm' ? 'ballistae' : type;
@@ -607,9 +608,7 @@ const BuildPanel = () => {
     }
     setDemolishAmounts(prev => ({ ...prev, [key]: 1 }));
     refreshBuildUi();
-    if (typeof window !== 'undefined' && typeof toast === 'function') {
-      toast(result.message || `Demolished ${amount} ${type.replace(/_/g, ' ')}`, 'success');
-    }
+    toast(result.message || `Demolished ${amount} ${type.replace(/_/g, ' ')}`, 'success');
   };
 
   const renderBuildingRow = (b, icon) => {
