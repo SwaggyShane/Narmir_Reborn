@@ -43,7 +43,7 @@ export function applyWorldMapLayers(container, layers, { animate = true } = {}) 
     const visible = layers[key] !== false;
     setLayerVisible(svg.querySelector(selector), visible, { animate });
     if (key === 'nodes') {
-      const nodeGroups = Array.from(svg.querySelectorAll('.wm-node-group'));
+      const nodeGroups = gsap.utils.toArray(svg.querySelectorAll('.wm-node-group'));
       if (nodeGroups.length > 0) {
         gsap.killTweensOf(nodeGroups);
         if (!animate) {
@@ -63,7 +63,9 @@ export function applyWorldMapLayers(container, layers, { animate = true } = {}) 
 }
 
 function primeHidden(svg, selector) {
-  const nodes = Array.from(svg.querySelectorAll(selector));
+  // Use gsap.utils.toArray for robustness (handles NodeList, selectors, etc.)
+  // Prevents "GSAP target [object NodeList] not found" errors.
+  const nodes = gsap.utils.toArray(svg ? svg.querySelectorAll(selector) : []);
   if (nodes.length > 0) {
     gsap.set(nodes, { autoAlpha: 0 });
   }
@@ -125,9 +127,9 @@ export function animateWorldMap(container, options = {}) {
     const kingdomLabels = primeHidden(svg, '.wm-kingdom-label');
     const expeditionLines = Array.from(svg.querySelectorAll('.wm-expedition-line'));
     const tradeLines = Array.from(svg.querySelectorAll('.wm-trade-line'));
-    const terrainShapes = Array.from(svg.querySelectorAll('.terrain-shape'));
-    const forestShapes = Array.from(svg.querySelectorAll('.terrain-shape[data-terrain="forest"]'));
-    const mountainShapes = Array.from(svg.querySelectorAll('.terrain-shape[data-terrain="mountains"]'));
+    const terrainShapes = gsap.utils.toArray(svg.querySelectorAll('.terrain-shape'));
+    const forestShapes = gsap.utils.toArray(svg.querySelectorAll('.terrain-shape[data-terrain="forest"]'));
+    const mountainShapes = gsap.utils.toArray(svg.querySelectorAll('.terrain-shape[data-terrain="mountains"]'));
 
     if (!entrance) {
       applyWorldMapLayers(container, layers, { animate: true });
@@ -245,7 +247,7 @@ export function animateWorldMap(container, options = {}) {
       if (flow) cleanups.push(() => flow.kill());
     }
 
-    const rings = Array.from(svg.querySelectorAll('.wm-kingdom-ring'));
+    const rings = gsap.utils.toArray(svg.querySelectorAll('.wm-kingdom-ring'));
     rings.forEach((ring) => {
       const pulse = gsap.fromTo(ring, {
         attr: { r: 10 },
@@ -275,7 +277,7 @@ export function animateWorldMap(container, options = {}) {
 // Light hover feedback on terrain shapes — small scale bump, gated on reduced motion.
 // Tooltip content (name + expedition speed modifier) lives in the SVG's native <title>.
 function bindTerrainHover(svg, reduced) {
-  const shapes = Array.from(svg.querySelectorAll('.terrain-shape'));
+  const shapes = gsap.utils.toArray(svg.querySelectorAll('.terrain-shape'));
   if (!shapes.length) return () => {};
 
   const onEnter = (event) => {
@@ -314,7 +316,7 @@ function bindTerrainHover(svg, reduced) {
 export function highlightSelectedNode(svg, selectedNodeId, { animate = true } = {}) {
   if (!svg) return;
 
-  const groups = Array.from(svg.querySelectorAll('.wm-node-group'));
+  const groups = gsap.utils.toArray(svg.querySelectorAll('.wm-node-group'));
   groups.forEach((group) => {
     const isSelected = selectedNodeId && group.getAttribute('data-node-id') === String(selectedNodeId);
     const halo = group.querySelector('.wm-node-halo');

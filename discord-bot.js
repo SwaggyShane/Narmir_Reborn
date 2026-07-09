@@ -11,6 +11,9 @@ const client = new Client({
   ]
 });
 
+// Ensure we never listen on the legacy 'ready' event (use clientReady via Events.ClientReady)
+client.removeAllListeners('ready');
+
 function trimEnv(value) {
   return String(value ?? '').trim().replace(/^["']|["']$/g, '');
 }

@@ -90,6 +90,34 @@ Network / Socket.io
 
 ---
 
+## Blocked Work: Expedition Reward Systems
+
+**Status:** Waiting for Phase 1-2 architecture completion
+
+Two expedition systems need reward wiring that should be implemented AFTER the Command → Simulation → Events architecture is in place (Phase 2 complete). Implementation will be cleaner and won't require refactoring if we build in the new architecture rather than patching the old one.
+
+### Epic-Trek Per-Hex Discovery & Loot
+
+**What's missing:**
+- Per-hex discovery rolls as expedition travels (1.5 hexes/turn)
+- Dungeon/mountain location discovery during travel
+- Accumulated loot (gold, resources, mana, troops, items)
+- Proper reward wiring in expeditionRewards() function
+
+### Passive Scouting Continuous Finds
+
+**What's missing:**
+- Per-turn discovery chance when scout allocation active
+- Per-turn resource node discovery (scaled by allocation)
+- Per-turn passive finds (gold, wood, land, mana, troops, maps, kingdoms)
+- Integration with scout-progress system
+
+**Unblock condition:** Phase 2 (Command + Event system) is complete and tested
+
+Both systems follow the same pattern: allocate units → accumulate discoveries over time → receive loot when allocation ends or completes. Better to design this pattern once in the new architecture than patch it twice in the old one.
+
+---
+
 ## Rapid Development Guardrails (For 1-3 Day Execution)
 
 Execution will compress an 11-week roadmap into days. These 3 operational constraints prevent common failure modes during rapid development:
@@ -288,6 +316,12 @@ Render
 ### 1.3 State Persistence Model: Command → DB → Event → Socket.io
 Define how game state persists to PostgreSQL and how it syncs with events. **CRITICAL: This phase establishes the transaction boundary that prevents client/server desync.**
 
+**Status: Foundation already in place.** The new database layer (`db/transaction.js`, `db/schema.js` PgDbAdapter) already has:
+- ✅ AsyncLocalStorage for transaction context
+- ✅ Nested transaction support (savepoints)
+- ✅ Error recovery and connection pooling
+- ✅ Atomic write capability via `db.run(sql)`
+
 **Problem to solve:**
 If you write to DB first, then emit Socket.io event, a crash in between leaves the client permanently out of sync:
 1. Command "recruit 5 troops" → DB write succeeds (count = 55)
@@ -299,7 +333,7 @@ If you write to DB first, then emit Socket.io event, a crash in between leaves t
 **Solution: Outbox Pattern with Atomic Transactions**
 
 ```
-Command → Atomic Transaction {
+Command → Atomic Transaction (using db.run) {
   1. Apply state change in memory
   2. Generate GameEvent
   3. Write state + event to DB (single transaction)
@@ -310,6 +344,8 @@ Command → Atomic Transaction {
   7. Mark as sent (or retry on failure)
 }
 ```
+
+**Implementation note:** Use `db.run()` with explicit BEGIN/COMMIT to wrap state + event writes in a single transaction. The AsyncLocalStorage system ensures all nested queries use the same connection.
 
 **Design decisions to document (create table):**
 
@@ -332,20 +368,23 @@ Command → Atomic Transaction {
 **Why:** This is CRITICAL for a persistent multiplayer game. Without atomic transactions between state + events, you'll have silent desync bugs that only show up under load or network failure.
 
 ### 1.4 Identify Coupling Points
-Quick audit of codebase for:
+Quick audit of codebase for coupling issues. **Focus areas: `game/`, `routes/`, `client/` (DB layer in `db/` is already modularized).**
+
+Audit for:
 - Modules that import from 5+ other modules
 - Circular dependencies (use `npm ls` or static analysis)
-- Cross-system method calls
+- Cross-system method calls (e.g., game/engine.js calling routes/kingdom-gameplay.js)
 
 **Output:** A coupling map (simple spreadsheet) showing:
 - System A depends on System B (reason: X)
 - Number of cross-system calls per system pair
+- Priority: which to decouple first
 
 **Acceptance criteria:**
-- [ ] Coupling map lists 10+ dependencies
+- [ ] Coupling map identifies 10+ cross-system dependencies in game/routes/client
 - [ ] Identifies the 3-5 most coupled pairs
-- [ ] Suggests which to decouple first
 - [ ] Assessment of whether movement is a good Phase 2 pilot (does it connect to visibility, terrain, etc.?)
+- [ ] Note which systems are already modularized (db/ is baseline, don't re-audit)
 
 **Why:** Take 3-4 days max. Movement might be perfect OR too thin depending on what it touches. This audit will tell you.
 
@@ -642,11 +681,15 @@ Define testing approach for each component type:
 ### 3.0 Establish GameDataManager with Explicit Loading Order (Week 6, Day 1 - CRITICAL)
 **Problem:** If MonsterLoader and ItemLoader run in parallel, MonsterLoader might try to validate loot item references before ItemLoader has populated the item registry. Validation fails or passes incorrectly.
 
-**Solution:** Centralized GameDataManager with strict loading sequence:
+**Solution:** Centralized GameDataManager with strict loading sequence and atomic database writes:
 
 ```typescript
 // game/loaders/GameDataManager.ts
 class GameDataManager {
+  constructor(db) {
+    this.db = db;
+  }
+
   async loadAll(): Promise<void> {
     // MUST load in this exact order
     console.log('Loading items...');
@@ -664,22 +707,56 @@ class GameDataManager {
   private async loadItems() {
     const itemsData = require('../data/items.json');
     this.itemRegistry = itemsData.map(validateAndCreateItem);
-    // ValidationScript also runs in this order
+    // Atomically persist all items in single transaction
+    await this.db.run('BEGIN');
+    try {
+      for (const item of this.itemRegistry) {
+        await this.db.run('INSERT INTO items (id, data) VALUES ($1, $2)', [item.id, JSON.stringify(item)]);
+      }
+      await this.db.run('COMMIT');
+    } catch (err) {
+      await this.db.run('ROLLBACK');
+      throw err;
+    }
   }
 
   private async loadMonsters() {
     const monstersData = require('../data/monsters.json');
     // At this point, this.itemRegistry is fully populated
     this.monsterRegistry = monstersData.map(m => validateMonster(m, this.itemRegistry));
+    // Atomically persist
+    await this.db.run('BEGIN');
+    try {
+      for (const monster of this.monsterRegistry) {
+        await this.db.run('INSERT INTO monsters (id, data) VALUES ($1, $2)', [monster.id, JSON.stringify(monster)]);
+      }
+      await this.db.run('COMMIT');
+    } catch (err) {
+      await this.db.run('ROLLBACK');
+      throw err;
+    }
   }
 
   private async loadLocations() {
     const locationsData = require('../data/locations.json');
     // At this point, both registries are populated
     this.locationRegistry = locationsData.map(l => validateLocation(l, this.monsterRegistry));
+    // Atomically persist
+    await this.db.run('BEGIN');
+    try {
+      for (const location of this.locationRegistry) {
+        await this.db.run('INSERT INTO locations (id, data) VALUES ($1, $2)', [location.id, JSON.stringify(location)]);
+      }
+      await this.db.run('COMMIT');
+    } catch (err) {
+      await this.db.run('ROLLBACK');
+      throw err;
+    }
   }
 }
 ```
+
+**Implementation note:** Use `db.run()` with explicit BEGIN/COMMIT blocks. The AsyncLocalStorage system ensures all nested queries use the same connection, making transactions safe and atomic.
 
 **Validation scripts must also respect this order:**
 ```bash
@@ -857,14 +934,21 @@ All core world data (items, monsters, locations) is in JSON files. Adding new co
 
 ### 4.1 Expand Validation Scripts (Week 10)
 
+**Status: Partially complete.** Database repair/validation already exists:
+- ✅ `db/json-repair.js` (131 LOC) — JSON validation/repair utilities
+- ✅ `db/numeric-fields.js` (64 LOC) — Type conversion and validation
+- ✅ `db/column-utils.js` (60 LOC) — Column introspection
+
+**Still needed:** Content data file validation (items.json, monsters.json, locations.json)
+
 **Deliverables:**
-1. `scripts/validate-content.js` (consolidated validator)
+1. `scripts/validate-content.js` (consolidated validator for JSON data files)
 2. Hook into pre-commit (run validation before commit)
 3. CI integration (fail build if validation fails)
 4. Documentation of validation rules
 
-**Validation checks:**
-- [ ] No duplicate IDs across all JSON files
+**Validation checks (content files only):**
+- [ ] No duplicate IDs across all JSON files (items, monsters, locations)
 - [ ] All monster loot references point to valid items
 - [ ] All location connections point to valid locations
 - [ ] All behavior references exist in behavior lookup tables

@@ -1,116 +1,149 @@
-# Game Architecture — Module Organization & Import Patterns
+# Game Architecture: Current State (Phase 1 Documentation)
 
-## Overview
+**Purpose:** This document describes how the game currently works, the data flows, and system interactions. It is the baseline for architectural improvements.
 
-This document defines the canonical locations for shared utilities, the rationale for server/client separation, and import patterns for different contexts.
+**Date:** 2026-07-08  
+**Status:** As-is, pre-refactoring
 
-## Canonical Module Locations
+---
 
-### Server-Side (CommonJS)
+## Current Data Flow: From Input to Render
 
-**`game/lib/timestamp.js`** — Canonical server timestamp utilities
-- Functions: `createdAtAgeMs`, `formatTimestamp`, `formatTimestampShort`, `nowUnix`
-- Module system: CommonJS (`module.exports`)
-- Usage: Imported by server code (game/engine.js, lib/changelog-publish.js) and tests
-
-**`game/lib/data-transformations.js`** — Pure data transformation functions
-- Functions: `repairMojibake`, `cleanNewsEvent`, `isNight`, `assignRegion`, `getHappinessRecoveryRate`, `calculateHappiness`, `calcDiscoveryChance`, `levelCap`, `getCap`
-- Dependencies: config, synergy-cache, race-bonus, population, fragment-bonus-manager
-- Module system: CommonJS (`module.exports`)
-- Usage: Imported by game/engine.js; can be imported and tested independently
-
-### Client-Side (ES Modules)
-
-**`client/src/utils/timestamp.js`** — Client-side timestamp mirror
-- Mirrors all server timestamp functions for client use
-- Module system: ES modules (`export function`)
-- Rationale: Cannot directly import from game/lib due to server/client build system separation. Functions are duplicated but kept in sync conceptually.
-- Comment in file documents this intentional separation
-
-## Import Patterns
-
-### Server Code (CommonJS)
-
-```javascript
-// In game/engine.js or any server module:
-const { createdAtAgeMs, formatTimestamp, formatTimestampShort, nowUnix } = require('./lib/timestamp');
-const { calculateHappiness, levelCap, getCap } = require('./lib/data-transformations');
+```
+1. HTTP Request (Routes)
+   ↓
+2. Route Handler (routes/kingdom-*.js)
+   ↓
+3. Game Logic (game/engine.js - processTurn)
+   ↓
+4. Database Write (db/schema.js - PgDbAdapter)
+   ↓
+5. Socket.io Broadcast (game/sockets.js)
+   ↓
+6. Client Receives (client/src/socket-client.js)
+   ↓
+7. Zustand Store Update (client/src/stores/*.js)
+   ↓
+8. React Re-render (client/src/components/)
 ```
 
-### Client Code (ES Modules)
+### Step-by-Step Breakdown
 
-```javascript
-// In client/src/** React components:
-import { createdAtAgeMs, formatTimestamp } from '@/utils/timestamp';
-// Note: data-transformations functions remain server-only; duplicate in client only if needed
-```
+**Step 1: HTTP Request**
+- User action triggers route handler in `/routes/kingdom-*.js`
+- Examples: `/turn`, `/build`, `/train`, `/expedition/start`
+- Request carries user ID, intent, and parameters
 
-## Key Design Decisions
+**Step 2: Route Handler**
+- Route validates input (user exists, has resources, action is legal)
+- Route calls game logic directly: `engine.processTurn(kingdom, db)`
+- Multiple routes call into same game functions (tight coupling point)
 
-### 1. Why Duplicate Timestamp Functions?
+**Step 3: Game Logic (engine.js)**
+- `processTurn()` is the main engine function (~2500 lines)
+- Processes entire turn: regen, combat, expeditions, construction, etc.
+- Returns: `{ updates: {...}, events: [...] }`
+- Updates = state changes (gold, troops, etc.)
+- Events = what happened (combat result, resource gained, etc.)
 
-The game uses a dual-module architecture:
-- **Server:** Node.js CommonJS (game/, lib/)
-- **Client:** React ES modules (client/src/)
+**Step 4: Database Write**
+- Updates are written to PostgreSQL via `db.run(sql, params)`
+- Uses new PgDbAdapter with transaction support
+- Synchronous: turns must complete before response sent
 
-Direct imports across this boundary are not possible due to build system constraints. Rather than create a brittle bridge or introduce unnecessary complexity, we maintain intentional mirrors:
-- **Server canonical:** game/lib/timestamp.js (CommonJS)
-- **Client mirror:** client/src/utils/timestamp.js (ES modules)
+**Step 5: Socket.io Broadcast**
+- Game events broadcast to client: `io.emit('game:turn', { updates, events })`
+- Broadcasting happens inside the HTTP response handler
+- Clients listening on socket receive the broadcast
 
-Both implement identical transformation logic. When the server version changes, the client version must be updated to stay in sync — **except for locale/timezone settings**, which are context-dependent:
-- **Server:** Always uses `'en-US'` + `'America/New_York'` for consistency across environments and logs
-- **Client:** Uses browser's default locale/timezone so users see times in their own timezone
+**Step 6: Client Receives Event**
+- Client socket listener in `socket-client.js` receives game state
+- Example: `socket.on('game:turn', (data) => handleTurn(data))`
 
-The sync requirement applies to: input validation (whitespace trim), date parsing logic, format templates. The timezone difference is intentional and documented.
+**Step 7: Zustand Store Update**
+- State update triggers Zustand store: `store.setState({ ...newState })`
+- Store is source of truth for client-side UI state
+- No direct DOM manipulation; React reconciliation only
 
-### Visibility / Fog of War Representations
+**Step 8: React Re-render**
+- Component subscribed to store detects state change
+- React re-renders component tree
+- Only changed elements update in DOM
 
-The codebase intentionally uses two different representations for hex visibility/fog of war because they serve different performance and persistence needs:
+---
 
-- **Server (persistent bitmap):** `game/visibility-cells.js` + `game/visibility.js` stores discovered hexes as a compact BigInt bitmap using `CELL_INDEX_STRIDE = 48` (and `CELL_INDEX_OFFSET = 8`). Used for DB storage, scouting, and ring-based discovery. Throws on invalid cells to prevent silent corruption.
-- **Client (fast render grid):** `client/src/utils/hexMap/HexVisibility.ts` (and related HexGeometry) uses a Uint8Array for O(1) fog state lookup (Unseen/Seen/Current) during map rendering. Rebuilt from server data on sync.
+## Coupling Relationships
 
-**Why dual?** Bitmap is space-efficient for long-term per-kingdom state. Array is optimal for real-time React/SVG rendering. Direct cross-import is impossible due to module system split (see above).
+### Current Tight Couplings
 
-**Consistency requirement:** Changes to map size, stride, or hex math must update both sides and the bridging test. Historical bugs (e.g. stride 32 vs enlarged map) were caused by drift.
+**Routes ↔ Engine**
+- Every route calls `engine.processTurn()`
+- Routes also call specific functions directly
+- Routes reach into `game/*.js` with no abstraction
 
-See: visibility-cells.js, WorldmapRenderer.jsx, HexSelectionModal.jsx, ARCHIVAL.md (stride migration), and the dedicated consistency test.
+**Engine ↔ Database**
+- `processTurn()` receives `db` parameter and calls it directly
+- No abstraction layer or transaction wrapper
 
-### 2. Consolidating Data Transformations
+**Engine ↔ Managers**
+- Combat calls damage calculator
+- Construction calls cost calculator
+- Scout calls progression system
+- Each is tightly wired to the next
 
-Pure data transformation functions (no I/O, no state mutations) are consolidated in `game/lib/data-transformations.js` rather than scattered through engine.js. This enables:
-- Unit testing without full engine context
-- Reuse across different orchestration points
-- Clarity on what is computation vs. orchestration
+**Engine ↔ Config**
+- `processTurn()` reads from `config.EXPEDITION_TURNS`
+- Constants are global, immutable, scattered
 
-### 3. Common Pitfalls to Avoid
+### Cross-System Calls
 
-**❌ Do not:** Add new duplicated utilities without documenting the split
-- If client needs a server utility, document why in a comment (build system constraint, not design choice)
+These represent coupling points to decouple:
 
-**❌ Do not:** Import client utilities in server code or vice versa
-- This breaks the module separation and creates hidden dependencies
+- Routes call engine functions directly
+- Engine calls combat manager directly
+- Combat calls effect system directly
+- Expedition system calls combat resolution
+- No abstraction layers between subsystems
 
-**❌ Do not:** Define the same pure function in multiple places
-- Consolidate in the canonical location first, then mirror if cross-module use is needed
+---
 
-**✅ Do:** Keep timestamp and data-transformation functions in sync across server/client
-- Run tests and smoke checks after any changes to catch divergence
+## State Ownership
 
-## Testing
+Who owns what state currently:
 
-### Server Tests
-- Import from game/lib/timestamp.js and game/lib/data-transformations.js
-- These are CommonJS, so use `require()`
+| State | Owner | Access |
+|-------|-------|--------|
+| Kingdom (primary) | Database | Engine reads, modifies, writes back |
+| Entities | Kingdom object | Embedded JSON or rows |
+| Active effects | Kingdom | active_effects JSON |
+| Expedition progress | Expeditions table | Separate rows |
+| Scout progress | Kingdom | scout_progress field |
+| Discovered kingdoms | Kingdom | JSON field |
+| Combat log | Database | combat_log table |
+| Market prices | Database | market_prices table |
 
-### Client Tests (if any)
-- Import from client/src/utils/timestamp.js
-- These are ES modules, so use `import`
+**Problem:** Multiple systems can write to the same fields without clear ownership rules.
 
-### Smoke Tests
-- Server start-up with DATABASE_URL set
-- Baseline checks verify timestamp and transformation functions work in context (forum, auth, portal, game)
+---
 
-## Future Consolidation
+## Architecture Violations (Current)
 
-If the codebase migrates to a unified module system (all CommonJS or all ES modules), these mirrors can be eliminated. Until then, the separation is intentional and necessary.
+By the principles we want to enforce:
+
+❌ **Routes call engine directly** — UI depends on game logic implementation  
+❌ **Mutable state passed through** — Kingdom object modified in-place  
+❌ **No command/event boundary** — Results returned, not events broadcast  
+❌ **Hardcoded behaviors** — Damage, healing, effects hardcoded in functions  
+❌ **Multiple systems write shared state** — kingdom.gold updated by many subsystems  
+❌ **Database queries scattered** — processTurn calls db multiple times  
+
+---
+
+## Next Steps
+
+Phase 1 continues with:
+1. Turn Pipeline Diagram (detailed timing and bottlenecks)
+2. State Persistence Model (how state syncs to DB and clients)
+3. Coupling Points Analysis (what needs decoupling first)
+
+Then Phase 2: Introduce Command → Simulation → Events pattern.

@@ -83,6 +83,18 @@ async function initializeAdditionalColumns(db, getTableColumns, addCol) {
   for (const [col, def] of rnAdds) {
     if (!rnCols.includes(col)) await addCol('resource_nodes', col, def, rnCols);
   }
+
+  // bounties columns (posted_by for placer, claimed_by_id for warfare claims)
+  // were referenced in code but may be absent on legacy tables from before DDL carve.
+  const bCols = await getTableColumns('bounties');
+  if (!bCols.includes('posted_by')) {
+    await addCol('bounties', 'posted_by', 'INTEGER');
+    console.log('[db] Added missing posted_by column to bounties (for legacy tables)');
+  }
+  if (!bCols.includes('claimed_by_id')) {
+    await addCol('bounties', 'claimed_by_id', 'INTEGER');
+    console.log('[db] Added missing claimed_by_id column to bounties');
+  }
 }
 
 async function initializeMarketPrices(db) {
