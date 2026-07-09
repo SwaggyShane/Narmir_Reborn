@@ -220,14 +220,13 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     setInstantEntries((prev) => [entry, ...prev].slice(0, 50));
   }, []);
 
-  useAppEvent(
-    AppEvent.EXPEDITION_LOG_ENTRY,
-    useCallback((detail) => {
-      const { icon, title, subtitle } = detail || {};
-      if (!title) return;
-      logInstantEntry(icon, title, subtitle);
-    }, [logInstantEntry])
-  );
+  const handleExpeditionLogEntry = useCallback((detail) => {
+    const { icon, title, subtitle } = detail || {};
+    if (!title) return;
+    logInstantEntry(icon, title, subtitle);
+  }, [logInstantEntry]);
+
+  useAppEvent(AppEvent.EXPEDITION_LOG_ENTRY, handleExpeditionLogEntry);
 
   const handleLaunchExpedition = useCallback(async (type) => {
     const rangers = Number(

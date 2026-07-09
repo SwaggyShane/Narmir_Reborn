@@ -41,7 +41,7 @@ function initializeEventListeners() {
  * Scout system emits this; Visibility system listens.
  */
 function handleRingCompleted(data) {
-  const { kingdomId, ringNumber, hexes } = data;
+  const { kingdomId, ringNumber, hexes } = data || {};
   // Visibility system would:
   // 1. Load kingdom's current visibility bitmap
   // 2. Add hexes to seen_cells

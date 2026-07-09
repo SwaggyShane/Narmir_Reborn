@@ -23,7 +23,7 @@ class CommandHandler {
     }
 
     const { type, ...payload } = command;
-    const { kingdom, db } = context;
+    const { kingdom, db } = context || {};
 
     // Route to handler based on command type
     switch (type) {
@@ -97,7 +97,7 @@ class CommandHandler {
 
   // ── Expeditions ──
   handleExpeditions(kingdom, db) {
-    return this.engine.resolveExpeditions(kingdom, db);
+    return this.engine.resolveExpeditions(db, kingdom, this.engine);
   }
 
   // ── Combat ──
