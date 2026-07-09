@@ -90,6 +90,24 @@ Network / Socket.io
 
 ---
 
+## Blocked Work: Epic-Trek Reward System
+
+**Status:** Waiting for Phase 1-2 architecture completion
+
+The epic-trek expedition system needs per-hex discovery and reward wiring that should be implemented AFTER the Command → Simulation → Events architecture is in place (Phase 2 complete). 
+
+Implementation will be cleaner and won't require refactoring if we build it in the new architecture rather than patching the old one.
+
+**What's missing in epic-trek:**
+- Per-hex discovery rolls as expedition travels (1.5 hexes/turn)
+- Dungeon/mountain location discovery during travel
+- Accumulated loot (gold, resources, mana, troops, items)
+- Proper reward wiring in expeditionRewards() function
+
+**Unblock condition:** Phase 2 (Command + Event system) is complete and tested
+
+---
+
 ## Rapid Development Guardrails (For 1-3 Day Execution)
 
 Execution will compress an 11-week roadmap into days. These 3 operational constraints prevent common failure modes during rapid development:
