@@ -123,6 +123,56 @@ async function start() {
     }
   }
 
+// Graceful shutdown handler (Priority #1 for Railway stability)
+const gracefulShutdown = async () => {
+  console.log('[shutdown] Received termination signal...');
+
+  // Stop accepting new connections
+  if (server) {
+    server.close(() => {
+      console.log('[shutdown] HTTP server closed');
+    });
+  }
+
+  // Close Socket.io before closing connections
+  if (io) {
+    io.close(() => {
+      console.log('[shutdown] Socket.io closed');
+    });
+  }
+
+  // Shutdown audit scheduler if it exists
+  if (global._audit_scheduler) {
+    try {
+      global._audit_scheduler.shutdown();
+      console.log('[shutdown] Audit scheduler shut down');
+    } catch (err) {
+      console.error('[shutdown] Error closing audit scheduler:', err.message);
+    }
+  }
+
+  console.log('[shutdown] Cleanup complete. Exiting...');
+  process.exit(0);
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
+// Unhandled rejection handler - log but don't crash immediately
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[CRITICAL] Unhandled Rejection at:', promise);
+  console.error('[CRITICAL] Reason:', reason instanceof Error ? reason.message : reason);
+  // Don't exit - let graceful shutdown handler manage process lifecycle
+});
+
+// Uncaught exception handler - log and trigger graceful shutdown
+process.on('uncaughtException', (err) => {
+  console.error('[CRITICAL] Uncaught Exception:', err.message);
+  console.error('[CRITICAL] Stack:', err.stack);
+  // Trigger graceful shutdown after logging
+  gracefulShutdown().catch(() => process.exit(1));
+});
+
 start().catch(err => {
   console.error('Failed to start:', err);
   process.exit(1);
