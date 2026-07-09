@@ -657,10 +657,11 @@ function processBuildQueue(k, events, xpSourcesAccum) {
     updates.xp_sources_updated = conXp.xp_sources;
 
     // Award engineer unit XP per building completed
+    // XP scaled to meaningful progression: level 2 (200 XP) should take substantial time
     const engXpRes = awardTroopXp(
       { ...k, troop_levels: updates.troop_levels || k.troop_levels },
       "engineers",
-      totalCompleted * 10,
+      totalCompleted * 3,
     );
     updates.troop_levels = typeof engXpRes.troop_levels === "string" ? JSON.parse(engXpRes.troop_levels) : engXpRes.troop_levels;
 
