@@ -247,21 +247,6 @@ const BuildPanel = () => {
     setBuildUiTick((tick) => tick + 1);
   }, []);
 
-  React.useEffect(() => {
-    if (showAttunements) {
-      loadAttunements();
-    }
-  }, [showAttunements]);
-
-  useEffect(() => {
-    const newAllocations = {};
-    Object.entries(BUILD_ALLOCATION_KEYS).forEach(([inputId, key]) => {
-      newAllocations[inputId] = buildAllocation[key] || 0;
-    });
-    setEngineerAllocations(newAllocations);
-    refreshBuildUi();
-  }, [buildAllocation, refreshBuildUi]);
-
   const loadAttunements = async () => {
     try {
       setLoading(true);
@@ -324,6 +309,21 @@ const BuildPanel = () => {
       setLoading(false);
     }
   };
+
+  React.useEffect(() => {
+    if (showAttunements) {
+      loadAttunements();
+    }
+  }, [showAttunements]);
+
+  useEffect(() => {
+    const newAllocations = {};
+    Object.entries(BUILD_ALLOCATION_KEYS).forEach(([inputId, key]) => {
+      newAllocations[inputId] = buildAllocation[key] || 0;
+    });
+    setEngineerAllocations(newAllocations);
+    refreshBuildUi();
+  }, [buildAllocation, refreshBuildUi]);
 
   const applyAttunement = async (fragmentName, buildingType) => {
     try {
