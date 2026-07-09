@@ -5,6 +5,7 @@ const fs = require("fs");
 const crypto = require("crypto");
 const engine = require("../game/engine");
 const config = require("../game/config");
+const commandHandler = require("../game/command-handler");
 const { initProfiler, runWithProfiler } = require("../game/profiling");
 const { requireAuth, requireCsrfToken } = require("./middleware");
 const { safeJsonParse, devLog } = require('../utils/helpers');
@@ -701,9 +702,9 @@ module.exports = function (db) {
             let turnResult;
             if (process.env.NODE_ENV !== 'production') {
               const p = initProfiler();
-              turnResult = runWithProfiler(p, () => engine.processTurn(lockedK, db));
+              turnResult = runWithProfiler(p, () => commandHandler.handle({ type: 'turn' }, { kingdom: lockedK, db }));
             } else {
-              turnResult = engine.processTurn(lockedK, db);
+              turnResult = commandHandler.handle({ type: 'turn' }, { kingdom: lockedK, db });
             }
             const { updates, events, _profileReport } = turnResult;
             if (_profileReport && _profileReport.totalTime > 0) {
