@@ -63,7 +63,7 @@ export default function KingdomsPanel({ adminFetch, onToast }) {
           onToast(`Reset "${k.name}"`, 'success');
           await loadKingdoms();
         } catch (err) {
-          onToast('Reset failed: ' + (err.message || 'Unknown error'), 'error');
+          onToast('Reset failed: ' + (err?.message || 'Unknown error'), 'error');
         }
       },
     });
@@ -83,7 +83,7 @@ export default function KingdomsPanel({ adminFetch, onToast }) {
       onToast(`+Turns added to "${k.name}"`, 'success');
       setKingdoms(prev => prev.map(r => r.id === k.id ? { ...r, turns_stored: 400 } : r));
     } catch (err) {
-      onToast('+Turns failed: ' + (err.message || 'Unknown error'), 'error');
+      onToast('+Turns failed: ' + (err?.message || 'Unknown error'), 'error');
     }
   }
 
@@ -108,7 +108,7 @@ export default function KingdomsPanel({ adminFetch, onToast }) {
           onToast(`Banned "${k.username}"`, 'success');
           setKingdoms(prev => prev.map(r => r.player_id === k.player_id ? { ...r, is_banned: 1 } : r));
         } catch (err) {
-          onToast('Ban failed: ' + (err.message || 'Unknown error'), 'error');
+          onToast('Ban failed: ' + (err?.message || 'Unknown error'), 'error');
         }
       },
     });
@@ -128,7 +128,7 @@ export default function KingdomsPanel({ adminFetch, onToast }) {
       onToast(`Unbanned "${k.username}"`, 'success');
       setKingdoms(prev => prev.map(r => r.player_id === k.player_id ? { ...r, is_banned: 0 } : r));
     } catch (err) {
-      onToast('Unban failed: ' + (err.message || 'Unknown error'), 'error');
+      onToast('Unban failed: ' + (err?.message || 'Unknown error'), 'error');
     }
   }
 
@@ -151,7 +151,7 @@ export default function KingdomsPanel({ adminFetch, onToast }) {
           onToast(`Deleted "${k.name}"`, 'success');
           setKingdoms(prev => prev.filter(r => r.id !== k.id));
         } catch (err) {
-          onToast('Delete failed: ' + (err.message || 'Unknown error'), 'error');
+          onToast('Delete failed: ' + (err?.message || 'Unknown error'), 'error');
         }
       },
     });
