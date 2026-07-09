@@ -162,14 +162,59 @@ function awardUnitXp(k, unit, xpAmount) {
 
 function getAvailableUnits(k, unit) {
   const total = k[unit] || 0;
-  if (!k.training_allocation) return total;
-  const trainingAlloc = safeJsonParse(
-    k.training_allocation,
-    {},
-    "getAvailableUnits:training_allocation",
-  );
-  const training = Math.max(0, parseInt(trainingAlloc[unit]) || 0);
-  return Math.max(0, total - training);
+  let allocated = 0;
+
+  // All units can have training allocation
+  if (k.training_allocation) {
+    const trainingAlloc = safeJsonParse(
+      k.training_allocation,
+      {},
+      "getAvailableUnits:training_allocation",
+    );
+    allocated += Math.max(0, parseInt(trainingAlloc[unit], 10) || 0);
+  }
+
+  // Engineers also have build and resource-build allocations
+  if (unit === 'engineers') {
+    if (k.build_allocation) {
+      const buildAlloc = safeJsonParse(
+        k.build_allocation,
+        {},
+        "getAvailableUnits:build_allocation",
+      );
+      allocated += Object.values(buildAlloc || {}).reduce((sum, v) => sum + (Number(v) || 0), 0);
+    }
+    if (k.resource_build_allocation) {
+      const resourceAlloc = safeJsonParse(
+        k.resource_build_allocation,
+        {},
+        "getAvailableUnits:resource_build_allocation",
+      );
+      allocated += Object.values(resourceAlloc || {}).reduce((sum, v) => sum + (Number(v) || 0), 0);
+    }
+  }
+
+  // Rangers also have scout allocation
+  if (unit === 'rangers') {
+    if (k.scout_allocation) {
+      allocated += Math.max(0, parseInt(k.scout_allocation, 10) || 0);
+    }
+  }
+
+  // Mages also have research allocation for spellbooks
+  if (unit === 'mages') {
+    if (k.research_allocation) {
+      const researchAlloc = safeJsonParse(
+        k.research_allocation,
+        {},
+        "getAvailableUnits:research_allocation",
+      );
+      allocated += Math.max(0, parseInt(researchAlloc.spellbook_mages || 0, 10) || 0);
+      allocated += Math.max(0, parseInt(researchAlloc.school_spellbook_mages || 0, 10) || 0);
+    }
+  }
+
+  return Math.max(0, total - allocated);
 }
 
 module.exports = {
