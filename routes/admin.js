@@ -380,7 +380,8 @@ module.exports = function (db, io) {
       bld_gravel_pit = 0, bld_blockfield = 0, bld_stone_quarry = 0,
       bld_open_pit = 0, bld_strip_mine = 0, bld_deep_mine = 0,
       resource_sequence = '{}'::jsonb, ladders = 0, trade_routes = 0, active_trade_routes = '[]'::jsonb,
-      milestones_claimed = '[]'::jsonb, milestone_bonuses = '{}'::jsonb, milestone_title = ''`;
+      milestones_claimed = '[]'::jsonb, milestone_bonuses = '{}'::jsonb, milestone_title = '',
+      scout_allocation = 0, scout_progress = 0`;
 
   const resetKingdomLogic = async (db, kingdomId, race) => {
     await db.run(`${RESET_KINGDOM_SET} WHERE id = $15`, [
