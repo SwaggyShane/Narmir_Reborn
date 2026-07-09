@@ -615,7 +615,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
         <div className="min-w-0 flex-1">
           <div className="font-semibold text-[var(--text)]">
             {repairText(label)}
-            {!isCompleted ? ` departed — ${entry.turns_left} turn${entry.turns_left === 1 ? '' : 's'} left` : ' — Returned'}
+            {!isCompleted && entry.type !== 'land_expansion' && ` departed — ${entry.turns_left} turn${entry.turns_left === 1 ? '' : 's'} left`}
+            {isCompleted && ' — Returned'}
           </div>
           <div className="mt-0.5 text-[11px] text-[var(--text3)]">{repairText(subtitle)}</div>
           {isCompleted && rewards.length > 0 && (
