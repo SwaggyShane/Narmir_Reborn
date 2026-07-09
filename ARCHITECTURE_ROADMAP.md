@@ -90,21 +90,31 @@ Network / Socket.io
 
 ---
 
-## Blocked Work: Epic-Trek Reward System
+## Blocked Work: Expedition Reward Systems
 
 **Status:** Waiting for Phase 1-2 architecture completion
 
-The epic-trek expedition system needs per-hex discovery and reward wiring that should be implemented AFTER the Command → Simulation → Events architecture is in place (Phase 2 complete). 
+Two expedition systems need reward wiring that should be implemented AFTER the Command → Simulation → Events architecture is in place (Phase 2 complete). Implementation will be cleaner and won't require refactoring if we build in the new architecture rather than patching the old one.
 
-Implementation will be cleaner and won't require refactoring if we build it in the new architecture rather than patching the old one.
+### Epic-Trek Per-Hex Discovery & Loot
 
-**What's missing in epic-trek:**
+**What's missing:**
 - Per-hex discovery rolls as expedition travels (1.5 hexes/turn)
 - Dungeon/mountain location discovery during travel
 - Accumulated loot (gold, resources, mana, troops, items)
 - Proper reward wiring in expeditionRewards() function
 
+### Passive Scouting Continuous Finds
+
+**What's missing:**
+- Per-turn discovery chance when scout allocation active
+- Per-turn resource node discovery (scaled by allocation)
+- Per-turn passive finds (gold, wood, land, mana, troops, maps, kingdoms)
+- Integration with scout-progress system
+
 **Unblock condition:** Phase 2 (Command + Event system) is complete and tested
+
+Both systems follow the same pattern: allocate units → accumulate discoveries over time → receive loot when allocation ends or completes. Better to design this pattern once in the new architecture than patch it twice in the old one.
 
 ---
 
