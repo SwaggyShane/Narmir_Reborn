@@ -247,7 +247,7 @@ const BuildPanel = () => {
     setBuildUiTick((tick) => tick + 1);
   }, []);
 
-  const loadAttunements = async () => {
+  const loadAttunements = useCallback(async () => {
     try {
       setLoading(true);
       const data = await apiCall('/api/kingdom/available-attunements');
@@ -308,13 +308,13 @@ const BuildPanel = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   React.useEffect(() => {
     if (showAttunements) {
       loadAttunements();
     }
-  }, [showAttunements]);
+  }, [showAttunements, loadAttunements]);
 
   useEffect(() => {
     const newAllocations = {};
