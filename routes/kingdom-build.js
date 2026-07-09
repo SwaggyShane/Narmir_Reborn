@@ -209,27 +209,41 @@ module.exports = function (db) {
       return res.status(400).json({ error: allocValidation.error });
     }
 
-    const k = await db.get(
-      'SELECT id, engineers, build_allocation, training_allocation, scout_allocation FROM kingdoms WHERE player_id = $1',
-      [req.player.playerId],
-    );
-    if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+    try {
+      await db.withTransaction(async () => {
+        const k = await db.get(
+          'SELECT id, engineers, build_allocation, training_allocation, scout_allocation FROM kingdoms WHERE player_id = $1 FOR UPDATE',
+          [req.player.playerId],
+        );
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
 
-    const buildAlloc = safeJsonParse(k.build_allocation, {}, 'resource-build-allocation:build_allocation');
-    const trainingAlloc = safeJsonParse(k.training_allocation, {}, 'resource-build-allocation:training_allocation');
-    const buildTotal = Object.values(buildAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
-    const trainingTotal = Object.values(trainingAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
-    const scoutTotal = Math.max(0, parseInt(k.scout_allocation, 10) || 0);
+        const buildAlloc = safeJsonParse(k.build_allocation, {}, 'resource-build-allocation:build_allocation');
+        const trainingAlloc = safeJsonParse(k.training_allocation, {}, 'resource-build-allocation:training_allocation');
+        const buildTotal = Object.values(buildAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
+        const trainingTotal = Object.values(trainingAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
+        const scoutTotal = Math.max(0, parseInt(k.scout_allocation, 10) || 0);
 
-    if (allocValidation.total + buildTotal + trainingTotal + scoutTotal > k.engineers)
-      return res.status(400).json({
-        error: `Not enough available engineers. Allocated: ${allocValidation.total.toLocaleString()} resource, ${buildTotal.toLocaleString()} build, ${trainingTotal.toLocaleString()} training, ${scoutTotal.toLocaleString()} scout. Total available: ${k.engineers.toLocaleString()}`,
+        if (allocValidation.total + buildTotal + trainingTotal + scoutTotal > k.engineers) {
+          const err = new Error(`Not enough available engineers. Allocated: ${allocValidation.total.toLocaleString()} resource, ${buildTotal.toLocaleString()} build, ${trainingTotal.toLocaleString()} training, ${scoutTotal.toLocaleString()} scout. Total available: ${k.engineers.toLocaleString()}`);
+          err.statusCode = 400;
+          throw err;
+        }
+
+        await db.run('UPDATE kingdoms SET resource_build_allocation = $1 WHERE id = $2', [
+          JSON.stringify(allocValidation.values),
+          k.id,
+        ]);
       });
-    await db.run('UPDATE kingdoms SET resource_build_allocation = $1 WHERE id = $2', [
-      JSON.stringify(allocValidation.values),
-      k.id,
-    ]);
-    res.json({ ok: true });
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[resource-build-allocation] error:', err.message);
+      const statusCode = err.statusCode || 500;
+      res.status(statusCode).json({ error: err.message });
+    }
   });
 
   // POST /school-allocation
