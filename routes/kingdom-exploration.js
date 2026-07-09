@@ -564,7 +564,7 @@ module.exports = function (db, kingdomGameplayRouter) {
         }
 
         await db.run(
-          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), population = GREATEST(0, population - $2), lands = lands + $3 WHERE id = $4',
+          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), population = GREATEST(0, population - $2), land = land + $3 WHERE id = $4',
           [totalTurns, reward.populationCost, reward.landsDiscovered, k.id],
         );
 
