@@ -480,6 +480,7 @@ async function initDb(options = {}) {
         client.release();
       }
       _db = new PgDbAdapter(pool);
+      _db.bootComplete = false; // Flag to prevent pool shutdown during boot
       setColumnDb(_db);
       console.log("[db] ✅ PostgreSQL connected successfully! Connection established.");
 
@@ -527,14 +528,23 @@ async function initDb(options = {}) {
   process.on('SIGINT', () => clearInterval(txnReaperInterval));
 
   // Graceful pool shutdown on container stop (Railway sends SIGTERM)
+  // Track boot completion to avoid closing pool during initialization
   const shutdownPool = async () => {
     try {
+      // Only close pool after boot is complete to avoid interrupting initialization
+      if (_db && !_db.bootComplete) {
+        console.log('[db] SIGTERM received during boot - deferring pool close until boot completes');
+        // Set a timeout to check again in 1 second (allows boot to progress)
+        setTimeout(shutdownPool, 1000);
+        return;
+      }
       await pool.end();
       console.log('[db] Pool closed gracefully');
     } catch (e) {
       console.error('[db] Error closing pool:', e.message);
     }
   };
+
   process.on('SIGTERM', shutdownPool);
   process.on('SIGINT', shutdownPool);
 

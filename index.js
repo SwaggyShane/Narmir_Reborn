@@ -112,6 +112,11 @@ async function start() {
       sentryEnabled: instrument.sentryEnabled,
       db,
     });
+
+    // Mark boot as complete so SIGTERM can close the pool safely
+    if (db && db.bootComplete !== undefined) {
+      db.bootComplete = true;
+    }
     } catch (err) {
       bootError = err;
       console.error('[boot] FATAL:', err.message);
