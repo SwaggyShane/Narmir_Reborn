@@ -364,7 +364,7 @@ module.exports = function (db, io) {
       mage_tower_allocation = '{}'::jsonb, shrine_allocation = '{}'::jsonb, library_allocation = '{}'::jsonb,
       library_progress = '{}'::jsonb, tower_progress = '{}'::jsonb, scrolls = '{}'::jsonb, active_effects = '{}'::jsonb,
       world_fragments = '[]'::jsonb, collected_lore = '[]'::jsonb, collected_events = '[]'::jsonb,
-      achievements = '[]'::jsonb, fortified_blueprints = '{}'::jsonb, fortified_buildings = '{}'::jsonb,
+      achievements = '[]'::jsonb, fortified_blueprints = 0, fortified_buildings = '{}'::jsonb,
       hybrid_blueprints = '{}'::jsonb, maps = 0, blueprints_stored = 0,
       scaffolding_stored = 0, hammers_stored = 0,
       certified_blueprints_stored = 0, prestige_level = 0,
