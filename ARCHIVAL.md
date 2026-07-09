@@ -2,11 +2,25 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-08 (Visibility unification and container/DB stability fixes via PR #850)
+**Last updated:** 2026-07-09 (Phase 1 architecture documentation + review fixes via PR #851)
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-09
+
+- **Phase 1: Architecture Documentation Foundation** (PR #851, merged 2026-07-09): Completed comprehensive architectural baseline analysis before Phase 2 refactoring.
+  - **Deliverables:**
+    - `game/ARCHITECTURE.md` — Current-state documentation: data flow, system components, coupling relationships, state ownership, and 7 architectural violations to address
+    - `game/TURN_PIPELINE.md` — Detailed 16-phase turn execution sequence with timing estimates, state mutation points, bottleneck analysis (attunements ~50-200ms, auto-research ~20-50ms, training ~20-40ms)
+    - `game/STATE_PERSISTENCE_MODEL.md` — State flow from user action through database writes and back to clients; write/read/broadcast paths; JSON serialization constraints; transaction model; Outbox Pattern proposal
+    - `game/COUPLING_ANALYSIS.md` — Identification of 4 tiers of tight coupling (Routes→Engine, Engine→Modules, Systems→Systems, Module→DB) with specific coupling points and decoupling roadmap
+    - `game/lib/healing.js` — Gemini review fixes: getXpSources NaN bug (merge defaults) and cleanNestedJson optimization (early return guard)
+  - **Quality Gates:** CI ✅ (all checks pass), Gemini review feedback addressed in healing.js
+  - **Files Changed:** 4 new architecture docs, 1 review fix module, plus router/healing extraction from M1-1/M1-3
+  - **Commits:** 1 squashed commit (Phase 1 docs + Gemini review fixes per workflow constraint)
+  - **Impact:** Establishes clear baseline for Phase 2 architectural improvements; identifies bottlenecks, coupling points, and optimization opportunities; provides decision framework for future refactoring
 
 ### 2026-07-08
 

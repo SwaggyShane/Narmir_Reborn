@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-08 (Visibility unification + container/DB fixes complete — PR #850 created)
+**Last updated:** 2026-07-09 (Phase 1 architecture documentation complete — PR #851 merged)
 
 ---
 
@@ -43,6 +43,7 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 ## Completed Systems (See ARCHIVAL.md)
 
+- **Phase 1: Architecture Documentation (M1-4)** (complete 2026-07-09, PR #851) — Comprehensive baseline architectural analysis: current-state documentation (ARCHITECTURE.md), detailed turn pipeline with bottleneck analysis (TURN_PIPELINE.md), state persistence model (STATE_PERSISTENCE_MODEL.md), coupling analysis (COUPLING_ANALYSIS.md). Ready for Phase 2 refactoring. See ARCHIVAL.md.
 - **Visibility Unification (M1-2) + Container/DB Stability** (complete 2026-07-08, PR #850) — Unified server/client cellIndex (removed duplicate, added bounds). Fixed hardcoded PORT and shutdown issues causing restarts and SSL errors in logs. See ARCHIVAL.md.
 - **Turn Healing Extraction (M1-3)** (complete on feature/turn-healing-local) — Expanded healKingdomForTurn to cover 15+ JSON fields, added ensureArray/getXpSources, extracted logic from processTurn, dedicated tests. Local only per instructions.
 - **Router Order Reduction (M1-1)** (started on feature/router-order-local) — Made sub-router mounting explicit via ordered array in kingdom.js to reduce shadowing. Enhanced precedence test. Limited commits.

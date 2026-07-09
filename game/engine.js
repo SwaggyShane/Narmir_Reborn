@@ -25,6 +25,13 @@ const { EPOCH_NOW } = require('../lib/db-sql');
 const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
 const { getProfiler, resetDevProfiler } = require('./profiling');
 
+// Phase 3: System Registry for modular turn processing
+const { registry } = require('./turn-systems');
+
+// Register Phase 3 systems (after registry init to avoid circular deps)
+const goldIncomeSystem = require('./systems/gold-income');
+registry.register(goldIncomeSystem);
+
 // Healing (M1-3): centralized defensive repair for double-/nested-stringified JSON columns.
 // Imported from canonical location in game/lib so it can be unit tested independently
 // and reused by other turn-adjacent modules.
