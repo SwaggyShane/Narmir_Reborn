@@ -310,7 +310,7 @@ const BuildPanel = () => {
     }
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (showAttunements) {
       loadAttunements();
     }
