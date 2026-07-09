@@ -85,7 +85,7 @@ async function start() {
     setupRoutes(app, {
       db,
       io,
-      bootError,
+      getBootError: () => bootError, // Pass getter instead of stale value
       authSensitiveLimiter,
       turnLimiter,
       adminLimiter,
@@ -123,40 +123,63 @@ async function start() {
     }
   }
 
+// Track boot completion for graceful shutdown
+const bootState = { complete: false };
+
 // Graceful shutdown handler (Priority #1 for Railway stability)
-const gracefulShutdown = async () => {
+const gracefulShutdown = async (exitCode = 0) => {
   console.log('[shutdown] Received termination signal...');
 
-  // Stop accepting new connections
-  if (server) {
-    server.close(() => {
-      console.log('[shutdown] HTTP server closed');
-    });
-  }
+  // Set a fallback timeout to force exit if graceful shutdown hangs
+  const forceExitTimeout = setTimeout(() => {
+    console.error('[shutdown] Graceful shutdown timed out after 10 seconds. Forcing exit...');
+    process.exit(exitCode);
+  }, 10000);
+  forceExitTimeout.unref(); // Don't keep process alive for this timeout
 
-  // Close Socket.io before closing connections
-  if (io) {
-    io.close(() => {
-      console.log('[shutdown] Socket.io closed');
-    });
-  }
-
-  // Shutdown audit scheduler if it exists
-  if (global._audit_scheduler) {
-    try {
-      global._audit_scheduler.shutdown();
-      console.log('[shutdown] Audit scheduler shut down');
-    } catch (err) {
-      console.error('[shutdown] Error closing audit scheduler:', err.message);
+  try {
+    // Stop accepting new connections
+    if (server) {
+      await new Promise((resolve) => {
+        server.close(() => {
+          console.log('[shutdown] HTTP server closed');
+          resolve();
+        });
+      });
     }
-  }
 
-  console.log('[shutdown] Cleanup complete. Exiting...');
-  process.exit(0);
+    // Close Socket.io before closing connections
+    if (io) {
+      await new Promise((resolve) => {
+        io.close(() => {
+          console.log('[shutdown] Socket.io closed');
+          resolve();
+        });
+      });
+    }
+
+    // Shutdown audit scheduler if it exists
+    if (global._audit_scheduler) {
+      try {
+        global._audit_scheduler.shutdown();
+        console.log('[shutdown] Audit scheduler shut down');
+      } catch (err) {
+        console.error('[shutdown] Error closing audit scheduler:', err.message);
+      }
+    }
+
+    console.log('[shutdown] Cleanup complete. Exiting with code', exitCode);
+    clearTimeout(forceExitTimeout); // Cancel fallback timeout
+    process.exit(exitCode);
+  } catch (err) {
+    console.error('[shutdown] Error during graceful shutdown:', err.message);
+    clearTimeout(forceExitTimeout);
+    process.exit(exitCode);
+  }
 };
 
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', () => gracefulShutdown(0));
+process.on('SIGINT', () => gracefulShutdown(0));
 
 // Unhandled rejection handler - log but don't crash immediately
 process.on('unhandledRejection', (reason, promise) => {
@@ -165,12 +188,12 @@ process.on('unhandledRejection', (reason, promise) => {
   // Don't exit - let graceful shutdown handler manage process lifecycle
 });
 
-// Uncaught exception handler - log and trigger graceful shutdown
+// Uncaught exception handler - log and trigger graceful shutdown with error code
 process.on('uncaughtException', (err) => {
   console.error('[CRITICAL] Uncaught Exception:', err.message);
   console.error('[CRITICAL] Stack:', err.stack);
-  // Trigger graceful shutdown after logging
-  gracefulShutdown().catch(() => process.exit(1));
+  // Exit with code 1 to signal container orchestrator of crash
+  gracefulShutdown(1).catch(() => process.exit(1));
 });
 
 start().catch(err => {
