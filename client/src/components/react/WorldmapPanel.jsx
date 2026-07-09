@@ -271,11 +271,15 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
   // (only .terrain affects SVG *content*). Toggling other layers only runs this effect
   // (which does cheap GSAP visibility) without blowing away the entire SVG via innerHTML.
   // This eliminates the "Maximum update depth exceeded" render loops previously logged.
+  //
+  // NOTE: We only depend on `layers` here (not `mapSvg`). The initial apply is handled
+  // inside animateWorldMap when mapDataKey changes. Including mapSvg could cause
+  // unnecessary re-applies or contribute to effect ordering issues.
   useEffect(() => {
-    if (mapContainerRef.current && mapSvg) {
+    if (mapContainerRef.current) {
       applyWorldMapLayers(mapContainerRef.current, layers, { animate: true });
     }
-  }, [layers, mapSvg]);
+  }, [layers]);
 
   const refreshWorldMap = useCallback(
     () => loadWorldMap({
