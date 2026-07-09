@@ -424,17 +424,12 @@ function processTurn(k, db = null) {
   rebellionCheck(k, happinessResult.happiness, updates, events);
 
   // ── 1. Gold income ───────────────────────────────────────────────────────────
-  // Phase 3: Use SystemRegistry to process gold income (Slice 2 extraction)
-  const goldSystemResult = registry.processAll(k, updates, events);
-  const income = goldSystemResult.updates._incomeBreakdown?.gold || 0;
-  Object.assign(updates, goldSystemResult.updates);
-  events.length = 0; // Clear auto-generated events from system
-
+  const income = goldPerTurn(k);
   const tradeIncome = calculateTradeIncome(k);
   // Respect gold already set by rebellionCheck (e.g. Treasury Looting) instead of
   // recomputing from the pre-turn k.gold snapshot and discarding it.
-  const goldBase = updates.gold || k.gold;
-  updates.gold = goldBase + tradeIncome;
+  const goldBase = updates.gold !== undefined ? updates.gold : k.gold;
+  updates.gold = goldBase + income + tradeIncome;
 
   let incomeMsg = `🪙 Turn ${updates.turn}: +${income.toLocaleString()} gold earned.`;
   if (tradeIncome > 0) {
