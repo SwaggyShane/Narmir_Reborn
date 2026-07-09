@@ -260,6 +260,10 @@ module.exports = function (db, kingdomGameplayRouter) {
           const t = req.body.terrain || 'forest';
           if (r < 1) throw new Error('Send at least 1 ranger');
 
+          if (r > engine.getAvailableUnits(k, 'rangers')) {
+            throw new Error('Not enough available rangers');
+          }
+
           const reward = calculateHuntingReward(r, k.ranger_level || 1, t, k.race, 'instant');
 
           const newFood = Math.max(0, (k.food || 0) + reward.foodReward);
@@ -390,6 +394,10 @@ module.exports = function (db, kingdomGameplayRouter) {
           const e = Math.max(0, parseInt(req.body.engineers) || 0);
           const t = req.body.terrain || 'mountain';
           if (e < 1) throw new Error('Send at least 1 engineer');
+
+          if (e > engine.getAvailableUnits(k, 'engineers')) {
+            throw new Error('Not enough available engineers');
+          }
 
           const reward = calculateProspectingReward(e, k.engineer_level || 1, t, k.race, 'instant');
 
