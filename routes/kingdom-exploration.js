@@ -7,7 +7,7 @@ const { applyKingdomUpdates } = require('../db/schema');
 const { calculateHuntingReward } = require('../game/hunting-economy');
 const { calculateProspectingReward } = require('../game/prospecting-economy');
 const { calculateLandExpansionReward } = require('../game/land-expansion');
-const { validateAllocation, calculateAllocationResult, getAllocationStatus } = require('../game/scout-allocation');
+const { validateAllocation, getAllocationStatus } = require('../game/scout-allocation');
 const { getLocationByRegionAndType, markLocationDiscovered } = require('../game/world-locations');
 const { getDistanceToLocation, getLocationTurnCost } = require('../game/location-distance');
 
@@ -746,21 +746,20 @@ module.exports = function (db, kingdomGameplayRouter) {
           throw err;
         }
 
-        const result = calculateAllocationResult(kingdom, rangerCount);
         await db.run(
           'UPDATE kingdoms SET scout_allocation = $1 WHERE id = $2',
-          [result.newTotal, kingdom.id],
+          [rangerCount, kingdom.id],
         );
 
-        const updatedKingdom = { ...kingdom, scout_allocation: result.newTotal };
+        const updatedKingdom = { ...kingdom, scout_allocation: rangerCount };
         const status = getAllocationStatus(updatedKingdom);
 
         return {
-          allocated: result.allocated,
+          allocated: rangerCount,
           scoutAllocation: status.allocated,
           availableRangers: status.available,
           updates: {
-            scout_allocation: result.newTotal,
+            scout_allocation: rangerCount,
             rangers: status.available,
           },
         };
