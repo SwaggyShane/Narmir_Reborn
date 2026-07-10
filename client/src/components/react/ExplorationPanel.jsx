@@ -180,6 +180,9 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       if (
         reason === 'turn' ||
         reason === 'search' ||
+        reason === 'hunting' ||
+        reason === 'prospecting' ||
+        reason === 'land-expansion' ||
         reason === 'expedition-start' ||
         reason === 'expedition-complete' ||
         reason === 'expedition-cancel' ||
