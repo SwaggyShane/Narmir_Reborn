@@ -159,7 +159,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     } catch (err) {
       console.error('Failed to load profile:', err);
     }
-  }, [syncKingdomData]);
+  }, []);
 
   const refreshAll = useCallback(async () => {
     await Promise.all([refreshInventory(), refreshExpeditions(), refreshProfile()]);
