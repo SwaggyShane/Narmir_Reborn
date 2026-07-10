@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { cleanMessageText, toast } from '../../utils/toast.js';
 import { apiCall } from '../../utils/api';
 import { repairMojibake } from '../../utils/repairMojibake';
-import { applyGameMutation } from '../../utils/gameMutations.js';
+import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { useGameMutationEvents } from '../../hooks/useGameState';
@@ -215,14 +215,10 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const mountainFoodCost = Math.ceil(mountainRangers * 0.5 * 100 * 0.75);
 
   const applyResult = useCallback((result, reason) => {
-    if (applyGameMutation) {
-      applyGameMutation(result, { reason });
-      return;
-    }
     if (result?.updates) {
-      syncKingdomData(result.updates);
+      normalizeAndRouteResponse(result, { reason });
     }
-  }, [syncKingdomData]);
+  }, []);
 
   const logInstantEntry = useCallback((icon, title, subtitle) => {
     const entry = {

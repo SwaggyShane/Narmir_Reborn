@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { apiCall } from '../utils/api.mjs';
 import { toast } from '../utils/toast.js';
-import { applyGameMutation } from '../utils/gameMutations.js';
+import { normalizeAndRouteResponse } from '../utils/responseNormalizer.js';
 import { playGameSound } from '../utils/audio.js';
 import { getRegenCountdownLabel } from './useRegenCountdown.js';
 import { AppEvent, emitAppEvent } from '../utils/appEvents.js';
@@ -9,8 +9,9 @@ import { useProfileStore } from '../stores/index.js';
 import { setLastSpellTarget } from '../utils/spellTargetHistory.js';
 
 function applyResult(data, reason) {
-  const updates = data?.updates || data?.kUpdates || null;
-  if (updates) applyGameMutation(updates, { reason });
+  if (data?.updates) {
+    normalizeAndRouteResponse(data, { reason });
+  }
   return data;
 }
 
@@ -61,7 +62,7 @@ export function useGameActions() {
         return null;
       }
       applyResult(data, 'turn');
-      // applyResult already syncs to stores via applyGameMutation
+      // applyResult already syncs to stores via normalizeAndRouteResponse
       // No need to manually update here
 
       let completedBuildingsMsg = '';

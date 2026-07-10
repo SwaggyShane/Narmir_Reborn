@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { apiCall } from '../../utils/api.mjs';
-import { applyGameMutation } from '../../utils/gameMutations.js';
 import { getSocket } from '../../socket-client.js';
 import { initSocketHandlers } from '../../hooks/useSocket.js';
 import { useProfileStore, useEconomyStore, useMilitaryStore, useResearchStore, usePopulationStore } from '../../stores';
@@ -49,13 +48,6 @@ export async function loadKingdom() {
     useMilitaryStore.getState().receiveServerSnapshot(combinedData);
     useResearchStore.getState().receiveServerSnapshot(combinedData);
     usePopulationStore.getState().receiveServerSnapshot(combinedData);
-    applyGameMutation(
-      {
-        ...combinedData,
-        kingdomId: combinedData.kingdomId ?? combinedData.id ?? null,
-      },
-      { reason: 'kingdom-refresh' },
-    );
   }
   return kingdom;
 }

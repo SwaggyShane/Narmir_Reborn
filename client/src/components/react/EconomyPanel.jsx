@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameMutationEvents } from '../../hooks/useGameState';
-import { applyGameMutation } from '../../utils/gameMutations.js';
+import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
 import {
   useTax,
   useTradeTargets,
@@ -168,7 +168,7 @@ const EconomyPanel = () => {
     try {
       const result = await apiCall('/api/kingdom/options', { method: 'POST', body: { tax } });
       if (result.error) { toast(result.error, 'error'); return; }
-      applyGameMutation(result, { reason: 'tax-update' });
+      normalizeAndRouteResponse(result, { reason: 'tax-update' });
       toast('Tax rate locked', 'success');
     } catch (err) {
       console.error('[tax] lock failed:', err);
@@ -186,7 +186,7 @@ const EconomyPanel = () => {
       body: { targetId: tradeTargetId, offer: { [tradeOfferItem]: oQty }, request: { [tradeRequestItem]: rQty } },
     });
     if (result?.error) return toast(result.error, 'error');
-    applyGameMutation(result, { reason: 'send-trade-offer' });
+    normalizeAndRouteResponse(result, { reason: 'send-trade-offer' });
     toast('Trade offer sent!', 'success');
     setTradeOfferQty('');
     setTradeRequestQty('');
@@ -197,7 +197,7 @@ const EconomyPanel = () => {
   const handleAcceptTrade = useCallback(async (offerId) => {
     const result = await apiCall('/api/kingdom/economy/trade/accept', { method: 'POST', body: { offerId } });
     if (result.error) return toast(result.error, 'error');
-    applyGameMutation(result, { reason: 'accept-trade' });
+    normalizeAndRouteResponse(result, { reason: 'accept-trade' });
     toast('Trade accepted!', 'success');
     await loadTradeOffers();
   }, [loadTradeOffers]);
@@ -230,7 +230,7 @@ const EconomyPanel = () => {
         body: { unitType: mercUnit, tier: mercTier, count },
       });
       if (result.error) { toast(result.error, 'error'); return; }
-      applyGameMutation(result, { reason: 'hire-mercs' });
+      normalizeAndRouteResponse(result, { reason: 'hire-mercs' });
       toast(`Hired ${result.hired?.count || count} mercenaries`, 'success');
       setMercCount('');
     } catch (err) {
@@ -248,7 +248,7 @@ const EconomyPanel = () => {
         body: { amount, termIndex: Number(bankTermIndex) },
       });
       if (result.error) { toast(result.error, 'error'); return; }
-      applyGameMutation(result, { reason: 'bank-deposit' });
+      normalizeAndRouteResponse(result, { reason: 'bank-deposit' });
       toast(result.message || 'Deposit successful', 'success');
       setBankAmount('');
     } catch (err) {
@@ -265,7 +265,7 @@ const EconomyPanel = () => {
         body: { targetId: tradeRouteTargetId },
       });
       if (result.error) { toast(result.error, 'error'); return; }
-      applyGameMutation(result, { reason: 'establish-trade-route' });
+      normalizeAndRouteResponse(result, { reason: 'establish-trade-route' });
       toast(result.message || 'Trade route established', 'success');
       setTradeRouteTargetId('');
       await loadTradeRoutes();

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
 import { toast } from '../../utils/toast.js';
 import { useActivePanel } from '../../hooks/useActivePanel';
-import { applyGameMutation } from '../../utils/gameMutations.js';
+import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
 import { dispatchExpeditionLogEntry } from '../../utils/expeditionLog.js';
 import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
 import { useRace } from '../../stores';
@@ -183,9 +183,7 @@ const ResourcesPanel = () => {
         // Set kingdom data directly from API response (don't call syncFromState which reads from empty currentResourcesState)
         setKingdom({ ...refreshed, _seq: seq });
 
-        if (applyGameMutation) {
-          applyGameMutation(refreshed, { reason: 'resources-refresh' });
-        }
+        normalizeAndRouteResponse(refreshed, { reason: 'resources-refresh' });
         return refreshed;
       }
       return refreshed;

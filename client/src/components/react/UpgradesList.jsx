@@ -3,7 +3,7 @@ import { fmt } from '../../utils/fmt.js';
 import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
 import { playGameSound } from '../../utils/audio.js';
-import { applyGameMutation } from '../../utils/gameMutations.js';
+import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
 import { ownedFromUpdates, parseOwnedUpgrades } from '../../utils/upgradeUtils.js';
 
 function isUpgradeOwned(owned, upgradeKey) {
@@ -57,11 +57,8 @@ function UpgradeRow({ category, upgradeKey, def, owned, state, onPurchased, purc
         }
 
         playGameSound('upgrade_purchased');
+        normalizeAndRouteResponse(result, { reason: 'upgrade-purchased', type: 'mausoleum' });
         const nextOwned = { ...owned, [upgradeKey]: true };
-        applyGameMutation({
-          gold: Math.max(0, Number(state?.gold || 0) - Number(def.cost || 0)),
-          mausoleum_upgrades: nextOwned,
-        }, { reason: 'economy-upgrade' });
         onPurchased?.(upgradeKey, nextOwned);
         toast(`${def.name} purchased!`, 'success');
         return;
@@ -86,7 +83,7 @@ function UpgradeRow({ category, upgradeKey, def, owned, state, onPurchased, purc
       playGameSound('upgrade_purchased');
 
       if (result.updates) {
-        applyGameMutation(result, { reason: 'economy-upgrade' });
+        normalizeAndRouteResponse(result, { reason: 'upgrade-purchased', type: category });
       }
 
       const nextOwned = ownedFromUpdates(result.updates, category)

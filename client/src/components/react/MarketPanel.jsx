@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameMutationEvents } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
-import { applyGameMutation } from '../../utils/gameMutations.js';
+import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
 
 import { toast } from '../../utils/toast.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
@@ -212,7 +212,7 @@ const MarketPanel = () => {
         return;
       }
 
-      if (applyGameMutation) applyGameMutation(res.updates);
+      normalizeAndRouteResponse(res, { reason: `market-${op}` });
       const successMsg = op === 'buy' ? `Bought ${qty} ${resource}` : `Sold ${qty} ${resource}`;
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.message || successMsg, 'success');
       setQuantities((prev) => ({ ...prev, [resource]: '' }));
@@ -256,7 +256,7 @@ const MarketPanel = () => {
       body: { offerId },
     });
     if (result.error) return toast(result.error, 'error');
-    applyGameMutation(result, { reason: 'accept-trade' });
+    normalizeAndRouteResponse(result, { reason: 'accept-trade' });
     toast('Trade accepted!', 'success');
     await loadTradeOffers();
   }, []);
