@@ -81,6 +81,10 @@ export function useGameActions() {
             completedBuildingsMsg = periodIdx !== -1 ? endPart.substring(0, periodIdx) : endPart;
           }
           if (msg.includes('ACHIEVEMENT UNLOCKED')) playAchievementSound();
+          // Emit scout progression to expedition log
+          if (ev?.expeditionLogEntry) {
+            emitAppEvent(AppEvent.EXPEDITION_LOG_ENTRY, ev.expeditionLogEntry);
+          }
         }
       }
 

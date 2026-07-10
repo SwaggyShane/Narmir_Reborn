@@ -631,9 +631,15 @@ function processTurn(k, db = null) {
         const metrics = getProgressMetrics(scoutResult.new_total);
         const pctStr = Math.round(metrics.percentComplete);
         const ringMsg = metrics.nextRing ? `toward Ring ${metrics.nextRing}` : `Ring ${metrics.currentRing} (Complete)`;
+        const scoutMsg = `Scouts: ${pctStr}% ${ringMsg}`;
         events.push({
           type: "system",
-          message: `🔍 Scouts: ${pctStr}% ${ringMsg}`,
+          message: `🔍 ${scoutMsg}`,
+          expeditionLogEntry: {
+            icon: '🔍',
+            title: scoutMsg,
+            subtitle: `Scout allocation progress`,
+          },
         });
         // Reveal new ring hexes if ring was completed
         if (scoutResult.ring_completed && db && k.id) {
