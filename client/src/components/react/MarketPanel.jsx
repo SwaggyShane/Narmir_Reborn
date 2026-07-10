@@ -188,6 +188,11 @@ const MarketPanel = () => {
     void refreshMarket();
   }, [refreshMarket]);
 
+  // Phase 3A: Zustand-driven refetch (dual source - listener is safety net)
+  useEffect(() => {
+    void refreshMarket();
+  }, [gold, food, wood, stone, iron, coal, steel, mana, turn, refreshMarket]);
+
   useGameMutationEvents(onMutation);
 
   const marketTrade = async (resource, op) => {

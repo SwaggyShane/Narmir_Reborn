@@ -168,6 +168,11 @@ const NewsPanel = () => {
 
   useAppEvent(AppEvent.NEWS_ITEMS, handleNewsItems);
 
+  // Phase 3A: Zustand-driven refetch (dual source - listener is safety net)
+  useEffect(() => {
+    loadNews();
+  }, [turn, loadNews]);
+
   useGameMutationEvents((event) => {
     const reason = String(event?.reason || '');
     if ([

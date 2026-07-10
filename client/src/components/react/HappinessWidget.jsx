@@ -25,6 +25,11 @@ const HappinessWidget = ({ onOpenTab }) => {
     fetchHappinessData();
   }, [fetchHappinessData]);
 
+  // Phase 3A: Zustand-driven refetch (dual source - listener is safety net)
+  useEffect(() => {
+    fetchHappinessData();
+  }, [happiness, fetchHappinessData]);
+
   useGameMutationEvents(useCallback((event) => {
     const reason = String(event?.reason || '');
     if (['turn', 'kingdom-refresh', 'server-updates', 'mutation'].includes(reason)) {

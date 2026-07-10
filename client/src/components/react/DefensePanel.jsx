@@ -153,6 +153,11 @@ const DefensePanel = () => {
     bld_vaults: vaults,
   };
 
+  // Phase 3A: Zustand-driven refetch (dual source - listener is safety net)
+  useEffect(() => {
+    refreshDefense();
+  }, [gold, wood, stone, iron, refreshDefense]);
+
   useGameMutationEvents(useCallback((event) => {
     if (String(event?.reason || '') === 'economy-upgrade') {
       refreshDefense();

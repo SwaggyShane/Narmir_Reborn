@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useGameMutationEvents } from '../../hooks/useGameState';
 import { useStudiesData } from '../../hooks/useStudiesData';
 import {
@@ -54,6 +54,11 @@ const StudiesPanel = () => {
   const resConstruction = useResConstruction();
   const resWarMachines = useResWarMachines();
   const resSpellbook = useResSpellbook();
+
+  // Phase 3A: Zustand-driven refetch (dual source - listener is safety net)
+  useEffect(() => {
+    fetchStudiesData();
+  }, [schoolOfMagic, resEconomy, resWeapons, resArmor, fetchStudiesData]);
 
   useGameMutationEvents(useCallback((event) => {
     if (String(event?.reason || '') === 'economy-upgrade') {

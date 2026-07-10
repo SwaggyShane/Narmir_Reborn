@@ -173,6 +173,11 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     return () => clearInterval(refreshTimer);
   }, [refreshAll]);
 
+  // Phase 3A: Zustand-driven refetch (dual source - listener is safety net)
+  useEffect(() => {
+    void refreshAll();
+  }, [rangers, fighters, engineers, food, turns_stored, scout_allocation, scout_progress, population, refreshAll]);
+
   useGameMutationEvents(
     useCallback((event) => {
       if (!event?.reason) return;

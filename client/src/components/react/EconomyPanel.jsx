@@ -152,6 +152,11 @@ const EconomyPanel = () => {
     else if (activeTab === 'trade-routes') loadTradeRoutes();
   }, [activeTab, loadTradeOffers, loadTradeRoutes]);
 
+  // Phase 3A: Zustand-driven refetch (dual source - listener is safety net)
+  useEffect(() => {
+    loadEconData();
+  }, [gold, food, wood, stone, iron, tax, bankUpgrades, farmUpgrades, granaryUpgrades, marketUpgrades, tavernUpgrades, loadEconData]);
+
   useGameMutationEvents(useCallback((event) => {
     const reason = String(event?.reason || '');
     if (['turn', 'economy-upgrade', 'hire-mercs', 'bank-deposit', 'kingdom-refresh', 'mutation'].includes(reason)) {
