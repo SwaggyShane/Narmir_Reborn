@@ -1269,33 +1269,19 @@ export function renderWorldMap(
 
 
           if (isMe || k.land > 5000 || k.rank <= 3) {
+            var fontSize = (isMe ? 24 : 18);
+            var fontWeight = (isMe ? 900 : 700);
+            var textColor = (isMe ? "#e8b84b" : "#fff");
+            var textContent = escapeHtml(k.name.slice(0, 10));
 
+            // Render text with stroke outline for better readability at zoom
             svg +=
-
-              '<text class="wm-kingdom-label" x="' +
-
-              jx +
-
-              '" y="' +
-
-              (jy - r - 5) +
-
-              '" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="' +
-
-              (isMe ? 14 : 11) +
-
-              '" font-weight="' +
-
-              (isMe ? 800 : 600) +
-
-              '" fill="' +
-
-              (isMe ? "#e8b84b" : "#fff") +
-
-              '" filter="url(#uiShadow)" pointer-events="none" text-rendering="geometricPrecision" style="dominant-baseline:middle">' +
-
-              escapeHtml(k.name.slice(0, 10)) +
-
+              '<text class="wm-kingdom-label" x="' + jx + '" y="' + (jy - r - 5) +
+              '" text-anchor="middle" font-family="Courier New, monospace" font-size="' + fontSize +
+              '" font-weight="' + fontWeight +
+              '" fill="' + textColor +
+              '" stroke="#000" stroke-width="1.2" stroke-linejoin="round" pointer-events="none" text-rendering="optimizeSpeed" style="dominant-baseline:middle">' +
+              textContent +
               "</text>";
 
           }
