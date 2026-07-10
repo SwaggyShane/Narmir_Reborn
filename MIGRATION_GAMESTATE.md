@@ -137,6 +137,106 @@ Components re-render
 
 ---
 
+## Pre-Migration: Response Contract & Hidden Dependencies Audit
+
+**CRITICAL GROUNDWORK (Before Phase 1)**
+
+### **Pre-Phase 1A: Define Response Routing Contract** (Day 0.5)
+
+**Problem:** Different API endpoints return responses with different shapes. Without a standardized contract, each handler will route data differently → subtle sync bugs.
+
+**Solution:** Define THE contract that every API response must follow before entering any store.
+
+**Audit all API endpoints and document their response shapes:**
+
+```bash
+grep -r "apiCall\|/api/" /home/user/Narmir_Reborn/game/routes --include="*.js" | grep "res.send\|return {" | head -50
+```
+
+**Document template for each endpoint:**
+
+```javascript
+/**
+ * ENDPOINT: /api/kingdom/hire
+ * RESPONSE SHAPE (Standardized Contract):
+ * {
+ *   error?: string,
+ *   updates: {
+ *     economy: { gold, food, ... },      // ← always have economy sub-object
+ *     military: { troops, ... },          // ← always have military sub-object
+ *     population: { population, ... },    // ← always have population sub-object
+ *     research: { mana, ... },            // ← always have research sub-object
+ *     profile: { turn, ... }              // ← always have profile sub-object
+ *   }
+ * }
+ * 
+ * STORE ROUTING (Required):
+ * - updates.economy → useEconomyStore.receiveServerSnapshot()
+ * - updates.military → useMilitaryStore.receiveServerSnapshot()
+ * - updates.population → usePopulationStore.receiveServerSnapshot()
+ * - updates.research → useResearchStore.receiveServerSnapshot()
+ * - updates.profile → useProfileStore.receiveServerSnapshot()
+ */
+```
+
+**Create contract for every endpoint:**
+1. `/api/kingdom/hire` — troops, gold, population
+2. `/api/kingdom/economy/upgrade` — gold, farm_upgrades (etc), mana (for school), research
+3. `/api/kingdom/buy-mausoleum-upgrade` — gold, mausoleum_upgrades
+4. `/api/kingdom/attack` — troops, walls, mana, gold
+5. `/api/kingdom/turn` — turn, turns_stored, gold, food, resources, scout progress, events
+6. `/api/kingdom/spell` — mana, troops, research, turn
+7. `/api/kingdom/search` — troops, gold, food, resources, events
+... (all endpoints)
+
+**Standardization rule:**
+- **EVERY response** must have `updates` object with exactly these sub-objects: `{ economy, military, population, research, profile }`
+- **If endpoint doesn't update a domain**, pass empty object: `{ research: {} }` not missing
+- **No custom shapes** — no "just return gold", no "returns farm_upgrades at top level"
+
+**Why this matters:**
+- Handlers don't have to guess about response shape
+- `applyResult()` always routes the same way
+- No "sometimes it's here, sometimes it's there" sync bugs
+
+**Deliverable:** `/game/API_CONTRACT.md` documenting response shape for every endpoint
+
+---
+
+### **Pre-Phase 1B: Hidden Dependencies Audit** (Day 0.5)
+
+**Problem:** Initial grep found 23 files. But there are likely:
+- Indirect imports (A imports B imports GameStateManager)
+- Dynamic/computed usage (getState() calls hidden in ternaries)
+- Re-exports we didn't catch
+- Template strings with property names
+
+**Audit steps:**
+
+```bash
+# 1. Find all re-exports
+grep -r "export.*gameStateManager\|export.*useGameState\|export.*gameMutation" /home/user/Narmir_Reborn/client/src
+
+# 2. Find computed/dynamic usage
+grep -r "getState\|applyUpdates" /home/user/Narmir_Reborn/client/src | grep -v "Zustand\|useEconomyStore\|useMilitaryStore" | grep -v node_modules
+
+# 3. Find any remaining listener subscriptions
+grep -r "subscribe\|listener" /home/user/Narmir_Reborn/client/src | grep -v "Zustand\|store\|node_modules"
+
+# 4. Check all tests for mocked GameStateManager
+grep -r "vi.mock.*GameState\|jest.mock.*GameState" /home/user/Narmir_Reborn/client/src
+
+# 5. Find config/constant files that might reference it
+grep -r "GameState\|applyGame" /home/user/Narmir_Reborn/client/src/utils/config* /home/user/Narmir_Reborn/client/src/constants*
+
+# 6. Check if any plugin/extension system dynamically loads it
+grep -r "require.*GameState\|import.*GameState" /home/user/Narmir_Reborn/client/src | grep -v node_modules | grep -v "\.test\."
+```
+
+**Document findings as amendments to the 23-file list.**
+
+---
+
 ## Migration Phases
 
 ### **Phase 1: Foundation Setup** (Days 1-2)
@@ -183,8 +283,96 @@ export const mockMilitaryStore = { ... };
 
 ---
 
+### **Phase 1.5: Response Normalization Layer** (Day 2.5)
+**Goal:** Implement centralized response routing that enforces the contract
+
+**Before Phase 2, create a single source of truth for response routing:**
+
+**File:** `client/src/utils/responseNormalizer.js` (new)
+
+```javascript
+/**
+ * Centralized response routing enforcing the API Contract.
+ * All server responses pass through here before reaching stores.
+ * This prevents partial-sync bugs and inconsistent routing.
+ */
+
+import { useEconomyStore } from '../stores';
+import { useMilitaryStore } from '../stores';
+import { useResearchStore } from '../stores';
+import { usePopulationStore } from '../stores';
+import { useProfileStore } from '../stores';
+
+export function normalizeAndRouteResponse(response, context = {}) {
+  if (!response?.updates) return null;
+  
+  const { updates } = response;
+  
+  // Enforce contract: every response must have all 5 domain objects
+  const normalized = {
+    economy: updates.economy || {},
+    military: updates.military || {},
+    research: updates.research || {},
+    population: updates.population || {},
+    profile: updates.profile || {},
+  };
+  
+  // Validate: no unexpected top-level keys (catches routing mistakes)
+  const validKeys = new Set(['economy', 'military', 'research', 'population', 'profile']);
+  for (const key of Object.keys(updates)) {
+    if (!validKeys.has(key) && !['error', 'events', 'updates'].includes(key)) {
+      console.warn(`[Normalizer] Unexpected response key: ${key}`, response);
+    }
+  }
+  
+  // Route each domain to its store in strict order
+  if (normalized.economy && Object.keys(normalized.economy).length > 0) {
+    useEconomyStore.getState().receiveServerSnapshot(normalized.economy);
+  }
+  
+  if (normalized.military && Object.keys(normalized.military).length > 0) {
+    useMilitaryStore.getState().receiveServerSnapshot(normalized.military);
+  }
+  
+  if (normalized.research && Object.keys(normalized.research).length > 0) {
+    useResearchStore.getState().receiveServerSnapshot(normalized.research);
+  }
+  
+  if (normalized.population && Object.keys(normalized.population).length > 0) {
+    usePopulationStore.getState().receiveServerSnapshot(normalized.population);
+  }
+  
+  if (normalized.profile && Object.keys(normalized.profile).length > 0) {
+    useProfileStore.getState().receiveServerSnapshot(normalized.profile);
+  }
+  
+  // Log for debugging
+  if (context.reason) {
+    console.log(`[Response Route] ${context.reason}`, { normalized });
+  }
+  
+  return normalized;
+}
+```
+
+**Rule:** ALL API handlers must use this function, not ad-hoc routing.
+
+**Update all handlers to use it:**
+- UpgradesList.jsx: `normalizeAndRouteResponse(result, { reason: 'upgrade-purchased' })`
+- useGameActions.js: `normalizeAndRouteResponse(data, { reason: 'turn-complete' })`
+- AuthModal.jsx: `normalizeAndRouteResponse(data, { reason: 'login-complete' })`
+- etc.
+
+**This ensures:**
+- No inconsistent routing (single code path)
+- Response shape validation (catches malformed responses)
+- Consistent logging (easier debugging)
+- Easy to verify all stores updated correctly
+
+---
+
 ### **Phase 2: Critical Sync Point Migrations** (Days 3-4)
-**Goal:** Eliminate dual-system updates in core logic
+**Goal:** Eliminate dual-system updates in core logic using the normalized routing
 
 #### 2.1 Migrate useGameActions.applyResult()
 **File:** `client/src/hooks/useGameActions.js`
@@ -282,69 +470,165 @@ useProfileStore.getState().receiveTurnUpdate({ turns_stored: Math.max(0, profile
 
 ---
 
-### **Phase 3: Hook Migration** (Days 5-7)
-**Goal:** Replace all legacy hook calls with Zustand equivalents
+### **Phase 3A: State Source Migration** (Days 5-6)
+**Goal:** Prove components render correctly from Zustand alone (BEFORE removing listeners)
 
-#### 3.1 Replace useGameMutationEvents() patterns
+**KEY PRINCIPLE:** Don't remove useGameMutationEvents() yet. Instead, verify components work by reading from Zustand stores directly.
 
-**Pattern: Trigger refresh on state changes**
+#### 3A.1 Add Zustand Reads (Dual Data Sources - Temporary)
 
-**Before (DefensePanel, EconomyPanel, MarketPanel, etc.):**
+**For each component using useGameMutationEvents(), add Zustand reads alongside it:**
+
+**Before (DefensePanel):**
 ```javascript
-const [refreshKey, setRefreshKey] = useState(0);
+import { useGameMutationEvents } from '../../hooks/useGameState';
 
-useGameMutationEvents((event) => {
-  if (['economy-upgrade', 'accept-trade', 'turn'].includes(event.reason)) {
-    setRefreshKey(k => k + 1);
-  }
-});
-```
-
-**After (Option A: Store subscriptions):**
-```javascript
-useEffect(() => {
-  // Subscribe to changes in relevant stores
-  const unsubEconomy = useEconomyStore.subscribe(
-    (state) => state.gold,
-    () => setRefreshKey(k => k + 1),
-    { equalityFn: (a, b) => a === b }
-  );
+export const DefensePanel = () => {
+  const [refreshKey, setRefreshKey] = useState(0);
   
-  const unsubMilitary = useMilitaryStore.subscribe(
-    (state) => state.troops,
-    () => setRefreshKey(k => k + 1)
-  );
+  useGameMutationEvents((event) => {
+    if (['wall-built', 'attack'].includes(event.reason)) {
+      setRefreshKey(k => k + 1);
+    }
+  });
   
-  return () => {
-    unsubEconomy();
-    unsubMilitary();
-  };
-}, []);
+  // Component renders based on refreshKey (tied to listener)
+  return <div key={refreshKey}>{/* ... */}</div>;
+};
 ```
 
-**After (Option B: Simpler - just re-fetch UI on manual actions):**
+**After Phase 3A (Dual sources - testing period):**
 ```javascript
-// Remove useGameMutationEvents entirely
-// Let DefensePanel component fetch data on button clicks
-// (rely on socket events to trigger full loadKingdom anyway)
+import { useGameMutationEvents } from '../../hooks/useGameState';
+import { useWallHp, useBuildCount } from '../../stores';  // ← ADD ZUSTAND READS
+
+export const DefensePanel = () => {
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // ← KEEP listener for now (fallback)
+  useGameMutationEvents((event) => {
+    if (['wall-built', 'attack'].includes(event.reason)) {
+      setRefreshKey(k => k + 1);
+    }
+  });
+  
+  // ← ADD direct Zustand reads
+  const wallHp = useWallHp();  // Changes trigger component re-render via Zustand
+  const bldWalls = useBuildCount('walls');
+  
+  // Component still renders based on refreshKey, but ALSO renders when stores change
+  // If both work, listener is redundant
+  return <div key={refreshKey}>{/* Now renders from both sources */}</div>;
+};
 ```
 
-**Recommendation:** Use Option B (simpler, less overhead)
+**Why this works:**
+- Component gets Zustand updates automatically (store subscription)
+- Component ALSO gets GameStateManager updates (listener)
+- If they diverge, you'll see it immediately
+- If they stay in sync, listener is proven redundant
 
-**Files to update:**
-1. `DefensePanel.jsx` — line 36, 157
-2. `EconomyPanel.jsx` — line 155  
-3. `ExplorationPanel.jsx` — lines 92, 174
-4. `HappinessPanel.jsx` — line 65
-5. `HappinessWidget.jsx` — line 28
-6. `MarketPanel.jsx` — line 191
-7. `NewsPanel.jsx` — line 171
-8. `StudiesPanel.jsx` — line 58
-9. `useActiveExpeditionsSummary.js` — line 22
+**Testing step:** Trigger an API call (buy upgrade, take turn, etc.) and verify:
+1. UI updates from Zustand (stores changed)
+2. UI updates from GameStateManager listener (both work)
+3. If only #2 happens, Zustand routing is broken (catch it here!)
 
-**For each:** Remove useGameMutationEvents, rely on prop changes or manual refetch
+#### 3A.2 Apply to all 15 components
 
-#### 3.2 Replace useGameState() calls
+Add Zustand selectors to:
+1. DefensePanel
+2. EconomyPanel
+3. ExplorationPanel
+4. HappinessPanel
+5. HappinessWidget
+6. MarketPanel
+7. NewsPanel
+8. StudiesPanel
+9. ResourcesPanel
+10. ... (all 15)
+
+**Deliverable:** All 15 components reading from Zustand stores, but listeners still in place (safety net).
+
+**Gate:** Run full smoke test. If Zustand reads match listener updates, proceed to 3B. If not, debug the mismatch BEFORE removing listeners.
+
+---
+
+### **Phase 3B: Listener Removal** (Days 6-7)
+**Goal:** Remove legacy refresh patterns NOW THAT WE'VE PROVEN Zustand works
+
+**Only proceed if Phase 3A smoke test passes!**
+
+#### 3B.1 Remove useGameMutationEvents() calls
+
+Now that components are proven to work via Zustand reads, remove the listeners:
+
+**Before (from Phase 3A):**
+```javascript
+import { useGameMutationEvents } from '../../hooks/useGameState';
+import { useWallHp, useBuildCount } from '../../stores';
+
+export const DefensePanel = () => {
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  useGameMutationEvents((event) => {  // ← REMOVE THIS
+    if (['wall-built', 'attack'].includes(event.reason)) {
+      setRefreshKey(k => k + 1);
+    }
+  });
+  
+  const wallHp = useWallHp();
+  const bldWalls = useBuildCount('walls');
+  
+  return <div key={refreshKey}>{/* ... */}</div>;
+};
+```
+
+**After Phase 3B (Zustand only):**
+```javascript
+import { useWallHp, useBuildCount } from '../../stores';
+
+export const DefensePanel = () => {
+  // ← refreshKey no longer needed (Zustand subscriptions trigger re-render)
+  
+  const wallHp = useWallHp();  // Component re-renders when this changes
+  const bldWalls = useBuildCount('walls');  // Component re-renders when this changes
+  
+  return <div>{/* ... */}</div>;  // No key needed
+};
+```
+
+#### 3B.2 Apply to all 15 components
+
+Remove listener calls from all components that had them.
+
+#### 3B.3 Replace useGameState() calls
+
+**Before:**
+```javascript
+const { state } = useGameState();
+const gold = state.gold;
+```
+
+**After:**
+```javascript
+const gold = useGold();  // Direct Zustand hook
+```
+
+**Gate Before Phase 3B:**
+```bash
+# Run smoke test for all 15 components
+npm run test:components
+npm run dev  # Manual testing
+# - Buy an upgrade → UI updates (verify Zustand read worked)
+# - Take turn → UI updates (verify Zustand read worked)
+# - Build structure → UI updates (verify Zustand read worked)
+# - Attack → UI updates (verify Zustand read worked)
+# If ALL work, listener is proven redundant → proceed to 3B
+```
+
+---
+
+### **Phase 3B.2: Replace useGameState() calls** (Parallel to 3B.1)
 
 **Before (ResourcesPanel, useKingdomRank):**
 ```javascript
@@ -363,7 +647,7 @@ const mana = useMana();
 1. `ResourcesPanel.jsx` — line 117
 2. `useKingdomRank.js` — line 26
 
-#### 3.3 Migrate applyGameMutation() calls
+#### 3B.3 Migrate applyGameMutation() calls (Already done in Phase 2!)
 
 **CRITICAL FILE:** `UpgradesList.jsx` — handles ALL building upgrade purchases (lines 43-99)
 
@@ -771,28 +1055,63 @@ Manual QA checklist:
 
 ## Completion Checklist
 
-### **Pre-Migration**
-- [ ] Create comprehensive test fixtures for Zustand stores
-- [ ] Document all mutation reasons used in codebase
-- [ ] Backup current state (branch)
+### **Pre-Migration Audits**
+- [ ] **Pre-Phase 1A: Response Contract**
+  - [ ] Document response shape for all 7+ API endpoints
+  - [ ] Create `/game/API_CONTRACT.md` with standardized format
+  - [ ] Identify any endpoints with non-standard responses
+- [ ] **Pre-Phase 1B: Hidden Dependencies**
+  - [ ] Run all 6 grep audits for GameStateManager usage
+  - [ ] Document any indirect imports found
+  - [ ] Update 23-file list with amendments
+  - [ ] Check all tests for GameStateManager mocks
 
 ### **Phase 1**
 - [ ] UIStore extended with panel state management
 - [ ] usePanelState.js deleted
 - [ ] Test fixtures created
+- [ ] **Gate:** UIStore panel state persists and retrieves correctly
+
+### **Phase 1.5: Response Normalizer**
+- [ ] Create `responseNormalizer.js` with contract enforcement
+- [ ] Validation logic: warns on unexpected keys
+- [ ] Update all handlers to use `normalizeAndRouteResponse()`
+- [ ] Logging added for debugging
+- [ ] **Gate:** All API responses route to correct stores, no partial updates
 
 ### **Phase 2**
-- [ ] useGameActions.applyResult() migrated
-- [ ] AuthModal.loadKingdom() migrated  
-- [ ] useRegenCountdown() migrated
+- [ ] useGameActions.applyResult() uses normalizer
+- [ ] AuthModal.loadKingdom() uses normalizer
+- [ ] useRegenCountdown() uses normalizer
+- [ ] UpgradesList.jsx uses normalizer (both endpoints)
 - [ ] All dual-system calls eliminated
+- [ ] **Gate:** Buy upgrade → economyStore updates (not GameStateManager)
 
-### **Phase 3**
-- [ ] All useGameMutationEvents() removed from components
-- [ ] All useGameState() replaced with specific hooks
-- [ ] All applyGameMutation() calls replaced with store actions
-- [ ] 15 components migrated
-- [ ] 5 hooks migrated
+### **Phase 3A: Dual Data Sources (Proving Zustand Works)**
+- [ ] DefensePanel: Add Zustand reads (keep listener)
+- [ ] EconomyPanel: Add Zustand reads (keep listener)
+- [ ] ExplorationPanel: Add Zustand reads (keep listener)
+- [ ] HappinessPanel: Add Zustand reads (keep listener)
+- [ ] HappinessWidget: Add Zustand reads (keep listener)
+- [ ] MarketPanel: Add Zustand reads (keep listener)
+- [ ] NewsPanel: Add Zustand reads (keep listener)
+- [ ] StudiesPanel: Add Zustand reads (keep listener)
+- [ ] ResourcesPanel: Add Zustand reads (keep listener)
+- [ ] ... (all 15 components)
+- [ ] **Gate: Smoke Test (CRITICAL)**
+  - [ ] Buy farm upgrade → UI updates from Zustand read
+  - [ ] Buy bank upgrade → UI updates from Zustand read
+  - [ ] Take turn → UI updates from Zustand read
+  - [ ] Build wall → UI updates from Zustand read
+  - [ ] Attack enemy → UI updates from Zustand read
+  - [ ] If ANY fails, debug before proceeding (listener is safety net)
+
+### **Phase 3B: Listener Removal (Only After 3A Gate Passes)**
+- [ ] Remove useGameMutationEvents() from all 15 components
+- [ ] Remove useGameState() calls, replace with specific hooks
+- [ ] All applyGameMutation() calls removed (done in Phase 2, but verify)
+- [ ] 15 components now read exclusively from Zustand
+- [ ] 5 hooks migrated to Zustand
 - [ ] **UpgradesList.jsx fully migrated** — ALL 7 upgrade types:
   - [ ] Farm upgrades → economyStore.farm_upgrades
   - [ ] Bank upgrades → economyStore.bank_upgrades
@@ -801,6 +1120,7 @@ Manual QA checklist:
   - [ ] Tavern upgrades → economyStore.tavern_upgrades
   - [ ] School upgrades → researchStore.school_upgrades
   - [ ] Mausoleum upgrades → economyStore.mausoleum_upgrades
+- [ ] **Gate:** Smoke test still passes after listener removal
 
 ### **Phase 4**
 - [ ] gameMutations.js deleted
@@ -872,17 +1192,26 @@ Manual QA checklist:
 
 ## Estimated Timeline
 
-| Phase | Duration | Risk |
-|-------|----------|------|
-| **1: Foundation** | 1-2 days | Low |
-| **2: Critical Sync** | 1-2 days | **High** - test thoroughly |
-| **3: Hook Migration** | 2-3 days | Medium |
-| **4: Utilities** | 1 day | Low |
-| **5: Tests** | 1 day | Medium |
-| **6: Cleanup** | 0.5 days | Low |
-| **Total** | ~8-10 days | |
+| Phase | Duration | Risk | Gate/Verification |
+|-------|----------|------|-------------------|
+| **Pre-Phase 1A: Response Contract** | 0.5 days | Low | Document all 7+ endpoints |
+| **Pre-Phase 1B: Hidden Dependencies** | 0.5 days | Medium | Run all grep audits, catch hidden imports |
+| **1: Foundation** | 1-2 days | Low | UIStore panel state works |
+| **1.5: Response Normalizer** | 1 day | **High** | All responses route correctly, no divergence |
+| **2: Critical Sync Points** | 1-2 days | **High** | AuthModal, useGameActions, useRegenCountdown sync verified |
+| **3A: Dual Data Sources** | 1 day | Medium | All 15 components read from Zustand successfully |
+| **3A Gate: Smoke Test** | 1 day | **CRITICAL** | Manual testing: buy upgrade, take turn, build, attack → all update from Zustand |
+| **3B: Listener Removal** | 1 day | Medium | Remove useGameMutationEvents after 3A proves it's redundant |
+| **4: Utilities** | 1 day | Low | panelNav, shellBridge, replayWarReport updated |
+| **5: Tests** | 1 day | Medium | Update mocks, add integration tests |
+| **6: Cleanup** | 0.5 days | Low | Delete files, verify zero legacy references |
+| **Total** | ~10-13 days | | **More rigorous, safer** |
 
-**Key Insight:** Don't parallelize phases. Complete Phase 2 thoroughly before Phase 3 to ensure stores are synced correctly.
+**Key Principles:**
+- **Don't remove listeners until they're proven redundant (Phase 3A gate)**
+- **Enforce response contract from Phase 1.5 onward**
+- **Audit hidden dependencies before starting (Pre-Phase 1B)**
+- **Each phase has explicit gate conditions before proceeding**
 
 ---
 
