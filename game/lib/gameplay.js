@@ -495,9 +495,10 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
     if (roll(calcDiscoveryChance(k))) {
       updates._find_kingdom = true;
     }
-  } else if (type === "deep") {
+  } else if (type === "deep" || type === "epic-trek") {
+    const goldSource = type === "epic-trek" ? "along the expedition path" : "from deep wilderness caches";
     rewards.push({
-      text: `+${goldBase.toLocaleString()} gold from deep wilderness caches`,
+      text: `+${goldBase.toLocaleString()} gold ${goldSource}`,
     });
     updates.gold = k.gold + goldBase;
 
@@ -878,8 +879,8 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
   }
 
   // ── Ultra-rare prizes ──────────────────────────────────────────────────
-  // deep: 0.5%, dungeon success: 1%, mountain: 2.5% per turn (MAX 1 per expedition for mountain)
-  const ultraChance = type === "dungeon" ? 0.01 : type === "deep" ? 0.005 : type === "mountain" ? 0.025 : 0;
+  // deep/epic-trek: 0.5%, dungeon success: 1%, mountain: 2.5% per turn (MAX 1 per expedition for mountain)
+  const ultraChance = type === "dungeon" ? 0.01 : (type === "deep" || type === "epic-trek") ? 0.005 : type === "mountain" ? 0.025 : 0;
 
   // For mountain expeditions, track if we already got an ultra-rare during the 100 turns
   if (type === "mountain" && updates._rangers_returned > 0) {
@@ -920,8 +921,8 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
     updates.items = JSON.stringify(inventory);
   }
 
-  // ── Throne of Nazdreg (0.1% on deep/dungeon, unique forever) ────────────────
-  const throneChance = type === "deep" || type === "dungeon" ? 0.001 : 0;
+  // ── Throne of Nazdreg (0.1% on deep/epic-trek/dungeon, unique forever) ────────────────
+  const throneChance = (type === "deep" || type === "epic-trek" || type === "dungeon") ? 0.001 : 0;
   if (throneChance > 0 && roll(throneChance)) {
     updates._check_throne = true; // resolveExpeditions will check server_state and apply if unclaimed
   }
