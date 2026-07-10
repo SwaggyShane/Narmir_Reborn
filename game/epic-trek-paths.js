@@ -60,16 +60,35 @@ function getPathHexes(startX, startY, targetX, targetY) {
  * Calculate turn cost for Epic Trek to target.
  * Cost = 1.5 turns per hex distance (EPIC_TREK_TURNS_PER_HEX from config).
  *
+ * Phase 3B TODO: Apply elevation movement penalties via calculateMovementCost()
+ * Currently requires elevation_grid lookup for each hex along path.
+ * Would add 1.3x-1.5x multiplier for high-elevation routes.
+ *
  * @param {number} startX - Kingdom X
  * @param {number} startY - Kingdom Y
  * @param {number} targetX - Target X
  * @param {number} targetY - Target Y
+ * @param {object} opts - Optional {elevationGrid, getFlag}
  * @returns {number} Turn cost (ceiling)
  */
-function getEpicTrekTurns(startX, startY, targetX, targetY) {
+function getEpicTrekTurns(startX, startY, targetX, targetY, opts = {}) {
   const distance = hexUnitDistance(startX, startY, targetX, targetY);
   const EPIC_TREK_TURNS_PER_HEX = 1.5; // Locked constant
-  return Math.ceil(distance * EPIC_TREK_TURNS_PER_HEX);
+  let cost = distance * EPIC_TREK_TURNS_PER_HEX;
+
+  // Phase 3B: Apply elevation penalties if enabled and elevation data available
+  if (opts.getFlag?.('FEATURE_ELEVATION_MOVEMENT') && opts.elevationGrid) {
+    const { calculateMovementCost } = require('./world-elevation');
+    const pathHexes = getPathHexes(startX, startY, targetX, targetY);
+
+    // Simple approximation: use start/end elevation delta
+    const startElev = opts.elevationGrid[`${pathHexes[0].col},${pathHexes[0].row}`] || 0;
+    const endElev = opts.elevationGrid[`${pathHexes[pathHexes.length - 1].col},${pathHexes[pathHexes.length - 1].row}`] || 0;
+    const movementMult = calculateMovementCost(startElev, endElev, { FEATURE_ELEVATION_MOVEMENT: true });
+    cost *= movementMult;
+  }
+
+  return Math.ceil(cost);
 }
 
 /**
