@@ -3,6 +3,7 @@ import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import { toast } from '../../utils/toast.js';
 import ProgressBar from './ProgressBar';
+import HybridBlueprintModal from './HybridBlueprintModal';
 import {
   useEconomyStore,
   useRace,
@@ -176,6 +177,8 @@ const BuildPanel = () => {
   const [currentAttunements, setCurrentAttunements] = useState({});
   const [synergyContributions, setSynergyContributions] = useState({});
   const [synergyStatus, setSynergyStatus] = useState(null);
+  const [showBlueprintModal, setShowBlueprintModal] = useState(false);
+  const [selectedBlueprint, setSelectedBlueprint] = useState(null);
   const [synergyCooldown, setSynergyCooldown] = useState(null);
   const [activatingAbility, setActivatingAbility] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -722,12 +725,18 @@ const BuildPanel = () => {
       </div>
       <div className="build-content-scroll space-y-4 px-4 pb-5">
 
-        <div className="flex justify-center pt-4">
+        <div className="flex justify-center gap-3 pt-4">
           <button
             onClick={() => setShowAttunements(true)}
             className="rounded-full border border-blue-400 px-4 py-1.5 text-[12px] font-semibold text-blue-400 cursor-pointer whitespace-nowrap hover:bg-blue-400/10 transition-colors"
           >
             🌌 Attunements
+          </button>
+          <button
+            onClick={() => setShowBlueprintModal(true)}
+            className="rounded-full border border-purple-400 px-4 py-1.5 text-[12px] font-semibold text-purple-400 cursor-pointer whitespace-nowrap hover:bg-purple-400/10 transition-colors"
+          >
+            ✨ Fragments
           </button>
         </div>
 
@@ -1077,6 +1086,18 @@ const BuildPanel = () => {
           </div>
 
         </div>
+
+        {showBlueprintModal && (
+          <HybridBlueprintModal
+            blueprintId={selectedBlueprint}
+            fragmentName="Fragment"
+            onClose={() => setShowBlueprintModal(false)}
+            onSuccess={() => {
+              setShowBlueprintModal(false);
+              loadAttunements();
+            }}
+          />
+        )}
       </div>
     </div>
   );

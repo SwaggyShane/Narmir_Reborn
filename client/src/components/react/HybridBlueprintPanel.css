@@ -1,0 +1,164 @@
+/* HybridBlueprintPanel Styles */
+
+.hybrid-blueprint-panel {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid #00ffff;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 15px 0;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+}
+
+.panel-header h3 {
+  margin: 0;
+  color: #00ffff;
+  font-size: 1.3em;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.blueprint-count {
+  background: rgba(0, 255, 136, 0.2);
+  color: #00ff88;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.95em;
+  border: 1px solid #00ff88;
+}
+
+.blueprints-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.blueprint-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 255, 200, 0.05) 100%);
+  border: 2px solid #00d4ff;
+  border-radius: 8px;
+  padding: 12px 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.blueprint-item:hover {
+  border-color: #00ffff;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 255, 200, 0.1) 100%);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+  transform: translateX(5px);
+}
+
+.blueprint-icon {
+  font-size: 1.5em;
+  min-width: 40px;
+  text-align: center;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.blueprint-info {
+  flex: 1;
+}
+
+.blueprint-info h4 {
+  margin: 0 0 3px 0;
+  color: #00ffff;
+  font-size: 1.05em;
+}
+
+.blueprint-desc {
+  margin: 0;
+  color: #999999;
+  font-size: 0.85em;
+}
+
+.blueprint-action {
+  display: flex;
+  align-items: center;
+}
+
+.btn-apply {
+  background: linear-gradient(90deg, #00d4ff 0%, #00ffff 100%);
+  color: #000;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9em;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-apply:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+}
+
+.panel-info {
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid #00ff88;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 0.9em;
+  color: #cccccc;
+}
+
+.panel-info p {
+  margin: 5px 0;
+  line-height: 1.4;
+}
+
+.panel-info p:first-child {
+  color: #00ff88;
+  font-weight: bold;
+}
+
+.panel-info p:last-child {
+  color: #ff9999;
+  margin-bottom: 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .hybrid-blueprint-panel {
+    padding: 15px;
+    margin: 10px 0;
+  }
+
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .blueprint-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .blueprint-action {
+    width: 100%;
+  }
+
+  .btn-apply {
+    width: 100%;
+  }
+}
