@@ -1132,7 +1132,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                 </div>
               ))}
               {activeExpeditions.map((exp) => renderRow(exp, false))}
-              {completedExpeditions.map((exp) => renderRow(exp, true))}
+              {completedExpeditions.filter((exp) => exp.type !== 'land_expansion').map((exp) => renderRow(exp, true))}
             </div>
           </div>
         </div>
