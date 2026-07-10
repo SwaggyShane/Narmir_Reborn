@@ -73,6 +73,28 @@ Components re-render
 
 ---
 
+## Building Upgrades In Scope (Complete List)
+
+**ALL 7 building upgrade types are explicitly covered by this migration:**
+
+| # | Upgrade Type | API Endpoint | Current Handler | Store Target | Property Name |
+|---|--------------|--------------|-----------------|---------------|---------------|
+| 1 | **Farm** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx line 70 | economyStore | `farm_upgrades` |
+| 2 | **Bank** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx line 70 | economyStore | `bank_upgrades` |
+| 3 | **Granary** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx line 70 | economyStore | `granary_upgrades` |
+| 4 | **Market** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx line 70 | economyStore | `market_upgrades` |
+| 5 | **Tavern** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx line 70 | economyStore | `tavern_upgrades` |
+| 6 | **School** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx line 70 | researchStore | `school_upgrades` |
+| 7 | **Mausoleum** | `/api/kingdom/buy-mausoleum-upgrade` | UpgradesList.jsx line 48 | economyStore | `mausoleum_upgrades` |
+
+**Current Issue:** All 7 flow through `applyGameMutation()` → GameStateManager (legacy)
+
+**Post-Migration:** All 7 flow through Zustand stores directly (modern)
+
+**Migration Point:** Single file (`UpgradesList.jsx`) handles all 7 types, so fixing it fixes all upgrade types at once.
+
+---
+
 ## Files Affected (Complete Inventory)
 
 ### **Core Infrastructure (To Delete)**
@@ -343,31 +365,98 @@ const mana = useMana();
 
 #### 3.3 Migrate applyGameMutation() calls
 
+**CRITICAL FILE:** `UpgradesList.jsx` — handles ALL building upgrade purchases (lines 43-99)
+
+**All Building Upgrade Types (7 total):**
+
+| Upgrade Type | API Endpoint | Store | State Property | File | Line |
+|--------------|--------------|-------|----------------|------|------|
+| **Farm** | `/api/kingdom/economy/upgrade` | economyStore | `farm_upgrades` | UpgradesList.jsx | 70-99 |
+| **Bank** | `/api/kingdom/economy/upgrade` | economyStore | `bank_upgrades` | UpgradesList.jsx | 70-99 |
+| **Granary** | `/api/kingdom/economy/upgrade` | economyStore | `granary_upgrades` | UpgradesList.jsx | 70-99 |
+| **Market** | `/api/kingdom/economy/upgrade` | economyStore | `market_upgrades` | UpgradesList.jsx | 70-99 |
+| **Tavern** | `/api/kingdom/economy/upgrade` | economyStore | `tavern_upgrades` | UpgradesList.jsx | 70-99 |
+| **School** | `/api/kingdom/economy/upgrade` | researchStore | `school_upgrades` | UpgradesList.jsx | 70-99 |
+| **Mausoleum** | `/api/kingdom/buy-mausoleum-upgrade` | economyStore | `mausoleum_upgrades` | UpgradesList.jsx | 48-68 |
+
+**All upgrade types flow through single component:** `UpgradesList.jsx`
+
 **Files using `applyGameMutation()`:**
-- `UpgradesList.jsx` — line 89 (farm upgrades!)
+- `UpgradesList.jsx` — line 89 (handles ALL 7 upgrade types above!)
+  - Line 48-68: Mausoleum upgrades (separate endpoint)
+  - Line 70-99: Economy + School upgrades (unified endpoint)
 - `useKingdomRank.js` — line 45
 
-**Before:**
+**Migration Strategy:**
+
+UpgradesList.jsx needs to route upgrades to correct stores based on type:
+
+**Before (Current - Legacy):**
 ```javascript
 if (result.updates) {
-  applyGameMutation(result, { reason: 'economy-upgrade' });
+  applyGameMutation(result, { reason: 'economy-upgrade' });  // ALL UPDATES → GameStateManager
 }
 ```
 
-**After:**
+**After (Zustand - Explicit routing by type):**
+
 ```javascript
 if (result.updates) {
-  if (result.updates.economy) {
-    useEconomyStore.getState().receiveServerSnapshot(result.updates.economy);
+  // Economy upgrades: farm, bank, granary, market, tavern
+  // These come back as: { farm_upgrades: {...}, gold: X, ... }
+  if (result.updates.economy || result.updates.farm_upgrades !== undefined || 
+      result.updates.bank_upgrades !== undefined || result.updates.granary_upgrades !== undefined ||
+      result.updates.market_upgrades !== undefined || result.updates.tavern_upgrades !== undefined) {
+    useEconomyStore.getState().receiveServerSnapshot(result.updates.economy || result.updates);
   }
-  if (result.updates.farm_upgrades !== undefined) {
-    useEconomyStore.getState().receiveServerSnapshot({
-      farm_upgrades: result.updates.farm_upgrades
+  
+  // School upgrades: research discipline
+  // Comes back as: { school_upgrades: {...} }
+  if (result.updates.school_upgrades !== undefined) {
+    useResearchStore.getState().receiveServerSnapshot({
+      school_upgrades: result.updates.school_upgrades
     });
   }
-  // ... route to appropriate stores
+  
+  // Mausoleum upgrades: comes back as { mausoleum_upgrades: {...}, gold: X }
+  if (result.updates.mausoleum_upgrades !== undefined) {
+    useEconomyStore.getState().receiveServerSnapshot(result.updates);
+  }
 }
 ```
+
+**Specific Code Changes in UpgradesList.jsx:**
+
+```diff
+  Line 48-68 (Mausoleum endpoint):
+  - applyGameMutation(result, { reason: 'economy-upgrade' });
++ if (result.updates) {
++   useEconomyStore.getState().receiveServerSnapshot(result.updates);
++ }
+
+  Line 70-99 (Economy endpoint, all 5 types + school):
+  - applyGameMutation(result, { reason: 'economy-upgrade' });
++ if (result.updates) {
++   // Route to economy store for farm/bank/granary/market/tavern
++   if (result.updates.economy) {
++     useEconomyStore.getState().receiveServerSnapshot(result.updates.economy);
++   }
++   // Route to research store for school upgrades
++   if (result.updates.research) {
++     useResearchStore.getState().receiveServerSnapshot(result.updates.research);
++   }
++ }
+```
+
+**Verification checklist for Phase 3.3:**
+- [ ] Farm upgrade purchase → economyStore.farm_upgrades updated
+- [ ] Bank upgrade purchase → economyStore.bank_upgrades updated
+- [ ] Granary upgrade purchase → economyStore.granary_upgrades updated
+- [ ] Market upgrade purchase → economyStore.market_upgrades updated
+- [ ] Tavern upgrade purchase → economyStore.tavern_upgrades updated
+- [ ] School upgrade purchase → researchStore.school_upgrades updated
+- [ ] Mausoleum upgrade purchase → economyStore.mausoleum_upgrades updated
+- [ ] No applyGameMutation() calls remain in UpgradesList.jsx
 
 ---
 
@@ -506,19 +595,99 @@ const handleBuildWalls = async () => {
 };
 ```
 
-### **UpgradesList.jsx**
+### **UpgradesList.jsx** (Handles ALL 7 Upgrade Types)
+
+**This is THE critical migration point.** All building upgrades (farm, bank, granary, market, tavern, school, mausoleum) flow through this single component.
+
+**Line 1-10 (Imports):**
 ```diff
 - import { applyGameMutation } from '../../utils/gameMutations';
-+ // No import needed - store directly
-  
-  const handleBuy = async () => {
-    // ...
-    if (result.updates) {
--     applyGameMutation(result, { reason: 'economy-upgrade' });
-+     useEconomyStore.getState().receiveServerSnapshot(result.updates.economy);
-    }
-  };
++ import { useEconomyStore } from '../../stores';
++ import { useResearchStore } from '../../stores';
+  // Other imports remain
 ```
+
+**Lines 48-68 (Mausoleum upgrades - separate endpoint):**
+```diff
+  const handleBuy = async () => {
+    if (purchasing) return;
+    setPurchasing(true);
+    try {
+      if (category === 'mausoleum') {
+        const result = await apiCall('/api/kingdom/buy-mausoleum-upgrade', {
+          method: 'POST',
+          body: { upgradeKey },
+        });
+        if (result.error) {
+          toast(result.error, 'error');
+          return;
+        }
+        playGameSound('upgrade_purchased');
+        const nextOwned = { ...owned, [upgradeKey]: true };
++       // UPDATE: Route mausoleum upgrades to economyStore
++       if (result.updates?.economy || result.updates?.mausoleum_upgrades) {
++         useEconomyStore.getState().receiveServerSnapshot(result.updates);
++       }
+        applyGameMutation({
+          gold: Math.max(0, Number(state?.gold || 0) - Number(def.cost || 0)),
+          mausoleum_upgrades: nextOwned,
+        }, { reason: 'economy-upgrade' });
+        onPurchased?.(upgradeKey, nextOwned);
+        toast(`${def.name} purchased!`, 'success');
+        return;
+      }
+```
+
+**Lines 70-99 (Economy + School upgrades - unified endpoint):**
+```diff
+  // Non-mausoleum upgrades (FARM, BANK, GRANARY, MARKET, TAVERN, SCHOOL)
+  const result = await apiCall('/api/kingdom/economy/upgrade', {
+    method: 'POST',
+    body: {
+      category,  // 'farm' | 'bank' | 'granary' | 'market' | 'tavern' | 'school'
+      upgradeKey,
+    },
+  });
+
+  if (result.error) {
+    toast(result.error, 'error');
+    if (String(result.error).toLowerCase().includes('already purchased')) {
+      onPurchased?.(upgradeKey, { ...owned, [upgradeKey]: true });
+    }
+    return;
+  }
+
+  playGameSound('upgrade_purchased');
+
+  if (result.updates) {
+-   applyGameMutation(result, { reason: 'economy-upgrade' });
++   // CRITICAL MIGRATION: Route all 6 upgrade types to appropriate stores
++   if (result.updates.economy) {
++     // Farm, Bank, Granary, Market, Tavern upgrades
++     // Server returns: { economy: { farm_upgrades, bank_upgrades, granary_upgrades, market_upgrades, tavern_upgrades, gold, ... } }
++     useEconomyStore.getState().receiveServerSnapshot(result.updates.economy);
++   }
++   if (result.updates.research) {
++     // School upgrades
++     // Server returns: { research: { school_upgrades, mana, ... } }
++     useResearchStore.getState().receiveServerSnapshot(result.updates.research);
++   }
+  }
+
+  const nextOwned = ownedFromUpdates(result.updates, category)
+    || { ...owned, [upgradeKey]: true };
+  onPurchased?.(upgradeKey, nextOwned);
+  toast(`${def.name} purchased!`, 'success');
+```
+
+**Summary of changes:**
+- **Remove:** `import { applyGameMutation }`
+- **Add:** `import { useEconomyStore, useResearchStore }` 
+- **Line 48-68:** Route mausoleum to economyStore
+- **Line 89:** Replace `applyGameMutation()` with explicit store routing
+- **Ensure:** All 7 upgrade types hit correct stores
+
+**Post-migration, this component will be the definitive example of "correct" Zustand mutation patterns** for new code.
 
 ### **useGameActions.js**
 ```diff
@@ -624,6 +793,14 @@ Manual QA checklist:
 - [ ] All applyGameMutation() calls replaced with store actions
 - [ ] 15 components migrated
 - [ ] 5 hooks migrated
+- [ ] **UpgradesList.jsx fully migrated** — ALL 7 upgrade types:
+  - [ ] Farm upgrades → economyStore.farm_upgrades
+  - [ ] Bank upgrades → economyStore.bank_upgrades
+  - [ ] Granary upgrades → economyStore.granary_upgrades
+  - [ ] Market upgrades → economyStore.market_upgrades
+  - [ ] Tavern upgrades → economyStore.tavern_upgrades
+  - [ ] School upgrades → researchStore.school_upgrades
+  - [ ] Mausoleum upgrades → economyStore.mausoleum_upgrades
 
 ### **Phase 4**
 - [ ] gameMutations.js deleted
@@ -665,9 +842,19 @@ Manual QA checklist:
 - New integration tests for store sync
 - Test coverage maintained or improved
 
-✅ **Functionality:**
-- Farm upgrades work correctly
-- Building updates flow through Zustand
+✅ **Functionality - Building Upgrades (ALL 7 types tested):**
+- [ ] Farm upgrades work correctly (irrigation, etc.)
+- [ ] Bank upgrades work correctly
+- [ ] Granary upgrades work correctly
+- [ ] Market upgrades work correctly
+- [ ] Tavern upgrades work correctly
+- [ ] School upgrades work correctly
+- [ ] Mausoleum upgrades work correctly
+- [ ] Each upgrade deducts gold correctly
+- [ ] Each upgrade updates store immediately
+- [ ] Gold in economyStore reflects post-upgrade value
+- [ ] mana/research in researchStore reflects post-school-upgrade
+- Building updates flow through Zustand (not GameStateManager)
 - Max button respects capacity
 - Socket events properly sync stores
 - No console errors
