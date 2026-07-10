@@ -660,6 +660,19 @@ async function initDb(options = {}) {
     }
   }
 
+  // Migration: convert scout_progress from INTEGER to NUMERIC to support fractional values
+  const migrationName = '002_scout_progress_to_numeric';
+  const existingMigration = await _db.get('SELECT id FROM migrations WHERE name = $1', [migrationName]);
+  if (!existingMigration) {
+    try {
+      await _db.run(`ALTER TABLE kingdoms ALTER COLUMN scout_progress TYPE NUMERIC(10,2) USING scout_progress::NUMERIC(10,2)`);
+      await _db.run('INSERT INTO migrations (name) VALUES ($1)', [migrationName]);
+      console.log('[db] Migration applied:', migrationName);
+    } catch (err) {
+      console.warn('[db] Migration skipped (column may already be NUMERIC):', err.message);
+    }
+  }
+
   // Trade offers table
 
   // market prices seeding now in init-data

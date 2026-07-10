@@ -371,7 +371,7 @@ async function initializeKingdomColumns(db, getTableColumns, getColumnType, addC
     ['first_mountain_found_turn', 'INTEGER DEFAULT NULL'],
     ['visibility', "TEXT NOT NULL DEFAULT '{\"seen_cells\":\"0\",\"current_cells\":\"0\",\"version\":1}'"],
     ['scout_allocation', 'INTEGER NOT NULL DEFAULT 0'],
-    ['scout_progress', 'INTEGER NOT NULL DEFAULT 0'],
+    ['scout_progress', 'NUMERIC(10,2) NOT NULL DEFAULT 0'],
     ['wood', 'INTEGER NOT NULL DEFAULT 0'],
     ['stone', 'INTEGER NOT NULL DEFAULT 0'],
     ['iron', 'INTEGER NOT NULL DEFAULT 0'],
