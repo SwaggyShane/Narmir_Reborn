@@ -4,7 +4,7 @@
  * Biome-aware normalization ensures elevation bands match terrain types.
  */
 
-const SimplexNoise = require('simplex-noise');
+const { buildPermutationTable, createNoise2D } = require('simplex-noise');
 
 const ELEVATION_BANDS = {
   ocean: [0, 0],
@@ -13,6 +13,18 @@ const ELEVATION_BANDS = {
   hills: [91, 149],
   mountains: [150, 255],
 };
+
+/**
+ * Seeded PRNG: linear congruential generator for deterministic noise
+ */
+function seededRandom(seed) {
+  const m = 2 ** 31 - 1;
+  let s = (seed % m) || 1;
+  return () => {
+    s = (s * 16807) % m;
+    return (s - 1) / (m - 1);
+  };
+}
 
 /**
  * Map noise value (0-1) to elevation band based on terrain type
@@ -43,16 +55,8 @@ function generateElevationGrid(worldSeed, hexGrid) {
     return {};
   }
 
-  const noise = new SimplexNoise(() => {
-    // Seeded PRNG: linear congruential generator
-    const m = 2 ** 31 - 1;
-    let seed = worldSeed % m;
-    if (seed <= 0) seed += m - 1;
-    return () => {
-      seed = (seed * 16807) % m;
-      return (seed - 1) / (m - 1);
-    };
-  }());
+  const permTable = buildPermutationTable(seededRandom(worldSeed));
+  const noise = createNoise2D(seededRandom(worldSeed), permTable);
 
   const elevationMap = {};
   const OCTAVES = 4;
@@ -70,7 +74,7 @@ function generateElevationGrid(worldSeed, hexGrid) {
     for (let i = 0; i < OCTAVES; i++) {
       const x = hex.col * frequency;
       const y = hex.row * frequency;
-      const value = noise.noise2D(x, y);
+      const value = noise(x, y);
 
       elevation += value * amplitude;
       maxValue += amplitude;
