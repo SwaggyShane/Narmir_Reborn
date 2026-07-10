@@ -909,7 +909,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                         return `${formatNum(scout_allocation)} rangers • Ring ${MAX_SCOUT_RING} (Complete)`;
                       }
                       const nextRing = currentRing + 1;
-                      const turnsForNext = 20 + (nextRing - 1) * 5;
+                      const turnsForNext = SCOUT_BASE_TURNS + (nextRing - 1) * SCOUT_RING_INCREMENT;
                       const turnsPreviousDone = getTotalTurnsForRing(currentRing);
                       const turnsIntoNext = scout_progress - turnsPreviousDone;
                       return `${formatNum(scout_allocation)} rangers • Ring ${currentRing} (${formatNum(turnsIntoNext)} / ${formatNum(turnsForNext)} toward Ring ${nextRing})`;
