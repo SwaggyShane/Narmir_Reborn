@@ -266,15 +266,24 @@ grep -r "apiCall\|/api/" /home/user/Narmir_Reborn/game/routes --include="*.js" |
 7. `/api/kingdom/search` — troops, gold, food, resources, events
 ... (all endpoints)
 
-**Standardization rule:**
-- **EVERY response** must have `updates` object with exactly these sub-objects: `{ economy, military, population, research, profile }`
-- **If endpoint doesn't update a domain**, pass empty object: `{ research: {} }` not missing
+**Standardization rule (Flexible):**
+- **EVERY response** must have `updates` object with consistent domain sub-objects
+- **Relaxed approach:** If endpoint doesn't update a domain, **omit the key entirely** (don't send empty object)
+  - This is safer than requiring all 5 domains always present
+  - Minimizes backend changes needed to comply with contract
+  - Normalizer routes only present domains (missing keys are no-op)
 - **No custom shapes** — no "just return gold", no "returns farm_upgrades at top level"
 
 **Why this matters:**
 - Handlers don't have to guess about response shape
 - `normalizeAndRouteResponse()` always routes the same way
 - No "sometimes it's here, sometimes it's there" sync bugs
+- Reduces backend migration burden (don't require all endpoints to emit all 5 domains)
+
+**Contract enforcement rule:**
+- Validate that top-level keys are only from: `{ economy, military, research, population, profile, error, events, message, success }`
+- No unexpected keys (catch routing mistakes)
+- Each domain that IS present must be an object (not null/string/etc)
 
 **Deliverable:** `/game/API_CONTRACT.md` documenting response shape for every endpoint
 
@@ -358,6 +367,16 @@ getPanelState: (panelName) =>
 **Gate:** Panel state persists in memory during session, components can read/write to UIStore
 
 **Rollback:** Revert UIStore changes, restore usePanelState.js
+```bash
+# Identify Phase 1 commits (check git log for phase 1 work)
+git log --oneline -n 10
+
+# Revert last N commits from Phase 1
+git revert HEAD~2..HEAD  # Adjust range based on actual commit count
+
+# Or reset to pre-Phase-1 state (WARNING: loses all Phase 1 work)
+git reset --hard origin/main
+```
 
 ---
 
@@ -388,25 +407,38 @@ import { normalizeAndRouteResponse } from './utils/responseNormalizer';
 
 export const gameStateManager = {
   applyUpdates(updates, context = {}) {
+    // Aggressive logging: parse stack to identify exact caller file/line
+    const stack = new Error().stack.split('\n');
+    const caller = stack[2]?.trim() || 'unknown';
+    
     console.warn('[DEPRECATED] GameStateManager.applyUpdates() called', {
-      stack: new Error().stack.split('\n')[2],
-      context
+      caller,  // e.g., "at DefensePanel (DefensePanel.jsx:42:15)"
+      context,
+      stack: stack.slice(2, 5).join('\n')  // Full stack trace for debugging
     });
     normalizeAndRouteResponse({ updates }, context);
   },
   
   setState(state) {
+    const stack = new Error().stack.split('\n');
+    const caller = stack[2]?.trim() || 'unknown';
+    
     console.warn('[DEPRECATED] GameStateManager.setState() called', {
-      stack: new Error().stack.split('\n')[2],
-      state
+      caller,
+      state,
+      stack: stack.slice(2, 5).join('\n')
     });
     // Route known properties to appropriate stores
     normalizeAndRouteResponse({ updates: state }, { reason: 'legacy-setstate' });
   },
   
   getState() {
+    const stack = new Error().stack.split('\n');
+    const caller = stack[2]?.trim() || 'unknown';
+    
     console.warn('[DEPRECATED] GameStateManager.getState() called', {
-      stack: new Error().stack.split('\n')[2]
+      caller,
+      stack: stack.slice(2, 5).join('\n')
     });
     // Construct state from stores (fallback for forgotten callers)
     return {
@@ -641,6 +673,14 @@ export function normalizeAndRouteResponse(response, context = {}) {
 **Gate:** Run `npm run dev` with no contract violation errors during manual testing
 
 **Rollback:** Revert normalizer, restore applyGameMutation calls
+```bash
+# Revert Phase 1.5 commits
+git log --oneline -n 20 | grep -i "normalizer\|response"
+git revert <commit-hash>  # Revert normalizer creation
+
+# Or batch revert Phase 1.5
+git revert HEAD~1..HEAD   # Adjust based on commit count
+```
 
 ---
 
@@ -680,6 +720,14 @@ function applyResult(data, reason) {
 - etc. for each store
 
 **Rollback:** Restore legacy applyGameMutation call
+```bash
+# Revert Phase 2 commits (useGameActions, AuthModal, useRegenCountdown)
+git log --oneline -n 20 | grep -E "(useGameActions|AuthModal|useRegenCountdown)"
+
+# Batch revert all Phase 2 work
+git revert HEAD~3..HEAD   # Adjust range to match actual Phase 2 commits
+git push origin main
+```
 
 ### **Phase 2.2: Migrate AuthModal.loadKingdom()**
 
@@ -768,7 +816,8 @@ export const DefensePanel = () => {
 **After Phase 3A (Dual sources - testing period):**
 ```javascript
 import { useGameMutationEvents } from '../../hooks/useGameState';
-import { useWallHp, useBuildCount } from '../../stores';  // ← ADD ZUSTAND READS
+import { useMilitaryStore } from '../../stores';
+import { useShallow } from 'zustand/react';
 
 export const DefensePanel = () => {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -780,9 +829,13 @@ export const DefensePanel = () => {
     }
   });
   
-  // ← ADD direct Zustand reads
-  const wallHp = useWallHp();  // Changes trigger component re-render via Zustand
-  const bldWalls = useBuildCount('walls');
+  // ← ADD direct Zustand reads USING useShallow to prevent re-render noise
+  // useShallow prevents re-renders from unrelated store properties changing
+  // (only re-renders if wallHp or walls actually change)
+  const defenseData = useMilitaryStore(useShallow((s) => ({
+    wallHp: s.wallHp,
+    walls: s.bld_walls,
+  })));
   
   // Component still renders based on refreshKey, but ALSO renders when stores change
   // If both work, listener is redundant
@@ -791,8 +844,9 @@ export const DefensePanel = () => {
 ```
 
 **Why this works:**
-- Component gets Zustand updates automatically (store subscription)
-- Component ALSO gets GameStateManager updates (listener)
+- Component gets Zustand updates automatically (store subscription via useShallow)
+- Component ALSO gets GameStateManager updates (listener via refreshKey)
+- useShallow prevents false positives (re-renders only when selected properties change)
 - If they diverge, you'll see it immediately
 - If they stay in sync, listener is proven redundant
 
@@ -800,6 +854,7 @@ export const DefensePanel = () => {
 1. UI updates from Zustand (stores changed)
 2. UI updates from GameStateManager listener (both work)
 3. If only #2 happens, Zustand routing is broken (catch it here!)
+4. Check React DevTools Profiler: useShallow should prevent spurious re-renders
 
 ### **Phase 3A.2: Apply to all 15 components**
 
@@ -820,6 +875,14 @@ Add Zustand selectors to:
 **Gate:** Run full smoke test. If Zustand reads match listener updates, proceed to 3B. If not, debug the mismatch BEFORE removing listeners.
 
 **Rollback:** Revert component changes, restore listener calls
+```bash
+# Revert Phase 3A component migrations (15 files)
+git log --oneline -n 30 | grep -i "phase 3a\|dual"
+
+# Batch revert all Phase 3A changes
+git revert HEAD~15..HEAD  # Adjust range to match actual component commit count
+git push origin main
+```
 
 ---
 
@@ -990,6 +1053,14 @@ if (result.updates) {
 - [ ] No console errors from validateContract() in dev mode
 
 **Rollback:** Restore listener calls, restore applyGameMutation calls
+```bash
+# Revert Phase 3B component + UpgradesList migrations
+git log --oneline -n 30 | grep -i "phase 3b\|listener\|UpgradesList"
+
+# Batch revert all Phase 3B changes
+git revert HEAD~8..HEAD  # Adjust range to match actual Phase 3B commits
+git push origin main
+```
 
 ---
 
@@ -1037,6 +1108,14 @@ const warLogCache = gameStateManager.getState().warLogCache;
 - Or: create a warLogStore for war-related data
 
 **Rollback:** Restore utility compatibility
+```bash
+# Revert Phase 4 utility migrations (panelNav, shellBridge, replayWarReport)
+git log --oneline -n 20 | grep -i "phase 4\|utility\|panelNav\|shellBridge"
+
+# Batch revert all Phase 4 changes
+git revert HEAD~4..HEAD  # Adjust range to match actual Phase 4 commits
+git push origin main
+```
 
 ---
 
