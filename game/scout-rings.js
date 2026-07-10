@@ -4,10 +4,11 @@ const { getHexesInRadius } = require('./hex-utils');
 const config = require('./config');
 
 /**
- * Scout ring progression system (locked 2026-07-04).
- * Rings 1-17 are available; Ring 17 is the hard cap.
+ * Scout ring progression system (locked 2026-07-09).
+ * Rings 1-25 are available; Ring 25 is the hard cap.
  * Ring N requires: SCOUT_BASE_TURNS + (N-1) × SCOUT_RING_INCREMENT turns
- * Example: Ring 1 = 20 turns, Ring 2 = 25 turns, Ring 17 = 100 turns
+ * Example: Ring 1 = 10 turns, Ring 2 = 15 turns, Ring 25 = 130 turns
+ * Total for all 25 rings: 1750 scout-turns
  */
 
 /**

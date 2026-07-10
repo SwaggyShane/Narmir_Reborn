@@ -2050,7 +2050,7 @@ const config = {
   },
 
   SCOUT_CONSTANTS: {
-    SCOUT_BASE_TURNS: 20, // Ring 1 costs 20 turns
+    SCOUT_BASE_TURNS: 10, // Ring 1 costs 10 turns
     SCOUT_RING_INCREMENT: 5, // Each subsequent ring costs 5 more turns
     MAX_RING: 25, // Hard cap on ring progression (stride 48: 1.5× larger than stride 32 which was 17)
   },
