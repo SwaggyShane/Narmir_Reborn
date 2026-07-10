@@ -1,18 +1,11 @@
 import clsx from 'clsx';
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
 import { useActivePanel } from '../../hooks/useActivePanel';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { dispatchExpeditionLogEntry } from '../../utils/expeditionLog.js';
 import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
-import {
-  useRace,
-  useEconomyStore,
-  useProfileStore,
-  useMilitaryStore,
-  useResearchStore,
-  usePopulationStore
-} from '../../stores';
+import { useRace } from '../../stores';
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
@@ -62,18 +55,11 @@ const BUILDING_COST = { woodyard: 1000, lumber_camp: 10000, sawmill: 100000, gra
 function buildingsByType(type) {
   return Object.values(BUILDING_CONFIG).filter(b => b.type === type).sort((a, b) => a.stage - b.stage);
 }
-function getParsedStateProp(propName, stateObj, fallback = {}) {
-  // If stateObj is provided, use it; otherwise read from stores
-  let s = stateObj;
-  if (!s) {
-    s = {
-      ...useEconomyStore.getState(),
-      ...useProfileStore.getState(),
-      ...useMilitaryStore.getState(),
-      ...useResearchStore.getState(),
-      ...usePopulationStore.getState(),
-    };
-  }
+let currentResourcesState = {};
+function getState() { return currentResourcesState || {}; }
+
+function getParsedStateProp(propName, fallback = {}) {
+  const s = getState();
   if (!s) return fallback;
   const prop = s[propName];
   if (typeof prop === 'string') {
@@ -128,27 +114,14 @@ const ResourcesPanel = () => {
   const [engineerAllocations, setEngineerAllocations] = useState({});
   const { activePanel } = useActivePanel();
   const race = useRace();
+  currentResourcesState = {};
 
-  // Get data from Zustand stores
-  const economyData = useEconomyStore();
-  const profileData = useProfileStore();
-  const militaryData = useMilitaryStore();
-  const researchData = useResearchStore();
-  const populationData = usePopulationStore();
-
-  // Combine store data into kingdom object for backward compatibility
   const syncFromState = useCallback(() => {
-    const s = {
-      ...useEconomyStore.getState(),
-      ...useProfileStore.getState(),
-      ...useMilitaryStore.getState(),
-      ...useResearchStore.getState(),
-      ...usePopulationStore.getState(),
-    };
+    const s = getState();
     setKingdom(s);
     setIsOrc(race === 'orc');
 
-    const bq = getParsedStateProp('build_queue', s);
+    const bq = getParsedStateProp('build_queue');
     setBuildingInProgress(prev => {
       const next = { ...prev };
       for (const type of ['wood', 'stone', 'iron']) {
