@@ -174,10 +174,17 @@ const ResourcesPanel = () => {
     try {
       const refreshed = await apiCall('/api/kingdom/me');
       if (refreshed && !refreshed.error) {
+        // Parse resource_sequence if present
+        let seq = refreshed.resource_sequence || {};
+        if (typeof seq === 'string') {
+          try { seq = JSON.parse(seq); } catch { seq = {}; }
+        }
+        // Set kingdom data directly from API response
+        setKingdom({ ...refreshed, _seq: seq });
+
         if (applyGameMutation) {
           applyGameMutation(refreshed, { reason: 'resources-refresh' });
         }
-        syncFromState();
         return refreshed;
       }
       return refreshed;
