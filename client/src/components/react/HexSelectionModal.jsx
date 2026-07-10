@@ -97,6 +97,13 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
     return buildHexGrid(WORLD_WIDTH, WORLD_HEIGHT, worldSeed);
   }, [isOpen, worldSeed]);
 
+  // Get terrain type for selected hex
+  const selectedHexTerrain = useMemo(() => {
+    if (!selectedHex || !hexGrid) return null;
+    const cell = hexGrid.cells.find(c => c.col === selectedHex.x && c.row === selectedHex.y);
+    return cell ? cell.terrain : null;
+  }, [selectedHex, hexGrid]);
+
   const handleHexClick = useCallback((col, row) => {
     if (col < 0 || col > WORLD_MAX_COL || row < 0 || row > WORLD_MAX_ROW) {
       return;
@@ -245,7 +252,7 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
         {/* Selected Hex Display */}
         {selectedHex && (
           <div className="mb-3 rounded bg-[var(--accent2)]/10 px-3 py-2 text-[12px] text-[var(--accent2)]">
-            ✓ Selected: ({selectedHex.x}, {selectedHex.y})
+            ✓ Selected: ({selectedHex.x}, {selectedHex.y}) {selectedHexTerrain && ` • Terrain: ${selectedHexTerrain.charAt(0).toUpperCase() + selectedHexTerrain.slice(1)}`}
           </div>
         )}
 
@@ -288,6 +295,19 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
         {/* Instructions */}
         <div className="mb-3 text-[12px] text-[var(--text3)]">
           Click a hex to select it and start the action. Drag to pan the map.
+        </div>
+
+        {/* Terrain Legend */}
+        <div className="mb-3 rounded bg-[var(--bg3)] p-2">
+          <div className="mb-2 text-[11px] font-semibold text-[var(--text)]">Terrain Types:</div>
+          <div className="grid grid-cols-4 gap-2 text-[10px] text-[var(--text3)]">
+            {Object.entries(TERRAIN_COLORS).map(([terrainType, color]) => (
+              <div key={terrainType} className="flex items-center gap-1.5">
+                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: color }}></div>
+                <span>{terrainType.charAt(0).toUpperCase() + terrainType.slice(1)}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Cancel button */}
