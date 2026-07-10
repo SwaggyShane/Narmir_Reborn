@@ -317,6 +317,9 @@ const BuildPanel = () => {
     }
   }, [showAttunements, loadAttunements]);
 
+  // Use a stable stringified version for detecting meaningful changes (not just reference changes)
+  const buildAllocationStr = useMemo(() => JSON.stringify(buildAllocation), [buildAllocation]);
+
   useEffect(() => {
     const newAllocations = {};
     Object.entries(BUILD_ALLOCATION_KEYS).forEach(([inputId, key]) => {
@@ -324,7 +327,7 @@ const BuildPanel = () => {
     });
     setEngineerAllocations(newAllocations);
     refreshBuildUi();
-  }, [buildAllocation, refreshBuildUi]);
+  }, [buildAllocationStr, refreshBuildUi]);
 
   const applyAttunement = async (fragmentName, buildingType) => {
     try {

@@ -26,27 +26,36 @@ function syncIdentity(me, fallbackUsername) {
 export async function loadKingdom() {
   const kingdom = await apiCall('/api/kingdom/me');
   if (kingdom && !kingdom.error) {
-    useProfileStore.getState().receiveServerSnapshot(kingdom);
-    useEconomyStore.getState().receiveServerSnapshot(kingdom);
-    useMilitaryStore.getState().receiveServerSnapshot(kingdom);
-    useResearchStore.getState().receiveServerSnapshot(kingdom);
-    usePopulationStore.getState().receiveServerSnapshot(kingdom);
+    // Fetch scouts in parallel with kingdom data (or already available from initial load)
+    let scouts = null;
+    try {
+      scouts = await apiCall('/api/kingdom/scouts');
+      console.log('[auth] Fetched scouts:', scouts);
+    } catch (err) {
+      console.warn('[auth] Scouts fetch failed:', err);
+    }
+
+    // Combine kingdom and scouts data into single snapshot to avoid multiple re-renders
+    const combinedData = { ...kingdom };
+    if (scouts && !scouts.error) {
+      console.log('[auth] Merging scouts into profile update');
+      combinedData.scout_allocation = scouts.scout_allocation;
+      combinedData.scout_progress = scouts.scout_progress;
+    }
+
+    // Update all stores with combined data (single batch update)
+    useProfileStore.getState().receiveServerSnapshot(combinedData);
+    useEconomyStore.getState().receiveServerSnapshot(combinedData);
+    useMilitaryStore.getState().receiveServerSnapshot(combinedData);
+    useResearchStore.getState().receiveServerSnapshot(combinedData);
+    usePopulationStore.getState().receiveServerSnapshot(combinedData);
     applyGameMutation(
       {
-        ...kingdom,
-        kingdomId: kingdom.kingdomId ?? kingdom.id ?? null,
+        ...combinedData,
+        kingdomId: combinedData.kingdomId ?? combinedData.id ?? null,
       },
       { reason: 'kingdom-refresh' },
     );
-
-    const scouts = await apiCall('/api/kingdom/scouts');
-    console.log('[auth] Fetched scouts:', scouts);
-    if (scouts && !scouts.error) {
-      console.log('[auth] Updating profile store with scouts:', scouts);
-      useProfileStore.getState().receiveServerSnapshot(scouts);
-    } else {
-      console.warn('[auth] Scouts fetch failed or errored:', scouts?.error || 'no data');
-    }
   }
   return kingdom;
 }
