@@ -802,6 +802,9 @@ module.exports = function (db, kingdomGameplayRouter) {
           released,
           scoutAllocation: status.allocated,
           availableRangers: status.available,
+          updates: {
+            scout_allocation: 0,
+          },
         };
       });
 
