@@ -83,9 +83,9 @@ async function getKingdomVisibility(db, kingdom, options = {}) {
   // TEST MODE: Disable fog of war by returning full world visibility
   if (process.env.DISABLE_FOG_OF_WAR === 'true') {
     // Return maximum visibility (all cells visible)
-    // Grid is 48 cols x 512 rows = 24,576 hexes
-    // Use a large BigInt that covers all possible cells
-    const maxVis = (1n << 65n) - 1n; // Large enough to cover all 24,576 cells
+    // Max cell index = 511 * 48 + 47 = 24575
+    // Create BigInt with all bits set up to bit 24575
+    const maxVis = (1n << 24576n) - 1n;
     return { seenCells: maxVis, currentCells: maxVis, version: DEFAULT_VISIBILITY.version };
   }
 
