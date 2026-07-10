@@ -634,6 +634,11 @@ function processTurn(k, db = null) {
         events.push({
           type: "system",
           message: `🔍 Scouts: ${pctStr}% ${ringMsg}`,
+          expeditionLogEntry: {
+            icon: '🔍',
+            title: `Scouts: ${pctStr}% ${ringMsg}`,
+            subtitle: `Scout allocation progress`,
+          },
         });
         // Reveal new ring hexes if ring was completed
         if (scoutResult.ring_completed && db && k.id) {
