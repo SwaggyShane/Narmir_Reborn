@@ -1292,7 +1292,7 @@ export function renderWorldMap(
 
               (isMe ? "#e8b84b" : "#fff") +
 
-              '" pointer-events="none" shape-rendering="crispEdges" vector-effect="non-scaling-stroke" style="text-rendering: geometricPrecision; paint-order: stroke; dominant-baseline: middle">' +
+              '" pointer-events="none" style="text-shadow: 0 1px 2px #000, 0 -1px 2px #000, 1px 0 2px #000, -1px 0 2px #000; dominant-baseline:middle">' +
 
               escapeHtml(k.name.slice(0, 10)) +
 
