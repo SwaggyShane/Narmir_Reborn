@@ -66,10 +66,12 @@ describe('HappinessWidget', () => {
     });
 
     render(<HappinessWidget />);
-    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    // Phase 3A: Dual sources (initial useEffect + Zustand-driven useEffect)
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
 
     capturedHandler({ reason: 'turn' });
-    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
+    // Listener triggers additional fetch
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(3));
   });
 
   it('ignores irrelevant mutation event reasons', async () => {
@@ -79,10 +81,12 @@ describe('HappinessWidget', () => {
     });
 
     render(<HappinessWidget />);
-    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    // Phase 3A: Dual sources (initial useEffect + Zustand-driven useEffect)
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
 
     capturedHandler({ reason: 'unrelated-event' });
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    // Still 2 calls - unrelated event doesn't trigger fetch
+    expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
   it('does not throw when the fetch fails', async () => {

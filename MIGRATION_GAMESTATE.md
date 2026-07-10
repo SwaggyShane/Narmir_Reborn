@@ -205,10 +205,10 @@ Components re-render ✅
 | **Phase 1** | 1-2 days | Days 2-3 | UIStore panel state | Panel state persists/retrieves | Revert UIStore changes | ✅ |
 | **Phase 1.5** | 1 day | Day 4 | Response normalizer | Contract validation works | Revert normalizer, re-add listeners | ✅ |
 | **Phase 2** | 1-2 days | Days 5-6 | Critical sync points | Buy upgrade → store updates | Revert Phase 2 files | ✅ COMPLETE |
-| **Phase 3A** | 1 day | Day 7 | Dual data sources | All 15 components read Zustand | Revert component changes |
-| **3A Gate** | 1 day | Day 8 | Smoke test | Buy/turn/attack all update | Do NOT proceed to 3B |
-| **Phase 3B** | 1 day | Days 9-10 | Listener removal | Components still render | Restore listener calls |
-| **Phase 4** | 1 day | Day 11 | Utility cleanup | panelNav, shellBridge migrated | Revert utility changes |
+| **Phase 3A** | 1 day | Day 7 | Dual data sources | All 15 components read Zustand | Revert component changes | ✅ |
+| **3A Gate** | 1 day | Day 8 | Smoke test | Buy/turn/attack all update | Do NOT proceed to 3B | ✅ PASSED |
+| **Phase 3B** | 1 day | Days 9-10 | Listener removal | Components still render | Restore listener calls | ✅ COMPLETE |
+| **Phase 4** | 1 day | Day 11 | Utility cleanup | panelNav, shellBridge migrated | Revert utility changes | ✅ COMPLETE |
 | **Phase 5** | 1 day | Day 12 | Test updates | All tests passing | Fix failing tests |
 | **Phase 6** | 0.5 day | Day 13 | Cleanup & deletion | Zero grep results | (Do not rollback; commit backwards) |
 
