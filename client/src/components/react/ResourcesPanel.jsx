@@ -180,13 +180,12 @@ const ResourcesPanel = () => {
         if (typeof seq === 'string') {
           try { seq = JSON.parse(seq); } catch { seq = {}; }
         }
-        // Set kingdom data directly from API response
+        // Set kingdom data directly from API response (don't call syncFromState which reads from empty currentResourcesState)
         setKingdom({ ...refreshed, _seq: seq });
 
         if (applyGameMutation) {
           applyGameMutation(refreshed, { reason: 'resources-refresh' });
         }
-        syncFromState();
         return refreshed;
       }
       return refreshed;
