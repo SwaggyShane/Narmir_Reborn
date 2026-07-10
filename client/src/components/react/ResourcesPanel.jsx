@@ -185,6 +185,7 @@ const ResourcesPanel = () => {
         if (applyGameMutation) {
           applyGameMutation(refreshed, { reason: 'resources-refresh' });
         }
+        syncFromState();
         return refreshed;
       }
       return refreshed;
