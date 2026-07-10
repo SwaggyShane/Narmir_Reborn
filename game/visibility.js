@@ -80,6 +80,15 @@ async function getKingdomVisibility(db, kingdom, options = {}) {
     return { seenCells: 0n, currentCells: 0n, version: DEFAULT_VISIBILITY.version };
   }
 
+  // TEST MODE: Disable fog of war by returning full world visibility
+  if (process.env.DISABLE_FOG_OF_WAR === 'true') {
+    // Return maximum visibility (all cells visible)
+    // Grid is 48 cols x 512 rows = 24,576 hexes
+    // Use a large BigInt that covers all possible cells
+    const maxVis = (1n << 65n) - 1n; // Large enough to cover all 24,576 cells
+    return { seenCells: maxVis, currentCells: maxVis, version: DEFAULT_VISIBILITY.version };
+  }
+
   // Ensure we have `race` for correct home-hex computation in getInitialVisibility / getKingdomMapCoords.
   // Some call sites (e.g. early /world-map paths) historically omitted it, causing home hex to be
   // seeded using the wrong RACE_HOMES anchor (defaulting to 'human'). This made the always-visible
