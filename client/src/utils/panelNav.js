@@ -50,9 +50,3 @@ export function switchTab(tabName) {
 export function initGameStateManager() {
   // Deprecated - no longer needed. GameStateManager removed.
 }
-
-export function applyGameMutation(resultOrUpdates, context = {}) {
-  // Deprecated - use applyGameMutation from gameMutations.js instead
-  console.warn('panelNav.applyGameMutation is deprecated - use gameMutations.applyGameMutation');
-  return resultOrUpdates;
-}

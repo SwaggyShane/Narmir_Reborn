@@ -1,1 +1,1 @@
-export { apiCall, gameState, switchTab, initGameStateManager, applyGameMutation } from './panelNav.js';
+export { apiCall, gameState, switchTab, initGameStateManager } from './panelNav.js';
