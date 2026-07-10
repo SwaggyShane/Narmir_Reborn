@@ -733,25 +733,17 @@ export function renderWorldMap(
         // forced tundra/desert/volcanic band at the map's far north/south).
         var hexGrid = buildHexGrid(W, H, worldSeed);
 
-        // Terrain layer: the fill of every hex. Toggling "terrain" off shows
-        // flat race-identity colors — lightened so the fill reads as its own
-        // shade, distinct from the (brighter, unlightened) border color below.
-        // Always visible: this layer now doubles as the flat race-color fill
-        // when the terrain toggle is off, so it must never be hidden outright
-        // (the toggle switches its fill color, not its visibility).
+        // Terrain layer: the fill of every hex shows biome type color.
+        // Region is displayed only as borders (race-colored lines).
+        // Terrain toggle is removed — biome colors are always shown.
         svg += '<g class="wm-layer wm-layer-terrain">';
         hexGrid.cells.forEach(function (cell) {
-          var meta = REGION_META[cell.race] || {};
           var fill;
+          // Always show biome color (terrain type, not region/race color)
           if (cell.terrain === 'lake' || cell.terrain === 'ocean') {
-            // Lakes and the ocean are fixed geography, not a biome-toggle
-            // cosmetic — always show as water regardless of the terrain
-            // toggle, the same way region borders always show.
             fill = TERRAIN_COLORS[cell.terrain];
-          } else if (layers.terrain !== false) {
-            fill = TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.plains;
           } else {
-            fill = lightenHexColor(meta.color || TERRAIN_COLORS.plains, 0.35);
+            fill = TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.plains;
           }
           svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="' + fill + '" class="terrain-shape" data-terrain="' + escapeHtml(cell.terrain) + '" data-race="' + escapeHtml(cell.race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default" pointer-events="none"><title>' + escapeHtml(terrainTooltip(cell.terrain)) + '</title></path>';
         });
@@ -1288,9 +1280,9 @@ export function renderWorldMap(
 
               (jy - r - 5) +
 
-              '" text-anchor="middle" font-family="sans-serif" font-size="' +
+              '" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="' +
 
-              (isMe ? 12 : 9) +
+              (isMe ? 14 : 11) +
 
               '" font-weight="' +
 
@@ -1300,7 +1292,7 @@ export function renderWorldMap(
 
               (isMe ? "#e8b84b" : "#fff") +
 
-              '" filter="url(#uiShadow)" pointer-events="none">' +
+              '" filter="url(#uiShadow)" pointer-events="none" text-rendering="geometricPrecision" style="dominant-baseline:middle">' +
 
               escapeHtml(k.name.slice(0, 10)) +
 
