@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/api';
-import './HybridBlueprintModal.css';
 
-/**
- * HybridBlueprintModal
- * Displays available buildings for fragment bonus application with double confirmation
- */
 export default function HybridBlueprintModal({ blueprintId, fragmentName, onClose, onSuccess }) {
   const [buildings, setBuildings] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -18,7 +13,6 @@ export default function HybridBlueprintModal({ blueprintId, fragmentName, onClos
     permanent: false,
   });
 
-  // Fetch available buildings
   useEffect(() => {
     const fetchBuildings = async () => {
       try {
@@ -32,7 +26,7 @@ export default function HybridBlueprintModal({ blueprintId, fragmentName, onClos
           return;
         }
 
-        setBuildings(data.availableBuildings);
+        setBuildings(data.availableBuildings || []);
       } catch (err) {
         setError('Network error: ' + err.message);
       } finally {
@@ -49,16 +43,14 @@ export default function HybridBlueprintModal({ blueprintId, fragmentName, onClos
     setCheckboxes({ understand: false, permanent: false });
   };
 
-  const handleConfirmAssignment = async () => {
-    if (!checkboxes.understand || !checkboxes.permanent) {
-      setError('You must acknowledge both warnings');
-      return;
-    }
+  const handleConfirm = async () => {
+    if (!checkboxes.understand || !checkboxes.permanent) return;
 
     setConfirming(true);
+    setError(null);
 
     try {
-      const data = await apiCall('/api/kingdom/hybrid-blueprint/confirm-assignment', {
+      const data = await apiCall('/api/kingdom/hybrid-blueprint/assign', {
         method: 'POST',
         body: {
           blueprintId,
@@ -68,16 +60,15 @@ export default function HybridBlueprintModal({ blueprintId, fragmentName, onClos
       });
 
       if (data.error) {
-        setError(data.error || 'Failed to apply bonus');
+        setError(data.error);
         setConfirming(false);
         return;
       }
 
-      if (data.ok && onSuccess) {
-        onSuccess(data);
-      }
+      if (onSuccess) onSuccess(data);
+      onClose();
     } catch (err) {
-      setError('Network error: ' + err.message);
+      setError('Failed to apply fragment: ' + err.message);
       setConfirming(false);
     }
   };
@@ -85,41 +76,76 @@ export default function HybridBlueprintModal({ blueprintId, fragmentName, onClos
   const handleBack = () => {
     setStage('select');
     setSelected(null);
-    setError(null);
+    setCheckboxes({ understand: false, permanent: false });
   };
 
   // Selection stage
   if (stage === 'select') {
     return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content hybrid-modal" onClick={e => e.stopPropagation()}>
-          <div className="modal-header">
-            <h2>⚡ Select Building for {fragmentName}</h2>
-            <button className="modal-close" onClick={onClose}>✕</button>
+      <div className="fixed inset-0 bg-black/80 z-modal backdrop-blur-sm flex items-center justify-center p-5" onClick={onClose}>
+        <div className="rounded-xl border-2 border-[var(--accent1)] bg-gradient-to-br from-zinc-900 to-white/5 max-w-[900px] w-full max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="p-8 border-b border-white/10 bg-gradient-to-br from-orange-500/5 to-transparent">
+            <div className="flex items-center gap-4 mb-3">
+              <span className="text-5xl leading-none">✨</span>
+              <h2 className="text-2xl font-bold m-0 text-white">World Fragments</h2>
+            </div>
+            <p className="text-zinc-300 text-sm m-0 mt-2 italic">Select a building to attune with discovered fragments</p>
           </div>
 
-          {error && <div className="error-message">{error}</div>}
+          {error && <div className="bg-red/10 border-b border-red text-red px-8 py-3 text-xs m-0">{error}</div>}
 
-          {loading ? (
-            <div className="loading">Loading buildings...</div>
-          ) : buildings.length === 0 ? (
-            <div className="no-buildings">
-              <p>⚠️ All buildings already have fragments applied</p>
-            </div>
-          ) : (
-            <div className="buildings-grid">
-              {buildings.map(building => (
-                <BuildingCard
-                  key={building.buildingType}
-                  building={building}
-                  onSelect={handleSelectBuilding}
-                />
-              ))}
-            </div>
-          )}
+          <div className="flex-1 overflow-y-auto p-8">
+            {loading ? (
+              <div className="text-center text-zinc-400 py-12">Loading available buildings...</div>
+            ) : buildings.length === 0 ? (
+              <div className="text-center text-zinc-400 py-12">
+                <p>⚠️ All buildings already have fragments applied</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
+                {buildings.map((building) => (
+                  <div
+                    key={building.buildingType}
+                    onClick={() => handleSelectBuilding(building)}
+                    className="bg-white/[0.03] border border-white/10 rounded-lg p-5 cursor-pointer transition-all hover:bg-white/5 hover:border-white/20 hover:shadow-lg hover:-translate-y-1"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="m-0 text-base font-semibold text-white">{building.name}</h3>
+                      <span className="bg-white/10 rounded px-2 py-1 text-xs font-semibold text-zinc-300">
+                        {building.count}
+                      </span>
+                    </div>
 
-          <div className="modal-footer">
-            <button className="btn-cancel" onClick={onClose}>Cancel</button>
+                    <div className="mb-3">
+                      <p className="text-sm font-semibold text-orange-400 m-0 mb-1">✨ {building.bonus?.name}</p>
+                      <p className="text-xs text-zinc-400 m-0 leading-relaxed">{building.bonus?.desc}</p>
+                    </div>
+
+                    {building.bonus?.passive && Object.keys(building.bonus.passive).length > 0 && (
+                      <div className="text-xs text-zinc-500 space-y-1">
+                        {Object.entries(building.bonus.passive).map(([key, value]) => (
+                          <div key={key} className="flex justify-between">
+                            <span>{key.replace(/_/g, ' ')}:</span>
+                            <span className={value > 0 ? 'text-green' : 'text-red'}>
+                              {value > 0 ? '+' : ''}{Math.round(value * 100)}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 border-t border-white/10 bg-white/[0.02] flex justify-end gap-3">
+            <button
+              className="bg-transparent border border-zinc-600 text-zinc-400 px-5 py-2 rounded text-sm font-medium cursor-pointer transition-all hover:border-zinc-400 hover:text-white"
+              onClick={onClose}
+            >
+              Close
+            </button>
           </div>
         </div>
       </div>
@@ -129,89 +155,92 @@ export default function HybridBlueprintModal({ blueprintId, fragmentName, onClos
   // Confirmation stage
   if (stage === 'confirm' && selected) {
     return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content confirmation-modal" onClick={e => e.stopPropagation()}>
-          <div className="modal-header">
-            <h2>⚠️ CONFIRM IRREVERSIBLE CHOICE</h2>
-            <button className="modal-close" onClick={handleBack}>✕</button>
+      <div className="fixed inset-0 bg-black/80 z-modal backdrop-blur-sm flex items-center justify-center p-5" onClick={onClose}>
+        <div className="rounded-xl border-2 border-[var(--accent1)] bg-gradient-to-br from-zinc-900 to-white/5 max-w-[700px] w-full max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="p-8 border-b border-white/10 bg-gradient-to-br from-red-500/5 to-transparent">
+            <h2 className="text-2xl font-bold m-0 text-white">⚠️ Confirm Fragment Application</h2>
+            <p className="text-zinc-300 text-sm m-0 mt-2">This action is permanent and cannot be undone</p>
           </div>
 
-          <div className="confirmation-content">
-            <div className="warning-box">
-              <h3>You are about to apply:</h3>
-              <p className="bold">{fragmentName}</p>
-              <p className="text-center">to</p>
-              <p className="bold">{selected.name} (have: {selected.count})</p>
+          <div className="flex-1 overflow-y-auto p-8 space-y-6">
+            <div className="bg-red/10 border border-red/30 rounded-lg p-5">
+              <p className="text-sm text-zinc-300 m-0">
+                You are about to attune <span className="font-bold text-orange-400">{selected.name}</span> (have: <span className="font-bold text-white">{selected.count}</span>) with a discovered fragment.
+              </p>
             </div>
 
-            <div className="bonus-details">
-              <h4>✨ {selected.bonus.name}</h4>
-              <p className="bonus-desc">{selected.bonus.desc}</p>
+            <div className="bg-white/[0.03] border border-white/10 rounded-lg p-5">
+              <h3 className="m-0 mb-3 text-sm font-semibold uppercase tracking-wider text-orange-400">Fragment Bonus</h3>
+              <h4 className="m-0 text-base font-semibold text-white mb-2">✨ {selected.bonus?.name}</h4>
+              <p className="text-zinc-300 text-sm m-0 leading-relaxed mb-4">{selected.bonus?.desc}</p>
 
-              {Object.keys(selected.bonus.passive).length > 0 && (
-                <div className="passive-bonuses">
-                  <h5>Passive Bonuses:</h5>
-                  <ul>
-                    {Object.entries(selected.bonus.passive).map(([key, value]) => (
-                      <li key={key}>
-                        <span className="stat-name">{formatStat(key)}:</span>
-                        <span className={`stat-value ${value > 0 ? 'positive' : 'negative'}`}>
-                          {value > 0 ? '+' : ''}{(value * 100).toFixed(0)}%
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+              {selected.bonus?.passive && Object.keys(selected.bonus.passive).length > 0 && (
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2">
+                  {Object.entries(selected.bonus.passive).map(([key, value]) => (
+                    <div key={key} className={`flex flex-col items-center p-3 bg-white/5 rounded border-l-4 text-center ${value >= 0 ? 'border-green' : 'border-red'}`}>
+                      <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400 mb-1">
+                        {key.replace(/_/g, ' ')}
+                      </span>
+                      <span className={`text-base font-bold ${value >= 0 ? 'text-green' : 'text-red'}`}>
+                        {value > 0 ? '+' : ''}{Math.round(value * 100)}%
+                      </span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
 
-            <div className="cost-box">
-              <p>💰 Cost: <strong>500,000 Gold</strong></p>
-              <p>✨ Cost: <strong>100,000 Mana</strong></p>
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-5">
+              <h4 className="m-0 mb-3 text-sm font-semibold uppercase tracking-wider text-orange-400">Costs & Requirements</h4>
+              <div className="space-y-1 text-sm">
+                <p className="text-zinc-300 m-0">💰 Cost: <span className="font-bold text-yellow-400">500,000 Gold</span></p>
+                <p className="text-zinc-300 m-0">✨ Cost: <span className="font-bold text-blue-400">100,000 Mana</span></p>
+              </div>
             </div>
 
-            <div className="danger-zone">
-              <h4>⛔ WARNING ⛔</h4>
-              <p>This choice is <strong>PERMANENT</strong> and <strong>CANNOT BE UNDONE</strong></p>
-              <p>Once applied, this fragment cannot be moved or removed from this building.</p>
-            </div>
+            <div className="bg-red/10 border border-red/30 rounded-lg p-5 space-y-3">
+              <h4 className="m-0 text-sm font-semibold uppercase tracking-wider text-red">⛔ Critical Warning</h4>
+              <p className="text-sm text-zinc-300 m-0">
+                <span className="font-bold text-white">This choice is PERMANENT</span> and cannot be undone. Once applied to this building, the fragment cannot be moved or removed.
+              </p>
 
-            {error && <div className="error-message">{error}</div>}
-
-            <div className="checkboxes">
-              <label>
+              <label className="flex items-center gap-2 cursor-pointer mt-4">
                 <input
                   type="checkbox"
                   checked={checkboxes.understand}
-                  onChange={e => setCheckboxes({ ...checkboxes, understand: e.target.checked })}
+                  onChange={(e) => setCheckboxes(prev => ({ ...prev, understand: e.target.checked }))}
+                  className="w-4 h-4"
                 />
-                <span>I understand this choice is permanent</span>
+                <span className="text-sm text-zinc-300">I understand this cannot be undone</span>
               </label>
-              <label>
+
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={checkboxes.permanent}
-                  onChange={e => setCheckboxes({ ...checkboxes, permanent: e.target.checked })}
+                  onChange={(e) => setCheckboxes(prev => ({ ...prev, permanent: e.target.checked }))}
+                  className="w-4 h-4"
                 />
-                <span>I confirm I want to apply this fragment</span>
+                <span className="text-sm text-zinc-300">I confirm this is permanent</span>
               </label>
             </div>
+
+            {error && <div className="bg-red/10 border border-red text-red px-4 py-3 text-xs rounded">{error}</div>}
           </div>
 
-          <div className="modal-footer">
+          <div className="p-4 border-t border-white/10 bg-white/[0.02] flex justify-end gap-3">
             <button
-              className="btn-cancel"
+              className="bg-transparent border border-zinc-600 text-zinc-400 px-5 py-2 rounded text-sm font-medium cursor-pointer transition-all hover:border-zinc-400 hover:text-white"
               onClick={handleBack}
-              disabled={confirming}
             >
               Back
             </button>
             <button
-              className="btn-danger"
-              onClick={handleConfirmAssignment}
+              className="bg-gradient-to-r from-green-600 to-green-700 text-white border-0 rounded px-6 py-2 text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-600/40 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleConfirm}
               disabled={!checkboxes.understand || !checkboxes.permanent || confirming}
             >
-              {confirming ? 'Applying...' : 'APPLY FRAGMENT'}
+              {confirming ? 'Applying...' : 'Apply Fragment'}
             </button>
           </div>
         </div>
@@ -220,51 +249,4 @@ export default function HybridBlueprintModal({ blueprintId, fragmentName, onClos
   }
 
   return null;
-}
-
-/**
- * Building Card Component
- */
-function BuildingCard({ building, onSelect }) {
-  return (
-    <div className="building-card" onClick={() => onSelect(building)}>
-      <div className="card-header">
-        <h3>{building.name}</h3>
-        <span className="building-count">×{building.count}</span>
-      </div>
-
-      <div className="card-body">
-        <div className="bonus-name">✨ {building.bonus.name}</div>
-        <p className="bonus-desc">{building.bonus.desc}</p>
-
-        {Object.keys(building.bonus.passive).length > 0 && (
-          <div className="passive-preview">
-            {Object.entries(building.bonus.passive).slice(0, 2).map(([key, value]) => (
-              <span key={key} className="bonus-chip">
-                {formatStat(key)}: {value > 0 ? '+' : ''}{(value * 100).toFixed(0)}%
-              </span>
-            ))}
-            {Object.keys(building.bonus.passive).length > 2 && (
-              <span className="bonus-chip">+{Object.keys(building.bonus.passive).length - 2} more</span>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="card-footer">
-        <button className="btn-select">Select Building →</button>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Format stat names for display
- */
-function formatStat(stat) {
-  return stat
-    .replace(/_/g, ' ')
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
 }
