@@ -622,23 +622,27 @@ function processTurn(k, db = null) {
 
   // ── 4e-i. Scout ring progression ──────────────────────────────────────────────
   {
-    const scoutResult = measureAttunement('processScoutProgress', () =>
-      processScoutProgress({ ...k, ...updates }, db)
-    );
-    if (scoutResult.progress_gained > 0) {
-      updates.scout_progress = scoutResult.new_total;
-      const metrics = getProgressMetrics(scoutResult.new_total);
-      const pctStr = Math.round(metrics.percentComplete);
-      events.push({
-        type: "system",
-        message: `🔍 Scouts: ${pctStr}% toward Ring ${metrics.nextRing}`,
-      });
-      // Reveal new ring hexes if ring was completed
-      if (scoutResult.ring_completed && db && k.id) {
-        revealRingHexes(db, k.id, { ...k, ...updates }, scoutResult.completed_ring_number).catch(err =>
-          console.error(`[engine] Failed to reveal scout ring ${scoutResult.completed_ring_number}: ${err.message}`)
-        );
+    try {
+      const scoutResult = measureAttunement('processScoutProgress', () =>
+        processScoutProgress({ ...k, ...updates }, db)
+      );
+      if (scoutResult.progress_gained > 0) {
+        updates.scout_progress = scoutResult.new_total;
+        const metrics = getProgressMetrics(scoutResult.new_total);
+        const pctStr = Math.round(metrics.percentComplete);
+        events.push({
+          type: "system",
+          message: `🔍 Scouts: ${pctStr}% toward Ring ${metrics.nextRing}`,
+        });
+        // Reveal new ring hexes if ring was completed
+        if (scoutResult.ring_completed && db && k.id) {
+          revealRingHexes(db, k.id, { ...k, ...updates }, scoutResult.completed_ring_number).catch(err =>
+            console.error(`[engine] Failed to reveal scout ring ${scoutResult.completed_ring_number}: ${err.message}`)
+          );
+        }
       }
+    } catch (err) {
+      console.error('[engine] Scout progression error:', err.message);
     }
   }
 
