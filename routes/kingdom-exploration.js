@@ -413,10 +413,11 @@ module.exports = function (db, kingdomGameplayRouter) {
         });
         return res.json({ ok: true, updates, reward, message: `Instant prospect: +${reward.goldReward} gold` });
       } catch (err) {
+        console.error('[expedition/prospecting-instant] failed:', err.message, err.stack);
         if (err.message.includes('No turns available')) {
           return res.status(429).json({ error: err.message });
         }
-        return res.status(500).json({ error: 'Prospecting failed - please try again' });
+        return res.status(500).json({ error: err.message || 'Prospecting failed - please try again' });
       }
     }
 
@@ -517,9 +518,9 @@ module.exports = function (db, kingdomGameplayRouter) {
         message: msg,
       });
     } catch (err) {
-      console.error('[expedition/prospecting] failed:', err.message);
+      console.error('[expedition/prospecting] failed:', err.message, err.stack);
       if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
-      res.status(500).json({ error: 'Prospecting failed - please try again' });
+      return res.status(500).json({ error: err.message || 'Prospecting failed - please try again' });
     }
   });
 
