@@ -635,6 +635,7 @@ function processTurn(k, db = null) {
         events.push({
           type: "system",
           message: `🔍 ${scoutMsg}`,
+          skipNews: true,
           expeditionLogEntry: {
             icon: '🔍',
             title: scoutMsg,

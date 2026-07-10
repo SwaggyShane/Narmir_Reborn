@@ -71,7 +71,8 @@ export function useGameActions() {
 
       let completedBuildingsMsg = '';
       if (Array.isArray(data.events)) {
-        emitAppEvent(AppEvent.NEWS_ITEMS, data.events);
+        const newsEvents = data.events.filter(ev => ev && !ev.skipNews);
+        emitAppEvent(AppEvent.NEWS_ITEMS, newsEvents);
         for (const ev of data.events) {
           const msg = ev?.message || '';
           if (msg.includes('Completed: ')) {
