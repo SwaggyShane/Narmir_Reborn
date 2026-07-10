@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { fmt } from "../../utils/fmt";
+import { toast } from '../../utils/toast.js';
 import { useRace, useGold, usePopulation, useFighters, useRangers, useMages, useClerics, useNinjas, useThieves, useMilitaryEngineers as useEngineers, useEconomyStore, useMilitaryStore, usePopulationStore, useResearchStore, useProfileStore } from '../../stores';
 
 const UNIT_ROWS = [
@@ -120,7 +121,7 @@ const HirePanel = () => {
   const hire = useCallback(async (row) => {
     const amount = Math.max(0, parseInt(quantities[row.key], 10) || 0);
     if (amount <= 0) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter a valid quantity', 'error');
+      toast('Enter a valid quantity', 'error');
       return;
     }
 
@@ -134,7 +135,7 @@ const HirePanel = () => {
       });
 
       if (res.error) {
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.error, 'error');
+        toast(res.error, 'error');
         return;
       }
 
@@ -147,17 +148,17 @@ const HirePanel = () => {
       }
 
       setQuantities((prev) => ({ ...prev, [row.key]: '' }));
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Hired ${amount} ${row.label.toLowerCase()}`, 'success');
+      toast(`Hired ${amount} ${row.label.toLowerCase()}`, 'success');
     } catch (err) {
       console.error('[hire] failed:', err);
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Hire failed', 'error');
+      toast('Hire failed', 'error');
     }
   }, [quantities]);
 
   const fire = useCallback(async (row) => {
     const amount = Math.max(0, parseInt(quantities[row.key], 10) || 0);
     if (amount <= 0) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter a valid quantity', 'error');
+      toast('Enter a valid quantity', 'error');
       return;
     }
 
@@ -171,7 +172,7 @@ const HirePanel = () => {
       });
 
       if (res.error) {
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.error, 'error');
+        toast(res.error, 'error');
         return;
       }
 
@@ -184,10 +185,10 @@ const HirePanel = () => {
       }
 
       setQuantities((prev) => ({ ...prev, [row.key]: '' }));
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Fired ${amount} ${row.label.toLowerCase()}`, 'success');
+      toast(`Fired ${amount} ${row.label.toLowerCase()}`, 'success');
     } catch (err) {
       console.error('[fire] failed:', err);
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Fire failed', 'error');
+      toast('Fire failed', 'error');
     }
   }, [quantities]);
 
