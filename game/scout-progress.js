@@ -50,7 +50,7 @@ function getScoutProgressThisTurn(kingdom) {
   const raceModifier = RACE_MODIFIERS[race.toLowerCase()] || 1.0;
   progress *= raceModifier;
 
-  return Math.floor(progress);
+  return Math.round(progress * 100) / 100;
 }
 
 /**
