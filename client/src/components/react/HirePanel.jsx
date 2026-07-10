@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { fmt } from "../../utils/fmt";
 import { toast } from '../../utils/toast';
-import { useRace, useGold, usePopulation, useFighters, useRangers, useMages, useClerics, useNinjas, useThieves, useMilitaryEngineers as useEngineers, useEconomyStore, useMilitaryStore, usePopulationStore, useResearchStore, useProfileStore } from '../../stores';
+import { useRace, useGold, usePopulation, useFighters, useRangers, useMages, useClerics, useNinjas, useThieves, useMilitaryEngineers as useEngineers, useEconomyStore, useMilitaryStore, usePopulationStore, useResearchStore, useProfileStore, useBuildCount, useResearchers } from '../../stores';
 
 const UNIT_ROWS = [
   {
@@ -87,6 +87,9 @@ const HirePanel = () => {
   const ninjas = useNinjas();
   const thieves = useThieves();
   const engineers = useEngineers();
+  const researchers = useResearchers();
+  const bldBarracks = useBuildCount('barracks');
+  const bldSchools = useBuildCount('schools');
   const [quantities, setQuantities] = useState(initialQuantities);
 
   const isVampire = race === 'vampire';
@@ -114,9 +117,25 @@ const HirePanel = () => {
   const setMaxValue = useCallback((row) => {
     const maxByGold = Math.floor(Number(gold) / Number(row.price || 1));
     const maxByPop = row.key === 'clerics' && isVampire ? 0 : freePopulation;
-    const max = Math.max(0, Math.min(maxByGold, maxByPop));
+    let maxByCapacity = Infinity;
+
+    // Barracks troops (fighters, rangers, clerics, thieves, ninjas)
+    const BARRACKS_TROOPS = ['fighters', 'rangers', 'clerics', 'thieves', 'ninjas'];
+    if (BARRACKS_TROOPS.includes(row.key)) {
+      const barracksCap = bldBarracks * 500;
+      const barracksUsed = fighters + rangers + clerics + thieves + ninjas;
+      maxByCapacity = Math.max(0, barracksCap - barracksUsed);
+    }
+
+    // Researchers (schools)
+    if (row.key === 'researchers') {
+      const schoolCap = bldSchools * 100;
+      maxByCapacity = Math.max(0, schoolCap - researchers);
+    }
+
+    const max = Math.max(0, Math.min(maxByGold, maxByPop, maxByCapacity));
     setQuantities((prev) => ({ ...prev, [row.key]: String(max) }));
-  }, [freePopulation, isVampire, gold]);
+  }, [freePopulation, isVampire, gold, bldBarracks, bldSchools, fighters, rangers, clerics, thieves, ninjas, researchers]);
 
   const hire = useCallback(async (row) => {
     const amount = Math.max(0, parseInt(quantities[row.key], 10) || 0);
