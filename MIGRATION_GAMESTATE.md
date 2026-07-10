@@ -23,7 +23,58 @@ The codebase currently has **two parallel state management systems** that create
 - Harder to test (listener mock complexity)
 - Hidden dependencies (indirect imports, re-exports)
 
-**Solution:** Migrate all 23 files to Zustand using a phased approach with explicit gates and testing checkpoints.
+**Solution:** Migrate all 23 files to Zustand using a phased approach with explicit gates, rollback criteria, and safety mechanisms.
+
+---
+
+## Architectural Overview
+
+### Store Ownership (Single Source of Truth)
+
+| Domain | Store | Responsibility | Files Affected |
+|--------|-------|-----------------|-----------------|
+| **Economy** | `useEconomyStore` | Gold, food, wood, stone, iron, upgrades (farm, bank, granary, market, tavern, mausoleum) | 15+ |
+| **Military** | `useMilitaryStore` | Troops, walls, combat results, war reports | 8+ |
+| **Research** | `useResearchStore` | Mana, spells, school upgrades, discoveries | 5+ |
+| **Population** | `usePopulationStore` | Population count, happiness, entertainment | 4+ |
+| **Profile** | `useProfileStore` | Turn, turns_stored, scout progress, achievements | 10+ |
+| **UI** | `useUIStore` | Panel state, modal visibility, active tabs | 3+ |
+
+**Principle:** Each store owns its domain exclusively. No cross-store direct mutations.
+
+---
+
+### Event Flow Diagram (Post-Migration)
+
+```
+External Event (API call, socket, user action)
+    ↓
+API Handler (component, utility, socket listener)
+    ↓
+normalizeAndRouteResponse(response, context)
+    ↓
+validateContract(updates) [DEV ONLY]
+    ├─ checks for unexpected keys
+    ├─ validates domain object types
+    └─ logs discrepancies (dev warnings)
+    ↓
+Selective Store Routing
+    ├─ if updates.economy → useEconomyStore.receiveServerSnapshot()
+    ├─ if updates.military → useMilitaryStore.receiveServerSnapshot()
+    ├─ if updates.research → useResearchStore.receiveServerSnapshot()
+    ├─ if updates.population → usePopulationStore.receiveServerSnapshot()
+    └─ if updates.profile → useProfileStore.receiveServerSnapshot()
+    ↓
+Store subscriptions notify
+    ↓
+Components re-render (via hook subscriptions)
+    ↓
+useShallow selectors prevent unnecessary re-renders
+    ↓
+UI updates
+```
+
+**Key:** Single event → single routing path → consistent state.
 
 ---
 
@@ -81,25 +132,25 @@ Components re-render ✅
 
 ---
 
-## Building Upgrades In Scope (Complete List)
+## Building Upgrades In Scope (Canonical Reference)
 
 **ALL 7 building upgrade types are explicitly covered by this migration:**
 
-| # | Upgrade Type | API Endpoint | Current Handler | Store Target | Property Name |
-|---|--------------|--------------|-----------------|---------------|---------------|
-| 1 | **Farm** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx line 70 | economyStore | `farm_upgrades` |
-| 2 | **Bank** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx line 70 | economyStore | `bank_upgrades` |
-| 3 | **Granary** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx line 70 | economyStore | `granary_upgrades` |
-| 4 | **Market** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx line 70 | economyStore | `market_upgrades` |
-| 5 | **Tavern** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx line 70 | economyStore | `tavern_upgrades` |
-| 6 | **School** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx line 70 | researchStore | `school_upgrades` |
-| 7 | **Mausoleum** | `/api/kingdom/buy-mausoleum-upgrade` | UpgradesList.jsx line 48 | economyStore | `mausoleum_upgrades` |
+| # | Upgrade Type | API Endpoint | Handler | Store Target | Property |
+|---|--------------|--------------|---------|--------------|----------|
+| 1 | **Farm** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx:70 | economyStore | `farm_upgrades` |
+| 2 | **Bank** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx:70 | economyStore | `bank_upgrades` |
+| 3 | **Granary** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx:70 | economyStore | `granary_upgrades` |
+| 4 | **Market** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx:70 | economyStore | `market_upgrades` |
+| 5 | **Tavern** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx:70 | economyStore | `tavern_upgrades` |
+| 6 | **School** | `/api/kingdom/economy/upgrade` | UpgradesList.jsx:70 | researchStore | `school_upgrades` |
+| 7 | **Mausoleum** | `/api/kingdom/buy-mausoleum-upgrade` | UpgradesList.jsx:48 | economyStore | `mausoleum_upgrades` |
 
 **Current Issue:** All 7 flow through `applyGameMutation()` → GameStateManager (legacy)
 
-**Post-Migration:** All 7 flow through Zustand stores directly (modern)
+**Post-Migration:** All 7 flow through `normalizeAndRouteResponse()` → Zustand stores (modern)
 
-**Migration Point:** Single file (`UpgradesList.jsx`) handles all 7 types, so fixing it fixes all upgrade types at once.
+**Single migration point:** `UpgradesList.jsx` handles all 7 types. Fix once, fix all.
 
 ---
 
@@ -147,19 +198,19 @@ Components re-render ✅
 
 ## Timeline at a Glance
 
-| Phase | Duration | Calendar Days | Focus | Gate Condition |
-|-------|----------|---------------|-------|----------------|
-| **Pre-Phase 1A** | 0.5 day | Day 1 | Response contract definition | All endpoints documented |
-| **Pre-Phase 1B** | 0.5 day | Day 1 | Hidden dependencies audit | Grep finds no new files |
-| **Phase 1** | 1-2 days | Days 2-3 | UIStore panel state | Panel state persists/retrieves |
-| **Phase 1.5** | 1 day | Day 4 | Response normalizer | Contract validation works |
-| **Phase 2** | 1-2 days | Days 5-6 | Critical sync points | Buy upgrade → store updates |
-| **Phase 3A** | 1 day | Day 7 | Dual data sources | All 15 components read Zustand |
-| **3A Gate** | 1 day | Day 8 | Smoke test | Buy/turn/attack all update |
-| **Phase 3B** | 1 day | Days 9-10 | Listener removal | Components still render |
-| **Phase 4** | 1 day | Day 11 | Utility cleanup | panelNav, shellBridge migrated |
-| **Phase 5** | 1 day | Day 12 | Test updates | All tests passing |
-| **Phase 6** | 0.5 day | Day 13 | Cleanup & deletion | Zero grep results |
+| Phase | Duration | Calendar Days | Focus | Gate Condition | Rollback Trigger |
+|-------|----------|---------------|-------|----------------|------------------|
+| **Pre-Phase 1A** | 0.5 day | Day 1 | Response contract definition | All endpoints documented | N/A |
+| **Pre-Phase 1B** | 0.5 day | Day 1 | Hidden dependencies audit | Grep finds no new files | N/A |
+| **Phase 1** | 1-2 days | Days 2-3 | UIStore panel state | Panel state persists/retrieves | Revert UIStore changes |
+| **Phase 1.5** | 1 day | Day 4 | Response normalizer | Contract validation works | Revert normalizer, re-add listeners |
+| **Phase 2** | 1-2 days | Days 5-6 | Critical sync points | Buy upgrade → store updates | Revert Phase 2 files |
+| **Phase 3A** | 1 day | Day 7 | Dual data sources | All 15 components read Zustand | Revert component changes |
+| **3A Gate** | 1 day | Day 8 | Smoke test | Buy/turn/attack all update | Do NOT proceed to 3B |
+| **Phase 3B** | 1 day | Days 9-10 | Listener removal | Components still render | Restore listener calls |
+| **Phase 4** | 1 day | Day 11 | Utility cleanup | panelNav, shellBridge migrated | Revert utility changes |
+| **Phase 5** | 1 day | Day 12 | Test updates | All tests passing | Fix failing tests |
+| **Phase 6** | 0.5 day | Day 13 | Cleanup & deletion | Zero grep results | (Do not rollback; commit backwards) |
 
 ---
 
@@ -275,7 +326,7 @@ grep -r "vi\.mock.*GameState\|jest\.mock.*GameState" /home/user/Narmir_Reborn/cl
 
 ## Phase 1: Foundation Setup (Days 2-3)
 
-**Goal:** Make uiStore ready to replace panel state storage
+**Goal:** Make uiStore ready to replace panel state storage. Introduce compatibility layer for safety.
 
 ### **Phase 1.1: Extend UIStore with Panel State (In-Memory)**
 
@@ -306,9 +357,76 @@ getPanelState: (panelName) =>
 
 **Gate:** Panel state persists in memory during session, components can read/write to UIStore
 
+**Rollback:** Revert UIStore changes, restore usePanelState.js
+
 ---
 
-### **Phase 1.2: Create test fixtures for Zustand stores**
+### **Phase 1.2: Introduce Compatibility Layer (Safety Net)**
+
+**File:** `client/src/GameStateManager.js` (convert to proxy, don't delete yet)
+
+**Rationale:** Instead of immediately deleting GameStateManager, convert it to a thin proxy that warns but routes through the new system. This:
+- Catches forgotten callers immediately (console warnings)
+- Prevents breakage if we miss a reference
+- Provides a gradual cutover path
+- Makes phase gates safer
+
+**Implementation:**
+
+```javascript
+/**
+ * DEPRECATED: Compatibility Layer (Phase 1.2)
+ * 
+ * This is a thin proxy around normalizeAndRouteResponse().
+ * All calls are logged with warnings for developer visibility.
+ * 
+ * Usage during Phase 1-5: Forgotten callers still work + log warnings
+ * Deletion point: Phase 6 (after confirming zero warnings in Phase 5)
+ */
+
+import { normalizeAndRouteResponse } from './utils/responseNormalizer';
+
+export const gameStateManager = {
+  applyUpdates(updates, context = {}) {
+    console.warn('[DEPRECATED] GameStateManager.applyUpdates() called', {
+      stack: new Error().stack.split('\n')[2],
+      context
+    });
+    normalizeAndRouteResponse({ updates }, context);
+  },
+  
+  setState(state) {
+    console.warn('[DEPRECATED] GameStateManager.setState() called', {
+      stack: new Error().stack.split('\n')[2],
+      state
+    });
+    // Route known properties to appropriate stores
+    normalizeAndRouteResponse({ updates: state }, { reason: 'legacy-setstate' });
+  },
+  
+  getState() {
+    console.warn('[DEPRECATED] GameStateManager.getState() called', {
+      stack: new Error().stack.split('\n')[2]
+    });
+    // Construct state from stores (fallback for forgotten callers)
+    return {
+      gold: useEconomyStore.getState().gold,
+      food: useEconomyStore.getState().food,
+      // ... all other properties
+    };
+  }
+};
+```
+
+**Effect:** Forgotten calls still work but trigger console warnings. Makes Phase 5 smoke test easy: look for warnings.
+
+**Gate:** No console warnings during Phase 5 smoke test = safe to delete in Phase 6
+
+**Rollback:** Already reverted if Phase 1 fails
+
+---
+
+### **Phase 1.3: Create test fixtures for Zustand stores**
 
 **File:** `client/src/__mocks__/stores.js` (new)
 
@@ -324,7 +442,7 @@ export const mockMilitaryStore = { ... };
 
 ---
 
-### **Phase 1.3 (Post-Migration): Add localStorage Persistence**
+### **Phase 1.4 (Post-Migration): Add localStorage Persistence**
 
 **Timing:** Only after Phase 6 (GameStateManager fully deleted). Adding persistence mid-migration creates sync risks.
 
@@ -373,6 +491,9 @@ export const useUIStore = create(
  * (socket handlers, utilities, tests). This is standard Zustand practice
  * and does NOT violate React hook rules since we're calling the store
  * directly, not using the hook in render context.
+ * 
+ * PRODUCTION BUILD: validateContract() completely tree-shakes away via
+ * process.env.NODE_ENV checks. Vite removes ~2KB of dev-only validation code.
  */
 
 import { useEconomyStore } from '../stores';
@@ -383,21 +504,24 @@ import { useProfileStore } from '../stores';
 
 /**
  * Validates that response follows the standardized contract.
- * Throws in dev if response structure is invalid.
+ * THROWS in dev if response structure is invalid (not just warns).
  * 
  * Contract rule: Every response.updates must contain exactly these sub-objects:
  * { economy, military, research, population, profile }
  * 
  * Each sub-object can be empty {} if that domain wasn't updated.
  * 
- * PRODUCTION: This function tree-shakes away completely (process.env.NODE_ENV check).
- * Build: Vite strips isDev checks, reducing bundle size by ~2KB.
+ * TREE-SHAKING: This entire function is eliminated in production builds.
+ * Vite statically analyzes process.env.NODE_ENV === 'development' and removes
+ * the whole validation block. Result: zero overhead in production.
  */
 export function validateContract(updates, context = {}) {
   const isDev = process.env.NODE_ENV === 'development';
   
   if (!updates) {
-    if (isDev) console.warn('[Contract] Response missing updates object', context);
+    if (isDev) {
+      throw new Error('[Contract] Response missing updates object: ' + JSON.stringify(context));
+    }
     return false;
   }
   
@@ -412,20 +536,17 @@ export function validateContract(updates, context = {}) {
   const unexpectedKeys = foundKeys.filter(key => !allowedKeys.has(key));
   
   if (unexpectedKeys.length > 0 && isDev) {
-    console.warn(
-      `[Contract Violation] Unexpected response keys: ${unexpectedKeys.join(', ')}`,
-      { context, foundKeys, updates }
+    throw new Error(
+      `[Contract Violation] Unexpected response keys: ${unexpectedKeys.join(', ')}. Context: ${JSON.stringify(context)}`
     );
-    return false;
   }
   
   // Each domain that IS present should be an object (not null/string/etc)
   ['economy', 'military', 'research', 'population', 'profile'].forEach(domain => {
     if (updates[domain] !== undefined && typeof updates[domain] !== 'object') {
       if (isDev) {
-        console.warn(
-          `[Contract Violation] ${domain} is not an object`,
-          { context, domain, value: updates[domain] }
+        throw new Error(
+          `[Contract Violation] ${domain} is not an object: ${typeof updates[domain]}. Context: ${JSON.stringify(context)}`
         );
       }
     }
@@ -439,7 +560,7 @@ export function normalizeAndRouteResponse(response, context = {}) {
   
   const { updates } = response;
   
-  // Validate response contract (throws warnings in dev)
+  // Validate response contract (THROWS in dev on violation)
   validateContract(updates, context);
   
   // Enforce contract: every response can have these 5 domain objects
@@ -490,14 +611,16 @@ export function normalizeAndRouteResponse(response, context = {}) {
 
 1. **Direct Store Access via .getState():** Uses the `.getState()` static method on Zustand hooks. This is the standard pattern for accessing store state outside of React components (in utilities, socket handlers, tests). It does NOT violate React hook rules because we're calling the store directly, not using the hook in render context.
 
-2. **Contract Validation:** The `validateContract()` function enforces the standardized response structure. In development, it warns when:
+2. **Runtime Assertions:** Changed from warnings to throwing errors in dev. Errors stop development immediately instead of being ignored.
+
+3. **Contract Validation:** The `validateContract()` function enforces the standardized response structure. In development, it throws when:
    - Response has unexpected top-level keys (indicates incorrect routing)
    - A domain sub-object is not a proper object
    - This catches divergence early before it causes silent sync bugs
 
-3. **Tree-Shaking:** The `process.env.NODE_ENV === 'development'` checks are eliminated by Vite during production build, removing ~2KB of validation code that's never used in production. Zustand exports clean: `const isDev = process.env.NODE_ENV === 'development';` sections are statically analyzed and removed.
+4. **Tree-Shaking:** The `process.env.NODE_ENV === 'development'` checks are eliminated by Vite during production build, removing ~2KB of validation code that's never used in production. The entire validateContract function is completely removed from bundle.
 
-4. **Normalized Routing:** Accepts empty objects for domains that don't have updates. This ensures all 5 stores follow the same code path, making routing failures visible.
+5. **Normalized Routing:** Accepts empty objects for domains that don't have updates. This ensures all 5 stores follow the same code path, making routing failures visible.
 
 **Rule:** ALL API handlers must use this function, not ad-hoc routing.
 
@@ -509,10 +632,15 @@ export function normalizeAndRouteResponse(response, context = {}) {
 
 **This ensures:**
 - No inconsistent routing (single code path)
-- Response contract validated in dev (catches malformed responses early)
+- Response contract validated in dev (catches malformed responses immediately via throw)
 - Consistent logging (easier debugging)
 - Works in any context (components, utilities, socket handlers, tests)
 - Easy to verify all stores updated correctly
+- Zero production overhead (tree-shakes to nothing)
+
+**Gate:** Run `npm run dev` with no contract violation errors during manual testing
+
+**Rollback:** Revert normalizer, restore applyGameMutation calls
 
 ---
 
@@ -551,6 +679,8 @@ function applyResult(data, reason) {
 - Verify gold/food updates hit useEconomyStore
 - etc. for each store
 
+**Rollback:** Restore legacy applyGameMutation call
+
 ### **Phase 2.2: Migrate AuthModal.loadKingdom()**
 
 **File:** `client/src/components/react/AuthModal.jsx`
@@ -581,6 +711,8 @@ const loadKingdom = async (kingdomId) => {
 
 **Remove lines:** All GameStateManager and applyGameMutation calls
 
+**Rollback:** Restore GameStateManager calls
+
 ### **Phase 2.3: Migrate useRegenCountdown (Optimistic Updates)**
 
 **File:** `client/src/hooks/useRegenCountdown.js`
@@ -600,6 +732,8 @@ useProfileStore.getState().receiveTurnUpdate({ turns_stored: Math.max(0, profile
 ```
 
 **Or:** Delegate optimistic updates to server only (simpler)
+
+**Rollback:** Restore legacy GameStateManager calls
 
 ---
 
@@ -685,6 +819,8 @@ Add Zustand selectors to:
 
 **Gate:** Run full smoke test. If Zustand reads match listener updates, proceed to 3B. If not, debug the mismatch BEFORE removing listeners.
 
+**Rollback:** Revert component changes, restore listener calls
+
 ---
 
 ### **Gate Before Phase 3B: Smoke Test (Day 8 - CRITICAL)**
@@ -702,8 +838,11 @@ npm run dev  # Manual testing
 - [ ] Attack enemy → UI updates (verify Zustand read worked)
 - [ ] Hire unit → UI updates and capacity limits work
 - [ ] Check HirePanel Max button → capacity calculations correct
+- [ ] Console: NO warnings about deprecated GameStateManager calls (via compatibility layer)
 
-**Result:** If ALL work, listeners are proven redundant → proceed to Phase 3B. If ANY fail, debug before proceeding.
+**Result:** If ALL work AND no compatibility layer warnings, listeners are proven redundant → proceed to Phase 3B. If ANY fail, debug before proceeding.
+
+**Rollback Trigger:** If ANY manual test fails, STOP. Do NOT proceed to Phase 3B. Investigate root cause, fix, retest.
 
 ---
 
@@ -772,21 +911,7 @@ Remove listener calls from all components that had them.
 
 ### **Phase 3B.3: Migrate applyGameMutation() calls (Already done in Phase 2!)**
 
-**CRITICAL FILE:** `UpgradesList.jsx` — handles ALL building upgrade purchases (lines 43-99)
-
-**All Building Upgrade Types (7 total):**
-
-| Upgrade Type | API Endpoint | Store | State Property | File | Line |
-|--------------|--------------|-------|----------------|------|------|
-| **Farm** | `/api/kingdom/economy/upgrade` | economyStore | `farm_upgrades` | UpgradesList.jsx | 70-99 |
-| **Bank** | `/api/kingdom/economy/upgrade` | economyStore | `bank_upgrades` | UpgradesList.jsx | 70-99 |
-| **Granary** | `/api/kingdom/economy/upgrade` | economyStore | `granary_upgrades` | UpgradesList.jsx | 70-99 |
-| **Market** | `/api/kingdom/economy/upgrade` | economyStore | `market_upgrades` | UpgradesList.jsx | 70-99 |
-| **Tavern** | `/api/kingdom/economy/upgrade` | economyStore | `tavern_upgrades` | UpgradesList.jsx | 70-99 |
-| **School** | `/api/kingdom/economy/upgrade` | researchStore | `school_upgrades` | UpgradesList.jsx | 70-99 |
-| **Mausoleum** | `/api/kingdom/buy-mausoleum-upgrade` | economyStore | `mausoleum_upgrades` | UpgradesList.jsx | 48-68 |
-
-**All upgrade types flow through single component:** `UpgradesList.jsx`
+**CRITICAL FILE:** `UpgradesList.jsx` — handles ALL building upgrade purchases (see canonical reference above)
 
 **Architectural Separation:**
 
@@ -862,7 +987,9 @@ if (result.updates) {
 - [ ] Mausoleum upgrade purchase → economyStore.mausoleum_upgrades updated (via normalizer)
 - [ ] No applyGameMutation() calls remain in UpgradesList.jsx
 - [ ] Component-level logic (toasts, owned state, callbacks) still work correctly
-- [ ] No console warnings from validateContract() in dev mode
+- [ ] No console errors from validateContract() in dev mode
+
+**Rollback:** Restore listener calls, restore applyGameMutation calls
 
 ---
 
@@ -908,6 +1035,8 @@ const warLogCache = gameStateManager.getState().warLogCache;
 - If warLogCache is in a store, read from there
 - If it's component-level state, pass as prop
 - Or: create a warLogStore for war-related data
+
+**Rollback:** Restore utility compatibility
 
 ---
 
@@ -995,39 +1124,48 @@ test('component re-renders only when selected properties change (useShallow)', a
 
 **Pattern 3: Validation catches contract violations**
 ```javascript
-test('validateContract warns on malformed response in dev', () => {
-  const consoleSpy = vi.spyOn(console, 'warn');
-  
+test('validateContract throws on malformed response in dev', () => {
   const badResponse = {
     unexpected_key: 'value',  // Not in contract
     economy: { gold: 100 },
   };
   
-  validateContract(badResponse, { context: 'test' });
-  
-  expect(consoleSpy).toHaveBeenCalledWith(
-    expect.stringContaining('Unexpected response keys')
-  );
-  consoleSpy.mockRestore();
+  expect(() => {
+    validateContract(badResponse, { context: 'test' });
+  }).toThrow(/Unexpected response keys/);
 });
 ```
 
-**Automation checklist for Phase 5:**
-- [ ] All GameStateManager/legacy hook mocks removed
-- [ ] New Zustand store mocks created (Phase 1.2 deliverable)
-- [ ] validateContract() tests added (contract enforcement)
-- [ ] normalizeAndRouteResponse() integration tests (all 5 domains)
-- [ ] All 7 building upgrade types tested (farm, bank, granary, market, tavern, school, mausoleum)
-- [ ] Multi-store sync tested (e.g., school upgrades updating both economy and research)
-- [ ] useShallow selector patterns tested
-- [ ] Component tests updated to use store mocks instead of listener mocks
-- [ ] npm test and npm run test:components both pass
+### **Phase 5.3 (DEFER): Atomic Multi-Store Updates Evaluation**
+
+**Timing:** Evaluate during Phase 5 testing if React rendering becomes excessive.
+
+**If needed:** Wrap multi-store updates in `unstable_batchedUpdates()`:
+```javascript
+import { unstable_batchedUpdates } from 'react-dom';
+
+export function normalizeAndRouteResponse(response, context = {}) {
+  // ... validation ...
+  
+  unstable_batchedUpdates(() => {
+    if (Object.keys(normalized.economy).length > 0) {
+      useEconomyStore.getState().receiveServerSnapshot(normalized.economy);
+    }
+    if (Object.keys(normalized.military).length > 0) {
+      useMilitaryStore.getState().receiveServerSnapshot(normalized.military);
+    }
+    // ... etc for all stores
+  });
+}
+```
+
+**Decision point:** If Phase 5 profiling shows excessive re-renders, implement batching. Otherwise, unnecessary optimization.
 
 ---
 
 ## Phase 6: Cleanup & Deletion (Day 13)
 
-**Goal:** Remove all legacy code
+**Goal:** Remove all legacy code. Lock down architecture.
 
 ### **Phase 6.1: Delete files**
 ```bash
@@ -1043,21 +1181,152 @@ grep -r "GameStateManager\|useGameState\|useGameMutationEvents\|useGameSelector\
 # Should return: 0 results
 ```
 
-### **Phase 6.3: Run full test suite**
+### **Phase 6.3: Create automated verification script**
+
+**File:** `scripts/verify-migration.js` (new)
+
+```bash
+#!/usr/bin/env node
+
+/**
+ * Verify that GameStateManager migration is complete.
+ * Runs as part of CI to prevent accidental reintroduction.
+ */
+
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
+
+const checks = [
+  {
+    name: 'GameStateManager imports',
+    grep: 'grep -r "import.*GameStateManager" client/src --include="*.js" --include="*.jsx"',
+    shouldFind: 0,
+  },
+  {
+    name: 'gameStateManager references',
+    grep: 'grep -r "gameStateManager" client/src --include="*.js" --include="*.jsx"',
+    shouldFind: 0,
+  },
+  {
+    name: 'useGameState hook usage',
+    grep: 'grep -r "useGameState\|useGameMutationEvents" client/src --include="*.js" --include="*.jsx"',
+    shouldFind: 0,
+  },
+  {
+    name: 'gameMutations imports',
+    grep: 'grep -r "gameMutations" client/src --include="*.js" --include="*.jsx"',
+    shouldFind: 0,
+  },
+];
+
+let passed = 0;
+let failed = 0;
+
+console.log('🔍 Verifying GameStateManager migration...\n');
+
+checks.forEach(check => {
+  try {
+    const result = execSync(check.grep, { encoding: 'utf-8', stdio: 'pipe' });
+    const found = result.split('\n').filter(l => l.trim()).length;
+    
+    if (found === check.shouldFind) {
+      console.log(`✅ ${check.name}: PASS (${found} found, expected ${check.shouldFind})`);
+      passed++;
+    } else {
+      console.log(`❌ ${check.name}: FAIL (${found} found, expected ${check.shouldFind})`);
+      console.log(result);
+      failed++;
+    }
+  } catch (e) {
+    if (e.status === 1 && check.shouldFind === 0) {
+      // grep returns 1 when no matches found (expected)
+      console.log(`✅ ${check.name}: PASS (0 found, expected 0)`);
+      passed++;
+    } else {
+      console.log(`❌ ${check.name}: FAIL (error: ${e.message})`);
+      failed++;
+    }
+  }
+});
+
+console.log(`\n📊 Results: ${passed} passed, ${failed} failed`);
+process.exit(failed > 0 ? 1 : 0);
+```
+
+**Add to package.json:**
+```json
+{
+  "scripts": {
+    "verify:migration": "node scripts/verify-migration.js"
+  }
+}
+```
+
+**Add to CI:** `.github/workflows/test.yml`
+```yaml
+- name: Verify migration
+  run: npm run verify:migration
+```
+
+**Effect:** CI fails if any legacy references are found. Prevents accidental reintroduction.
+
+### **Phase 6.4: Lock Down Architecture**
+
+**File:** `.eslintrc.mjs` (update)
+
+```javascript
+export default [
+  {
+    ignores: ['node_modules/', 'dist/'],
+  },
+  {
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'GameStateManager',
+              message: 'GameStateManager is deleted. Use Zustand stores (useEconomyStore, useMilitaryStore, etc.) instead.',
+            },
+            {
+              name: './GameStateManager',
+              message: 'GameStateManager is deleted. Use Zustand stores instead.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['**/GameStateManager'],
+              message: 'GameStateManager is deleted. Use Zustand stores instead.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+];
+```
+
+**Effect:** ESLint immediately rejects any file trying to import GameStateManager. Developers know instantly it's gone.
+
+### **Phase 6.5: Run full test suite**
 ```bash
 npm run lint
 npm test
 npm run test:components
+npm run verify:migration
 ```
 
-### **Phase 6.4: Manual smoke test**
+### **Phase 6.6: Manual smoke test**
 - Load game in browser
 - Buy farm upgrade → verify `farm_upgrades` appears in store
 - Hire units → verify barracks/school capacity works
 - Take turn → verify turns_stored updates
 - Check HirePanel Max button → should show capacity correctly
+- Check browser console → NO warnings or errors
 
-### **Phase 6.5 (Post-Migration): UIStore localStorage Persistence**
+### **Phase 6.7 (Post-Migration): UIStore localStorage Persistence**
 
 **Timing:** Only after Phase 6 confirms GameStateManager is fully removed.
 
@@ -1085,7 +1354,7 @@ export const useUIStore = create(
 );
 ```
 
-### **Phase 6.6: Documentation Updates**
+### **Phase 6.8: Documentation Updates**
 
 **Update CLAUDE.md:**
 - Remove all GameStateManager references
@@ -1099,16 +1368,16 @@ export const useUIStore = create(
   - ❌ Never use hooks in non-component contexts
   - ❌ Never create new state without going through receiveServerSnapshot
 
-### **Phase 6.7: War Log Cache Resolution (Deferred Decision)**
+### **Phase 6.9: War Log Cache Resolution**
 
 **Current state:** Only mentioned in `replayWarReport.js`, read from GameStateManager
 
-**Decision options:**
+**Decision options (audit usage first):**
 1. **militaryStore:** If warLogCache is combat-related ✅ Recommended
 2. **profileStore:** If warLogCache is player-specific
 3. **New warLogStore:** If very large and frequently updated
 
-**Timing:** Decide after Phase 6 based on actual usage patterns.
+**Timing:** Decide based on actual usage patterns discovered during Phase 5.
 
 ---
 
@@ -1119,11 +1388,13 @@ export const useUIStore = create(
 | **Sync divergence during Phase 3A** | Medium | High | Dual data sources prove stores work before listener removal | Phase 3A smoke test |
 | **Missing mutations trigger silent bugs** | Medium | **CRITICAL** | Gate before Phase 3B: manual test all actions (buy, attack, turn) | Comprehensive smoke test |
 | **Hidden dependencies in Phase 1B** | Low | Medium | Comprehensive grep audit of all 6 patterns | Zero grep results |
-| **Contract violations caught too late** | Medium | High | validateContract() runs in dev, catches misshapes immediately | Contract tests |
+| **Contract violations caught too late** | Low | High | validateContract() THROWS in dev, catches misshapes immediately | Contract tests |
 | **Performance regression from dual reads** | Low | Medium | Remove listeners in Phase 3B, profile with React DevTools | Phase 5 perf audit |
+| **Forgotten legacy calls break things** | Medium | **HIGH** | Compatibility layer (Phase 1.2) catches forgotten calls via console warnings | Phase 5 smoke test |
 | **Panel state lost during migration** | Low | Low | UIStore.panelState persists in-memory; localStorage added post-migration | Session testing |
-| **Tests break due to mock changes** | High | Medium | Create store mocks early (Phase 1.2), update incrementally | Phase 5 automation |
-| **War log cache placement unclear** | Low | Low | Defer decision to Phase 6.8 after usage audit | Document decision |
+| **Tests break due to mock changes** | High | Medium | Create store mocks early (Phase 1.3), update incrementally | Phase 5 automation |
+| **War log cache placement unclear** | Low | Low | Defer decision to Phase 6.9 after usage audit | Document decision |
+| **Legacy code reintroduced months later** | Medium | High | ESLint forbids imports + CI verification script + ADR | CI blocks bad imports |
 
 ---
 
@@ -1144,15 +1415,18 @@ export const useUIStore = create(
 - [ ] UIStore extended with panel state management
 - [ ] usePanelState.js deleted
 - [ ] Test fixtures created
-- [ ] **Gate:** UIStore panel state persists and retrieves correctly
+- [ ] Compatibility layer introduced (GameStateManager → proxy)
+- [ ] **Gate:** UIStore panel state persists; compatibility layer catches forgotten calls
+- [ ] **Rollback plan documented**
 
 ### **Phase 1.5: Response Normalizer**
 - [ ] Create `responseNormalizer.js` with contract enforcement
-- [ ] Validation logic: warns on unexpected keys
-- [ ] Tree-shaking documentation added
+- [ ] Runtime assertions: throw errors in dev (not just warn)
+- [ ] Tree-shaking documentation added (process.env.NODE_ENV)
 - [ ] Update all handlers to use `normalizeAndRouteResponse()`
 - [ ] Logging added for debugging
 - [ ] **Gate:** All API responses route to correct stores, no partial updates
+- [ ] **Rollback plan documented**
 
 ### **Phase 2**
 - [ ] useGameActions.applyResult() uses normalizer
@@ -1161,6 +1435,7 @@ export const useUIStore = create(
 - [ ] UpgradesList.jsx uses normalizer (both endpoints)
 - [ ] All dual-system calls eliminated
 - [ ] **Gate:** Buy upgrade → economyStore updates (not GameStateManager)
+- [ ] **Rollback plan documented**
 
 ### **Phase 3A: Dual Data Sources (Proving Zustand Works)**
 - [ ] DefensePanel: Add Zustand reads (keep listener)
@@ -1179,7 +1454,9 @@ export const useUIStore = create(
   - [ ] Take turn → UI updates from Zustand read
   - [ ] Build wall → UI updates from Zustand read
   - [ ] Attack enemy → UI updates from Zustand read
-  - [ ] If ANY fails, debug before proceeding (listener is safety net)
+  - [ ] NO warnings from compatibility layer about legacy calls
+  - [ ] If ANY fails, STOP. Debug before proceeding. Do NOT continue to Phase 3B.
+- [ ] **Rollback plan documented**
 
 ### **Phase 3B: Listener Removal (Only After 3A Gate Passes)**
 - [ ] Remove useGameMutationEvents() from all 15 components
@@ -1197,6 +1474,7 @@ export const useUIStore = create(
   - [ ] School upgrades → researchStore.school_upgrades
   - [ ] Mausoleum upgrades → economyStore.mausoleum_upgrades
 - [ ] **Gate:** Smoke test still passes after listener removal
+- [ ] **Rollback plan documented**
 
 ### **Phase 4**
 - [ ] gameMutations.js deleted
@@ -1204,28 +1482,35 @@ export const useUIStore = create(
 - [ ] shellBridge.js updated
 - [ ] replayWarReport.js updated
 - [ ] All utility functions working with Zustand
+- [ ] **Rollback plan documented**
 
 ### **Phase 5**
 - [ ] Test mocks updated
-- [ ] Integration tests added (patterns 1-4)
-- [ ] useShallow selector tests added
+- [ ] Integration tests added (patterns 1-3 plus useShallow)
 - [ ] All tests passing
+- [ ] **DEFER: Atomic batching evaluation** (only if Phase 5 profiling shows excessive re-renders)
+- [ ] **Rollback plan documented**
 
 ### **Phase 6**
 - [ ] GameStateManager.js deleted
 - [ ] useGameState.js deleted
 - [ ] Zero grep results for "GameStateManager" or legacy hooks
+- [ ] Automated verification script created and integrated into CI
+- [ ] ESLint no-restricted-imports rule added (forbids GameStateManager)
 - [ ] Lint passes
 - [ ] All tests pass
+- [ ] Verification script passes (`npm run verify:migration`)
 - [ ] Smoke test passes
-- [ ] UIStore localStorage persistence added (6.5)
-- [ ] Documentation updated (6.6)
-- [ ] War log cache decision documented (6.7)
+- [ ] UIStore localStorage persistence added (6.7)
+- [ ] Documentation updated (6.8)
+- [ ] War log cache decision documented (6.9)
+- [ ] **Final rollback plan:** All cleanup is one-way (commits merged); document how to revert if needed
 
 ### **Post-Migration**
 - [ ] Code review of all changes
 - [ ] Performance audit (no regression)
 - [ ] Document new patterns for future work
+- [ ] Celebrate migration success 🎉
 
 ---
 
@@ -1239,7 +1524,7 @@ export const useUIStore = create(
 
 ✅ **Tests:**
 - All existing tests passing
-- New integration tests for store sync (patterns 1-4)
+- New integration tests for store sync (patterns 1-3)
 - useShallow selector tests added
 - Test coverage maintained or improved
 
@@ -1265,29 +1550,41 @@ export const useUIStore = create(
 - Component render counts reasonable
 - useShallow selectors prevent unnecessary re-renders
 
+✅ **Safety & Architecture:**
+- Compatibility layer proved all forgotten callers were caught
+- Automated verification script prevents reintroduction
+- ESLint forbids GameStateManager imports
+- All rollback plans documented
+- Zero silent sync bugs discovered during migration
+
 ✅ **Documentation:**
 - Update CLAUDE.md to remove GameStateManager references
 - Add note about Zustand-only pattern for new code
 - Document store usage patterns and useShallow optimization
 - War log cache placement documented
+- Migration lessons learned documented
 
 ---
 
 ## Lessons Learned & Reference
 
 **Key Principles for Future Migrations:**
-1. **Response contract enforcement prevents subtle sync bugs** — Validate in dev, tree-shake in production
+1. **Response contract enforcement prevents subtle sync bugs** — Validate in dev (throw errors), tree-shake in production
 2. **Dual data sources prove listeners redundant before deletion** — Phase 3A catches divergence early
 3. **Comprehensive grep audit catches indirect dependencies** — Pre-Phase 1B is non-negotiable
 4. **Direct store refs via `.getState()` work in all contexts** — Not just components, also utilities/socket handlers
 5. **Centralized routing normalizer is the single source of truth** — All handlers use same function
 6. **useShallow optimizes selector performance** — Prevent re-renders on unrelated property changes
+7. **Compatibility layer reduces risk** — Forgotten calls still work but log warnings; proves migration is complete when warnings go to zero
+8. **Automated CI checks prevent regressions** — ESLint + verification script catches accidental reintroduction
 
 **Questions Resolved:**
 - ✅ Panel State: UIStore persists in-memory, localStorage post-migration
-- ⏳ War Log Cache: Defer to Phase 6.8 after usage audit
-- ⏳ Optimistic Updates: Simplest to delegate to server; revisit if needed
+- ✅ Compatibility Layer: Proxy catches forgotten calls via warnings, safe to delete when zero warnings in Phase 5
+- ✅ Optimistic Updates: Simplest to delegate to server; revisit if needed
 - ✅ Mutation Events: No external systems listening; safe to delete
+- ⏳ War Log Cache: Defer to Phase 6.9 after usage audit
+- ⏳ Multi-Store Batching: Defer to Phase 5 evaluation (only if profiling shows excess re-renders)
 
 ---
 
