@@ -84,9 +84,9 @@ export default function HybridBlueprintModal({ blueprintId, fragmentName, onClos
     return (
       <div
         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-        className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/72 p-4"
+        className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/15 p-4"
       >
-        <div className="flex w-full max-h-[80vh] max-w-[680px] flex-col rounded-sm border-2 border-[var(--accent1)] bg-bg2 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+        <div className="flex w-full max-h-[80vh] max-w-[680px] flex-col rounded-sm border-2 border-[var(--accent1)] bg-bg2 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
           <div className="flex items-center justify-between border-b border-white/5 px-4.5 py-3.5">
             <span className="text-[14px] font-bold text-text">✨ World Fragments</span>
             <button
@@ -150,9 +150,9 @@ export default function HybridBlueprintModal({ blueprintId, fragmentName, onClos
     return (
       <div
         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-        className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/72 p-4"
+        className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/15 p-4"
       >
-        <div className="flex w-full max-h-[80vh] max-w-[680px] flex-col rounded-sm border-2 border-[var(--accent1)] bg-bg2 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+        <div className="flex w-full max-h-[80vh] max-w-[680px] flex-col rounded-sm border-2 border-[var(--accent1)] bg-bg2 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
           <div className="flex items-center justify-between border-b border-white/5 px-4.5 py-3.5">
             <span className="text-[14px] font-bold text-text">⚠️ Confirm Fragment Application</span>
             <button
