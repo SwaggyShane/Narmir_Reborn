@@ -3,8 +3,6 @@
 // Ensures that if anything fails, the entire turn is rolled back.
 // Collects events into outbox for guaranteed delivery.
 
-const eventBus = require('./event-bus');
-
 /**
  * Wrap a turn execution in an explicit database transaction.
  *

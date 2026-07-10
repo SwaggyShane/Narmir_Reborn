@@ -3,8 +3,6 @@
 // Systems are registered and executed in sequence; foundation for decoupling.
 // Actual system implementations follow in later slices.
 
-const eventBus = require('./event-bus');
-
 // ── Base System Class ──
 class TurnSystem {
   constructor(name) {
