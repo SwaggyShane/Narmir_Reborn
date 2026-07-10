@@ -16,6 +16,7 @@ const attunementManager = require('../game/attunement-manager');
 const synergiesModule = require('../game/fragment-synergies');
 const abilityManager = require('../game/active-ability-manager');
 const { applyKingdomUpdates } = require('../db/schema');
+const { convertNumericFields } = require('../db/numeric-fields');
 const { setUnreadCount } = require("../cache.js");
 const { decorateNewsMessage } = require("../game/news-emoji");
 const { EPOCH_NOW } = require("../lib/db-sql");
@@ -738,7 +739,10 @@ module.exports = function (db) {
           "SELECT rangers, fighters, gold, mana, land, scrolls, maps, blueprints_stored, troop_levels, library_progress, tower_progress, racial_bonuses_unlocked, scout_progress FROM kingdoms WHERE id = $1",
           [k.id],
         );
-        if (refreshed) Object.assign(txUpdates, refreshed);
+        if (refreshed) {
+          convertNumericFields(refreshed);
+          Object.assign(txUpdates, refreshed);
+        }
 
         const unread = await db.get(
           "SELECT COUNT(*) as c FROM news WHERE kingdom_id = $1 AND is_read = 0",
