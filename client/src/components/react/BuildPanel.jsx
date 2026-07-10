@@ -709,36 +709,37 @@ const BuildPanel = () => {
                 Land: <span id="b-land-available" className="text-text">{fmt(landAvailable)} / {fmt(land)}</span> available
               </div>
             </div>
-            <div className="flex gap-1.5">
-              <button className="base-btn variant-accent flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--accent1)]" onClick={distributeBuildEvenly}>
-                Distribute
-              </button>
-              <button className="base-btn variant-red flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--red)]" onClick={releaseAllEngineers}>
-                Release All
-              </button>
-              <button className="base-btn variant-gold flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--gold)] text-black" onClick={saveBuildAllocation}>
-                Allocate
-              </button>
+            <div className="flex flex-col gap-2 w-full">
+              <div className="flex gap-1.5">
+                <button className="base-btn variant-accent flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--accent1)]" onClick={distributeBuildEvenly}>
+                  Distribute
+                </button>
+                <button className="base-btn variant-red flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--red)]" onClick={releaseAllEngineers}>
+                  Release All
+                </button>
+                <button className="base-btn variant-gold flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--gold)] text-black" onClick={saveBuildAllocation}>
+                  Allocate
+                </button>
+              </div>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => setShowAttunements(true)}
+                  className="flex-1 rounded-full border border-blue-400 px-4 py-1.5 text-[11px] font-semibold text-blue-400 cursor-pointer hover:bg-blue-400/10 transition-colors"
+                >
+                  🌌 Attunements
+                </button>
+                <button
+                  onClick={() => setShowBlueprintModal(true)}
+                  className="flex-1 rounded-full border border-purple-400 px-4 py-1.5 text-[11px] font-semibold text-purple-400 cursor-pointer hover:bg-purple-400/10 transition-colors"
+                >
+                  ✨ Fragments
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
       <div className="build-content-scroll space-y-4 px-4 pb-5">
-
-        <div className="flex justify-center gap-3 pt-4">
-          <button
-            onClick={() => setShowAttunements(true)}
-            className="rounded-full border border-blue-400 px-4 py-1.5 text-[12px] font-semibold text-blue-400 cursor-pointer whitespace-nowrap hover:bg-blue-400/10 transition-colors"
-          >
-            🌌 Attunements
-          </button>
-          <button
-            onClick={() => setShowBlueprintModal(true)}
-            className="rounded-full border border-purple-400 px-4 py-1.5 text-[12px] font-semibold text-purple-400 cursor-pointer whitespace-nowrap hover:bg-purple-400/10 transition-colors"
-          >
-            ✨ Fragments
-          </button>
-        </div>
 
         <div className="card mt-4 rounded-2xl border border-white/10 bg-zinc-950/80">
           <div className="mb-3 border-b border-white/10 pb-3 pt-3">
