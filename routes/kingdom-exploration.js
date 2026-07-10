@@ -316,7 +316,9 @@ module.exports = function (db, kingdomGameplayRouter) {
           targetCol = Math.floor(Number(target_x) || 0);
           targetRow = Math.floor(Number(target_y) || 0);
 
-          const travelTurns = calculateTravelTime(k.map_x, k.map_y, targetCol, targetRow);
+          const kingdomCol = Math.floor(Number(k.map_x) || 0);
+          const kingdomRow = Math.floor(Number(k.map_y) || 0);
+          const travelTurns = calculateTravelTime(kingdomCol, kingdomRow, targetCol, targetRow);
           totalTurns = calculateExpeditionDuration(d, travelTurns);
         }
 
@@ -452,7 +454,9 @@ module.exports = function (db, kingdomGameplayRouter) {
           targetCol = Math.floor(Number(target_x) || 0);
           targetRow = Math.floor(Number(target_y) || 0);
 
-          const travelTurns = calculateTravelTime(k.map_x, k.map_y, targetCol, targetRow);
+          const kingdomCol = Math.floor(Number(k.map_x) || 0);
+          const kingdomRow = Math.floor(Number(k.map_y) || 0);
+          const travelTurns = calculateTravelTime(kingdomCol, kingdomRow, targetCol, targetRow);
           totalTurns = calculateExpeditionDuration(d, travelTurns);
         }
 
