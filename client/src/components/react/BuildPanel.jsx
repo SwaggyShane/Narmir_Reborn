@@ -329,7 +329,7 @@ const BuildPanel = () => {
     refreshBuildUi();
   }, [buildAllocationStr, refreshBuildUi]);
 
-  const applyAttunement = async (fragmentName, buildingType) => {
+  const applyAttunement = useCallback(async (fragmentName, buildingType) => {
     try {
       const data = await apiCall('/api/kingdom/attune-fragment', {
         method: 'POST',
@@ -344,9 +344,9 @@ const BuildPanel = () => {
       console.error('[attunements] apply failed:', err.message);
       alert('Failed to apply attunement');
     }
-  };
+  }, [loadAttunements]);
 
-  const removeAttunement = async (buildingType) => {
+  const removeAttunement = useCallback(async (buildingType) => {
     try {
       const data = await apiCall('/api/kingdom/remove-attunement', {
         method: 'POST',
@@ -361,7 +361,7 @@ const BuildPanel = () => {
       console.error('[attunements] remove failed:', err.message);
       alert('Failed to remove attunement');
     }
-  };
+  }, [loadAttunements]);
 
   const activateSynergyAbility = async () => {
     if (activatingAbility || !synergyStatus?.activeSynergy) return;
