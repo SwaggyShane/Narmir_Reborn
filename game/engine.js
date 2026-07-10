@@ -630,9 +630,10 @@ function processTurn(k, db = null) {
         updates.scout_progress = scoutResult.new_total;
         const metrics = getProgressMetrics(scoutResult.new_total);
         const pctStr = Math.round(metrics.percentComplete);
+        const ringMsg = metrics.nextRing ? `toward Ring ${metrics.nextRing}` : `Ring ${metrics.currentRing} (Complete)`;
         events.push({
           type: "system",
-          message: `🔍 Scouts: ${pctStr}% toward Ring ${metrics.nextRing}`,
+          message: `🔍 Scouts: ${pctStr}% ${ringMsg}`,
         });
         // Reveal new ring hexes if ring was completed
         if (scoutResult.ring_completed && db && k.id) {
