@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { apiCall } from '../../utils/api.mjs';
 import { applyGameMutation } from '../../utils/gameMutations.js';
-import { gameStateManager } from '../../GameStateManager.js';
 import { getSocket } from '../../socket-client.js';
 import { initSocketHandlers } from '../../hooks/useSocket.js';
 import { useProfileStore, useEconomyStore, useMilitaryStore, useResearchStore, usePopulationStore } from '../../stores';
@@ -22,7 +21,6 @@ function syncIdentity(me, fallbackUsername) {
   const username = (me && me.username) || fallbackUsername || '';
   const isAdmin = !!(me && me.isAdmin);
   useProfileStore.getState().receiveServerSnapshot({ username, isAdmin });
-  gameStateManager.setState({ username, isAdmin }, { reason: 'auth-session' });
 }
 
 export async function loadKingdom() {

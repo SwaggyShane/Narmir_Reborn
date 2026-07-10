@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { apiCall } from '../utils/api.mjs';
 import { toast } from '../utils/toast.js';
-import { gameStateManager } from '../GameStateManager.js';
+import { applyGameMutation } from '../utils/gameMutations.js';
 import { playGameSound } from '../utils/audio.js';
 import { getRegenCountdownLabel } from './useRegenCountdown.js';
 import { AppEvent, emitAppEvent } from '../utils/appEvents.js';
@@ -10,7 +10,7 @@ import { setLastSpellTarget } from '../utils/spellTargetHistory.js';
 
 function applyResult(data, reason) {
   const updates = data?.updates || data?.kUpdates || null;
-  if (updates) gameStateManager.applyUpdates(updates, { reason, payload: updates });
+  if (updates) applyGameMutation(updates, { reason });
   return data;
 }
 
