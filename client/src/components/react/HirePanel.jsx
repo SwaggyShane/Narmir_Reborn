@@ -119,7 +119,8 @@ const HirePanel = () => {
     const maxByPop = row.key === 'clerics' && isVampire ? 0 : freePopulation;
     let maxByCapacity = Infinity;
 
-    // Barracks troops (fighters, rangers, clerics, thieves, ninjas)
+    // Only barracks troops are hard-capped by building capacity
+    // Non-military units (researchers, scribes, engineers, mages) are unlimited but consume population if not housed
     const BARRACKS_TROOPS = ['fighters', 'rangers', 'clerics', 'thieves', 'ninjas'];
     if (BARRACKS_TROOPS.includes(row.key)) {
       const barracksCap = bldBarracks * 500;
@@ -127,15 +128,9 @@ const HirePanel = () => {
       maxByCapacity = Math.max(0, barracksCap - barracksUsed);
     }
 
-    // Researchers (schools)
-    if (row.key === 'researchers') {
-      const schoolCap = bldSchools * 100;
-      maxByCapacity = Math.max(0, schoolCap - researchers);
-    }
-
     const max = Math.max(0, Math.min(maxByGold, maxByPop, maxByCapacity));
     setQuantities((prev) => ({ ...prev, [row.key]: String(max) }));
-  }, [freePopulation, isVampire, gold, bldBarracks, bldSchools, fighters, rangers, clerics, thieves, ninjas, researchers]);
+  }, [freePopulation, isVampire, gold, bldBarracks, fighters, rangers, clerics, thieves, ninjas]);
 
   const hire = useCallback(async (row) => {
     const amount = Math.max(0, parseInt(quantities[row.key], 10) || 0);
