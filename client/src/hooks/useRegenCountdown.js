@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { gameStateManager } from '../GameStateManager.js';
+import { useProfileStore } from '../stores/index.js';
 
 export const REGEN_AMOUNT = 7;
 export const REGEN_MAX = 400;
@@ -29,9 +29,9 @@ function tickRegenCountdown() {
   countdownSeconds -= 1;
   if (countdownSeconds < 0) {
     countdownSeconds = REGEN_INTERVAL_SEC;
-    const state = gameStateManager.getState();
+    const state = useProfileStore.getState();
     const next = Math.min(REGEN_MAX, (state?.turns_stored || 0) + REGEN_AMOUNT);
-    gameStateManager.applyUpdates({ turns_stored: next }, { reason: 'regen-optimistic' });
+    useProfileStore.getState().receiveServerSnapshot({ turns_stored: next });
   }
   notifySubscribers();
 }

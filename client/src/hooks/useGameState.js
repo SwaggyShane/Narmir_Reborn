@@ -1,22 +1,13 @@
 /**
- * Legacy game-state bridge.
+ * DEPRECATED: This hook is no longer functional.
  *
- * New work should use the Zustand domain stores in `client/src/stores/`.
- * This hook remains for older panels and compatibility paths that have not
- * been migrated yet.
+ * GameStateManager has been removed. All state must use Zustand domain stores in `client/src/stores/`.
+ * Migrate any code using this hook to use the appropriate Zustand store directly.
  */
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
-import { gameStateManager } from '../GameStateManager';
 
 export function useGameState() {
-  const state = useSyncExternalStore(
-    (listener) => gameStateManager.subscribe(listener),
-    () => gameStateManager.getState()
-  );
-
-  const setState = useCallback((nextState, context) => {
-    gameStateManager.setState(nextState, context);
-  }, []);
+  throw new Error('useGameState is deprecated. Use Zustand stores directly instead.');
 
   const applyUpdates = useCallback((updates, context) => {
     gameStateManager.applyUpdates(updates, context);

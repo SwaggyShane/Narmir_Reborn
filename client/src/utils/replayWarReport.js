@@ -1,7 +1,6 @@
 import { apiCall } from './api.mjs';
 import { toast } from './toast.js';
 import { repairMojibake } from './repairMojibake.js';
-import { gameStateManager } from '../GameStateManager.js';
 
 let _openReplayModal = null;
 
@@ -11,10 +10,7 @@ export function registerReplayModal(fn) {
 
 export const replayWarReport = async (id) => {
   try {
-    const warLogCache = Array.isArray(gameStateManager.getState().warLogCache)
-      ? gameStateManager.getState().warLogCache
-      : [];
-    let row = warLogCache.find((r) => r.id == id);
+    let row = null;
 
     if (!row) {
       const loaded = await apiCall(`/api/kingdom/war-log/${id}`);
