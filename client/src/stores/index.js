@@ -56,6 +56,7 @@ export {
   useResConstruction,
   useDiscoveredKingdoms,
   useTrainingAllocation,
+  useResourceBuildAllocation,
   useTax,
   useTradeTargets,
   useBankUpgrades,

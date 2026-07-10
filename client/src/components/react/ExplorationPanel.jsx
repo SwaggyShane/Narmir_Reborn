@@ -7,7 +7,7 @@ import { applyGameMutation } from '../../utils/gameMutations.js';
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { useGameMutationEvents } from '../../hooks/useGameState';
-import { useEconomyStore, useProfileStore, useMilitaryStore, useResearchStore, usePopulationStore } from '../../stores';
+import { useEconomyStore, useProfileStore, useMilitaryStore, useResearchStore, usePopulationStore, useBuildAllocation, useTrainingAllocation, useResourceBuildAllocation } from '../../stores';
 import EmptyState from './EmptyState.jsx';
 import HexSelectionModal from './HexSelectionModal.jsx';
 
@@ -195,10 +195,20 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     }, [refreshAll]),
   );
 
+  const buildAllocation = useBuildAllocation();
+  const trainingAllocation = useTrainingAllocation();
+  const resourceBuildAllocation = useResourceBuildAllocation();
+
   const inventoryCount = Object.keys(inventory).length;
   const availableRangers = Math.max(0, Number(rangers || 0) - Number(scout_allocation || 0));
   const availableFighters = Number(fighters || 0);
-  const availableEngineers = Number(engineers || 0);
+
+  // Calculate available engineers: total - training allocation - build allocations
+  const trainAllocEngineers = Math.max(0, parseInt(trainingAllocation?.engineers || 0, 10) || 0);
+  const buildAllocEngineers = Object.values(buildAllocation || {}).reduce((sum, n) => sum + (Number(n) || 0), 0);
+  const resourceAllocEngineers = Object.values(resourceBuildAllocation || {}).reduce((sum, n) => sum + (Number(n) || 0), 0);
+  const availableEngineers = Math.max(0, Number(engineers || 0) - trainAllocEngineers - buildAllocEngineers - resourceAllocEngineers);
+
   const availableFood = Number(food || 0);
   const availablePopulation = Number(population || 0);
   const expeditionTurns = useMemo(() => EXPEDITION_TURNS, []);

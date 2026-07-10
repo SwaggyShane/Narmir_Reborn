@@ -61,6 +61,7 @@ export const useEconomyStore = create(
         build_allocation: {},
         build_progress: {},
         training_allocation: {},
+        resource_build_allocation: {},
         land: 0,
         built_land: 0,
         hammers_stored: 0,
@@ -144,6 +145,7 @@ export const useEconomyStore = create(
           if (data?.build_allocation !== undefined) state.build_allocation = data.build_allocation;
           if (data?.build_progress !== undefined) state.build_progress = data.build_progress;
           if (data?.training_allocation !== undefined) state.training_allocation = data.training_allocation;
+          if (data?.resource_build_allocation !== undefined) state.resource_build_allocation = data.resource_build_allocation;
           if (data?.land !== undefined) state.land = data.land;
           if (data?.built_land !== undefined) state.built_land = data.built_land;
           if (data?.hammers_stored !== undefined) state.hammers_stored = data.hammers_stored;
@@ -322,6 +324,8 @@ export const useBuildAllocation = () => useEconomyStore((state) => state.build_a
 export const useBuildProgress = () => useEconomyStore((state) => state.build_progress);
 
 export const useTrainingAllocation = () => useEconomyStore((state) => state.training_allocation);
+
+export const useResourceBuildAllocation = () => useEconomyStore((state) => state.resource_build_allocation);
 
 export const useLand = () => useEconomyStore((state) => state.land);
 
