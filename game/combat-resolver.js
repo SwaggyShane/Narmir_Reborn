@@ -17,6 +17,8 @@
 const config = require('./config');
 const combatCalc = require('./combat-new');
 const { getTerrainModifiers, getTerrainDisplayName } = require('./terrain');
+const { getFlag } = require('./feature-flags');
+const { calculateElevationBonus } = require('./world-elevation');
 
 const TROOP_TYPES = ['thralls', 'fighters', 'rangers', 'mages', 'clerics', 'ninjas', 'thieves', 'engineers', 'war_machines'];
 const WEAPON_EQUIPPED_TYPES = ['fighters', 'rangers', 'clerics', 'ninjas', 'thieves', 'engineers'];
@@ -411,6 +413,21 @@ function calculateCombatPower(kingdom, opponent, combatType) {
   diagnostics.attacker.terrainMod = attackerTerrain.combatAtk || 1;
   diagnostics.defender.terrain = getTerrainDisplayName(opponent.terrain || 'plains');
   diagnostics.defender.terrainMod = defenderTerrain.combatDef || 1;
+
+  // Phase 3A: Apply elevation bonus if defender is on higher ground
+  if (getFlag('FEATURE_ELEVATION_COMBAT') && kingdom.elevation_level !== undefined && opponent.elevation_level !== undefined) {
+    const elevationBonus = calculateElevationBonus(kingdom.elevation_level, opponent.elevation_level, { FEATURE_ELEVATION_COMBAT: true });
+    if (elevationBonus > 0) {
+      const defenderDefenseBoost = Math.round(defenderPower * elevationBonus);
+      defenderPower += defenderDefenseBoost;
+      diagnostics.defender.elevationBonus = {
+        defenderElevation: opponent.elevation_level,
+        attackerElevation: kingdom.elevation_level,
+        defenseBoost: defenderDefenseBoost,
+        modifier: elevationBonus,
+      };
+    }
+  }
 
   return { attackerPower, defenderPower, diagnostics };
 }
