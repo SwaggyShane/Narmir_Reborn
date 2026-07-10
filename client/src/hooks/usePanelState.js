@@ -1,24 +1,20 @@
 /**
- * Legacy panel-state bridge.
+ * Legacy panel-state hook (deprecated).
  *
- * This keeps older panels working while the Zustand migration finishes.
- * Prefer domain stores and selectors for new panel state.
+ * GameStateManager removed. This now just provides local component state.
+ * Prefer domain stores and selectors for new panels.
  */
 import { useState } from 'react';
-import { gameStateManager } from '../GameStateManager.js';
 
 export function usePanelState(panelName, initialState = {}) {
-  const [state, setState] = useState(() => {
-    return gameStateManager.getPanelState(panelName) ?? initialState;
-  });
+  const [state, setState] = useState(initialState);
 
   const setPanelState = (nextState) => {
-    const prevState = gameStateManager.getPanelState(panelName) ?? {};
-    const merged = typeof nextState === 'function'
-      ? nextState(prevState)
-      : { ...prevState, ...nextState };
-    gameStateManager.setPanelState(panelName, merged);
-    setState(merged);
+    setState((prevState) =>
+      typeof nextState === 'function'
+        ? nextState(prevState)
+        : { ...prevState, ...nextState }
+    );
   };
 
   return { state, setState: setPanelState };

@@ -5,7 +5,7 @@ import { applyGameMutation } from '../utils/gameMutations.js';
 import { playGameSound } from '../utils/audio.js';
 import { getRegenCountdownLabel } from './useRegenCountdown.js';
 import { AppEvent, emitAppEvent } from '../utils/appEvents.js';
-import { useProfileStore } from '../stores/profileStore.js';
+import { useProfileStore } from '../stores/index.js';
 import { setLastSpellTarget } from '../utils/spellTargetHistory.js';
 
 function applyResult(data, reason) {
@@ -44,7 +44,7 @@ export function useGameActions() {
 
   const takeTurn = useCallback(async () => {
     if (turnInProgressRef.current) return null;
-    if ((gameStateManager.getState()?.turns_stored || 0) < 1) {
+    if ((useProfileStore.getState()?.turns_stored || 0) < 1) {
       const countdown = getRegenCountdownLabel();
       toast(`No turns available. Refills in ${countdown}`, 'warning');
       return null;
@@ -61,13 +61,8 @@ export function useGameActions() {
         return null;
       }
       applyResult(data, 'turn');
-      const updatedState = gameStateManager.getState();
-      useProfileStore.getState().receiveServerSnapshot({
-        turn: updatedState.turn,
-        turns_stored: updatedState.turns_stored,
-        scout_progress: updatedState.scout_progress,
-        scout_allocation: updatedState.scout_allocation
-      });
+      // applyResult already syncs to stores via applyGameMutation
+      // No need to manually update here
 
       let completedBuildingsMsg = '';
       if (Array.isArray(data.events)) {
@@ -89,9 +84,9 @@ export function useGameActions() {
         }
       }
 
-      const state = gameStateManager.getState();
-      const turnsLeft = state?.turns_stored ?? 0;
-      const currentTurn = state?.turn;
+      const state = useProfileStore.getState();
+      const turnsLeft = state?.turns_stored ?? data.updates?.turns_stored ?? 0;
+      const currentTurn = state?.turn ?? data.updates?.turn;
       const turnStatus = `Turn ${currentTurn || '?'} - ${turnsLeft} turns left`;
       const buildStatus = completedBuildingsMsg
         ? `Completed: ${completedBuildingsMsg}!`
