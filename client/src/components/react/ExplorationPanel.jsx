@@ -41,14 +41,16 @@ const repairText = (value) => cleanMessageText(repairMojibake(String(value ?? ''
 
 // Scout ring calculator (matches game/scout-rings.js)
 const MAX_SCOUT_RING = 25; // Must match game/config.js SCOUT_CONSTANTS.MAX_RING (stride 48: 1.5× old stride 32)
+const SCOUT_BASE_TURNS = 10; // Ring 1 costs 10 turns
+const SCOUT_RING_INCREMENT = 5; // Each subsequent ring costs 5 more turns
 const getCompletedRing = (scoutProgress) => {
   const progress = Math.max(0, Math.floor(Number(scoutProgress) || 0));
   let ring = 0;
   for (let i = 1; i <= MAX_SCOUT_RING; i++) {
-    const turnsRequired = 20 + (i - 1) * 5; // cost for this ring
+    const turnsRequired = SCOUT_BASE_TURNS + (i - 1) * SCOUT_RING_INCREMENT; // cost for this ring
     let totalTurns = 0;
     for (let j = 1; j <= i; j++) {
-      totalTurns += 20 + (j - 1) * 5;
+      totalTurns += SCOUT_BASE_TURNS + (j - 1) * SCOUT_RING_INCREMENT;
     }
     if (progress >= totalTurns) {
       ring = i;
@@ -62,7 +64,7 @@ const getCompletedRing = (scoutProgress) => {
 const getTotalTurnsForRing = (ring) => {
   let total = 0;
   for (let i = 1; i <= ring; i++) {
-    total += 20 + (i - 1) * 5;
+    total += SCOUT_BASE_TURNS + (i - 1) * SCOUT_RING_INCREMENT;
   }
   return total;
 };

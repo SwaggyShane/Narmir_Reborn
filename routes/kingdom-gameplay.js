@@ -399,14 +399,16 @@ module.exports = function (db) {
     }
 
     for (const ev of cleanEvents) {
+      // Skip messages marked to not go to news
+      if (ev.skipNews) continue;
+
       const existing = existingMessages[ev.message];
       if (
         existing &&
         !ev.message.includes("Troop upkeep") &&
         !ev.message.includes("Actively constructing") &&
         !ev.message.includes("Library Est:") &&
-        !ev.message.includes("Construction complete:") &&
-        !ev.message.includes("🔍 Scouts:")
+        !ev.message.includes("Construction complete:")
       )
         continue; // already sent — skip
       filteredEvents.push(ev);
