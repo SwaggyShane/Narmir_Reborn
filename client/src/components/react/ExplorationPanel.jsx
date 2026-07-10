@@ -404,7 +404,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       const foodGained = result.reward?.foodReward || 0;
       const logMsg = huntingDuration === 'instant'
         ? `${formatNum(r)} rangers found ${formatNum(foodGained)} food`
-        : `${formatNum(r)} rangers sent, returned with ${formatNum(foodGained)} food`;
+        : `${formatNum(r)} rangers sent on expedition, will return with ${formatNum(foodGained)} food`;
       logInstantEntry('🥩', 'Hunting expedition', logMsg);
       setHuntingRangers(0);
       setHuntingTargetHex(null);
@@ -452,7 +452,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       const goldGained = result.reward?.goldReward || 0;
       const logMsg = prospectingDuration === 'instant'
         ? `${formatNum(e)} engineers found ${formatNum(goldGained)} gold`
-        : `${formatNum(e)} engineers sent, returned with ${formatNum(goldGained)} gold`;
+        : `${formatNum(e)} engineers sent on expedition, will return with ${formatNum(goldGained)} gold`;
       logInstantEntry('⛏️', 'Prospecting expedition', logMsg);
       setProspectingEngineers(0);
       setProspectingTargetHex(null);
@@ -611,7 +611,17 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
 
   const renderRow = (entry, isCompleted = false) => {
     const rewards = isCompleted ? normalizeRewards(entry.rewards) : [];
-    const troops = `${formatNum(entry.rangers)} rangers${entry.fighters > 0 ? `, ${formatNum(entry.fighters)} fighters` : ''}`;
+
+    // Show appropriate units based on expedition type
+    let troops;
+    if (entry.type === 'prospecting') {
+      troops = `${formatNum(entry.engineers)} engineers`;
+    } else if (entry.type === 'land_expansion') {
+      troops = `${formatNum(entry.rangers)} rangers`;
+    } else {
+      troops = `${formatNum(entry.rangers)} rangers${entry.fighters > 0 ? `, ${formatNum(entry.fighters)} fighters` : ''}`;
+    }
+
     const label = TYPE_META[entry.type]?.label || entry.type;
     const icon = TYPE_META[entry.type]?.icon || '🧭';
     const subtitle = isCompleted
@@ -653,7 +663,17 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     const progressPct = totalTurns > 0
       ? Math.min(100, Math.round(((totalTurns - turnsLeft) / totalTurns) * 100))
       : 0;
-    const troops = `${formatNum(entry.rangers)} rangers${entry.fighters > 0 ? `, ${formatNum(entry.fighters)} fighters` : ''}`;
+
+    // Show appropriate units based on expedition type
+    let troops;
+    if (entry.type === 'prospecting') {
+      troops = `${formatNum(entry.engineers)} engineers`;
+    } else if (entry.type === 'land_expansion') {
+      troops = `${formatNum(entry.rangers)} rangers`;
+    } else {
+      troops = `${formatNum(entry.rangers)} rangers${entry.fighters > 0 ? `, ${formatNum(entry.fighters)} fighters` : ''}`;
+    }
+
     const countdownLabel = turnsLeft > 0
       ? `${formatNum(turnsLeft)} turn${turnsLeft === 1 ? '' : 's'} left`
       : 'Wrapping up…';
