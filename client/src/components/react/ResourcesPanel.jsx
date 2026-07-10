@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
+import { toast } from '../../utils/toast.js';
 import { useActivePanel } from '../../hooks/useActivePanel';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { dispatchExpeditionLogEntry } from '../../utils/expeditionLog.js';
@@ -439,9 +440,14 @@ const ResourcesPanel = () => {
         body: { type, toStage: stage }
       });
       if (data.ok) {
+        toast('Upgrade purchased!', 'success');
         await refreshKingdom();
-      } else { if(toast) toast('Error: ' + (data.error || 'Unknown'), 'error'); }
-    } catch(e) { if(toast) toast('Error: ' + e.message, 'error'); }
+      } else {
+        toast('Error: ' + (data.error || 'Unknown'), 'error');
+      }
+    } catch(e) {
+      toast('Error: ' + e.message, 'error');
+    }
   };
 
   const hasActiveExpedition = (nodeId) => activeExpeditions.some(e => e.node_id === nodeId);
