@@ -806,7 +806,7 @@ const BuildPanel = () => {
                                     <div className="mt-0.5 text-text">{att.fragmentName}</div>
                                   </div>
                                   <button
-                                    onClick={() => removeAttunement(buildingType)}
+                                    onClick={(e) => { e.stopPropagation(); removeAttunement(buildingType); }}
                                     title="Remove attunement — fragment can then be applied elsewhere"
                                     className="flex-shrink-0 rounded-sm border border-red px-1.5 py-0.5 text-[9px] text-red cursor-pointer leading-none"
                                   >Remove</button>
@@ -889,7 +889,7 @@ const BuildPanel = () => {
                                   {frag.buildings.map((bld) => (
                                     <button
                                       key={bld.buildingType}
-                                      onClick={() => applyAttunement(frag.fragmentName, bld.buildingType)}
+                                      onClick={(e) => { e.stopPropagation(); applyAttunement(frag.fragmentName, bld.buildingType); }}
                                       title={formatBonusTooltip(bld.bonuses, bld.special)}
                                       className="rounded-sm border border-white/5 bg-accent1 px-2 py-1.5 text-[11px] text-text cursor-pointer text-left"
                                     >
