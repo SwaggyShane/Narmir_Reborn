@@ -40,6 +40,14 @@ async function start() {
   const { logMonitoringConfig } = require('./config/monitoring');
   logMonitoringConfig();
 
+  // Initialize feature flags for elevation system (Phases 1-3)
+  const { initializeFlags } = require('./game/feature-flags');
+  initializeFlags({
+    FEATURE_ELEVATION_COMBAT: process.env.FEATURE_ELEVATION_COMBAT,
+    FEATURE_ELEVATION_MOVEMENT: process.env.FEATURE_ELEVATION_MOVEMENT,
+    FEATURE_ELEVATION_SPELLS: process.env.FEATURE_ELEVATION_SPELLS,
+  });
+
   const { setupAppMiddleware } = require('./lib/middleware');
   setupAppMiddleware(app);
 
