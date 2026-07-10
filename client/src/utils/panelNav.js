@@ -1,34 +1,9 @@
 /**
- * Legacy navigation bridge - mostly deprecated now that GameStateManager is gone.
- *
- * Keep switchTab and migrate other consumers to Zustand.
+ * Pure navigation utilities (no state management).
+ * All state now flows through Zustand stores only.
  */
 import { setActivePanelGlobal } from '../hooks/useActivePanel.js';
 import { setWarfareTab as applyWarfareTab } from './warfareTabs.js';
-
-function getCsrfToken() {
-  try {
-    const match = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
-    return match ? decodeURIComponent(match[1]) : null;
-  } catch {
-    return null;
-  }
-}
-
-export async function apiCall(method, endpoint, body = null) {
-  const headers = { 'Content-Type': 'application/json' };
-  const csrfToken = getCsrfToken();
-  if (csrfToken) headers['x-csrf-token'] = csrfToken;
-
-  const options = { method, headers, credentials: 'include' };
-  if (body) options.body = JSON.stringify(body);
-
-  const response = await fetch(endpoint, options);
-  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-  const contentType = response.headers.get('content-type');
-  return contentType && contentType.includes('application/json') ? response.json() : { ok: true };
-}
 
 function normalizePanelName(tabName) {
   const PANEL_ALIASES = { attack: 'warfare', spells: 'warfare', covert: 'warfare' };
@@ -45,8 +20,4 @@ export function switchTab(tabName) {
   setActivePanelGlobal(activeTab);
   if (warfareSubtab) applyWarfareTab(warfareSubtab);
   if (window.location.hash !== `#${rawTab}`) window.location.hash = rawTab;
-}
-
-export function initGameStateManager() {
-  // Deprecated - no longer needed. GameStateManager removed.
 }
