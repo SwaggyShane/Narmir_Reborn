@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { fmt } from "../../utils/fmt";
-import { toast } from '../../utils/toast.js';
+import { toast } from '../../utils/toast';
 import { useRace, useGold, usePopulation, useFighters, useRangers, useMages, useClerics, useNinjas, useThieves, useMilitaryEngineers as useEngineers, useEconomyStore, useMilitaryStore, usePopulationStore, useResearchStore, useProfileStore } from '../../stores';
 
 const UNIT_ROWS = [
