@@ -82,70 +82,63 @@ export default function HybridBlueprintModal({ blueprintId, fragmentName, onClos
   // Selection stage
   if (stage === 'select') {
     return (
-      <div className="fixed inset-0 bg-black/80 z-modal backdrop-blur-sm flex items-center justify-center p-5" onClick={onClose}>
-        <div className="rounded-xl border-2 border-[var(--accent1)] bg-gradient-to-br from-zinc-900 to-white/5 max-w-[900px] w-full max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-          <div className="p-8 border-b border-white/10 bg-gradient-to-br from-orange-500/5 to-transparent">
-            <div className="flex items-center gap-4 mb-3">
-              <span className="text-5xl leading-none">✨</span>
-              <h2 className="text-2xl font-bold m-0 text-white">World Fragments</h2>
-            </div>
-            <p className="text-zinc-300 text-sm m-0 mt-2 italic">Select a building to attune with discovered fragments</p>
+      <div
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/72 p-4"
+      >
+        <div className="flex w-full max-h-[80vh] max-w-[680px] flex-col rounded-sm border-2 border-[var(--accent1)] bg-bg2 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+          <div className="flex items-center justify-between border-b border-white/5 px-4.5 py-3.5">
+            <span className="text-[14px] font-bold text-text">✨ World Fragments</span>
+            <button
+              onClick={onClose}
+              className="p-1 text-[18px] text-text3 cursor-pointer leading-none"
+            >✕</button>
           </div>
 
-          {error && <div className="bg-red/10 border-b border-red text-red px-8 py-3 text-xs m-0">{error}</div>}
+          <div className="flex-1 overflow-y-auto px-4.5 py-4">
+            {error && (
+              <div className="mb-4 rounded-sm border border-red bg-red/10 p-3 text-[12px] text-red">
+                {error}
+              </div>
+            )}
 
-          <div className="flex-1 overflow-y-auto p-8">
             {loading ? (
-              <div className="text-center text-zinc-400 py-12">Loading available buildings...</div>
+              <div className="p-6 text-center text-text3">Loading available buildings...</div>
             ) : buildings.length === 0 ? (
-              <div className="text-center text-zinc-400 py-12">
+              <div className="p-6 text-center text-text3">
                 <p>⚠️ All buildings already have fragments applied</p>
               </div>
             ) : (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
+              <div className="grid gap-2 auto-fill [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
                 {buildings.map((building) => (
                   <div
                     key={building.buildingType}
-                    onClick={() => handleSelectBuilding(building)}
-                    className="bg-white/[0.03] border border-white/10 rounded-lg p-5 cursor-pointer transition-all hover:bg-white/5 hover:border-white/20 hover:shadow-lg hover:-translate-y-1"
+                    onClick={(e) => { e.stopPropagation(); handleSelectBuilding(building); }}
+                    className="cursor-pointer rounded-sm border border-white/5 bg-bg3 p-2.5 text-[11px] text-text transition-all hover:border-white/10 hover:bg-white/5"
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="m-0 text-base font-semibold text-white">{building.name}</h3>
-                      <span className="bg-white/10 rounded px-2 py-1 text-xs font-semibold text-zinc-300">
-                        {building.count}
-                      </span>
+                    <div className="mb-1 flex items-start justify-between gap-1.5">
+                      <div>
+                        <div className="font-semibold text-text">{building.name}</div>
+                        <div className="mt-0.5 text-text3">Count: {building.count}</div>
+                      </div>
                     </div>
-
-                    <div className="mb-3">
-                      <p className="text-sm font-semibold text-orange-400 m-0 mb-1">✨ {building.bonus?.name}</p>
-                      <p className="text-xs text-zinc-400 m-0 leading-relaxed">{building.bonus?.desc}</p>
-                    </div>
-
-                    {building.bonus?.passive && Object.keys(building.bonus.passive).length > 0 && (
-                      <div className="text-xs text-zinc-500 space-y-1">
-                        {Object.entries(building.bonus.passive).map(([key, value]) => (
-                          <div key={key} className="flex justify-between">
-                            <span>{key.replace(/_/g, ' ')}:</span>
-                            <span className={value > 0 ? 'text-green' : 'text-red'}>
-                              {value > 0 ? '+' : ''}{Math.round(value * 100)}%
-                            </span>
+                    {building.bonus && (
+                      <div className="mt-1 border-t border-white/5 pt-1">
+                        <div className="font-semibold text-gold">✨ {building.bonus.name}</div>
+                        <div className="mt-0.5 text-[10px] text-text3">{building.bonus.desc}</div>
+                        {building.bonus.passive && Object.keys(building.bonus.passive).length > 0 && (
+                          <div className="mt-1 text-[10px] text-text3">
+                            {Object.entries(building.bonus.passive).map(([k, v]) => v ? (
+                              <div key={k}>{k.replace(/_/g, ' ')}: <span className="text-text">+{v}</span></div>
+                            ) : null)}
                           </div>
-                        ))}
+                        )}
                       </div>
                     )}
                   </div>
                 ))}
               </div>
             )}
-          </div>
-
-          <div className="p-4 border-t border-white/10 bg-white/[0.02] flex justify-end gap-3">
-            <button
-              className="bg-transparent border border-zinc-600 text-zinc-400 px-5 py-2 rounded text-sm font-medium cursor-pointer transition-all hover:border-zinc-400 hover:text-white"
-              onClick={onClose}
-            >
-              Close
-            </button>
           </div>
         </div>
       </div>
@@ -155,90 +148,102 @@ export default function HybridBlueprintModal({ blueprintId, fragmentName, onClos
   // Confirmation stage
   if (stage === 'confirm' && selected) {
     return (
-      <div className="fixed inset-0 bg-black/80 z-modal backdrop-blur-sm flex items-center justify-center p-5" onClick={onClose}>
-        <div className="rounded-xl border-2 border-[var(--accent1)] bg-gradient-to-br from-zinc-900 to-white/5 max-w-[700px] w-full max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-          <div className="p-8 border-b border-white/10 bg-gradient-to-br from-red-500/5 to-transparent">
-            <h2 className="text-2xl font-bold m-0 text-white">⚠️ Confirm Fragment Application</h2>
-            <p className="text-zinc-300 text-sm m-0 mt-2">This action is permanent and cannot be undone</p>
+      <div
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/72 p-4"
+      >
+        <div className="flex w-full max-h-[80vh] max-w-[680px] flex-col rounded-sm border-2 border-[var(--accent1)] bg-bg2 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+          <div className="flex items-center justify-between border-b border-white/5 px-4.5 py-3.5">
+            <span className="text-[14px] font-bold text-text">⚠️ Confirm Fragment Application</span>
+            <button
+              onClick={onClose}
+              className="p-1 text-[18px] text-text3 cursor-pointer leading-none"
+            >✕</button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-8 space-y-6">
-            <div className="bg-red/10 border border-red/30 rounded-lg p-5">
-              <p className="text-sm text-zinc-300 m-0">
-                You are about to attune <span className="font-bold text-orange-400">{selected.name}</span> (have: <span className="font-bold text-white">{selected.count}</span>) with a discovered fragment.
-              </p>
-            </div>
+          <div className="flex-1 overflow-y-auto px-4.5 py-4">
+            {error && (
+              <div className="mb-4 rounded-sm border border-red bg-red/10 p-3 text-[12px] text-red">
+                {error}
+              </div>
+            )}
 
-            <div className="bg-white/[0.03] border border-white/10 rounded-lg p-5">
-              <h3 className="m-0 mb-3 text-sm font-semibold uppercase tracking-wider text-orange-400">Fragment Bonus</h3>
-              <h4 className="m-0 text-base font-semibold text-white mb-2">✨ {selected.bonus?.name}</h4>
-              <p className="text-zinc-300 text-sm m-0 leading-relaxed mb-4">{selected.bonus?.desc}</p>
-
-              {selected.bonus?.passive && Object.keys(selected.bonus.passive).length > 0 && (
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2">
-                  {Object.entries(selected.bonus.passive).map(([key, value]) => (
-                    <div key={key} className={`flex flex-col items-center p-3 bg-white/5 rounded border-l-4 text-center ${value >= 0 ? 'border-green' : 'border-red'}`}>
-                      <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400 mb-1">
-                        {key.replace(/_/g, ' ')}
-                      </span>
-                      <span className={`text-base font-bold ${value >= 0 ? 'text-green' : 'text-red'}`}>
-                        {value > 0 ? '+' : ''}{Math.round(value * 100)}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-5">
-              <h4 className="m-0 mb-3 text-sm font-semibold uppercase tracking-wider text-orange-400">Costs & Requirements</h4>
-              <div className="space-y-1 text-sm">
-                <p className="text-zinc-300 m-0">💰 Cost: <span className="font-bold text-yellow-400">500,000 Gold</span></p>
-                <p className="text-zinc-300 m-0">✨ Cost: <span className="font-bold text-blue-400">100,000 Mana</span></p>
+            <div className="mb-4 rounded-sm border border-red bg-red/10 p-3">
+              <div className="text-[12px] text-text3">
+                <p className="m-0 mb-2">You are about to attune:</p>
+                <p className="m-0 mb-1 text-center font-bold text-text">{selected.name}</p>
+                <p className="m-0 text-center text-text3">Have: {selected.count}</p>
               </div>
             </div>
 
-            <div className="bg-red/10 border border-red/30 rounded-lg p-5 space-y-3">
-              <h4 className="m-0 text-sm font-semibold uppercase tracking-wider text-red">⛔ Critical Warning</h4>
-              <p className="text-sm text-zinc-300 m-0">
-                <span className="font-bold text-white">This choice is PERMANENT</span> and cannot be undone. Once applied to this building, the fragment cannot be moved or removed.
-              </p>
-
-              <label className="flex items-center gap-2 cursor-pointer mt-4">
-                <input
-                  type="checkbox"
-                  checked={checkboxes.understand}
-                  onChange={(e) => setCheckboxes(prev => ({ ...prev, understand: e.target.checked }))}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm text-zinc-300">I understand this cannot be undone</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={checkboxes.permanent}
-                  onChange={(e) => setCheckboxes(prev => ({ ...prev, permanent: e.target.checked }))}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm text-zinc-300">I confirm this is permanent</span>
-              </label>
+            <div className="mb-4 rounded-sm border border-gold/30 bg-gold/5 p-3">
+              <div className="mb-2 text-[12px] font-semibold text-gold uppercase tracking-wider">✨ Fragment Bonus</div>
+              <div className="text-[11px] text-text">
+                <div className="font-semibold text-gold">{selected.bonus?.name}</div>
+                <p className="m-0 mt-1 text-text3">{selected.bonus?.desc}</p>
+                {selected.bonus?.passive && Object.keys(selected.bonus.passive).length > 0 && (
+                  <div className="mt-2 border-t border-white/5 pt-2">
+                    <div className="text-[10px] font-semibold text-gold mb-1">Passive Bonuses:</div>
+                    <div className="text-text3">
+                      {Object.entries(selected.bonus.passive).map(([k, v]) => v ? (
+                        <div key={k}>{k.replace(/_/g, ' ')}: <span className="text-text">+{v}</span></div>
+                      ) : null)}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {error && <div className="bg-red/10 border border-red text-red px-4 py-3 text-xs rounded">{error}</div>}
+            <div className="mb-4 rounded-sm border border-white/10 bg-white/[0.03] p-3">
+              <div className="mb-2 text-[12px] font-semibold text-text uppercase tracking-wider">Costs</div>
+              <div className="text-[11px] text-text3">
+                <p className="m-0">💰 Cost: <span className="font-bold text-gold">500,000 Gold</span></p>
+                <p className="m-0 mt-1">✨ Cost: <span className="font-bold text-blue">100,000 Mana</span></p>
+              </div>
+            </div>
+
+            <div className="rounded-sm border border-red bg-red/10 p-3">
+              <div className="mb-2 text-[12px] font-semibold text-red uppercase tracking-wider">⛔ WARNING</div>
+              <div className="text-[11px] text-text3">
+                <p className="m-0 mb-2">This choice is <span className="font-bold text-text">PERMANENT</span> and <span className="font-bold text-text">CANNOT BE UNDONE</span></p>
+                <p className="m-0">Once applied, this fragment cannot be moved or removed from this building.</p>
+              </div>
+
+              <div className="mt-3 space-y-2 border-t border-red/30 pt-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={checkboxes.understand}
+                    onChange={(e) => setCheckboxes(prev => ({ ...prev, understand: e.target.checked }))}
+                    className="cursor-pointer"
+                  />
+                  <span className="text-[11px] text-text3">I understand this cannot be undone</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={checkboxes.permanent}
+                    onChange={(e) => setCheckboxes(prev => ({ ...prev, permanent: e.target.checked }))}
+                    className="cursor-pointer"
+                  />
+                  <span className="text-[11px] text-text3">I confirm this is permanent</span>
+                </label>
+              </div>
+            </div>
           </div>
 
-          <div className="p-4 border-t border-white/10 bg-white/[0.02] flex justify-end gap-3">
+          <div className="flex gap-2 border-t border-white/5 px-4.5 py-3.5">
             <button
-              className="bg-transparent border border-zinc-600 text-zinc-400 px-5 py-2 rounded text-sm font-medium cursor-pointer transition-all hover:border-zinc-400 hover:text-white"
               onClick={handleBack}
+              className="flex-1 rounded-sm border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-semibold text-text transition-all hover:bg-white/10"
             >
               Back
             </button>
             <button
-              className="bg-gradient-to-r from-green-600 to-green-700 text-white border-0 rounded px-6 py-2 text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-600/40 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleConfirm}
               disabled={!checkboxes.understand || !checkboxes.permanent || confirming}
+              className="flex-1 rounded-sm border border-green bg-green/20 px-3 py-1.5 text-[11px] font-semibold text-green transition-all hover:bg-green/30 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {confirming ? 'Applying...' : 'Apply Fragment'}
             </button>
