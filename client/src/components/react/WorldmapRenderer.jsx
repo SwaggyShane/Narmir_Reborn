@@ -617,11 +617,13 @@ export function renderWorldMap(
 
           H +
 
-          '" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;border-radius:12px;box-shadow:inset 0 0 40px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5); background:#040710;">';
+          '" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;border-radius:12px;box-shadow:inset 0 0 40px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5); background:#040710; shape-rendering:crispEdges; image-rendering:crisp-edges; text-rendering:optimizeLegibility;" shape-rendering="crispEdges" image-rendering="crisp-edges" text-rendering="optimizeLegibility">';
         // Defs - filters and gradients
         svg +=
 
           "<defs>" +
+
+          '<style>.text-label { paint-order: stroke fill; stroke: #000; stroke-width: 3px; stroke-linejoin: round; }</style>' +
 
           '<linearGradient id="oceanGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#050a18"/><stop offset="50%" stop-color="#091225"/><stop offset="100%" stop-color="#03050c"/></linearGradient>' +
 
@@ -745,7 +747,7 @@ export function renderWorldMap(
           } else {
             fill = TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.plains;
           }
-          svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="' + fill + '" class="terrain-shape" data-terrain="' + escapeHtml(cell.terrain) + '" data-race="' + escapeHtml(cell.race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default" pointer-events="none"><title>' + escapeHtml(terrainTooltip(cell.terrain)) + '</title></path>';
+          svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="' + fill + '" stroke="#111" stroke-width="1.25" stroke-linejoin="round" class="terrain-shape" data-terrain="' + escapeHtml(cell.terrain) + '" data-race="' + escapeHtml(cell.race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default;shape-rendering:crispEdges;vector-effect:non-scaling-stroke" pointer-events="none"><title>' + escapeHtml(terrainTooltip(cell.terrain)) + '</title></path>';
         });
         svg += '</g>';
 
@@ -1272,7 +1274,7 @@ export function renderWorldMap(
 
             svg +=
 
-              '<text class="wm-kingdom-label" x="' +
+              '<text class="wm-kingdom-label text-label" x="' +
 
               jx +
 
@@ -1292,7 +1294,7 @@ export function renderWorldMap(
 
               (isMe ? "#e8b84b" : "#fff") +
 
-              '" pointer-events="none" style="text-shadow: 0 1px 2px #000, 0 -1px 2px #000, 1px 0 2px #000, -1px 0 2px #000; dominant-baseline:middle">' +
+              '" pointer-events="none" style="dominant-baseline:middle">' +
 
               escapeHtml(k.name.slice(0, 10)) +
 

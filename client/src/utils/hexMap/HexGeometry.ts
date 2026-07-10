@@ -81,8 +81,8 @@ export function hexCorners(
   for (let i = 0; i < 6; i++) {
     const angle = (Math.PI / 180) * (60 * i - 30);
     corners.push([
-      Math.round((cx + size * Math.cos(angle)) * 10) / 10,
-      Math.round((cy + size * Math.sin(angle)) * 10) / 10,
+      Math.round((cx + size * Math.cos(angle)) * 4) / 4,
+      Math.round((cy + size * Math.sin(angle)) * 4) / 4,
     ]);
   }
   return corners;
