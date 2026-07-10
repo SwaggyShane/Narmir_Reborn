@@ -405,7 +405,8 @@ module.exports = function (db) {
         !ev.message.includes("Troop upkeep") &&
         !ev.message.includes("Actively constructing") &&
         !ev.message.includes("Library Est:") &&
-        !ev.message.includes("Construction complete:")
+        !ev.message.includes("Construction complete:") &&
+        !ev.message.includes("🔍 Scouts:")
       )
         continue; // already sent — skip
       filteredEvents.push(ev);
