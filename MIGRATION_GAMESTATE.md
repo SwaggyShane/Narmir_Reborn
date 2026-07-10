@@ -211,29 +211,39 @@ grep -r "apiCall\|/api/" /home/user/Narmir_Reborn/game/routes --include="*.js" |
 - Re-exports we didn't catch
 - Template strings with property names
 
-**Audit steps:**
+**Comprehensive audit steps (run in order):**
 
 ```bash
-# 1. Find all re-exports
+# 1. Catch-all: Find ALL getState() calls (many will be Zustand, but hidden GameStateManager calls stand out)
+grep -r "\.getState()" /home/user/Narmir_Reborn/client/src --include="*.js" --include="*.jsx" | grep -v "useEconomyStore\|useMilitaryStore\|useProfileStore\|useResearchStore\|usePopulationStore\|useUIStore\|node_modules"
+# → Should be ZERO results (after filtering Zustand stores)
+
+# 2. Find ALL GameStateManager/gameStateManager references
+grep -r "GameStateManager\|gameStateManager" /home/user/Narmir_Reborn/client/src --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx"
+
+# 3. Find ALL applyUpdates/applyGameMutation calls
+grep -r "applyUpdates\|applyGameMutation" /home/user/Narmir_Reborn/client/src --include="*.js" --include="*.jsx"
+
+# 4. Find all listener subscriptions (Zustand subscriptions are OK, but old GameStateManager subscriptions are not)
+grep -r "\.subscribe(" /home/user/Narmir_Reborn/client/src --include="*.js" --include="*.jsx" | grep -v "useEconomyStore\|useMilitaryStore\|useProfileStore\|useResearchStore\|usePopulationStore\|useUIStore"
+# → Should be ZERO results
+
+# 5. Find re-exports (easy to miss)
 grep -r "export.*gameStateManager\|export.*useGameState\|export.*gameMutation" /home/user/Narmir_Reborn/client/src
 
-# 2. Find computed/dynamic usage
-grep -r "getState\|applyUpdates" /home/user/Narmir_Reborn/client/src | grep -v "Zustand\|useEconomyStore\|useMilitaryStore" | grep -v node_modules
+# 6. Special attention: shellBridge and panelNav (re-export points)
+grep -r "gameState\|applyGame" /home/user/Narmir_Reborn/client/src/utils/shellBridge.js /home/user/Narmir_Reborn/client/src/utils/panelNav.js
 
-# 3. Find any remaining listener subscriptions
-grep -r "subscribe\|listener" /home/user/Narmir_Reborn/client/src | grep -v "Zustand\|store\|node_modules"
-
-# 4. Check all tests for mocked GameStateManager
-grep -r "vi.mock.*GameState\|jest.mock.*GameState" /home/user/Narmir_Reborn/client/src
-
-# 5. Find config/constant files that might reference it
-grep -r "GameState\|applyGame" /home/user/Narmir_Reborn/client/src/utils/config* /home/user/Narmir_Reborn/client/src/constants*
-
-# 6. Check if any plugin/extension system dynamically loads it
-grep -r "require.*GameState\|import.*GameState" /home/user/Narmir_Reborn/client/src | grep -v node_modules | grep -v "\.test\."
+# 7. Check all test files for GameStateManager mocks
+grep -r "vi\.mock.*GameState\|jest\.mock.*GameState" /home/user/Narmir_Reborn/client/src
 ```
 
-**Document findings as amendments to the 23-file list.**
+**Document findings:**
+- Create a spreadsheet or list: `[filename] [line] [type] [reference]`
+- Update the 23-file list with any new findings
+- Flag any re-exports or dynamic usage for special attention in Phase 2
+
+**Expected result:** Should find 0-3 additional files (usually test-related or re-exports)
 
 ---
 
@@ -242,7 +252,7 @@ grep -r "require.*GameState\|import.*GameState" /home/user/Narmir_Reborn/client/
 ### **Phase 1: Foundation Setup** (Days 1-2)
 **Goal:** Make uiStore ready to replace panel state storage
 
-#### 1.1 Extend UIStore with Panel State
+#### 1.1 Extend UIStore with Panel State (In-Memory)
 **File:** `client/src/stores/uiStore.js`
 
 **Before:**
@@ -253,7 +263,7 @@ gameStateManager.setPanelState('defensePanel', { expanded: true });
 
 **After:**
 ```javascript
-// In uiStore.js - add panel state management
+// In uiStore.js - add panel state management (in-memory only, Phase 1.1)
 panelState: {},  // { panelName: state }
 
 setPanelState: (panelName, state) => set((s) => {
@@ -267,6 +277,38 @@ getPanelState: (panelName) =>
 **Migration:** Replace all `usePanelState()` calls with `useUIStore`
 - **File:** `client/src/hooks/usePanelState.js` → delete
 - **Files affected:** Any component using `usePanelState()` (search for usages)
+
+**Gate:** Panel state persists in memory during session, components can read/write to UIStore
+
+---
+
+#### 1.2 (Optional, Post-Migration) Add localStorage Persistence
+**Timing:** Only after Phase 6 (GameStateManager fully deleted). Adding persistence mid-migration creates sync risks.
+
+**Approach:** Use Zustand persist middleware:
+```javascript
+import { persist } from 'zustand/middleware';
+
+export const useUIStore = create(
+  persist(
+    immer((set) => ({
+      // ... state
+      setPanelState: (panelName, state) => { /* ... */ }
+    })),
+    {
+      name: 'ui-storage',
+      partialize: (state) => ({ 
+        panelState: state.panelState,  // Only persist panel preferences
+        // Exclude sensitive UI state (modals, temp values)
+      }),
+    }
+  )
+);
+```
+
+**Benefits:** Returning players see UI exactly as they left it (expanded panels, active tabs, etc.)
+
+**When:** Post-migration, Phase 6+
 
 #### 1.2 Create test fixtures for Zustand stores
 **File:** `client/src/__mocks__/stores.js` (new)
@@ -295,6 +337,11 @@ export const mockMilitaryStore = { ... };
  * Centralized response routing enforcing the API Contract.
  * All server responses pass through here before reaching stores.
  * This prevents partial-sync bugs and inconsistent routing.
+ * 
+ * IMPORTANT: Uses .getState() pattern for use in non-component contexts
+ * (socket handlers, utilities, tests). This is standard Zustand practice
+ * and does NOT violate React hook rules since we're calling the store
+ * directly, not using the hook in render context.
  */
 
 import { useEconomyStore } from '../stores';
@@ -303,12 +350,66 @@ import { useResearchStore } from '../stores';
 import { usePopulationStore } from '../stores';
 import { useProfileStore } from '../stores';
 
+/**
+ * Validates that response follows the standardized contract.
+ * Throws in dev if response structure is invalid.
+ * 
+ * Contract rule: Every response.updates must contain exactly these sub-objects:
+ * { economy, military, research, population, profile }
+ * 
+ * Each sub-object can be empty {} if that domain wasn't updated.
+ */
+export function validateContract(updates, context = {}) {
+  const isDev = process.env.NODE_ENV === 'development';
+  
+  if (!updates) {
+    if (isDev) console.warn('[Contract] Response missing updates object', context);
+    return false;
+  }
+  
+  // Whitelist of allowed top-level keys in updates
+  const allowedKeys = new Set([
+    'economy', 'military', 'research', 'population', 'profile',
+    'error', 'events', 'message', 'success' // meta keys OK
+  ]);
+  
+  // Check for unexpected keys (catches routing mistakes)
+  const foundKeys = Object.keys(updates);
+  const unexpectedKeys = foundKeys.filter(key => !allowedKeys.has(key));
+  
+  if (unexpectedKeys.length > 0 && isDev) {
+    console.warn(
+      `[Contract Violation] Unexpected response keys: ${unexpectedKeys.join(', ')}`,
+      { context, foundKeys, updates }
+    );
+    return false;
+  }
+  
+  // Each domain that IS present should be an object (not null/string/etc)
+  ['economy', 'military', 'research', 'population', 'profile'].forEach(domain => {
+    if (updates[domain] !== undefined && typeof updates[domain] !== 'object') {
+      if (isDev) {
+        console.warn(
+          `[Contract Violation] ${domain} is not an object`,
+          { context, domain, value: updates[domain] }
+        );
+      }
+    }
+  });
+  
+  return true;
+}
+
 export function normalizeAndRouteResponse(response, context = {}) {
   if (!response?.updates) return null;
   
   const { updates } = response;
   
-  // Enforce contract: every response must have all 5 domain objects
+  // Validate response contract (throws warnings in dev)
+  validateContract(updates, context);
+  
+  // Enforce contract: every response can have these 5 domain objects
+  // (empty {} if domain wasn't updated)
   const normalized = {
     economy: updates.economy || {},
     military: updates.military || {},
@@ -317,43 +418,50 @@ export function normalizeAndRouteResponse(response, context = {}) {
     profile: updates.profile || {},
   };
   
-  // Validate: no unexpected top-level keys (catches routing mistakes)
-  const validKeys = new Set(['economy', 'military', 'research', 'population', 'profile']);
-  for (const key of Object.keys(updates)) {
-    if (!validKeys.has(key) && !['error', 'events', 'updates'].includes(key)) {
-      console.warn(`[Normalizer] Unexpected response key: ${key}`, response);
-    }
-  }
-  
   // Route each domain to its store in strict order
-  if (normalized.economy && Object.keys(normalized.economy).length > 0) {
+  // Only call receiveServerSnapshot if domain has actual updates
+  if (Object.keys(normalized.economy).length > 0) {
     useEconomyStore.getState().receiveServerSnapshot(normalized.economy);
   }
   
-  if (normalized.military && Object.keys(normalized.military).length > 0) {
+  if (Object.keys(normalized.military).length > 0) {
     useMilitaryStore.getState().receiveServerSnapshot(normalized.military);
   }
   
-  if (normalized.research && Object.keys(normalized.research).length > 0) {
+  if (Object.keys(normalized.research).length > 0) {
     useResearchStore.getState().receiveServerSnapshot(normalized.research);
   }
   
-  if (normalized.population && Object.keys(normalized.population).length > 0) {
+  if (Object.keys(normalized.population).length > 0) {
     usePopulationStore.getState().receiveServerSnapshot(normalized.population);
   }
   
-  if (normalized.profile && Object.keys(normalized.profile).length > 0) {
+  if (Object.keys(normalized.profile).length > 0) {
     useProfileStore.getState().receiveServerSnapshot(normalized.profile);
   }
   
-  // Log for debugging
-  if (context.reason) {
-    console.log(`[Response Route] ${context.reason}`, { normalized });
+  // Debug logging
+  if (process.env.NODE_ENV === 'development' && context.reason) {
+    console.log(`[Response Route] ${context.reason}`, { 
+      had_updates: Object.keys(normalized).filter(k => Object.keys(normalized[k]).length > 0),
+      reason: context.reason
+    });
   }
   
   return normalized;
 }
 ```
+
+**Design Rationale:**
+
+1. **Direct Store Access via .getState():** Uses the `.getState()` static method on Zustand hooks. This is the standard pattern for accessing store state outside of React components (in utilities, socket handlers, tests). It does NOT violate React hook rules because we're calling the store directly, not using the hook in render context.
+
+2. **Contract Validation:** The `validateContract()` function enforces the standardized response structure. In development, it warns when:
+   - Response has unexpected top-level keys (indicates incorrect routing)
+   - A domain sub-object is not a proper object
+   - This catches divergence early before it causes silent sync bugs
+
+3. **Normalized Routing:** Accepts empty objects for domains that don't have updates. This ensures all 5 stores follow the same code path, making routing failures visible.
 
 **Rule:** ALL API handlers must use this function, not ad-hoc routing.
 
@@ -365,8 +473,9 @@ export function normalizeAndRouteResponse(response, context = {}) {
 
 **This ensures:**
 - No inconsistent routing (single code path)
-- Response shape validation (catches malformed responses)
+- Response contract validated in dev (catches malformed responses early)
 - Consistent logging (easier debugging)
+- Works in any context (components, utilities, socket handlers, tests)
 - Easy to verify all stores updated correctly
 
 ---
@@ -671,43 +780,53 @@ const mana = useMana();
   - Line 70-99: Economy + School upgrades (unified endpoint)
 - `useKingdomRank.js` — line 45
 
+**Architectural Separation:**
+
+When migrating UpgradesList.jsx, maintain clear separation:
+- **Component logic (stays in UpgradesList.jsx):** UI state (purchasing flag, modal state), user interaction flows, local validation, toast messages
+- **Store routing (use responseNormalizer):** All server response handling, state updates, inter-store consistency
+
 **Migration Strategy:**
 
-UpgradesList.jsx needs to route upgrades to correct stores based on type:
+Use the centralized response normalizer from Phase 1.5:
 
 **Before (Current - Legacy):**
 ```javascript
 if (result.updates) {
-  applyGameMutation(result, { reason: 'economy-upgrade' });  // ALL UPDATES → GameStateManager
+  applyGameMutation(result, { reason: 'economy-upgrade' });  // All updates → GameStateManager
+  // Component-level: update owned state, show toast, handle callback
+  const nextOwned = ownedFromUpdates(result.updates, category) || { ...owned, [upgradeKey]: true };
+  onPurchased?.(upgradeKey, nextOwned);
+  toast(`${def.name} purchased!`, 'success');
 }
 ```
 
-**After (Zustand - Explicit routing by type):**
+**After (Zustand + Normalizer - Explicit routing):**
 
 ```javascript
+// At top of component file:
+import { normalizeAndRouteResponse } from '../../utils/responseNormalizer';
+
+// In handleBuy function:
 if (result.updates) {
-  // Economy upgrades: farm, bank, granary, market, tavern
-  // These come back as: { farm_upgrades: {...}, gold: X, ... }
-  if (result.updates.economy || result.updates.farm_upgrades !== undefined || 
-      result.updates.bank_upgrades !== undefined || result.updates.granary_upgrades !== undefined ||
-      result.updates.market_upgrades !== undefined || result.updates.tavern_upgrades !== undefined) {
-    useEconomyStore.getState().receiveServerSnapshot(result.updates.economy || result.updates);
-  }
+  // ← Phase 1.5: Use centralized normalizer for ALL store routing (enforces contract)
+  normalizeAndRouteResponse(result, { 
+    reason: 'upgrade-purchased',
+    category: category,
+    upgradeKey: upgradeKey
+  });
   
-  // School upgrades: research discipline
-  // Comes back as: { school_upgrades: {...} }
-  if (result.updates.school_upgrades !== undefined) {
-    useResearchStore.getState().receiveServerSnapshot({
-      school_upgrades: result.updates.school_upgrades
-    });
-  }
-  
-  // Mausoleum upgrades: comes back as { mausoleum_upgrades: {...}, gold: X }
-  if (result.updates.mausoleum_upgrades !== undefined) {
-    useEconomyStore.getState().receiveServerSnapshot(result.updates);
-  }
+  // ← Component-level logic (UI concerns, stays here)
+  const nextOwned = ownedFromUpdates(result.updates, category) || { ...owned, [upgradeKey]: true };
+  onPurchased?.(upgradeKey, nextOwned);
+  toast(`${def.name} purchased!`, 'success');
 }
 ```
+
+**Why this split?**
+1. **Component stays responsible for:** UI state management, user feedback (toasts, loading flags), callback triggers for parent component updates
+2. **Normalizer responsible for:** ALL server → Zustand state routing, contract validation, multi-store sync
+3. **Benefits:** Single source of truth for routing (normalizer), cleaner component code, easier to test store sync independently
 
 **Specific Code Changes in UpgradesList.jsx:**
 
@@ -732,15 +851,17 @@ if (result.updates) {
 + }
 ```
 
-**Verification checklist for Phase 3.3:**
-- [ ] Farm upgrade purchase → economyStore.farm_upgrades updated
-- [ ] Bank upgrade purchase → economyStore.bank_upgrades updated
-- [ ] Granary upgrade purchase → economyStore.granary_upgrades updated
-- [ ] Market upgrade purchase → economyStore.market_upgrades updated
-- [ ] Tavern upgrade purchase → economyStore.tavern_upgrades updated
-- [ ] School upgrade purchase → researchStore.school_upgrades updated
-- [ ] Mausoleum upgrade purchase → economyStore.mausoleum_upgrades updated
+**Verification checklist for Phase 3B.3:**
+- [ ] Farm upgrade purchase → economyStore.farm_upgrades updated (via normalizer)
+- [ ] Bank upgrade purchase → economyStore.bank_upgrades updated (via normalizer)
+- [ ] Granary upgrade purchase → economyStore.granary_upgrades updated (via normalizer)
+- [ ] Market upgrade purchase → economyStore.market_upgrades updated (via normalizer)
+- [ ] Tavern upgrade purchase → economyStore.tavern_upgrades updated (via normalizer)
+- [ ] School upgrade purchase → researchStore.school_upgrades updated (via normalizer)
+- [ ] Mausoleum upgrade purchase → economyStore.mausoleum_upgrades updated (via normalizer)
 - [ ] No applyGameMutation() calls remain in UpgradesList.jsx
+- [ ] Component-level logic (toasts, owned state, callbacks) still work correctly
+- [ ] No console warnings from validateContract() in dev mode
 
 ---
 
@@ -810,18 +931,147 @@ vi.mock('../../hooks/useGameState', () => ({
 
 Same pattern as above.
 
-#### 5.3 Add integration tests
-Verify stores are synced after API calls:
+#### 5.3 Add integration tests with Zustand patterns
+Verify stores are synced after API calls and responseNormalizer works correctly:
+
+**Pattern 1: Direct store state inspection**
 ```javascript
-test('farm upgrade updates economyStore', async () => {
+import { useEconomyStore, useResearchStore } from '../../stores';
+
+test('farm upgrade routes through normalizer to economyStore', async () => {
+  // Capture initial state
+  const initialGold = useEconomyStore.getState().gold;
   const initialFarmUpgrades = useEconomyStore.getState().farm_upgrades;
   
-  await buyFarmUpgrade('irrigation');
+  // Mock API response (what server returns)
+  const mockResponse = {
+    updates: {
+      economy: {
+        farm_upgrades: { ...initialFarmUpgrades, irrigation: true },
+        gold: initialGold - 1000,
+      },
+    }
+  };
   
-  const updatedFarmUpgrades = useEconomyStore.getState().farm_upgrades;
-  expect(updatedFarmUpgrades.irrigation).toBe(true);
+  // Simulate normalizer call (happens in UpgradesList.jsx)
+  normalizeAndRouteResponse(mockResponse, { reason: 'upgrade-purchased', type: 'farm' });
+  
+  // Verify stores updated
+  expect(useEconomyStore.getState().farm_upgrades.irrigation).toBe(true);
+  expect(useEconomyStore.getState().gold).toBe(initialGold - 1000);
 });
 ```
+
+**Pattern 2: School upgrades across stores (multi-store sync)**
+```javascript
+test('school upgrade routes to researchStore via normalizer', () => {
+  const mockResponse = {
+    updates: {
+      research: {
+        school_upgrades: { magic: true },
+        mana: 50,
+      },
+    }
+  };
+  
+  normalizeAndRouteResponse(mockResponse, { reason: 'upgrade-purchased', type: 'school' });
+  
+  expect(useResearchStore.getState().school_upgrades.magic).toBe(true);
+  expect(useResearchStore.getState().mana).toBe(50);
+});
+```
+
+**Pattern 3: Validation catches contract violations**
+```javascript
+test('validateContract warns on malformed response in dev', () => {
+  const consoleSpy = vi.spyOn(console, 'warn');
+  
+  const badResponse = {
+    unexpected_key: 'value',  // Not in contract
+    economy: { gold: 100 },
+  };
+  
+  validateContract(badResponse, { context: 'test' });
+  
+  expect(consoleSpy).toHaveBeenCalledWith(
+    expect.stringContaining('Unexpected response keys')
+  );
+  consoleSpy.mockRestore();
+});
+```
+
+**Pattern 4: End-to-end component test (if E2E testing available)**
+```javascript
+test('UpgradesList: buying farm upgrade updates economyStore and UI', async () => {
+  // Mock API
+  vi.mock('../../utils/api', () => ({
+    apiCall: vi.fn().mockResolvedValue({
+      updates: {
+        economy: {
+          farm_upgrades: { irrigation: true },
+          gold: 4000,
+        }
+      }
+    })
+  }));
+  
+  // Render component and buy upgrade
+  const { getByText, rerender } = render(<UpgradesList category="farm" defs={farmDefs} />);
+  await userEvent.click(getByText('Buy'));
+  
+  // Verify store updated (component will re-render via Zustand subscription)
+  expect(useEconomyStore.getState().farm_upgrades.irrigation).toBe(true);
+  
+  // Verify toast shown (component-level logic)
+  await waitFor(() => expect(getByText(/purchased/i)).toBeInTheDocument());
+});
+```
+
+**Test Infrastructure Setup (Phase 1.2 deliverable):**
+```javascript
+// client/src/__mocks__/stores.js
+export const createMockEconomyStore = (initialState = {}) => ({
+  gold: 10000,
+  food: 5000,
+  farm_upgrades: {},
+  bank_upgrades: {},
+  ...initialState,
+  receiveServerSnapshot: vi.fn(function(updates) {
+    Object.assign(this, updates);
+  })
+});
+
+export const createMockResearchStore = (initialState = {}) => ({
+  mana: 100,
+  school_upgrades: {},
+  ...initialState,
+  receiveServerSnapshot: vi.fn(function(updates) {
+    Object.assign(this, updates);
+  })
+});
+
+// Usage in tests:
+test('normalizer updates economy store', () => {
+  const mockEconomy = createMockEconomyStore();
+  vi.mocked(useEconomyStore).mockReturnValue({
+    getState: () => mockEconomy
+  });
+  
+  normalizeAndRouteResponse({ updates: { economy: { gold: 5000 } } });
+  
+  expect(mockEconomy.receiveServerSnapshot).toHaveBeenCalledWith({ gold: 5000 });
+});
+```
+
+**Automation checklist for Phase 5:**
+- [ ] All GameStateManager/legacy hook mocks removed
+- [ ] New Zustand store mocks created (Phase 1.2 deliverable)
+- [ ] validateContract() tests added (contract enforcement)
+- [ ] normalizeAndRouteResponse() integration tests (all 5 domains)
+- [ ] All 7 building upgrade types tested (farm, bank, granary, market, tavern, school, mausoleum)
+- [ ] Multi-store sync tested (e.g., school upgrades updating both economy and research)
+- [ ] Component tests updated to use store mocks instead of listener mocks
+- [ ] npm test and npm run test:components both pass
 
 ---
 
@@ -1221,6 +1471,102 @@ Manual QA checklist:
 2. **War Log Cache:** Where should warLogCache be stored? (militaryStore? separate? profileStore?)
 3. **Optimistic Updates:** Accept server-driven only, or implement optimistic via Zustand actions?
 4. **Mutation Events:** Any external systems listening to gameStateManager mutation events? (check shellBridge)
+
+---
+
+## Post-Migration Polish (Phase 6+)
+
+After GameStateManager is deleted and all tests pass, complete these refinements:
+
+### **Phase 1.2: UIStore localStorage Persistence** (Post-migration)
+Timing: Only after Phase 6 confirms GameStateManager is fully removed.
+
+**Implementation:**
+```javascript
+// client/src/stores/uiStore.js
+import { create } from 'zustand';
+import { persist, immer } from 'zustand/middleware';
+
+export const useUIStore = create(
+  persist(
+    immer((set) => ({
+      // ... existing state
+      setPanelState: (panelName, state) => set((s) => {
+        s.panelState[panelName] = state;
+      }),
+    })),
+    {
+      name: 'narmir-ui-storage',
+      partialize: (state) => ({
+        panelState: state.panelState,  // Only persist UI preferences
+      }),
+    }
+  )
+);
+```
+
+**Benefit:** Players' UI layout (expanded panels, active tabs) persists across sessions.
+
+### **Phase 6.5: TypeScript Tightening**
+Consider migrating Zustand stores to TypeScript:
+- Strong types for store state and actions
+- IDE autocomplete for store methods
+- Catch type errors at build time instead of runtime
+
+### **Phase 6.6: Performance Audit**
+Run React DevTools Profiler:
+- [ ] No unnecessary component re-renders
+- [ ] Store subscriptions efficient (use useShallow where needed)
+- [ ] Socket event handlers not creating closures that capture stale state
+
+### **Phase 6.7: Documentation Updates**
+
+**Update CLAUDE.md:**
+- Remove all GameStateManager references
+- Add "Zustand-Only" pattern section with examples
+- Document store usage rules:
+  - ✅ Use hooks in components: `const gold = useGold()`
+  - ✅ Use `.getState()` in utilities/socket handlers: `useEconomyStore.getState().gold`
+  - ✅ All API responses flow through `normalizeAndRouteResponse()`
+  - ❌ Never directly mutate store state
+  - ❌ Never use hooks in non-component contexts
+  - ❌ Never create new state without going through receiveServerSnapshot
+
+**Add migration lessons learned document:**
+Create `game/MIGRATION_GAMESTATE_LESSONS.md`:
+- Response contract enforcement prevents subtle sync bugs
+- Dual data sources (Phase 3A) prove listeners redundant before deletion
+- Comprehensive grep audit (Pre-Phase 1B) catches indirect dependencies
+- Direct store refs via `.getState()` work in all contexts, not just components
+- validateContract() caught unexpected response structures during development
+
+**Video/Tutorial (Optional):**
+- Create a 5-min walkthrough of new Zustand patterns for future onboarding
+- Show before/after code for upgrading building vs. legacy approach
+
+### **Phase 6.8: War Log Cache Resolution**
+Post-migration analysis: Where should warLogCache live?
+
+**Current state:** Only mentioned in `replayWarReport.js`, read from GameStateManager
+
+**Decision options:**
+1. **militaryStore:** If warLogCache is combat-related ✅ Recommended
+2. **profileStore:** If warLogCache is player-specific
+3. **New warLogStore:** If very large and frequently updated
+
+**Implementation (Option 1):**
+```javascript
+// militaryStore.js
+actions: {
+  setWarLogCache: (cache) => set((s) => {
+    s.warLogCache = cache;
+  }),
+}
+
+// replayWarReport.js
+import { useMilitaryStore } from '../stores';
+const warLogCache = useMilitaryStore.getState().warLogCache;
+```
 
 ---
 
