@@ -19,6 +19,7 @@ const {
 const fragmentBonusManager = require("./fragment-bonus-manager");
 const effectsProcessor = require("./synergy-effects-processor");
 const { processScoutProgress } = require("./scout-progress");
+const { getProgressMetrics } = require("./scout-rings");
 const { revealRingHexes } = require("./visibility");
 const { safeJsonParse, clearParseCache } = require('../utils/helpers');
 const { EPOCH_NOW } = require('../lib/db-sql');
@@ -626,10 +627,12 @@ function processTurn(k, db = null) {
     );
     if (scoutResult.progress_gained > 0) {
       updates.scout_progress = scoutResult.new_total;
-      // Always log scout progress
+      const metrics = getProgressMetrics(scoutResult.new_total);
+      const pctStr = Math.round(metrics.percentComplete);
+      // Always log scout progress with percentage toward next ring
       events.push({
         type: "system",
-        message: `🔍 Scouts: +${Math.floor(scoutResult.progress_gained)} turns (Ring ${scoutResult.previous_ring} → ${scoutResult.ring_completed ? scoutResult.completed_ring_number : scoutResult.previous_ring})`,
+        message: `🔍 Scouts: +${Math.round(scoutResult.progress_gained * 100) / 100} turns toward Ring ${metrics.nextRing} (${pctStr}%)`,
       });
       // Reveal new ring hexes if ring was completed
       if (scoutResult.ring_completed && db && k.id) {

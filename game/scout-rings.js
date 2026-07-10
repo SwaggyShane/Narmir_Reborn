@@ -103,12 +103,13 @@ function getCompletedRing(scoutProgress) {
 
 /**
  * Calculate progress toward the next ring.
+ * Preserves fractional scout_progress values for accurate percentage calculation.
  *
- * @param {number} scoutProgress - Total scout-turns accumulated
+ * @param {number} scoutProgress - Total scout-turns accumulated (may be fractional)
  * @returns {object} Progress metrics: {currentRing, turnsForCurrentRing, turnsTowardNext, percentComplete}
  */
 function getProgressMetrics(scoutProgress) {
-  const progress = Math.max(0, Math.floor(Number(scoutProgress) || 0));
+  const progress = Math.max(0, Number(scoutProgress) || 0);
   const currentRing = getCompletedRing(progress);
   const nextRing = Math.min(currentRing + 1, config.SCOUT_CONSTANTS.MAX_RING);
 
