@@ -2,13 +2,20 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-09 (Phase 1 architecture documentation complete — PR #851 merged)
+**Last updated:** 2026-07-10 (All major systems complete — Exploration, Fog of War, GameStateManager migration, Security audit, Upgrade UX fixes)
 
 ---
 
 ## Status
 
-Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 2026-06-28. **Active work: Exploration System Redesign (all 4 phases complete as of 2026-07-04).** Fog of War system also complete (5/5 phases). Awaiting final integration and launch. See `EXPLORATION_SYSTEM_LOCKED.md` and `FOG_OF_WAR_PLAN.md` for specifications.
+✅ **ALL MAJOR SYSTEMS COMPLETE:**
+- GameStateManager → Zustand migration: Complete (single sprint, all 6 phases)
+- Exploration System Redesign: Complete (4 phases, fully deployed)
+- Fog of War system: Complete (5 phases, integrated)
+- Security Audit: Complete (all 7 categories passing)
+- Upgrade UX: Complete (validation toast + dynamic refresh)
+
+See [ARCHIVAL.md](ARCHIVAL.md) for detailed completion records.
 
 ---
 

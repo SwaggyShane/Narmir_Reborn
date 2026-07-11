@@ -18,6 +18,7 @@ const abilityManager = require('../game/active-ability-manager');
 const { applyKingdomUpdates } = require('../db/schema');
 const { convertNumericFields } = require('../db/numeric-fields');
 const { setUnreadCount } = require("../cache.js");
+const { structureUpdates } = require('./response-structurer');
 const { decorateNewsMessage } = require("../game/news-emoji");
 const { EPOCH_NOW } = require("../lib/db-sql");
 const { pgInList, pgValueTuples } = require("../lib/pg-placeholders");
@@ -762,7 +763,37 @@ module.exports = function (db) {
         const totalTime = Date.now() - startTime;
         console.log(`[turn] complete for player ${req.player.playerId} in ${totalTime}ms (prefetch+process+tx+postfetch)`);
 
-        return { ok: true, updates: txUpdates, events: txEvents, turns_stored: txUpdates.turns_stored };
+        // Separate fields into proper domains for contract compliance
+        const profileFields = new Set(['turn', 'turns_stored', 'level', 'xp', 'xp_sources', 'scout_progress', 'score', 'unread_news', 'last_turn_at', 'updated_at']);
+        const economyFields = new Set(['gold', 'food', 'mana', 'wood', 'stone', 'iron', 'steel', 'coal', 'maps', 'scrolls', 'blueprints_stored', 'land', 'food_surplus_turns', 'food_shortage_turns', '_spoilage']);
+        const researchFields = new Set(['research_focus', 'research_progress']);
+        const populationFields = new Set(['population', 'happiness', 'goals']);
+        const militaryFields = new Set(['rangers', 'fighters', 'troop_levels', 'tower_progress']);
+
+        const structuredUpdates = {};
+
+        // Distribute fields into domains
+        Object.entries(txUpdates).forEach(([key, value]) => {
+          if (profileFields.has(key)) {
+            if (!structuredUpdates.profile) structuredUpdates.profile = {};
+            structuredUpdates.profile[key] = value;
+          } else if (economyFields.has(key)) {
+            if (!structuredUpdates.economy) structuredUpdates.economy = {};
+            structuredUpdates.economy[key] = value;
+          } else if (researchFields.has(key)) {
+            if (!structuredUpdates.research) structuredUpdates.research = {};
+            structuredUpdates.research[key] = value;
+          } else if (populationFields.has(key)) {
+            if (!structuredUpdates.population) structuredUpdates.population = {};
+            structuredUpdates.population[key] = value;
+          } else if (militaryFields.has(key)) {
+            if (!structuredUpdates.military) structuredUpdates.military = {};
+            structuredUpdates.military[key] = value;
+          }
+          // Any other fields are silently dropped (shouldn't happen)
+        });
+
+        return { ok: true, updates: structuredUpdates, events: txEvents };
       });
       res.json(result);
     } catch (err) {
@@ -1170,7 +1201,7 @@ module.exports = function (db) {
       updates.name = name.trim();
     }
     await applyUpdates(db, k.id, updates);
-    res.json({ ok: true, updates });
+    res.json({ ok: true, updates: structureUpdates(updates) });
   });
   // â"€â"€ Season info â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.get("/season", requireAuth, async (_req, res) => {
@@ -1815,7 +1846,7 @@ module.exports = function (db) {
       ],
     );
 
-    res.json({ ok: true, prestige_level: result.updates.prestige_level });
+    res.json({ ok: true, prestige_level: result.updates.prestige_level, updates: structureUpdates(result.updates) });
   });
 
   router.get("/lore-and-achievements", requireAuth, async (req, res) => {

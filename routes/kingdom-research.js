@@ -8,6 +8,7 @@ const { loadTradeRoutes } = require('../game/engine');
 const config = require('../game/config');
 const { decorateNewsMessage } = require('../game/news-emoji');
 const { pgValueTuples } = require('../lib/pg-placeholders');
+const { structureUpdates } = require('./response-structurer');
 
 const router = express.Router();
 
@@ -392,7 +393,7 @@ module.exports = function (db) {
         return result;
       });
 
-      res.json({ ok: true, school: result.updates.school_of_magic, events: result.events });
+      res.json({ ok: true, school: result.updates.school_of_magic, events: result.events, updates: structureUpdates(result.updates) });
     } catch (e) {
       if (e.message.includes('Kingdom not found')) {
         return res.status(404).json({ error: e.message });

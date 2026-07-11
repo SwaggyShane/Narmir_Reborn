@@ -42,6 +42,37 @@ function UpgradeRow({ category, upgradeKey, def, owned, state, onPurchased, purc
 
   const handleBuy = async () => {
     if (purchasing) return;
+
+    // Validation: check if purchase is possible
+    if (!canBuy) {
+      if (isOwned) {
+        toast('Already owned', 'info');
+      } else if (!hasReq) {
+        toast(`Need ${def.requires?.replace(/_/g, ' ')} first`, 'warning');
+      } else if (!raceOk) {
+        toast('Your race cannot use this upgrade', 'warning');
+      } else if (!vaultsOk) {
+        toast(`Need ${def.reqVaults} vault${def.reqVaults !== 1 ? 's' : ''} first`, 'warning');
+      } else {
+        // Resource check
+        const missing = [];
+        if ((state?.gold || 0) < (def.cost || 0)) {
+          missing.push(`${fmt(def.cost - (state?.gold || 0))} gold`);
+        }
+        if ((state?.wood || 0) < (def.costWood || 0)) {
+          missing.push(`${fmt(def.costWood - (state?.wood || 0))} wood`);
+        }
+        if ((state?.stone || 0) < (def.costStone || 0)) {
+          missing.push(`${fmt(def.costStone - (state?.stone || 0))} stone`);
+        }
+        if ((state?.iron || 0) < (def.costIron || 0)) {
+          missing.push(`${fmt(def.costIron - (state?.iron || 0))} iron`);
+        }
+        toast(`Need: ${missing.join(', ')}`, 'warning');
+      }
+      return;
+    }
+
     setPurchasing(true);
 
     try {
@@ -110,7 +141,7 @@ function UpgradeRow({ category, upgradeKey, def, owned, state, onPurchased, purc
         <button
           className="btn btn-gold text-[11px] px-2.5 py-0.5 disabled:opacity-50"
           onClick={handleBuy}
-          disabled={!canBuy || purchasing}
+          disabled={purchasing}
         >
           {purchasing ? 'Buying...' : 'Buy'}
         </button>

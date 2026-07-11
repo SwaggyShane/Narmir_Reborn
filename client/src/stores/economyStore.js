@@ -102,6 +102,11 @@ export const useEconomyStore = create(
         granary_upgrades: {},
         market_upgrades: {},
         tavern_upgrades: {},
+        wall_upgrades: {},
+        tower_def_upgrades: {},
+        outpost_upgrades: {},
+        mausoleum_upgrades: {},
+        school_upgrades: {},
 
         // Entity collections (normalized: byId/allIds)
         tradeRoutes: {
@@ -434,3 +439,18 @@ export const useMarketUpgrades = () =>
 
 export const useTavernUpgrades = () =>
   useEconomyStore((state) => state.tavern_upgrades || EMPTY_OBJECT);
+
+export const useWallUpgrades = () =>
+  useEconomyStore((state) => state.wall_upgrades || EMPTY_OBJECT);
+
+export const useTowerDefUpgrades = () =>
+  useEconomyStore((state) => state.tower_def_upgrades || EMPTY_OBJECT);
+
+export const useOutpostUpgrades = () =>
+  useEconomyStore((state) => state.outpost_upgrades || EMPTY_OBJECT);
+
+export const useMausoleumUpgrades = () =>
+  useEconomyStore((state) => state.mausoleum_upgrades || EMPTY_OBJECT);
+
+export const useSchoolUpgrades = () =>
+  useEconomyStore((state) => state.school_upgrades || EMPTY_OBJECT);

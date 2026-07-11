@@ -5,6 +5,7 @@ const { validateNonNegativeInteger, validateAllocationObject } = require('../uti
 const { applyKingdomUpdates } = require('../db/schema');
 const engine = require('../game/engine');
 const config = require('../game/config');
+const { structureUpdates } = require('./response-structurer');
 
 const router = express.Router();
 
@@ -159,14 +160,21 @@ module.exports = function (db) {
           throw err;
         }
 
+        // Check for engineers on active expeditions
+        const activeExpeditions = await db.all(
+          'SELECT SUM(engineers) as engineers_in_expeditions FROM expeditions WHERE kingdom_id = $1 AND turns_left > 0',
+          [k.id],
+        );
+        const engOnExpedition = activeExpeditions[0]?.engineers_in_expeditions || 0;
+
         const resourceAlloc = safeJsonParse(k.resource_build_allocation, {}, 'build-allocation:resource_build_allocation');
         const trainingAlloc = safeJsonParse(k.training_allocation, {}, 'build-allocation:training_allocation');
         const resourceTotal = Object.values(resourceAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
         const trainingTotal = Object.values(trainingAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
         const scoutTotal = Math.max(0, parseInt(k.scout_allocation, 10) || 0);
 
-        if (allocValidation.total + resourceTotal + trainingTotal + scoutTotal > k.engineers) {
-          const err = new Error(`Not enough available engineers. Allocated: ${allocValidation.total.toLocaleString()} build, ${resourceTotal.toLocaleString()} resource, ${trainingTotal.toLocaleString()} training, ${scoutTotal.toLocaleString()} scout. Total available: ${k.engineers.toLocaleString()}`);
+        if (allocValidation.total + resourceTotal + trainingTotal + scoutTotal + engOnExpedition > k.engineers) {
+          const err = new Error(`Not enough available engineers. Allocated: ${allocValidation.total.toLocaleString()} build, ${resourceTotal.toLocaleString()} resource, ${trainingTotal.toLocaleString()} training, ${scoutTotal.toLocaleString()} scout, ${engOnExpedition.toLocaleString()} on expeditions. Total available: ${k.engineers.toLocaleString()}`);
           err.statusCode = 400;
           throw err;
         }
@@ -221,14 +229,21 @@ module.exports = function (db) {
           throw err;
         }
 
+        // Check for engineers on active expeditions
+        const activeExpeditions = await db.all(
+          'SELECT SUM(engineers) as engineers_in_expeditions FROM expeditions WHERE kingdom_id = $1 AND turns_left > 0',
+          [k.id],
+        );
+        const engOnExpedition = activeExpeditions[0]?.engineers_in_expeditions || 0;
+
         const buildAlloc = safeJsonParse(k.build_allocation, {}, 'resource-build-allocation:build_allocation');
         const trainingAlloc = safeJsonParse(k.training_allocation, {}, 'resource-build-allocation:training_allocation');
         const buildTotal = Object.values(buildAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
         const trainingTotal = Object.values(trainingAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
         const scoutTotal = Math.max(0, parseInt(k.scout_allocation, 10) || 0);
 
-        if (allocValidation.total + buildTotal + trainingTotal + scoutTotal > k.engineers) {
-          const err = new Error(`Not enough available engineers. Allocated: ${allocValidation.total.toLocaleString()} resource, ${buildTotal.toLocaleString()} build, ${trainingTotal.toLocaleString()} training, ${scoutTotal.toLocaleString()} scout. Total available: ${k.engineers.toLocaleString()}`);
+        if (allocValidation.total + buildTotal + trainingTotal + scoutTotal + engOnExpedition > k.engineers) {
+          const err = new Error(`Not enough available engineers. Allocated: ${allocValidation.total.toLocaleString()} resource, ${buildTotal.toLocaleString()} build, ${trainingTotal.toLocaleString()} training, ${scoutTotal.toLocaleString()} scout, ${engOnExpedition.toLocaleString()} on expeditions. Total available: ${k.engineers.toLocaleString()}`);
           err.statusCode = 400;
           throw err;
         }
@@ -337,7 +352,7 @@ module.exports = function (db) {
 
         return { updates: result.updates, message: msg };
       });
-      res.json({ ok: true, updates, message });
+      res.json({ ok: true, updates: structureUpdates(updates), message });
     } catch (err) {
       console.error('[demolish] error:', err.message);
       const statusCode = err.statusCode || 500;
@@ -424,7 +439,7 @@ module.exports = function (db) {
 
         return { updates, message: msg, buildTime, cost };
       });
-      res.json({ ok: true, updates, message, buildTime, cost });
+      res.json({ ok: true, updates: structureUpdates(updates), message, buildTime, cost });
     } catch (err) {
       console.error('[build] error:', err.message);
       const statusCode = err.statusCode || 500;
@@ -480,7 +495,7 @@ module.exports = function (db) {
 
         return { updates, message: msg };
       });
-      res.json({ ok: true, updates, message });
+      res.json({ ok: true, updates: structureUpdates(updates), message });
     } catch (err) {
       console.error('[cancel-building] error:', err.message);
       const statusCode = err.statusCode || 500;

@@ -9,6 +9,7 @@ const { getKingdomVisibility } = require('../game/visibility');
 const { safeBitmapHasCell } = require('../game/visibility-cells');
 const { pixelToHex } = require('../game/hex-utils');
 const { getKingdomMapCoords } = require('../game/world-map-coords');
+const { structureUpdates } = require('./response-structurer');
 
 const router = express.Router();
 
@@ -813,7 +814,7 @@ module.exports = function (db) {
       population: k.population + n,
     };
     await applyKingdomUpdates(k.id, updates);
-    res.json({ ok: true, updates });
+    res.json({ ok: true, updates: structureUpdates(updates) });
   });
 
   // â"€â"€ Defense overview â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€

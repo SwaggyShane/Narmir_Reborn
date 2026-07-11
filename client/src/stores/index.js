@@ -64,6 +64,10 @@ export {
   useGranaryUpgrades,
   useMarketUpgrades,
   useTavernUpgrades,
+  useWallUpgrades,
+  useTowerDefUpgrades,
+  useOutpostUpgrades,
+  useMausoleumUpgrades,
 } from './economyStore';
 
 export {

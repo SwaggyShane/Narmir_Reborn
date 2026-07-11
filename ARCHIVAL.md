@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-09 (Phase 1 architecture documentation + review fixes via PR #851)
+**Last updated:** 2026-07-10 (GameStateManager migration, Elevation system, Exploration/Fog of War complete, upgrade UX fixes)
 
 ---
 
@@ -1963,3 +1963,22 @@ Completed work that was previously tracked in `ROADMAP.md` has been consolidated
 - Completed platform-health work archived into the main completion record
 - Completed engine, combat, admin, and migration checkpoints remain recorded above for reference
 - Beta Launch Prerequisites (11 items): All Tier 1 Critical and Tier 2 Important items complete as of 2026-06-30
+
+### 2026-07-10
+
+- **GameStateManager → Zustand Migration** (MIGRATION_GAMESTATE.md, completed 2026-07-09): Full migration complete in single sprint. All 6 phases implemented: Phase 1 (UIStore), Phase 1.5 (Normalizer), Phase 2 (Sync Points), Phase 3A (Dual Sources), Phase 3B (Smoke Gate), Phase 4-6 (Cleanup & Audit). Zero legacy references in active code.
+
+- **Elevation System Implementation** (ELEVATION_SYSTEM_IMPLEMENTATION.md, completed 2026-07-04): All 5 phases complete. Seeded FBM noise generation, organic river flow (DAG layer), tectonic plate alignment, erosion simulation, and biome-aware sea level normalization fully implemented and wired into world boot.
+
+- **Phase 2 Architectural Refactoring** (PHASE_2_COMPLETION.md, sandbox 2026-07-09): Command → Simulation → Events architecture complete in sandbox. All 6 critical slices implemented locally with atomic persistence and event-driven coordination. Addresses 4-tier coupling analysis.
+
+- **Exploration System Redesign** (EXPLORATION_SYSTEM_LOCKED.md, completed 2026-07-04): All 4 phases complete. Scout (allocation-based ring reveal), Epic Trek (targeted exploration, Ring 2 gated), Hunting/Prospecting/Land (turn-based resource gathering), Dungeon/Mountain (regional combat expeditions). Fully integrated and deployed.
+
+- **Fog of War System** (FOG_OF_WAR_PLAN.md, completed 2026-07-03): All 5 phases complete. Scoped visibility systems, server-side gating on all endpoints, own territory rules, fog_of_war spell mechanics, REGION_SEEDS/RACE_HOMES alignment verified. Integrated with exploration system.
+
+- **Connection Pool Exhaustion Fix** (TURN_PROCESSING_FIX_PLAN.md, merged PR #847 2026-07-07): Root cause identified and fixed. Moved init-queries and refresh-queries outside transaction, reducing per-turn from 1,641ms to ~900ms. Improves concurrent turn throughput from 12 to ~22 turns/sec.
+
+- **Upgrade UX Fixes** (2026-07-10): Fixed two issues reported during gameplay testing. Issue 1: Added validation toast explaining insufficient resources when user clicks disabled upgrade button (e.g., "Need: 20k gold"). Issue 2: Refactored DefensePanel to read upgrade state from Zustand hooks instead of local state, enabling immediate dynamic refresh when upgrade purchased (no API delay). Button now clickable with validation on click rather than disabled state.
+
+- **Security Audit Complete** (SECURITY_AUDIT.md, 2026-07-05): All 7 categories reviewed and passing. SQL Injection (100% parameterized), XSS (sanitizeHtml hardened), Input Validation (PASS), Authentication (JWT+CSRF+rate limits), Race Conditions (PASS on critical paths), Sensitive Data (bcrypt+SecretsManager), Resource Management (pool sizing+limits).
+

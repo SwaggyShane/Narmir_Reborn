@@ -10,6 +10,7 @@ const { calculateLandExpansionReward } = require('../game/land-expansion');
 const { validateAllocation, getAllocationStatus } = require('../game/scout-allocation');
 const { getLocationByRegionAndType, markLocationDiscovered } = require('../game/world-locations');
 const { getDistanceToLocation, getLocationTurnCost } = require('../game/location-distance');
+const { structureUpdates } = require('./response-structurer');
 
 const MOJIBAKE_SIGNATURE = /[ÃÂâïðÅ�]/;
 
@@ -276,7 +277,7 @@ module.exports = function (db, kingdomGameplayRouter) {
             reward,
           };
         });
-        return res.json({ ok: true, updates, reward, message: `Instant hunt: +${reward.foodReward} food` });
+        return res.json({ ok: true, updates: structureUpdates(updates), reward, message: `Instant hunt: +${reward.foodReward} food` });
       } catch (err) {
         if (err.message.includes('No turns available')) {
           return res.status(429).json({ error: err.message });
@@ -413,7 +414,7 @@ module.exports = function (db, kingdomGameplayRouter) {
             reward,
           };
         });
-        return res.json({ ok: true, updates, reward, message: `Instant prospect: +${reward.goldReward} gold` });
+        return res.json({ ok: true, updates: structureUpdates(updates), reward, message: `Instant prospect: +${reward.goldReward} gold` });
       } catch (err) {
         console.error('[expedition/prospecting-instant] failed:', err.message, err.stack);
         if (err.message.includes('No turns available')) {
@@ -686,7 +687,7 @@ module.exports = function (db, kingdomGameplayRouter) {
         [k.id, ev.type, ev.message, k.turn]);
     }
 
-    res.json({ ok: true, message: result.message, updates });
+    res.json({ ok: true, message: result.message, updates: structureUpdates(updates) });
   });
 
   router.post('/expedition/cancel', requireAuth, requireCsrfToken, async (req, res) => {

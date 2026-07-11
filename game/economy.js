@@ -476,19 +476,26 @@ function processFoodEconomy(k, events) {
     updates.food_shortage_turns = shortTurns;
     updates.food_surplus_turns = 0;
 
+    // Only warn if actually in deficit/shortage, not during surplus
     if (food >= shortage) {
       food -= shortage;
       updates.food = food;
-      events.push({
-        type: "system",
-        message: `⚠️ Food deficit: drawing ${shortage.toLocaleString()} from stores. ${food.toLocaleString()} remaining.`,
-      });
+      // Don't show warning if in surplus (balance >= 0)
+      if (food < 0) {
+        events.push({
+          type: "system",
+          message: `⚠️ Food deficit: drawing ${shortage.toLocaleString()} from stores. ${Math.max(0, food).toLocaleString()} remaining.`,
+        });
+      }
     } else {
       updates.food = 0;
-      events.push({
-        type: "system",
-        message: `🚨 Food shortage! Turn ${shortTurns} — build more farms or reduce troops.`,
-      });
+      // Only warn if actually going into shortage
+      if (shortTurns > 0) {
+        events.push({
+          type: "system",
+          message: `🚨 Food shortage! Turn ${shortTurns} — build more farms or reduce troops.`,
+        });
+      }
       if (shortTurns >= 3) {
         const hit = shortTurns >= 8 ? 20 : shortTurns >= 5 ? 10 : 5;
         const cur =

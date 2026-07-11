@@ -2327,6 +2327,28 @@ module.exports = function (db, io) {
     }
   });
 
+  // POST /api/admin/reset-allocations - Clear engineer allocations for a kingdom (emergency fix)
+  router.post("/reset-allocations", requireAdmin, requireCsrfToken, async (req, res) => {
+    try {
+      const { kingdomId } = req.body;
+      if (!kingdomId) return res.status(400).json({ error: "kingdomId required" });
+
+      const k = await db.get("SELECT id, player_id FROM kingdoms WHERE id = $1", [kingdomId]);
+      if (!k) return res.status(404).json({ error: "Kingdom not found" });
+
+      await db.run(
+        "UPDATE kingdoms SET build_allocation = $1, resource_build_allocation = $1, training_allocation = $1, scout_allocation = 0 WHERE id = $2",
+        [JSON.stringify({}), k.id]
+      );
+
+      console.log(`[admin] Reset allocations for kingdom ${k.id} (player ${k.player_id})`);
+      res.json({ ok: true, message: "Engineer allocations cleared" });
+    } catch (err) {
+      console.error("[admin] reset-allocations error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   return router;
 };
 

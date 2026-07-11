@@ -11,6 +11,7 @@ const { getKingdomVisibility } = require('../game/visibility');
 const { safeBitmapHasCell } = require('../game/visibility-cells');
 const { pixelToHex } = require('../game/hex-utils');
 const { getKingdomMapCoords } = require('../game/world-map-coords');
+const { structureUpdates } = require('./response-structurer');
 
 const router = express.Router();
 
@@ -596,7 +597,7 @@ module.exports = function (db) {
       ],
     );
 
-    res.json({ message: "Withdrawal successful.", updates });
+    res.json({ message: "Withdrawal successful.", updates: structureUpdates(updates) });
   });
   router.post("/economy/upgrade", requireAuth, requireCsrfToken, async (req, res) => {
     const { category, upgradeKey } = req.body;
@@ -636,7 +637,7 @@ module.exports = function (db) {
       "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
       [k.id, "system", `⬆️ ${def?.name || upgradeKey} purchased.`, k.turn],
     );
-    res.json({ ok: true, updates: result.updates });
+    res.json({ ok: true, updates: structureUpdates(result.updates) });
   });
   router.post("/economy/hire-mercs", requireAuth, requireCsrfToken, async (req, res) => {
     const { unitType, tier, count } = req.body;
@@ -665,7 +666,7 @@ module.exports = function (db) {
         k.turn,
       ],
     );
-    res.json({ ok: true, hired: result.hired, updates: result.updates });
+    res.json({ ok: true, hired: result.hired, updates: structureUpdates(result.updates) });
   });
   router.post("/economy/dismiss-mercs", requireAuth, requireCsrfToken, async (req, res) => {
     const { mercIndex } = req.body;

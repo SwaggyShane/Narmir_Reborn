@@ -112,6 +112,79 @@ function darkenHexColor(hex, amount) {
   return '#' + channels.map((c) => c.toString(16).padStart(2, '0')).join('');
 }
 
+// Smooth Perlin-like noise for natural-looking river curves
+function smoothNoise(seed) {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+// Interpolation function for smooth noise
+function smoothstep(t) {
+  return t * t * (3 - 2 * t);
+}
+
+// Generates a smooth, meandering SVG path between two points
+function generateMeanderingPath(p1, p2) {
+  const dx = p2[0] - p1[0];
+  const dy = p2[1] - p1[1];
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist < 15) {
+    return `M ${p1[0]} ${p1[1]} L ${p2[0]} ${p2[1]}`;
+  }
+
+  // Perpendicular direction for meandering
+  const perpX = -dy / dist;
+  const perpY = dx / dist;
+
+  // Fewer segments = smoother curves
+  const numSegments = Math.max(3, Math.ceil(dist / 50));
+  let pathD = `M ${p1[0]} ${p1[1]}`;
+
+  // Base seed for consistent randomness
+  const baseSeed = p1[0] * 73856093 ^ p1[1] * 19349663 ^ p2[0] * 83492791;
+
+  // Generate smooth waypoints using octave-based noise
+  const points = [p1];
+  for (let i = 1; i < numSegments; i++) {
+    const t = i / numSegments;
+    const x = p1[0] + dx * t;
+    const y = p1[1] + dy * t;
+
+    // Multi-octave noise for natural variation
+    let noise = 0;
+    let amplitude = 1;
+    let frequency = 1;
+    let maxAmplitude = 0;
+
+    for (let octave = 0; octave < 3; octave++) {
+      const noiseVal = smoothNoise(baseSeed + i * 997 + octave * 1337) - 0.5;
+      noise += noiseVal * amplitude;
+      maxAmplitude += amplitude;
+      amplitude *= 0.5;
+      frequency *= 2;
+    }
+
+    noise = noise / maxAmplitude;
+    const offset = noise * Math.min(dist / 5, 20);
+
+    points.push([x + perpX * offset, y + perpY * offset]);
+  }
+  points.push(p2);
+
+  // Quadratic Bezier from start through waypoints
+  for (let i = 1; i < points.length - 1; i++) {
+    const cp = points[i];
+    const ep = i === points.length - 2 ? points[i + 1] :
+               [(points[i][0] + points[i + 1][0]) / 2, (points[i][1] + points[i + 1][1]) / 2];
+    pathD += ` Q ${cp[0]} ${cp[1]} ${ep[0]} ${ep[1]}`;
+  }
+
+  // Ensure exact endpoint
+  pathD += ` L ${p2[0]} ${p2[1]}`;
+  return pathD;
+}
+
 // Splits a region name onto two lines at whichever space is closest to the
 // middle, so long names ("The Nightfall Marshes") fit inside a hex region
 // instead of overflowing it. Short names are left on one line.
@@ -597,9 +670,10 @@ export function renderWorldMap(
     kingdomId,
   };
 
-        var W = 1999,
+        var SCALE = 4;
+        var W = 1999 * SCALE,
 
-          H = 1380;
+          H = 1380 * SCALE;
 
         var bg = "url(#oceanGrad)";
 
@@ -617,7 +691,7 @@ export function renderWorldMap(
 
           H +
 
-          '" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;border-radius:12px;box-shadow:inset 0 0 40px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5); background:#040710; shape-rendering:crispEdges; image-rendering:crisp-edges; text-rendering:optimizeLegibility;" shape-rendering="crispEdges" image-rendering="crisp-edges" text-rendering="optimizeLegibility">';
+          '" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;border-radius:12px;box-shadow:inset 0 0 40px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5); background:#040710; shape-rendering:geometricPrecision; image-rendering:crisp-edges; text-rendering:optimizeLegibility; -webkit-backface-visibility:hidden; backface-visibility:hidden;" shape-rendering="geometricPrecision" image-rendering="pixelated" text-rendering="optimizeLegibility" preserveAspectRatio="xMidYMid meet">';
         // Defs - filters and gradients
         svg +=
 
@@ -733,12 +807,23 @@ export function renderWorldMap(
         // belongs to exactly one race (by nearest RACE_HOMES point) and one
         // terrain (dominant race biome, an occasional mixed alternate, or a
         // forced tundra/desert/volcanic band at the map's far north/south).
-        var hexGrid = buildHexGrid(W, H, worldSeed);
+        var hexGrid = buildHexGrid(W / SCALE, H / SCALE, worldSeed);
+
+        // Scale all coordinates by SCALE factor for higher resolution rendering
+        hexGrid.cells.forEach(function(cell) {
+          cell.x *= SCALE;
+          cell.y *= SCALE;
+        });
+        hexGrid.riverSegments.forEach(function(seg) {
+          seg.p1 = [seg.p1[0] * SCALE, seg.p1[1] * SCALE];
+          seg.p2 = [seg.p2[0] * SCALE, seg.p2[1] * SCALE];
+        });
 
         // Terrain layer: the fill of every hex shows biome type color.
         // Region is displayed only as borders (race-colored lines).
         // Terrain toggle is removed — biome colors are always shown.
         svg += '<g class="wm-layer wm-layer-terrain">';
+        var scaledHexSize = HEX_SIZE * SCALE;
         hexGrid.cells.forEach(function (cell) {
           var fill;
           // Always show biome color (terrain type, not region/race color)
@@ -747,7 +832,7 @@ export function renderWorldMap(
           } else {
             fill = TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.plains;
           }
-          svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="' + fill + '" stroke="#111" stroke-width="1.25" stroke-linejoin="round" class="terrain-shape" data-terrain="' + escapeHtml(cell.terrain) + '" data-race="' + escapeHtml(cell.race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default;shape-rendering:crispEdges;vector-effect:non-scaling-stroke" pointer-events="none"><title>' + escapeHtml(terrainTooltip(cell.terrain)) + '</title></path>';
+          svg += '<path d="' + hexPath(cell.x, cell.y, scaledHexSize + 1.5) + '" fill="' + fill + '" stroke="none" class="terrain-shape" data-terrain="' + escapeHtml(cell.terrain) + '" data-race="' + escapeHtml(cell.race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default;shape-rendering:geometricPrecision" pointer-events="none"><title>' + escapeHtml(terrainTooltip(cell.terrain)) + '</title></path>';
         });
         svg += '</g>';
 
@@ -834,12 +919,14 @@ export function renderWorldMap(
         svg += '<g class="wm-layer wm-layer-rivers">';
         hexGrid.riverSegments.forEach(function (seg) {
           var underWidth = seg.kind === 'trunk' ? 6 : 4.5;
-          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#0d2a3a" stroke-width="' + underWidth + '" stroke-linecap="round" opacity="0.5" pointer-events="none"/>';
+          var pathD = generateMeanderingPath(seg.p1, seg.p2);
+          svg += '<path d="' + pathD + '" stroke="#0d2a3a" stroke-width="' + underWidth + '" stroke-linecap="round" fill="none" opacity="0.5" pointer-events="none"/>';
         });
         hexGrid.riverSegments.forEach(function (seg) {
           var topWidth = seg.kind === 'trunk' ? 3.25 : 2.25;
           var color = seg.kind === 'trunk' ? '#5cc0e8' : '#4a9fd0';
-          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="' + color + '" stroke-width="' + topWidth + '" stroke-linecap="round" opacity="0.85" class="water-edge" data-kind="' + seg.kind + '" pointer-events="none"/>';
+          var pathD = generateMeanderingPath(seg.p1, seg.p2);
+          svg += '<path d="' + pathD + '" stroke="' + color + '" stroke-width="' + topWidth + '" stroke-linecap="round" fill="none" opacity="0.85" class="water-edge" data-kind="' + seg.kind + '" pointer-events="none"/>';
         });
         svg += '</g>';
 
@@ -895,11 +982,11 @@ export function renderWorldMap(
           });
         });
         borderSegments.forEach(function (seg) {
-          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#000" stroke-width="4.5" stroke-linecap="round" opacity="0.5" pointer-events="none"/>';
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#000" stroke-width="' + (4.5 * SCALE / 4) + '" stroke-linecap="round" opacity="0.5" pointer-events="none"/>';
         });
         borderSegments.forEach(function (seg) {
           var meta = REGION_META[seg.race] || {};
-          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="' + (meta.stroke || '#fff') + '" stroke-width="2.25" stroke-linecap="round" class="region-shape wm-region" data-race="' + escapeHtml(seg.race) + '" style="transition:opacity 0.3s;opacity:' + regionOpacity(seg.race, highlightedRace) + '" pointer-events="none"/>';
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="' + (meta.stroke || '#fff') + '" stroke-width="' + (2.25 * SCALE / 4) + '" stroke-linecap="round" class="region-shape wm-region" data-race="' + escapeHtml(seg.race) + '" style="transition:opacity 0.3s;opacity:' + regionOpacity(seg.race, highlightedRace) + '" pointer-events="none"/>';
         });
         svg += '</g>';
 
@@ -1369,25 +1456,25 @@ export function renderWorldMap(
           var meta = e[1];
           var home = RACE_HOMES[race];
           if (!home) return;
-          var cx = home.x;
-          var cy = home.y;
+          var cx = home.x * SCALE;
+          var cy = home.y * SCALE;
           var titleColor = darkenHexColor(meta.color || '#333333', 0.35);
           var titleLines = wrapRegionName(meta.name);
-          var titleFontSize = 28;
-          var titleLineHeight = titleFontSize + 4;
-          var titleTop = cy - 6 - ((titleLines.length - 1) * titleLineHeight) / 2;
+          var titleFontSize = Math.round(28 * SCALE / 2.5);
+          var titleLineHeight = titleFontSize + Math.round(4 * SCALE / 2.5);
+          var titleTop = cy - 6 * SCALE / 2.5 - ((titleLines.length - 1) * titleLineHeight) / 2;
 
           svg += '<g class="wm-region-label" style="transition:opacity 0.3s;opacity:' + regionOpacity(race, highlightedRace) + '">';
           titleLines.forEach(function (line, i) {
             svg +=
               '<text x="' + cx + '" y="' + (titleTop + i * titleLineHeight) +
-              '" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="' + titleFontSize + '" fill="' + (meta.stroke || '#fff') + '" opacity="1" pointer-events="none" style="text-transform:uppercase;letter-spacing:1.5px;text-shadow:0 1px 3px rgba(0,0,0,0.9);">' +
+              '" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="' + titleFontSize + '" fill="' + (meta.stroke || '#fff') + '" opacity="1" pointer-events="none" style="text-transform:uppercase;letter-spacing:' + (1.5 * SCALE / 2.5) + 'px;text-shadow:0 ' + (1 * SCALE / 2.5) + 'px ' + (3 * SCALE / 2.5) + 'px rgba(0,0,0,0.9);">' +
               escapeHtml(line) +
               "</text>";
           });
           svg +=
-            '<text x="' + cx + '" y="' + (titleTop + titleLines.length * titleLineHeight + 8) +
-            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="20" fill="#ffffff" opacity="1" pointer-events="none" style="text-shadow:0 1px 2px rgba(0,0,0,0.9);">' +
+            '<text x="' + cx + '" y="' + (titleTop + titleLines.length * titleLineHeight + 8 * SCALE / 2.5) +
+            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="' + Math.round(20 * SCALE / 2.5) + '" fill="#ffffff" opacity="1" pointer-events="none" style="text-shadow:0 ' + (1 * SCALE / 2.5) + 'px ' + (2 * SCALE / 2.5) + 'px rgba(0,0,0,0.9);">' +
             escapeHtml(REGION_BONUSES[race] || "") +
             "</text>";
           svg += "</g>";

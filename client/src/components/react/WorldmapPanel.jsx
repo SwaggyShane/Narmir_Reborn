@@ -3,6 +3,8 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { apiCall } from '../../utils/api';
 import { setWorldMapData } from '../../utils/worldMapData.js';
 import { renderWorldMap } from './WorldmapRenderer.jsx';
+import WorldmapWebGL from './WorldmapWebGL.jsx';
+import { buildHexGrid } from '../../utils/worldMapBuilder.js';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
@@ -194,12 +196,22 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
   const [mapCard, setMapCard] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [layers, setLayers] = useState(DEFAULT_LAYERS);
+  const [useWebGL, setUseWebGL] = useState(false);
+  const [hexGrid, setHexGrid] = useState(null);
   const currentKingdomId = useKingdomId();
   const marketUpgrades = useMarketUpgrades();
   const mapContainerRef = useRef(null);
   const mapAnimatedKeyRef = useRef('');
   const nodeCardRef = useRef(null);
   const kingdomCardRef = useRef(null);
+
+  // Build hexGrid when worldSeed changes (for WebGL rendering)
+  useEffect(() => {
+    if (worldSeed) {
+      const grid = buildHexGrid(1999, 1380, worldSeed);
+      setHexGrid(grid);
+    }
+  }, [worldSeed]);
 
   const mapSvg = useMemo(() => {
     if (!kingdoms.length && !nodes.length) return '';
@@ -402,49 +414,74 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
               </div>
             ) : null}
             {!loading && !error && mapSvg && (
-              <div
-                ref={viewportRef}
-                id="world-map-viewport"
-                className="relative min-h-[520px] overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[#040710] touch-none cursor-grab"
-                onClick={handleMapClick}
-              >
-                <div
-                  ref={stageRef}
-                  id="world-map-stage"
-                  className="wm-map-stage w-full will-change-transform"
-                >
+              <>
+                <div className="flex gap-2 items-center justify-between mb-2">
+                  <div></div>
+                  <div className="text-xs text-[var(--text3)]">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={useWebGL}
+                        onChange={(e) => setUseWebGL(e.target.checked)}
+                        className="cursor-pointer"
+                      />
+                      WebGL (Experimental)
+                    </label>
+                  </div>
+                </div>
+                {useWebGL && hexGrid ? (
                   <div
-                    ref={mapContainerRef}
-                    id="world-map-container"
-                    className="w-full"
-                    dangerouslySetInnerHTML={{ __html: mapSvg }}
-                  />
-                </div>
-                <div className="pointer-events-none absolute left-2 top-2 rounded bg-black/45 px-2 py-1 text-[10px] text-[var(--text3)]">
-                  Drag to pan | Scroll to zoom
-                </div>
-                {layers.nodes && nodes.length === 0 && (
-                  <div className="pointer-events-none absolute inset-x-0 bottom-14 flex justify-center px-4">
-                    <div className="max-w-md rounded-lg border border-[var(--border)] bg-black/70 px-4 py-3 text-center text-[11px] text-[var(--text3)] backdrop-blur-sm">
-                      No resource nodes on the map yet. Scout sites in{' '}
-                      <button
-                        type="button"
-                        className="pointer-events-auto text-[var(--gold)] underline hover:opacity-90"
-                        onClick={(e) => { e.stopPropagation(); switchTab('resources'); }}
-                      >
-                        Resources
-                      </button>
-                      {' '}(Scout Node, 500 gold) to plot them here.
+                    id="world-map-webgl"
+                    className="relative min-h-[520px] overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[#040710]"
+                  >
+                    <WorldmapWebGL hexGrid={hexGrid} highlightedRace={highlightedRace} />
+                  </div>
+                ) : (
+                  <div
+                    ref={viewportRef}
+                    id="world-map-viewport"
+                    className="relative min-h-[520px] overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[#040710] touch-none cursor-grab"
+                    onClick={handleMapClick}
+                  >
+                    <div
+                      ref={stageRef}
+                      id="world-map-stage"
+                      className="wm-map-stage w-full will-change-transform"
+                    >
+                      <div
+                        ref={mapContainerRef}
+                        id="world-map-container"
+                        className="w-full"
+                        dangerouslySetInnerHTML={{ __html: mapSvg }}
+                      />
+                    </div>
+                    <div className="pointer-events-none absolute left-2 top-2 rounded bg-black/45 px-2 py-1 text-[10px] text-[var(--text3)]">
+                      Drag to pan | Scroll to zoom
+                    </div>
+                    {layers.nodes && nodes.length === 0 && (
+                      <div className="pointer-events-none absolute inset-x-0 bottom-14 flex justify-center px-4">
+                        <div className="max-w-md rounded-lg border border-[var(--border)] bg-black/70 px-4 py-3 text-center text-[11px] text-[var(--text3)] backdrop-blur-sm">
+                          No resource nodes on the map yet. Scout sites in{' '}
+                          <button
+                            type="button"
+                            className="pointer-events-auto text-[var(--gold)] underline hover:opacity-90"
+                            onClick={(e) => { e.stopPropagation(); switchTab('resources'); }}
+                          >
+                            Resources
+                          </button>
+                          {' '}(Scout Node, 500 gold) to plot them here.
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                      <span className="rounded bg-black/45 px-2 py-1 text-[10px] text-[var(--text3)]">{zoomLabel}</span>
+                      <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); zoomOut(); }} aria-label="Zoom out">−</button>
+                      <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); zoomIn(); }} aria-label="Zoom in">+</button>
+                      <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); resetViewport(true); }} aria-label="Reset map view">⌂</button>
                     </div>
                   </div>
                 )}
-                <div className="absolute bottom-2 right-2 flex items-center gap-1">
-                  <span className="rounded bg-black/45 px-2 py-1 text-[10px] text-[var(--text3)]">{zoomLabel}</span>
-                  <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); zoomOut(); }} aria-label="Zoom out">−</button>
-                  <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); zoomIn(); }} aria-label="Zoom in">+</button>
-                  <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); resetViewport(true); }} aria-label="Reset map view">⌂</button>
-                </div>
-              </div>
+              </>
             )}
           </div>
 
