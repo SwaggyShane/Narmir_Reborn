@@ -486,6 +486,9 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                     {mapCard.meta.name || mapCard.kingdom.region || '—'}
                   </span>{' '}
                   | Level {mapCard.kingdom.level || 1} | Turn {mapCard.kingdom.turn || 0}
+                  {mapCard.kingdom.map_x !== undefined && mapCard.kingdom.map_y !== undefined && (
+                    <> | X: {mapCard.kingdom.map_x} Y: {mapCard.kingdom.map_y}</>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-[12px] mb-3">
                   <div className="bg-[var(--bg3)] rounded text-center p-2">
