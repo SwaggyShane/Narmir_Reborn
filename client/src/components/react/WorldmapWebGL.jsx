@@ -53,107 +53,152 @@ export default function WorldmapWebGL({ hexGrid = null, elevationData = null, hi
   const cameraRef = useRef(null);
 
   useEffect(() => {
-    if (!containerRef.current || !hexGrid) return;
-
-    // Scene setup
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x040710);
-    sceneRef.current = scene;
-
-    // Camera setup
-    const w = containerRef.current.clientWidth;
-    const h = containerRef.current.clientHeight;
-    const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 10000);
-    camera.position.set(1000, 700, 1500);
-    camera.lookAt(1000, 700, 0);
-    cameraRef.current = camera;
-
-    // Renderer setup
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setSize(w, h);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    containerRef.current.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
-
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(500, 700, 1000);
-    directionalLight.castShadow = true;
-    directionalLight.shadow.mapSize.width = 2048;
-    directionalLight.shadow.mapSize.height = 2048;
-    scene.add(directionalLight);
-
-    // Build hex meshes from hexGrid
-    hexGrid.cells.forEach((cell) => {
-      const color = TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.plains;
-      const elevation = elevationData && elevationData[`${cell.col},${cell.row}`] || 50;
-
-      const material = new THREE.MeshStandardMaterial({
-        color: hexToColor(color),
-        roughness: 0.7,
-        metalness: 0.1,
-      });
-
-      const geometry = new THREE.ConeGeometry(HEX_SIZE * 0.9, Math.max(0.5, elevation / 80), 6);
-      const mesh = new THREE.Mesh(geometry, material);
-
-      mesh.position.set(cell.x, cell.y, elevation / 80);
-      mesh.rotation.z = Math.PI / 2;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-
-      mesh.userData = { ...cell };
-      scene.add(mesh);
-    });
-
-    // Add region borders as wireframe lines
-    if (hexGrid.borderSegments) {
-      hexGrid.borderSegments.forEach((seg) => {
-        const points = [
-          new THREE.Vector3(seg.p1[0], seg.p1[1], 5),
-          new THREE.Vector3(seg.p2[0], seg.p2[1], 5),
-        ];
-        const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        const meta = REGION_META[seg.race] || {};
-        const material = new THREE.LineBasicMaterial({
-          color: hexToColor(meta.stroke || '#fff'),
-          linewidth: 2,
-          transparent: true,
-          opacity: 0.8,
-        });
-        const line = new THREE.Line(geometry, material);
-        scene.add(line);
-      });
+    if (!containerRef.current || !hexGrid) {
+      console.log('[WebGL] Missing container or hexGrid', { container: !!containerRef.current, hexGrid: !!hexGrid });
+      return;
     }
 
-    // Animation loop
-    const animate = () => {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    };
-    animate();
+    console.log('[WebGL] Starting render with hexGrid:', { cells: hexGrid.cells?.length, W: hexGrid.W, H: hexGrid.H });
 
-    // Handle resize
-    const handleResize = () => {
-      const newW = containerRef.current.clientWidth;
-      const newH = containerRef.current.clientHeight;
-      camera.aspect = newW / newH;
-      camera.updateProjectionMatrix();
-      renderer.setSize(newW, newH);
-    };
-    window.addEventListener('resize', handleResize);
+    // Wait for container to have dimensions
+    const checkAndRender = () => {
+      const w = containerRef.current.clientWidth;
+      const h = containerRef.current.clientHeight;
+      console.log('[WebGL] Container size:', { w, h });
 
-    // Cleanup
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (containerRef.current && renderer.domElement.parentNode === containerRef.current) {
-        containerRef.current.removeChild(renderer.domElement);
+      if (w === 0 || h === 0) {
+        console.log('[WebGL] Waiting for layout...');
+        requestAnimationFrame(checkAndRender);
+        return;
       }
-      renderer.dispose();
+
+      // NOW we can initialize
+      initializeWebGL(w, h);
     };
+
+    const initializeWebGL = (w, h) => {
+      // Scene setup
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x040710);
+      scene.fog = new THREE.Fog(0x040710, 5000, 10000);
+      sceneRef.current = scene;
+
+      const centerX = hexGrid.W / 2;
+      const centerY = hexGrid.H / 2;
+      const camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 20000);
+      camera.position.set(centerX, centerY - 400, 1200);
+      camera.lookAt(centerX, centerY, 0);
+      console.log('[WebGL] Camera position:', { x: camera.position.x, y: camera.position.y, z: camera.position.z, centerX, centerY });
+      cameraRef.current = camera;
+
+      // Renderer setup
+      console.log('[WebGL] Creating renderer...');
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, logarithmicDepthBuffer: true });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.shadowMap.enabled = true;
+      console.log('[WebGL] Renderer created, adding to DOM...');
+      containerRef.current.appendChild(renderer.domElement);
+      console.log('[WebGL] Renderer added to DOM');
+      rendererRef.current = renderer;
+
+      // Lighting - key for visibility
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      scene.add(ambientLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+      directionalLight.position.set(centerX + 500, centerY + 500, 1500);
+      directionalLight.target.position.set(centerX, centerY, 0);
+      directionalLight.castShadow = true;
+      directionalLight.shadow.mapSize.width = 4096;
+      directionalLight.shadow.mapSize.height = 4096;
+      directionalLight.shadow.camera.far = 3000;
+      scene.add(directionalLight);
+      scene.add(directionalLight.target);
+
+      // Add hemisphere light for better ambient
+      const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x000000, 0.6);
+      scene.add(hemiLight);
+
+      // Build hex meshes from hexGrid - use BoxGeometry for visibility
+      let meshCount = 0;
+      hexGrid.cells.forEach((cell) => {
+        const color = TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.plains;
+        const elevation = elevationData && elevationData[`${cell.col},${cell.row}`] || 50;
+
+        const material = new THREE.MeshPhongMaterial({
+          color: hexToColor(color),
+          shininess: 30,
+          side: THREE.DoubleSide,
+        });
+
+        // Use simple box geometry for now (easier to see)
+        const geometry = new THREE.BoxGeometry(HEX_SIZE * 0.8, HEX_SIZE * 0.8, Math.max(1, elevation / 150));
+        const mesh = new THREE.Mesh(geometry, material);
+
+        mesh.position.set(cell.x, cell.y, Math.max(1, elevation / 150) / 2);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
+        mesh.userData = { ...cell };
+        scene.add(mesh);
+        meshCount++;
+      });
+      console.log('[WebGL] Created', meshCount, 'meshes');
+
+      // Add a test sphere to verify rendering works
+      const testGeom = new THREE.SphereGeometry(100, 32, 32);
+      const testMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      const testSphere = new THREE.Mesh(testGeom, testMat);
+      testSphere.position.set(centerX, centerY, 500);
+      scene.add(testSphere);
+      console.log('[WebGL] Added test sphere at', { x: centerX, y: centerY, z: 500 });
+
+      // Animation loop with slight camera rotation for 3D effect
+      let frame = 0;
+      console.log('[WebGL] Starting animation loop');
+      const animate = () => {
+        requestAnimationFrame(animate);
+
+        // Subtle camera rotation for depth perception
+        const angle = (frame * 0.0002) % (Math.PI * 2);
+        camera.position.x = centerX + Math.cos(angle) * 800;
+        camera.position.z = 1200 + Math.sin(angle) * 300;
+        camera.lookAt(centerX, centerY, 200);
+
+        if (frame === 0) {
+          console.log('[WebGL] First render frame - camera at', { x: camera.position.x, y: camera.position.y, z: camera.position.z });
+        }
+        frame++;
+        renderer.render(scene, camera);
+      };
+      animate();
+
+      // Handle resize
+      const handleResize = () => {
+        const newW = containerRef.current.clientWidth;
+        const newH = containerRef.current.clientHeight;
+        camera.aspect = newW / newH;
+        camera.updateProjectionMatrix();
+        renderer.setSize(newW, newH);
+      };
+      window.addEventListener('resize', handleResize);
+
+      // Cleanup
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        if (containerRef.current && renderer.domElement.parentNode === containerRef.current) {
+          containerRef.current.removeChild(renderer.domElement);
+        }
+        renderer.dispose();
+      };
+    };
+
+    // Start the rendering process
+    checkAndRender();
+
+    // Return cleanup (though we're async now)
+    return () => {};
   }, [hexGrid, elevationData]);
 
   return (
