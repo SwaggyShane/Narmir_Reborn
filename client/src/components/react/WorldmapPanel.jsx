@@ -486,7 +486,7 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                     {mapCard.meta.name || mapCard.kingdom.region || '—'}
                   </span>{' '}
                   | Level {mapCard.kingdom.level || 1} | Turn {mapCard.kingdom.turn || 0}
-                  {mapCard.kingdom.map_x !== undefined && mapCard.kingdom.map_y !== undefined && (
+                  {mapCard.kingdom.map_x != null && mapCard.kingdom.map_y != null && (
                     <> | X: {mapCard.kingdom.map_x} Y: {mapCard.kingdom.map_y}</>
                   )}
                 </div>
