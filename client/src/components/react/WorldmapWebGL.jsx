@@ -246,7 +246,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const symbol = createSymbolForTerrain(cell, elevation);
         if (!symbol) return;
 
-        symbol.position.set(cell.x, -cell.y, elevation + 1);
+        symbol.position.set(cell.x, -cell.y, elevation / 100 + 1);
         scene.add(symbol);
       });
 
