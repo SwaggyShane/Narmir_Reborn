@@ -249,14 +249,14 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
           centerSpire.rotation.x = Math.PI / 2;
           group.add(centerSpire);
 
-          // White sphere for central cap - sits on top of cylinder
+          // White sphere for central cap - center at top plane of cylinder
           const centerCapGeo = new THREE.SphereGeometry(centerTopRadius, 16, 16);
           const centerCapMat = new THREE.MeshPhongMaterial({
             color: 0xffffff,
             shininess: 25
           });
           const centerCap = new THREE.Mesh(centerCapGeo, centerCapMat);
-          centerCap.position.z = 32.16 + centerHeight / 2 + centerTopRadius;
+          centerCap.position.z = 32.16 + centerHeight / 2;
           centerCap.rotation.y = Math.PI / 4;
           group.add(centerCap);
 
@@ -272,7 +272,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
           positions.forEach(([x, y]) => {
             const topRadius = 3.5;
             const bottomRadius = 9.38;
-            const coneHeight = 38;
+            const coneHeight = 50;
 
             // Truncated cone: flat top at radius 3.5, flat bottom at radius 9.38
             const spireGeo = new THREE.CylinderGeometry(topRadius, bottomRadius, coneHeight, 8);
@@ -289,7 +289,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
               shininess: 15
             });
             const spire = new THREE.Mesh(spireGeo, spireMat);
-            spire.position.set(x, y, 19);
+            spire.position.set(x, y, 25);
             spire.rotation.x = Math.PI / 2;
             group.add(spire);
 
@@ -300,8 +300,8 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
               shininess: 25
             });
             const cap = new THREE.Mesh(capGeo, capMat);
-            // Position sphere center at cylinder top plane (z = 38)
-            cap.position.set(x, y, 19 + 19);
+            // Position sphere center at cylinder top plane (z = 50)
+            cap.position.set(x, y, 25 + 25);
             cap.rotation.y = Math.PI / 4; // 45 degrees
             group.add(cap);
           });
