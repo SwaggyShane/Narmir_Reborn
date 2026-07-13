@@ -307,131 +307,246 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         scene.add(riverLines);
       }
 
-      // Add debug sphere at kingdom positions + kingdom labels with dynamic text measurement
+      // Kingdom markers with race icons
       kingdoms.forEach((kingdom) => {
         if (!kingdom.map_x || !kingdom.map_y) return;
 
-        // Red sphere at kingdom position
-        const markerGeo = new THREE.SphereGeometry(11.25, 16, 16);
-        const markerMat = new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 0.6, transparent: true });
-        const marker = new THREE.Mesh(markerGeo, markerMat);
-        marker.position.set(kingdom.map_x, -kingdom.map_y, 25);
-        scene.add(marker);
+        const raceIcon = RACE_ICONS[kingdom.race] || '👑';
+        const symbolSize = 12;
+        const padding = 2;
 
-        // Kingdom label with dynamic text measurement
+        // Measure kingdom name
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.font = 'bold 64px Arial';
+        tempCtx.font = 'bold 12px Arial';
         const textMetrics = tempCtx.measureText(kingdom.name || 'Kingdom');
-        const actualTextWidth = Math.ceil(textMetrics.width);
+        const textWidth = Math.ceil(textMetrics.width);
+        const textHeight = 12;
 
-        // Background rounded rectangle
+        // Background oval dimensions
+        const bgWidth = symbolSize + padding + textWidth + padding * 2;
+        const bgHeight = Math.max(symbolSize, textHeight) + padding * 2;
+
+        // Draw background rounded rectangle
         const bgCanvas = document.createElement('canvas');
-        bgCanvas.width = 512;
-        bgCanvas.height = 160;
+        bgCanvas.width = bgWidth;
+        bgCanvas.height = bgHeight;
         const bgCtx = bgCanvas.getContext('2d');
-
-        const padding = 5;
-        const iconSize = 32;
-        const bgWidth = iconSize + actualTextWidth + padding * 3;
-        const bgHeight = Math.max(iconSize, 64) + padding * 2;
-        const radius = 32;
-
-        // Draw rounded rectangle
         bgCtx.fillStyle = 'rgba(0, 0, 0, 0.72)';
+
+        const radius = 5;
         bgCtx.beginPath();
-        bgCtx.moveTo(padding + radius, padding);
-        bgCtx.lineTo(padding + bgWidth - radius, padding);
-        bgCtx.quadraticCurveTo(padding + bgWidth, padding, padding + bgWidth, padding + radius);
-        bgCtx.lineTo(padding + bgWidth, padding + bgHeight - radius);
-        bgCtx.quadraticCurveTo(padding + bgWidth, padding + bgHeight, padding + bgWidth - radius, padding + bgHeight);
-        bgCtx.lineTo(padding + radius, padding + bgHeight);
-        bgCtx.quadraticCurveTo(padding, padding + bgHeight, padding, padding + bgHeight - radius);
-        bgCtx.lineTo(padding, padding + radius);
-        bgCtx.quadraticCurveTo(padding, padding, padding + radius, padding);
+        bgCtx.moveTo(radius, 0);
+        bgCtx.lineTo(bgWidth - radius, 0);
+        bgCtx.quadraticCurveTo(bgWidth, 0, bgWidth, radius);
+        bgCtx.lineTo(bgWidth, bgHeight - radius);
+        bgCtx.quadraticCurveTo(bgWidth, bgHeight, bgWidth - radius, bgHeight);
+        bgCtx.lineTo(radius, bgHeight);
+        bgCtx.quadraticCurveTo(0, bgHeight, 0, bgHeight - radius);
+        bgCtx.lineTo(0, radius);
+        bgCtx.quadraticCurveTo(0, 0, radius, 0);
         bgCtx.fill();
 
         const bgTexture = new THREE.CanvasTexture(bgCanvas);
         const bgGeometry = new THREE.PlaneGeometry(bgWidth, bgHeight);
         const bgMaterial = new THREE.MeshBasicMaterial({ map: bgTexture, transparent: true });
         const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
-        bgMesh.position.set(kingdom.map_x + 10 + bgWidth / 2, -kingdom.map_y, 23);
+        bgMesh.position.set(kingdom.map_x, -kingdom.map_y, 20);
         scene.add(bgMesh);
 
-        // Kingdom name text
+        // Draw symbol (race icon)
+        const symbolCanvas = document.createElement('canvas');
+        symbolCanvas.width = symbolSize;
+        symbolCanvas.height = symbolSize;
+        const symbolCtx = symbolCanvas.getContext('2d');
+        symbolCtx.font = `${symbolSize}px Arial`;
+        symbolCtx.textAlign = 'center';
+        symbolCtx.textBaseline = 'middle';
+        symbolCtx.fillText(raceIcon, symbolSize / 2, symbolSize / 2);
+
+        const symbolTexture = new THREE.CanvasTexture(symbolCanvas);
+        const symbolGeometry = new THREE.PlaneGeometry(symbolSize, symbolSize);
+        const symbolMaterial = new THREE.MeshBasicMaterial({ map: symbolTexture, transparent: true });
+        const symbolMesh = new THREE.Mesh(symbolGeometry, symbolMaterial);
+        const symbolX = -bgWidth / 2 + padding + symbolSize / 2;
+        symbolMesh.position.set(kingdom.map_x + symbolX, -kingdom.map_y, 21);
+        scene.add(symbolMesh);
+
+        // Draw kingdom name
         const nameCanvas = document.createElement('canvas');
-        nameCanvas.width = actualTextWidth + 20;
-        nameCanvas.height = 80;
+        nameCanvas.width = textWidth + 2;
+        nameCanvas.height = textHeight + 2;
         const nameCtx = nameCanvas.getContext('2d');
-        nameCtx.font = 'bold 64px Arial';
+        nameCtx.font = 'bold 12px Arial';
         nameCtx.fillStyle = '#ffffff';
         nameCtx.textBaseline = 'middle';
-        nameCtx.fillText(kingdom.name || 'Kingdom', 10, 40);
+        nameCtx.fillText(kingdom.name || 'Kingdom', 1, textHeight / 2 + 1);
 
         const nameTexture = new THREE.CanvasTexture(nameCanvas);
-        const nameGeometry = new THREE.PlaneGeometry(actualTextWidth, 64);
+        const nameGeometry = new THREE.PlaneGeometry(textWidth, textHeight);
         const nameMaterial = new THREE.MeshBasicMaterial({ map: nameTexture, transparent: true });
         const nameMesh = new THREE.Mesh(nameGeometry, nameMaterial);
-        nameMesh.position.set(kingdom.map_x + 10 + iconSize + padding + actualTextWidth / 2, -kingdom.map_y, 24);
+        const nameX = -bgWidth / 2 + padding + symbolSize + padding + textWidth / 2;
+        nameMesh.position.set(kingdom.map_x + nameX, -kingdom.map_y, 21);
         scene.add(nameMesh);
       });
 
       const mapWidth = hexGrid.W;
       const mapHeight = hexGrid.H;
-      const frustumWidth = mapWidth + 100;
-      const frustumHeight = mapHeight + 100;
-
-      const orthoCamera = new THREE.OrthographicCamera(
-        -frustumWidth / 2, frustumWidth / 2,
-        frustumHeight / 2, -frustumHeight / 2,
-        0.1, 10000
-      );
-
       const centerX = mapWidth / 2;
       const centerY = -mapHeight / 2;
+      const mapCenter = new THREE.Vector3(centerX, centerY, 0);
 
+      // Start with orthographic camera showing entire map
+      const initialFrustumWidth = mapWidth + 100;
+      const initialFrustumHeight = mapHeight + 100;
+
+      const orthoCamera = new THREE.OrthographicCamera(
+        -initialFrustumWidth / 2, initialFrustumWidth / 2,
+        initialFrustumHeight / 2, -initialFrustumHeight / 2,
+        0.1, 10000
+      );
       orthoCamera.position.set(centerX, centerY, 500);
       orthoCamera.lookAt(centerX, centerY, 0);
       orthoCamera.updateProjectionMatrix();
 
-      cameraRef.current = orthoCamera;
+      // Perspective camera for pitch controls
+      const perspCamera = new THREE.PerspectiveCamera(60, w / h, 0.1, 10000);
 
-      let rotation = 0;
-      let pitch = 0;
-      const mapCenter = new THREE.Vector3(centerX, centerY, 0);
-      const cameraDistance = 550;
-      const maxPitch = (2 * Math.PI) / 3;
-      const maxRotation = (2 * Math.PI) / 3;
+      let camera = orthoCamera;
+      cameraRef.current = camera;
 
-      const updateCameraRotation = () => {
-        const horizontalDist = cameraDistance * Math.cos(pitch);
-        const x = mapCenter.x + Math.sin(rotation) * horizontalDist;
-        const y = centerY + Math.sin(pitch) * cameraDistance;
-        const z = mapCenter.z + Math.cos(rotation) * horizontalDist;
-        orthoCamera.position.set(x, y, z);
-        orthoCamera.lookAt(mapCenter);
+      // Camera controls state
+      const cameraState = {
+        pitch: 30, // degrees
+        distance: 450,
+        minPitch: 5,
+        maxPitch: 120,
+        inPerspective: false,
+        camX: centerX,
+        camY: centerY,
+        zoomLevel: 2.0,
       };
 
+      const updateOrthoCamera = () => {
+        const frustumWidth = initialFrustumWidth / cameraState.zoomLevel;
+        const frustumHeight = initialFrustumHeight / cameraState.zoomLevel;
+
+        orthoCamera.left = -frustumWidth / 2;
+        orthoCamera.right = frustumWidth / 2;
+        orthoCamera.top = frustumHeight / 2;
+        orthoCamera.bottom = -frustumHeight / 2;
+
+        orthoCamera.position.set(cameraState.camX, cameraState.camY, 500);
+        orthoCamera.lookAt(cameraState.camX, cameraState.camY, 0);
+        orthoCamera.updateProjectionMatrix();
+      };
+
+      const updatePerspCamera = () => {
+        cameraState.inPerspective = true;
+        camera = perspCamera;
+        cameraRef.current = camera;
+
+        const pitchRad = (cameraState.pitch * Math.PI) / 180;
+        const horizontalDist = cameraState.distance * Math.cos(pitchRad);
+        const verticalDist = cameraState.distance * Math.sin(pitchRad);
+
+        perspCamera.position.set(
+          cameraState.camX,
+          cameraState.camY - horizontalDist * 0.3,
+          verticalDist
+        );
+        perspCamera.lookAt(cameraState.camX, cameraState.camY, 0);
+      };
+
+      let isRightMouseDown = false;
+      let lastMouseX = 0;
+      let lastMouseY = 0;
+
       const onKeyDown = (e) => {
-        const pitchSpeed = 0.02;
+        const pitchStep = 3; // degrees
         if (e.key === 'ArrowUp') {
-          pitch = Math.min(pitch + pitchSpeed, maxPitch);
-          updateCameraRotation();
+          cameraState.pitch = Math.min(
+            cameraState.pitch + pitchStep,
+            cameraState.maxPitch
+          );
+          updatePerspCamera();
           e.preventDefault();
         } else if (e.key === 'ArrowDown') {
-          pitch = Math.max(pitch - pitchSpeed, -maxPitch);
-          updateCameraRotation();
+          cameraState.pitch = Math.max(
+            cameraState.pitch - pitchStep,
+            cameraState.minPitch
+          );
+          updatePerspCamera();
           e.preventDefault();
         }
       };
 
+      const onMouseWheel = (e) => {
+        const zoomStep = 0.1;
+        if (e.deltaY < 0) {
+          cameraState.zoomLevel = Math.min(cameraState.zoomLevel + zoomStep, 5.0);
+        } else {
+          cameraState.zoomLevel = Math.max(cameraState.zoomLevel - zoomStep, 0.5);
+        }
+        if (!cameraState.inPerspective) {
+          updateOrthoCamera();
+        }
+        e.preventDefault();
+      };
+
+      const onMouseDown = (e) => {
+        if (e.button === 2) { // Right mouse button
+          isRightMouseDown = true;
+          lastMouseX = e.clientX;
+          lastMouseY = e.clientY;
+          e.preventDefault();
+        }
+      };
+
+      const onMouseMove = (e) => {
+        if (!isRightMouseDown) return;
+
+        const deltaX = e.clientX - lastMouseX;
+        const deltaY = e.clientY - lastMouseY;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+
+        // Pan the camera
+        const panScale = 0.5 / cameraState.zoomLevel;
+        cameraState.camX -= deltaX * panScale;
+        cameraState.camY += deltaY * panScale;
+
+        if (!cameraState.inPerspective) {
+          updateOrthoCamera();
+        } else {
+          updatePerspCamera();
+        }
+      };
+
+      const onMouseUp = () => {
+        isRightMouseDown = false;
+      };
+
+      const onContextMenu = (e) => {
+        e.preventDefault();
+      };
+
       window.addEventListener('keydown', onKeyDown);
+      window.addEventListener('mousedown', onMouseDown);
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+      window.addEventListener('contextmenu', onContextMenu);
+      containerRef.current.addEventListener('wheel', onMouseWheel, {
+        passive: false,
+      });
 
       let frame = 0;
       const animate = () => {
         requestAnimationFrame(animate);
         frame++;
-        renderer.render(scene, orthoCamera);
+        const activeCamera = cameraState.inPerspective ? perspCamera : orthoCamera;
+        renderer.render(scene, activeCamera);
       };
       animate();
 
@@ -439,14 +554,23 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const newW = containerRef.current.clientWidth;
         const newH = containerRef.current.clientHeight;
         renderer.setSize(newW, newH);
+        perspCamera.aspect = newW / newH;
+        perspCamera.updateProjectionMatrix();
       };
       window.addEventListener('resize', handleResize);
 
       return () => {
         window.removeEventListener('resize', handleResize);
         window.removeEventListener('keydown', onKeyDown);
-        if (containerRef.current && renderer.domElement.parentNode === containerRef.current) {
-          containerRef.current.removeChild(renderer.domElement);
+        window.removeEventListener('mousedown', onMouseDown);
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        window.removeEventListener('contextmenu', onContextMenu);
+        if (containerRef.current) {
+          containerRef.current.removeEventListener('wheel', onMouseWheel);
+          if (renderer.domElement.parentNode === containerRef.current) {
+            containerRef.current.removeChild(renderer.domElement);
+          }
         }
         renderer.dispose();
       };
