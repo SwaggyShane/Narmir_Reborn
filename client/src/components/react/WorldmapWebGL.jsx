@@ -310,27 +310,27 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
 
           // Standard sphere sizes for all hills
           const smallRadius = 3;
-          const mediumRadius = 5;
+          const mediumRadius = 6.5;
           const largeRadius = 8;
 
-          // Large sphere directly over centerpoint, sitting on hex
+          // Large sphere midline at hex top plane
           const largeGeo = new THREE.SphereGeometry(largeRadius, 16, 16);
           const largeMat = new THREE.MeshPhongMaterial({
             color: hillColor,
             shininess: 15
           });
           const largeSphere = new THREE.Mesh(largeGeo, largeMat);
-          largeSphere.position.set(0, 0, largeRadius);
+          largeSphere.position.set(0, 0, 0);
           group.add(largeSphere);
 
-          // Medium sphere beside large, z-center at bottom edge of large sphere
+          // Medium sphere on positive y side, midline at large sphere's y-midline
           const mediumGeo = new THREE.SphereGeometry(mediumRadius, 16, 16);
           const mediumMat = new THREE.MeshPhongMaterial({
             color: new THREE.Color(hillColor).multiplyScalar(1.15),
             shininess: 15
           });
           const mediumSphere = new THREE.Mesh(mediumGeo, mediumMat);
-          mediumSphere.position.set(largeRadius + mediumRadius, 0, 0);
+          mediumSphere.position.set(0, largeRadius + mediumRadius, 0);
           group.add(mediumSphere);
 
           // Small sphere beside medium one
@@ -340,7 +340,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
             shininess: 20
           });
           const smallSphere = new THREE.Mesh(smallGeo, smallMat);
-          smallSphere.position.set(largeRadius + mediumRadius + mediumRadius + smallRadius, 0, 0);
+          smallSphere.position.set(0, largeRadius + mediumRadius + mediumRadius + smallRadius, 0);
           group.add(smallSphere);
         }
 
