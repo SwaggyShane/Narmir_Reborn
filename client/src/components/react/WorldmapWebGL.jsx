@@ -308,27 +308,40 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         } else if (cell.terrain === 'hills') {
           const hillColor = new THREE.Color(TERRAIN_COLORS[cell.terrain] || '#6b5b3f');
 
-          // Main hill body
-          const bodyGeo = new THREE.TetrahedronGeometry(5);
-          const bodyMat = new THREE.MeshPhongMaterial({
+          // 3 concentric spheres with random sizes, centered at hex midpoint
+          const smallRadius = 2 + Math.random() * 2;
+          const mediumRadius = 4 + Math.random() * 3;
+          const largeRadius = 7 + Math.random() * 5;
+
+          // Large sphere
+          const largeGeo = new THREE.SphereGeometry(largeRadius, 16, 16);
+          const largeMat = new THREE.MeshPhongMaterial({
             color: hillColor,
             shininess: 15
           });
-          const body = new THREE.Mesh(bodyGeo, bodyMat);
-          body.position.z = 5;
-          body.rotation.x = Math.PI / 2;
-          group.add(body);
+          const largeSphere = new THREE.Mesh(largeGeo, largeMat);
+          largeSphere.position.z = 0;
+          group.add(largeSphere);
 
-          // Lighter peak
-          const peakGeo = new THREE.TetrahedronGeometry(1.5);
-          const peakMat = new THREE.MeshPhongMaterial({
+          // Medium sphere
+          const mediumGeo = new THREE.SphereGeometry(mediumRadius, 16, 16);
+          const mediumMat = new THREE.MeshPhongMaterial({
+            color: new THREE.Color(hillColor).multiplyScalar(1.15),
+            shininess: 15
+          });
+          const mediumSphere = new THREE.Mesh(mediumGeo, mediumMat);
+          mediumSphere.position.z = 0;
+          group.add(mediumSphere);
+
+          // Small sphere
+          const smallGeo = new THREE.SphereGeometry(smallRadius, 16, 16);
+          const smallMat = new THREE.MeshPhongMaterial({
             color: new THREE.Color(hillColor).multiplyScalar(1.3),
             shininess: 20
           });
-          const peak = new THREE.Mesh(peakGeo, peakMat);
-          peak.position.z = 5 + 5;
-          peak.rotation.x = Math.PI / 2;
-          group.add(peak);
+          const smallSphere = new THREE.Mesh(smallGeo, smallMat);
+          smallSphere.position.z = 0;
+          group.add(smallSphere);
         }
 
         return group;
