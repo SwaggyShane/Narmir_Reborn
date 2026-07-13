@@ -223,27 +223,112 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
           tip.rotation.x = Math.PI / 2;
           group.add(tip);
         } else if (cell.terrain === 'mountains') {
-          const mountainColor = new THREE.Color(TERRAIN_COLORS[cell.terrain] || '#ffffff').multiplyScalar(0.6);
-          const coneGeo = new THREE.ConeGeometry(3, 8, 4);
-          const coneMat = new THREE.MeshPhongMaterial({
-            color: mountainColor,
+          const mountainGrey = new THREE.Color('#777777');
+          const white = new THREE.Color(0xffffff);
+
+          // Central tall spire - truncated cylinder
+          const centerTopRadius = 6.699;
+          const centerBottomRadius = 6.699 * 1.5;
+          const centerHeight = 64.31;
+
+          const centerGeo = new THREE.CylinderGeometry(centerTopRadius, centerBottomRadius, centerHeight, 8);
+          const centerPositions = centerGeo.getAttribute('position');
+          const centerColors = [];
+
+          for (let i = 0; i < centerPositions.count; i++) {
+            centerColors.push(mountainGrey.r, mountainGrey.g, mountainGrey.b);
+          }
+
+          centerGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(centerColors), 3));
+          const centerMat = new THREE.MeshPhongMaterial({
+            vertexColors: true,
             shininess: 15
           });
-          const cone = new THREE.Mesh(coneGeo, coneMat);
-          cone.position.z = 4;
-          cone.rotation.x = Math.PI / 2;
-          group.add(cone);
+          const centerSpire = new THREE.Mesh(centerGeo, centerMat);
+          centerSpire.position.z = 32.16;
+          centerSpire.rotation.x = Math.PI / 2;
+          group.add(centerSpire);
+
+          // White sphere for central cap - sits on top of cylinder
+          const centerCapGeo = new THREE.SphereGeometry(centerTopRadius, 16, 16);
+          const centerCapMat = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            shininess: 25
+          });
+          const centerCap = new THREE.Mesh(centerCapGeo, centerCapMat);
+          centerCap.position.z = 32.16 + centerHeight / 2 + centerTopRadius;
+          centerCap.rotation.y = Math.PI / 4;
+          group.add(centerCap);
+
+          // 4 surrounding shorter spires
+          const offset = 8.88;
+          const positions = [
+            [offset, 0],
+            [-offset, 0],
+            [0, offset],
+            [0, -offset]
+          ];
+
+          positions.forEach(([x, y]) => {
+            const topRadius = 3.5;
+            const bottomRadius = 9.38;
+            const coneHeight = 38;
+
+            // Truncated cone: flat top at radius 3.5, flat bottom at radius 9.38
+            const spireGeo = new THREE.CylinderGeometry(topRadius, bottomRadius, coneHeight, 8);
+            const spirePositions = spireGeo.getAttribute('position');
+            const spireColors = [];
+
+            for (let i = 0; i < spirePositions.count; i++) {
+              spireColors.push(mountainGrey.r, mountainGrey.g, mountainGrey.b);
+            }
+
+            spireGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(spireColors), 3));
+            const spireMat = new THREE.MeshPhongMaterial({
+              vertexColors: true,
+              shininess: 15
+            });
+            const spire = new THREE.Mesh(spireGeo, spireMat);
+            spire.position.set(x, y, 19);
+            spire.rotation.x = Math.PI / 2;
+            group.add(spire);
+
+            // White sphere - center aligned with cylinder top plane
+            const capGeo = new THREE.SphereGeometry(topRadius, 16, 16);
+            const capMat = new THREE.MeshPhongMaterial({
+              color: 0xffffff,
+              shininess: 25
+            });
+            const cap = new THREE.Mesh(capGeo, capMat);
+            // Position sphere center at cylinder top plane (z = 38)
+            cap.position.set(x, y, 19 + 19);
+            cap.rotation.y = Math.PI / 4; // 45 degrees
+            group.add(cap);
+          });
         } else if (cell.terrain === 'hills') {
-          const hillColor = new THREE.Color(TERRAIN_COLORS[cell.terrain] || '#ffffff').multiplyScalar(0.6);
-          const tetGeo = new THREE.TetrahedronGeometry(3);
-          const tetMat = new THREE.MeshPhongMaterial({
+          const hillColor = new THREE.Color(TERRAIN_COLORS[cell.terrain] || '#6b5b3f');
+
+          // Main hill body
+          const bodyGeo = new THREE.TetrahedronGeometry(5);
+          const bodyMat = new THREE.MeshPhongMaterial({
             color: hillColor,
+            shininess: 15
+          });
+          const body = new THREE.Mesh(bodyGeo, bodyMat);
+          body.position.z = 5;
+          body.rotation.x = Math.PI / 2;
+          group.add(body);
+
+          // Lighter peak
+          const peakGeo = new THREE.TetrahedronGeometry(1.5);
+          const peakMat = new THREE.MeshPhongMaterial({
+            color: new THREE.Color(hillColor).multiplyScalar(1.3),
             shininess: 20
           });
-          const tet = new THREE.Mesh(tetGeo, tetMat);
-          tet.position.z = 3;
-          tet.rotation.x = Math.PI / 2;
-          group.add(tet);
+          const peak = new THREE.Mesh(peakGeo, peakMat);
+          peak.position.z = 5 + 5;
+          peak.rotation.x = Math.PI / 2;
+          group.add(peak);
         }
 
         return group;
