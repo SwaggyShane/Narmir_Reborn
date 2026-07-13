@@ -199,40 +199,50 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const group = new THREE.Group();
 
         if (cell.terrain === 'forest') {
-          const bodyGeo = new THREE.ConeGeometry(12, 8, 12);
-          const terrainColor = new THREE.Color(TERRAIN_COLORS[cell.terrain] || '#ffffff');
-          terrainColor.multiplyScalar(0.5);
+          const darkGreen = new THREE.Color(TERRAIN_COLORS[cell.terrain] || '#2d4a2d');
+
+          // Main dark green cone body
+          const bodyGeo = new THREE.ConeGeometry(12.5, 20, 12);
           const bodyMat = new THREE.MeshPhongMaterial({
-            color: terrainColor,
+            color: darkGreen,
             shininess: 20
           });
           const body = new THREE.Mesh(bodyGeo, bodyMat);
-          body.position.y = 4;
+          body.position.z = 12.5; // Offset so base sits at group origin
+          body.rotation.x = Math.PI / 2;
           group.add(body);
 
-          const tipGeo = new THREE.ConeGeometry(4, 6, 8);
+          // Small white tip cone
+          const tipGeo = new THREE.ConeGeometry(2.5, 5, 8);
           const tipMat = new THREE.MeshPhongMaterial({
             color: 0xffffff,
             shininess: 20
           });
           const tip = new THREE.Mesh(tipGeo, tipMat);
-          tip.position.y = 8 + 3;
+          tip.position.z = 12.5 + 10; // Position on top of body
+          tip.rotation.x = Math.PI / 2;
           group.add(tip);
         } else if (cell.terrain === 'mountains') {
-          const coneGeo = new THREE.ConeGeometry(2, 5, 4);
+          const mountainColor = new THREE.Color(TERRAIN_COLORS[cell.terrain] || '#ffffff').multiplyScalar(0.6);
+          const coneGeo = new THREE.ConeGeometry(3, 8, 4);
           const coneMat = new THREE.MeshPhongMaterial({
-            color: new THREE.Color(TERRAIN_COLORS[cell.terrain] || '#ffffff').multiplyScalar(0.6),
+            color: mountainColor,
             shininess: 15
           });
           const cone = new THREE.Mesh(coneGeo, coneMat);
+          cone.position.z = 4;
+          cone.rotation.x = Math.PI / 2;
           group.add(cone);
         } else if (cell.terrain === 'hills') {
-          const tetGeo = new THREE.TetrahedronGeometry(2);
+          const hillColor = new THREE.Color(TERRAIN_COLORS[cell.terrain] || '#ffffff').multiplyScalar(0.6);
+          const tetGeo = new THREE.TetrahedronGeometry(3);
           const tetMat = new THREE.MeshPhongMaterial({
-            color: new THREE.Color(TERRAIN_COLORS[cell.terrain] || '#ffffff').multiplyScalar(0.6),
+            color: hillColor,
             shininess: 20
           });
           const tet = new THREE.Mesh(tetGeo, tetMat);
+          tet.position.z = 3;
+          tet.rotation.x = Math.PI / 2;
           group.add(tet);
         }
 
@@ -247,7 +257,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const symbol = createSymbolForTerrain(cell, elevation);
         if (!symbol) return;
 
-        symbol.position.set(cell.x, -cell.y, elevation / 100 + 1);
+        symbol.position.set(cell.x, -cell.y, elevation);
         scene.add(symbol);
       });
 
