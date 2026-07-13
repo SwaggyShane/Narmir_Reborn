@@ -342,6 +342,19 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
           const smallSphere = new THREE.Mesh(smallGeo, smallMat);
           smallSphere.position.set(-7.5, -5, 0);
           group.add(smallSphere);
+        } else if (cell.terrain === 'desert') {
+          const desertColor = new THREE.Color(TERRAIN_COLORS[cell.terrain] || '#8b7355').multiplyScalar(1.25);
+
+          // Simple pyramid
+          const pyramidGeo = new THREE.ConeGeometry(10, 16, 4);
+          const pyramidMat = new THREE.MeshPhongMaterial({
+            color: desertColor,
+            shininess: 80
+          });
+          const pyramid = new THREE.Mesh(pyramidGeo, pyramidMat);
+          pyramid.position.z = 8;
+          pyramid.rotation.x = Math.PI / 2;
+          group.add(pyramid);
         }
 
         return group;
