@@ -355,6 +355,30 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
           pyramid.position.z = 8;
           pyramid.rotation.x = Math.PI / 2;
           group.add(pyramid);
+        } else if (cell.terrain === 'plains') {
+          const plainsColor = new THREE.Color('#DAA520');
+
+          // 12 columns evenly spaced around midpoint
+          const columnRadius = 1.25;
+          const columnHeight = 15;
+          const circleRadius = 12;
+          const numColumns = 12;
+
+          for (let i = 0; i < numColumns; i++) {
+            const angle = (i / numColumns) * Math.PI * 2;
+            const x = Math.cos(angle) * circleRadius;
+            const y = Math.sin(angle) * circleRadius;
+
+            const colGeo = new THREE.CylinderGeometry(columnRadius, columnRadius, columnHeight, 8);
+            const colMat = new THREE.MeshPhongMaterial({
+              color: plainsColor,
+              shininess: 20
+            });
+            const column = new THREE.Mesh(colGeo, colMat);
+            column.position.set(x, y, columnHeight / 2);
+            column.rotation.x = Math.PI / 2;
+            group.add(column);
+          }
         }
 
         return group;
