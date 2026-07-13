@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
+import { getRaceSVGIcon } from '../../utils/raceIconsSVG.js';
 import { hexCenter, hexCorners, HEX_SIZE, HEX_W, HEX_VERT } from '../../utils/hexMap/HexGeometry.ts';
 
 const TERRAIN_COLORS = {
@@ -311,7 +312,6 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       kingdoms.forEach((kingdom) => {
         if (!kingdom.map_x || !kingdom.map_y) return;
 
-        const raceIcon = RACE_ICONS[kingdom.race] || '👑';
         const symbolSize = 12;
         const padding = 2;
 
@@ -351,26 +351,44 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const bgGeometry = new THREE.PlaneGeometry(bgWidth, bgHeight);
         const bgMaterial = new THREE.MeshBasicMaterial({ map: bgTexture, transparent: true });
         const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
-        bgMesh.position.set(kingdom.map_x, -kingdom.map_y, 20);
+        bgMesh.position.set(kingdom.map_x, -kingdom.map_y, 25);
         scene.add(bgMesh);
 
-        // Draw symbol (race icon)
+        // Draw symbol (race icon from SVG with stroke)
         const symbolCanvas = document.createElement('canvas');
-        symbolCanvas.width = symbolSize;
-        symbolCanvas.height = symbolSize;
+        symbolCanvas.width = symbolSize * 3;
+        symbolCanvas.height = symbolSize * 3;
         const symbolCtx = symbolCanvas.getContext('2d');
-        symbolCtx.font = `${symbolSize}px Arial`;
-        symbolCtx.textAlign = 'center';
-        symbolCtx.textBaseline = 'middle';
-        symbolCtx.fillText(raceIcon, symbolSize / 2, symbolSize / 2);
 
         const symbolTexture = new THREE.CanvasTexture(symbolCanvas);
         const symbolGeometry = new THREE.PlaneGeometry(symbolSize, symbolSize);
         const symbolMaterial = new THREE.MeshBasicMaterial({ map: symbolTexture, transparent: true });
         const symbolMesh = new THREE.Mesh(symbolGeometry, symbolMaterial);
         const symbolX = -bgWidth / 2 + padding + symbolSize / 2;
-        symbolMesh.position.set(kingdom.map_x + symbolX, -kingdom.map_y, 21);
+        symbolMesh.position.set(kingdom.map_x + symbolX, -kingdom.map_y, 26);
         scene.add(symbolMesh);
+
+        const svgString = getRaceSVGIcon(kingdom.race);
+        if (svgString) {
+          const raceRegion = REGION_META[kingdom.race];
+          const raceColor = raceRegion ? raceRegion.color : '#ffffff';
+
+          // Add stroke and color to SVG
+          const svgWithStyle = svgString
+            .replace('<svg', `<svg stroke="white" stroke-width="0.5" color="${raceColor}"`)
+            .replace(/fill="currentColor"/g, `fill="${raceColor}"`);
+
+          const svg = new Image();
+          const svgBlob = new Blob([svgWithStyle], { type: 'image/svg+xml' });
+          const url = URL.createObjectURL(svgBlob);
+          svg.onload = () => {
+            symbolCtx.clearRect(0, 0, symbolCanvas.width, symbolCanvas.height);
+            symbolCtx.drawImage(svg, 0, 0, symbolCanvas.width, symbolCanvas.height);
+            symbolTexture.needsUpdate = true;
+            URL.revokeObjectURL(url);
+          };
+          svg.src = url;
+        }
 
         // Draw kingdom name
         const nameCanvas = document.createElement('canvas');
@@ -386,8 +404,8 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const nameGeometry = new THREE.PlaneGeometry(textWidth, textHeight);
         const nameMaterial = new THREE.MeshBasicMaterial({ map: nameTexture, transparent: true });
         const nameMesh = new THREE.Mesh(nameGeometry, nameMaterial);
-        const nameX = -bgWidth / 2 + padding + symbolSize + padding + textWidth / 2;
-        nameMesh.position.set(kingdom.map_x + nameX, -kingdom.map_y, 21);
+        const nameX = -bgWidth / 2 + padding + symbolSize + textWidth / 2;
+        nameMesh.position.set(kingdom.map_x + nameX, -kingdom.map_y, 26);
         scene.add(nameMesh);
       });
 
