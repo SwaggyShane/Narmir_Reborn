@@ -308,41 +308,40 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         } else if (cell.terrain === 'hills') {
           const hillColor = new THREE.Color(TERRAIN_COLORS[cell.terrain] || '#6b5b3f');
 
-          // 3 spheres with random sizes, sides touching at center point
-          const smallRadius = 2 + Math.random() * 2;
-          const mediumRadius = 4 + Math.random() * 3;
-          const largeRadius = 7 + Math.random() * 5;
+          // Standard sphere sizes for all hills
+          const smallRadius = 3;
+          const mediumRadius = 5;
+          const largeRadius = 8;
 
-          // Position spheres in triangle around center, each touching center point
-          // Small sphere at 0°
-          const smallGeo = new THREE.SphereGeometry(smallRadius, 16, 16);
-          const smallMat = new THREE.MeshPhongMaterial({
-            color: new THREE.Color(hillColor).multiplyScalar(1.3),
-            shininess: 20
-          });
-          const smallSphere = new THREE.Mesh(smallGeo, smallMat);
-          smallSphere.position.set(smallRadius, 0, 0);
-          group.add(smallSphere);
-
-          // Medium sphere at 120°
-          const mediumGeo = new THREE.SphereGeometry(mediumRadius, 16, 16);
-          const mediumMat = new THREE.MeshPhongMaterial({
-            color: new THREE.Color(hillColor).multiplyScalar(1.15),
-            shininess: 15
-          });
-          const mediumSphere = new THREE.Mesh(mediumGeo, mediumMat);
-          mediumSphere.position.set(mediumRadius * -0.5, mediumRadius * Math.sqrt(3) / 2, 0);
-          group.add(mediumSphere);
-
-          // Large sphere at 240°
+          // Large sphere directly over centerpoint, sitting on hex
           const largeGeo = new THREE.SphereGeometry(largeRadius, 16, 16);
           const largeMat = new THREE.MeshPhongMaterial({
             color: hillColor,
             shininess: 15
           });
           const largeSphere = new THREE.Mesh(largeGeo, largeMat);
-          largeSphere.position.set(largeRadius * -0.5, largeRadius * -Math.sqrt(3) / 2, 0);
+          largeSphere.position.set(0, 0, largeRadius);
           group.add(largeSphere);
+
+          // Medium sphere beside large, z-center at bottom edge of large sphere
+          const mediumGeo = new THREE.SphereGeometry(mediumRadius, 16, 16);
+          const mediumMat = new THREE.MeshPhongMaterial({
+            color: new THREE.Color(hillColor).multiplyScalar(1.15),
+            shininess: 15
+          });
+          const mediumSphere = new THREE.Mesh(mediumGeo, mediumMat);
+          mediumSphere.position.set(largeRadius + mediumRadius, 0, 0);
+          group.add(mediumSphere);
+
+          // Small sphere beside medium one
+          const smallGeo = new THREE.SphereGeometry(smallRadius, 16, 16);
+          const smallMat = new THREE.MeshPhongMaterial({
+            color: new THREE.Color(hillColor).multiplyScalar(1.3),
+            shininess: 20
+          });
+          const smallSphere = new THREE.Mesh(smallGeo, smallMat);
+          smallSphere.position.set(largeRadius + mediumRadius + mediumRadius + smallRadius, 0, 0);
+          group.add(smallSphere);
         }
 
         return group;
