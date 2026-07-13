@@ -309,7 +309,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
           const hillColor = new THREE.Color(TERRAIN_COLORS[cell.terrain] || '#6b5b3f');
 
           // Standard sphere sizes for all hills
-          const smallRadius = 3;
+          const smallRadius = 4.5;
           const mediumRadius = 6.5;
           const largeRadius = 8;
 
@@ -330,17 +330,17 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
             shininess: 15
           });
           const mediumSphere = new THREE.Mesh(mediumGeo, mediumMat);
-          mediumSphere.position.set(0, largeRadius + mediumRadius, 0);
+          mediumSphere.position.set(0, largeRadius + mediumRadius - 19.25 - 0.75, 0);
           group.add(mediumSphere);
 
-          // Small sphere beside medium one
+          // Small sphere positioned separately
           const smallGeo = new THREE.SphereGeometry(smallRadius, 16, 16);
           const smallMat = new THREE.MeshPhongMaterial({
             color: new THREE.Color(hillColor).multiplyScalar(1.3),
             shininess: 20
           });
           const smallSphere = new THREE.Mesh(smallGeo, smallMat);
-          smallSphere.position.set(0, largeRadius + mediumRadius + mediumRadius + smallRadius, 0);
+          smallSphere.position.set(-7.5, -5, 0);
           group.add(smallSphere);
         }
 
