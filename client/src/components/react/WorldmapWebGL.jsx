@@ -286,33 +286,28 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         });
       });
 
-      // Render border lines as thin colored planes
+      // Render borders as LineSegments (standard approach for hex map edges)
+      const positions = [];
+      const colors = [];
+
       borderLines.forEach(({ p1, p2, race }) => {
+        positions.push(p1.x, p1.y, p1.z);
+        positions.push(p2.x, p2.y, p2.z);
+
         const raceRegion = REGION_META[race];
         const color = raceRegion ? new THREE.Color(raceRegion.stroke) : new THREE.Color(0xffffff);
-
-        // Create a thin plane between the two points
-        const dx = p2.x - p1.x;
-        const dy = p2.y - p1.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const thickness = 1.5;
-
-        const planeGeo = new THREE.PlaneGeometry(length, thickness);
-        const planeMat = new THREE.MeshPhongMaterial({ color, side: THREE.DoubleSide });
-        const plane = new THREE.Mesh(planeGeo, planeMat);
-
-        // Position at midpoint
-        const midX = (p1.x + p2.x) / 2;
-        const midY = (p1.y + p2.y) / 2;
-        const midZ = (p1.z + p2.z) / 2;
-        plane.position.set(midX, midY, midZ);
-
-        // Rotate to align with the edge
-        const angle = Math.atan2(dy, dx);
-        plane.rotation.z = angle;
-
-        scene.add(plane);
+        colors.push(color.r, color.g, color.b);
+        colors.push(color.r, color.g, color.b);
       });
+
+      if (positions.length > 0) {
+        const borderGeo = new THREE.BufferGeometry();
+        borderGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+        borderGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
+        const borderMat = new THREE.LineBasicMaterial({ vertexColors: true, linewidth: 2 });
+        const borders = new THREE.LineSegments(borderGeo, borderMat);
+        scene.add(borders);
+      }
 
       if (borderLines.length > 0) {
         console.log(`Created ${borderLines.length} border segments`);
