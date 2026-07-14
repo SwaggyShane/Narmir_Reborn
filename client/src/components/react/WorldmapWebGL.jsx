@@ -423,6 +423,68 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         return group;
       };
 
+      const createSwampSymbol = () => {
+        const group = new THREE.Group();
+
+        // Water - blue circle
+        const waterGeo = new THREE.CircleGeometry(15, 32);
+        const waterMat = new THREE.MeshPhongMaterial({
+          color: 0x2a5a7a,
+          shininess: 20,
+        });
+        const water = new THREE.Mesh(waterGeo, waterMat);
+        water.position.z = 0.1;
+        group.add(water);
+
+        // Simple muddy base
+        const baseMat = new THREE.MeshPhongMaterial({
+          color: 0x3d4a2d,
+          shininess: 10,
+        });
+
+        const baseGeo = new THREE.SphereGeometry(6, 8, 8);
+        const base = new THREE.Mesh(baseGeo, baseMat);
+        base.scale.set(1, 0.5, 1); // Flatten it
+        base.position.z = 0.5;
+        group.add(base);
+
+        // 4 cattails - perpendicular from hex top
+        const stemHeight = 12;
+        const headHeight = 2;
+        const positions = [
+          [3, 3],
+          [-3, 3],
+          [-3, -3],
+          [3, -3]
+        ];
+
+        positions.forEach(([x, y]) => {
+          // Stem - perpendicular to hex face (straight up)
+          const stemGeo = new THREE.CylinderGeometry(0.2, 0.2, stemHeight, 4);
+          const stemMat = new THREE.MeshPhongMaterial({
+            color: 0x4a5c2a,
+            shininess: 10,
+          });
+          const stem = new THREE.Mesh(stemGeo, stemMat);
+          stem.position.set(x, y, stemHeight / 2);
+          stem.rotation.x = Math.PI / 2;
+          group.add(stem);
+
+          // Head
+          const headGeo = new THREE.CylinderGeometry(0.6, 0.6, headHeight, 6);
+          const headMat = new THREE.MeshPhongMaterial({
+            color: 0x2d1a0f,
+            shininess: 5,
+          });
+          const head = new THREE.Mesh(headGeo, headMat);
+          head.position.set(x, y, stemHeight);
+          head.rotation.x = Math.PI / 2;
+          group.add(head);
+        });
+
+        return group;
+      };
+
       const createVolcanicSymbol = () => {
         const group = new THREE.Group();
         const darkBrown = new THREE.Color('#4a2511');
@@ -496,6 +558,8 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
           return createPlainsSymbol();
         } else if (cell.terrain === 'volcanic') {
           return createVolcanicSymbol();
+        } else if (cell.terrain === 'swamp') {
+          return createSwampSymbol();
         }
         return null;
       };
