@@ -379,6 +379,33 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
             column.rotation.x = Math.PI / 2;
             group.add(column);
           }
+        } else if (cell.terrain === 'volcanic') {
+          const darkBrown = new THREE.Color('#4a2511');
+          const red = new THREE.Color('#dc143c');
+
+          // Dark brown base cylinder: base 7, top 5 (80% larger)
+          const baseHeight = 36;
+          const baseGeo = new THREE.CylinderGeometry(9, 12.6, baseHeight, 16);
+          const baseMat = new THREE.MeshPhongMaterial({
+            color: darkBrown,
+            shininess: 15
+          });
+          const baseCyl = new THREE.Mesh(baseGeo, baseMat);
+          baseCyl.position.z = baseHeight / 2;
+          baseCyl.rotation.x = Math.PI / 2;
+          group.add(baseCyl);
+
+          // Red top cylinder: base 5, top 3 (80% larger)
+          const topHeight = 28.8;
+          const topGeo = new THREE.CylinderGeometry(5.4, 9, topHeight, 16);
+          const topMat = new THREE.MeshPhongMaterial({
+            color: red,
+            shininess: 15
+          });
+          const topCyl = new THREE.Mesh(topGeo, topMat);
+          topCyl.position.z = baseHeight + 0.25 - topHeight / 2;
+          topCyl.rotation.x = Math.PI / 2;
+          group.add(topCyl);
         }
 
         return group;
