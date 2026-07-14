@@ -196,6 +196,108 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       instances.instanceColor.needsUpdate = true;
       scene.add(instances);
 
+      // Build cellMap and compute races using Voronoi (nearest RACE_HOME)
+      const RACE_HOMES = {
+        dwarf: { x: 400, y: 488 },
+        high_elf: { x: 1155, y: 340 },
+        wood_elf: { x: 1599, y: 467 },
+        vampire: { x: 933, y: 701 },
+        ogre: { x: 1777, y: 828 },
+        dark_elf: { x: 1243, y: 913 },
+        orc: { x: 1555, y: 1040 },
+        human: { x: 666, y: 913 },
+        dire_wolf: { x: 289, y: 849 },
+      };
+
+      function nearestRaceHome(x, y) {
+        let best = null;
+        let bestDist = Infinity;
+        for (const [race, home] of Object.entries(RACE_HOMES)) {
+          const dx = x - home.x;
+          const dy = y - home.y;
+          const dist = dx * dx + dy * dy;
+          if (dist < bestDist) {
+            bestDist = dist;
+            best = race;
+          }
+        }
+        return best || 'human';
+      }
+
+      const cellMap = new Map();
+      hexGrid.cells.forEach((cell) => {
+        const key = `${cell.col},${cell.row}`;
+        cell.race = nearestRaceHome(cell.x * 2, -cell.y * 2);
+        cellMap.set(key, cell);
+      });
+
+      // ODDR neighbor offsets (pointy-top, odd-r)
+      const ODDR_DIRECTIONS = [
+        [[1, 0], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]],  // even row
+        [[1, 0], [1, -1], [0, -1], [-1, 0], [0, 1], [1, 1]],    // odd row
+      ];
+
+      const DIRECTION_EDGE_CORNERS = [
+        [0, 1], // E
+        [5, 0], // NE
+        [4, 5], // NW
+        [3, 4], // W
+        [2, 3], // SW
+        [1, 2], // SE
+      ];
+
+      // Draw region borders
+      const borderLines = [];
+      const drawnEdges = new Set();
+      const BORDER_INSET = 4;
+
+      hexGrid.cells.forEach((cell) => {
+        const key = `${cell.col},${cell.row}`;
+        const parity = cell.row & 1;
+        const directions = ODDR_DIRECTIONS[parity];
+        const corners = hexCorners(cell.x, cell.y, HEX_SIZE - BORDER_INSET);
+        const elev = getCellElevation(cell);
+
+        directions.forEach((offset, dirIndex) => {
+          const neighborCol = cell.col + offset[0];
+          const neighborRow = cell.row + offset[1];
+          const neighborKey = `${neighborCol},${neighborRow}`;
+          const neighbor = cellMap.get(neighborKey);
+
+          if (neighbor && neighbor.race !== cell.race) {
+            const edgeKey = [key, neighborKey].sort().join('|');
+            if (!drawnEdges.has(edgeKey)) {
+              drawnEdges.add(edgeKey);
+
+              const edgeCorners = DIRECTION_EDGE_CORNERS[dirIndex];
+              const c1 = corners[edgeCorners[0]];
+              const c2 = corners[edgeCorners[1]];
+
+              const neighborElev = getCellElevation(neighbor);
+              const avgElev = (elev + neighborElev) / 2;
+              const borderZ = avgElev + 2;
+
+              borderLines.push({
+                p1: new THREE.Vector3(c1[0], c1[1], borderZ),
+                p2: new THREE.Vector3(c2[0], c2[1], borderZ),
+                race: cell.race,
+              });
+            }
+          }
+        });
+      });
+
+      // Render border lines as tubes
+      borderLines.forEach(({ p1, p2, race }) => {
+        const curve = new THREE.LineCurve3(p1, p2);
+        const raceRegion = REGION_META[race];
+        const color = raceRegion ? new THREE.Color(raceRegion.stroke) : new THREE.Color(0xffffff);
+        const tubeGeo = new THREE.TubeGeometry(curve, 8, 0.5, 6, false);
+        const tubeMat = new THREE.MeshPhongMaterial({ color });
+        const tube = new THREE.Mesh(tubeGeo, tubeMat);
+        scene.add(tube);
+      });
+      console.log(`Created ${borderLines.length} border segments`);
 
       const createForestSymbol = () => {
         const group = new THREE.Group();
