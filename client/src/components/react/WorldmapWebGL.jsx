@@ -395,17 +395,48 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
           baseCyl.rotation.x = Math.PI / 2;
           group.add(baseCyl);
 
-          // Red top cylinder: base 5, top 3 (80% larger)
+          // Red top cylinder: base 5, top 3 (80% larger) - orange emissive lava
           const topHeight = 28.8;
+          const lavaOrange = new THREE.Color('#ff6b1a');
           const topGeo = new THREE.CylinderGeometry(5.4, 9, topHeight, 16);
           const topMat = new THREE.MeshPhongMaterial({
-            color: red,
-            shininess: 15
+            color: lavaOrange,
+            emissive: lavaOrange,
+            emissiveIntensity: 0.6,
+            shininess: 25
           });
           const topCyl = new THREE.Mesh(topGeo, topMat);
           topCyl.position.z = baseHeight + 0.25 - topHeight / 2;
           topCyl.rotation.x = Math.PI / 2;
           group.add(topCyl);
+
+          // Lava drips flowing down both cylinders
+          const numDrips = 6;
+          for (let i = 0; i < numDrips; i++) {
+            const angle = (i / numDrips) * Math.PI * 2;
+            const dripX = Math.cos(angle) * 8.5;
+            const dripY = Math.sin(angle) * 8.5;
+
+            // Drips on brown cylinder
+            const brownDripGeo = new THREE.ConeGeometry(1.2, 10, 8);
+            const dripMat = new THREE.MeshPhongMaterial({
+              color: new THREE.Color('#ff8c00'),
+              emissive: new THREE.Color('#ff6b1a'),
+              emissiveIntensity: 0.8,
+              shininess: 30
+            });
+            const brownDrip = new THREE.Mesh(brownDripGeo, dripMat);
+            brownDrip.position.set(dripX, dripY, baseHeight / 2 - 5);
+            brownDrip.rotation.x = Math.PI / 2;
+            group.add(brownDrip);
+
+            // Drips on red cylinder
+            const redDripGeo = new THREE.ConeGeometry(1.5, 8, 8);
+            const redDrip = new THREE.Mesh(redDripGeo, dripMat);
+            redDrip.position.set(dripX, dripY, baseHeight + 0.25 - 6);
+            redDrip.rotation.x = Math.PI / 2;
+            group.add(redDrip);
+          }
         }
 
         return group;
