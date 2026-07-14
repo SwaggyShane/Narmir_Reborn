@@ -762,36 +762,10 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         passive: false,
       });
 
-      // Snow disabled for now - needs refactor
-      let snowGeometry = null;
-      let snowPositions = null;
-      let snowVelocities = null;
-      let snowCount = 0;
-      let mountainCenterX = 0, mountainCenterY = 0, mountainRangeX = 0, mountainRangeY = 0;
-
       let frame = 0;
       const animate = () => {
         requestAnimationFrame(animate);
         frame++;
-
-        // Update snowfall if snow particles exist
-        if (snowGeometry && snowPositions && snowVelocities) {
-          const positions = snowGeometry.attributes.position.array;
-          for (let i = 0; i < snowCount; i++) {
-            positions[i * 3] += snowVelocities[i * 3];
-            positions[i * 3 + 1] += snowVelocities[i * 3 + 1];
-            positions[i * 3 + 2] += snowVelocities[i * 3 + 2];
-
-            // Loop snowflakes back to top within mountain bounds
-            if (positions[i * 3 + 2] < -10) {
-              positions[i * 3 + 2] = Math.random() * 150 + 10;
-              positions[i * 3] = mountainCenterX + (Math.random() - 0.5) * mountainRangeX;
-              positions[i * 3 + 1] = mountainCenterY + (Math.random() - 0.5) * mountainRangeY;
-            }
-          }
-          snowGeometry.attributes.position.needsUpdate = true;
-        }
-
         const activeCamera = cameraState.inPerspective ? perspCamera : orthoCamera;
         renderer.render(scene, activeCamera);
       };
