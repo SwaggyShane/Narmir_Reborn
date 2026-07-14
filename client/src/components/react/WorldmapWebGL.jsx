@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { getRaceSVGIcon } from '../../utils/raceIconsSVG.js';
@@ -34,8 +35,11 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       return;
     }
 
+    let cancelled = false;
+    let cleanup = null;
+
     const checkAndRender = () => {
-      if (!containerRef.current) return;
+      if (cancelled || !containerRef.current) return;
       const w = containerRef.current.clientWidth;
       const h = containerRef.current.clientHeight;
 
@@ -44,10 +48,18 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         return;
       }
 
-      initializeWebGL(w, h);
+      cleanup = initializeWebGL(w, h);
     };
 
     const initializeWebGL = (w, h) => {
+      // Defensive: a stale canvas from a prior mount (e.g. a StrictMode
+      // double-invoke or an interrupted cleanup) must never linger — it
+      // would sit in the DOM as a frozen duplicate, silently absorbing or
+      // shadowing space while a live canvas renders elsewhere unseen.
+      while (containerRef.current.firstChild) {
+        containerRef.current.removeChild(containerRef.current.firstChild);
+      }
+
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x040710);
       scene.fog = new THREE.Fog(0x040710, 5000, 10000);
@@ -196,140 +208,160 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       instances.instanceColor.needsUpdate = true;
       scene.add(instances);
 
-      // Build cellMap and compute races using Voronoi (nearest RACE_HOME)
-      const RACE_HOMES = {
-        dwarf: { x: 400, y: 488 },
-        high_elf: { x: 1155, y: 340 },
-        wood_elf: { x: 1599, y: 467 },
-        vampire: { x: 933, y: 701 },
-        ogre: { x: 1777, y: 828 },
-        dark_elf: { x: 1243, y: 913 },
-        orc: { x: 1555, y: 1040 },
-        human: { x: 666, y: 913 },
-        dire_wolf: { x: 289, y: 849 },
-      };
+      // cellMap and cell.race are already built by buildHexGrid() (see
+      // worldMapBuilder.js) — reuse them rather than recomputing, so this
+      // view can never diverge from the canvas renderer's race assignment.
+      const cellMap = hexGrid.cellMap || new Map(hexGrid.cells.map(c => [`${c.col},${c.row}`, c]));
 
-      function nearestRaceHome(x, y) {
-        let best = null;
-        let bestDist = Infinity;
-        for (const [race, home] of Object.entries(RACE_HOMES)) {
-          const dx = x - home.x;
-          const dy = y - home.y;
-          const dist = dx * dx + dy * dy;
-          if (dist < bestDist) {
-            bestDist = dist;
-            best = race;
-          }
-        }
-        return best || 'human';
-      }
-
-      const cellMap = new Map();
-      hexGrid.cells.forEach((cell) => {
-        const key = `${cell.col},${cell.row}`;
-        // Check if race already exists on cell, otherwise compute it
-        if (!cell.race) {
-          cell.race = nearestRaceHome(cell.x * 2, -cell.y * 2);
-        }
-        cellMap.set(key, cell);
-      });
-      const validCells = hexGrid.cells.filter(c => c.col >= 0 && c.row >= 0);
-      console.log(`Total cells: ${hexGrid.cells.length}, valid cells: ${validCells.length}`);
-      console.log(`First cell: col=${hexGrid.cells[0]?.col}, row=${hexGrid.cells[0]?.row}, race=${hexGrid.cells[0]?.race}`);
-      console.log(`First valid cell: col=${validCells[0]?.col}, row=${validCells[0]?.row}, race=${validCells[0]?.race}`);
-
-      // ODDR neighbor offsets (pointy-top, odd-r)
+      // ODDR neighbor offsets (pointy-top, odd-r). Direction order is fixed
+      // (E, NE, NW, W, SW, SE) regardless of row parity — same table as
+      // worldMapBuilder.js / WorldmapRenderer.jsx.
       const ODDR_DIRECTIONS = [
         [[1, 0], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]],  // even row
         [[1, 0], [1, -1], [0, -1], [-1, 0], [0, 1], [1, 1]],    // odd row
       ];
 
+      // hexCorners(cx, cy, size) with cy = -cell.y (below) mirrors the
+      // *center* into this scene's Y-up space but leaves the per-corner
+      // trig offsets unflipped — matching the plain hexagon tile geometry
+      // built above (InstancedMesh also just translates that same local
+      // shape to (cell.x, -cell.y), never reflecting it). Because that
+      // reflection is only applied to the center, corner index N here sits
+      // where corner N's mirror partner would be in canvas space, which
+      // permutes the edge-to-direction mapping into simple sequential
+      // pairs. Do NOT reuse the canvas renderer's [[0,1],[5,0],[4,5],...]
+      // table here — it assumes unflipped corners and swaps NE/SE and
+      // NW/SW onto the wrong side of every hex.
       const DIRECTION_EDGE_CORNERS = [
         [0, 1], // E
-        [5, 0], // NE
-        [4, 5], // NW
+        [1, 2], // NE
+        [2, 3], // NW
         [3, 4], // W
-        [2, 3], // SW
-        [1, 2], // SE
+        [4, 5], // SW
+        [5, 0], // SE
       ];
 
-      // Draw region borders (only for valid cells)
-      const borderLines = [];
-      const drawnEdges = new Set();
+      // Region borders: each cell draws its OWN inset edge wherever that
+      // edge faces a different race (or the map's outer boundary). At an
+      // internal seam, both neighboring cells draw their own inset edge in
+      // their own color — two parallel lines instead of one shared line
+      // that would have to arbitrarily pick a color. Mirrors the canvas
+      // renderer's approach (WorldmapRenderer.jsx) so both views read the
+      // same way, just rendered as flat 3D ribbons instead of SVG strokes.
       const BORDER_INSET = 4;
+      const OUTLINE_HALF_WIDTH = 2.25;
+      const COLOR_HALF_WIDTH = 1.125;
+
+      function ribbonGeometry(p1, p2, z, halfWidth) {
+        const dx = p2[0] - p1[0];
+        const dy = p2[1] - p1[1];
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len < 0.001) return null;
+        const nx = (-dy / len) * halfWidth;
+        const ny = (dx / len) * halfWidth;
+
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+          p1[0] + nx, p1[1] + ny, z,
+          p1[0] - nx, p1[1] - ny, z,
+          p2[0] - nx, p2[1] - ny, z,
+          p2[0] + nx, p2[1] + ny, z,
+        ]), 3));
+        geo.setIndex([0, 1, 2, 0, 2, 3]);
+        geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([
+          0, 0, 1, 0, 1, 1, 0, 1,
+        ]), 2));
+        geo.computeVertexNormals();
+        return geo;
+      }
+
+      function capGeometry(p, z, radius) {
+        const circle = new THREE.CircleGeometry(radius, 8);
+        circle.translate(p[0], p[1], z);
+        return circle;
+      }
+
+      function borderSegmentGeometry(p1, p2, z, halfWidth) {
+        const ribbon = ribbonGeometry(p1, p2, z, halfWidth);
+        if (!ribbon) return null;
+        const cap1 = capGeometry(p1, z, halfWidth);
+        const cap2 = capGeometry(p2, z, halfWidth);
+        const merged = mergeGeometries([ribbon, cap1, cap2]);
+        ribbon.dispose();
+        cap1.dispose();
+        cap2.dispose();
+        return merged;
+      }
+
+      const outlineGeometries = [];
+      const colorGeometriesByRace = new Map();
 
       hexGrid.cells.forEach((cell) => {
-        // Skip invalid cells (col/row < 0)
-        if (cell.col < 0 || cell.row < 0) return;
-
-        const key = `${cell.col},${cell.row}`;
         const parity = cell.row & 1;
         const directions = ODDR_DIRECTIONS[parity];
-        const corners = hexCorners(cell.x, cell.y, HEX_SIZE - BORDER_INSET);
+        const corners = hexCorners(cell.x, -cell.y, HEX_SIZE - BORDER_INSET);
         const elev = getCellElevation(cell);
 
         directions.forEach((offset, dirIndex) => {
-          const neighborCol = cell.col + offset[0];
-          const neighborRow = cell.row + offset[1];
-          const neighborKey = `${neighborCol},${neighborRow}`;
+          const neighborKey = `${cell.col + offset[0]},${cell.row + offset[1]}`;
           const neighbor = cellMap.get(neighborKey);
 
-          // Only draw border if neighbor exists and has different race
-          if (neighbor && neighbor.race !== cell.race) {
-            const edgeKey = [key, neighborKey].sort().join('|');
-            if (!drawnEdges.has(edgeKey)) {
-              drawnEdges.add(edgeKey);
+          // Boundary edge: neighbor missing or different race
+          if (neighbor && neighbor.race === cell.race) return;
 
-              const edgeCorners = DIRECTION_EDGE_CORNERS[dirIndex];
-              const c1 = corners[edgeCorners[0]];
-              const c2 = corners[edgeCorners[1]];
+          const edgeCorners = DIRECTION_EDGE_CORNERS[dirIndex];
+          const c1 = corners[edgeCorners[0]];
+          const c2 = corners[edgeCorners[1]];
 
-              const neighborElev = getCellElevation(neighbor);
-              const borderZ = Math.max(elev, neighborElev) + 1;
+          const borderZ = neighbor
+            ? Math.max(elev, getCellElevation(neighbor)) + 1
+            : elev + 1;
 
-              borderLines.push({
-                p1: new THREE.Vector3(c1[0], c1[1], borderZ),
-                p2: new THREE.Vector3(c2[0], c2[1], borderZ),
-                race: cell.race,
-              });
+          const outlineGeo = borderSegmentGeometry(c1, c2, borderZ, OUTLINE_HALF_WIDTH);
+          if (outlineGeo) outlineGeometries.push(outlineGeo);
+
+          const colorGeo = borderSegmentGeometry(c1, c2, borderZ + 0.1, COLOR_HALF_WIDTH);
+          if (colorGeo) {
+            if (!colorGeometriesByRace.has(cell.race)) {
+              colorGeometriesByRace.set(cell.race, []);
             }
+            colorGeometriesByRace.get(cell.race).push(colorGeo);
           }
         });
       });
 
-      // Render borders as LineSegments (standard approach for hex map edges)
-      const positions = [];
-      const colors = [];
+      // A failed merge (e.g. a future attribute mismatch) must never throw
+      // here — this runs before camera/controls setup below, and an
+      // uncaught exception mid-function would silently skip all of that,
+      // leaving pan/zoom/pitch completely unresponsive with no error
+      // visible anywhere except a merge warning far above.
+      if (outlineGeometries.length > 0) {
+        const mergedOutline = mergeGeometries(outlineGeometries);
+        outlineGeometries.forEach(g => g.dispose());
+        if (mergedOutline) {
+          const outlineMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
+          scene.add(new THREE.Mesh(mergedOutline, outlineMat));
+        } else {
+          console.warn('Border outline geometry merge failed; skipping outline layer.');
+        }
+      }
 
-      borderLines.forEach(({ p1, p2, race }) => {
-        positions.push(p1.x, p1.y, p1.z);
-        positions.push(p2.x, p2.y, p2.z);
-
-        const raceRegion = REGION_META[race];
-        const color = raceRegion ? new THREE.Color(raceRegion.stroke) : new THREE.Color(0xffffff);
-        colors.push(color.r, color.g, color.b);
-        colors.push(color.r, color.g, color.b);
+      let borderSegmentCount = 0;
+      colorGeometriesByRace.forEach((geometries, race) => {
+        borderSegmentCount += geometries.length;
+        const merged = mergeGeometries(geometries);
+        geometries.forEach(g => g.dispose());
+        if (merged) {
+          const raceRegion = REGION_META[race];
+          const color = raceRegion ? new THREE.Color(raceRegion.stroke) : new THREE.Color(0xffffff);
+          const mat = new THREE.MeshBasicMaterial({ color });
+          scene.add(new THREE.Mesh(merged, mat));
+        } else {
+          console.warn(`Border color geometry merge failed for race "${race}"; skipping.`);
+        }
       });
 
-      if (positions.length > 0) {
-        const borderGeo = new THREE.BufferGeometry();
-        borderGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
-        borderGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
-        const borderMat = new THREE.LineBasicMaterial({ vertexColors: true, linewidth: 2 });
-        const borders = new THREE.LineSegments(borderGeo, borderMat);
-        scene.add(borders);
-      }
-
-      if (borderLines.length > 0) {
-        console.log(`Created ${borderLines.length} border segments`);
-        const first = borderLines[0];
-        const dist = Math.sqrt(
-          (first.p2.x - first.p1.x) ** 2 +
-          (first.p2.y - first.p1.y) ** 2 +
-          (first.p2.z - first.p1.z) ** 2
-        );
-        console.log(`First border: p1=(${first.p1.x.toFixed(2)}, ${first.p1.y.toFixed(2)}, ${first.p1.z.toFixed(2)}), p2=(${first.p2.x.toFixed(2)}, ${first.p2.y.toFixed(2)}, ${first.p2.z.toFixed(2)}), len=${dist.toFixed(2)}`);
-      }
+      console.log(`Total boundary edges: ${borderSegmentCount}`);
 
       const createForestSymbol = () => {
         const group = new THREE.Group();
@@ -962,16 +994,20 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       };
 
       const onMouseWheel = (e) => {
-        const zoomStep = 0.1;
-        if (e.deltaY < 0) {
-          cameraState.zoomLevel = Math.min(cameraState.zoomLevel + zoomStep, 5.0);
+        e.preventDefault();
+        // Scale by actual scroll magnitude (not a fixed per-event step) so
+        // a deliberate scroll produces an obviously large change. A fixed
+        // step mostly cancels out under trackpads/high-polling-rate mice,
+        // which fire many small alternating-sign events per gesture.
+        const scaleFactor = Math.exp(-e.deltaY * 0.0015);
+
+        if (cameraState.inPerspective) {
+          cameraState.distance = Math.min(Math.max(cameraState.distance * scaleFactor, 50), 2000);
+          updatePerspCamera();
         } else {
-          cameraState.zoomLevel = Math.max(cameraState.zoomLevel - zoomStep, 0.5);
-        }
-        if (!cameraState.inPerspective) {
+          cameraState.zoomLevel = Math.min(Math.max(cameraState.zoomLevel * scaleFactor, 0.5), 5.0);
           updateOrthoCamera();
         }
-        e.preventDefault();
       };
 
       const onMouseDown = (e) => {
@@ -1021,8 +1057,11 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       });
 
       let frame = 0;
+      let animationFrameId = null;
+      let disposed = false;
       const animate = () => {
-        requestAnimationFrame(animate);
+        if (disposed) return;
+        animationFrameId = requestAnimationFrame(animate);
         frame++;
 
         // Update mountain snow
@@ -1059,6 +1098,10 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       window.addEventListener('resize', handleResize);
 
       return () => {
+        disposed = true;
+        if (animationFrameId !== null) {
+          cancelAnimationFrame(animationFrameId);
+        }
         window.removeEventListener('resize', handleResize);
         window.removeEventListener('keydown', onKeyDown);
         window.removeEventListener('mousedown', onMouseDown);
@@ -1077,7 +1120,10 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
 
     checkAndRender();
 
-    return () => {};
+    return () => {
+      cancelled = true;
+      if (cleanup) cleanup();
+    };
   }, [hexGrid, elevationData, kingdoms]);
 
   return (
