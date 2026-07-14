@@ -35,6 +35,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
     }
 
     const checkAndRender = () => {
+      if (!containerRef.current) return;
       const w = containerRef.current.clientWidth;
       const h = containerRef.current.clientHeight;
 
@@ -194,6 +195,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       instances.instanceMatrix.needsUpdate = true;
       instances.instanceColor.needsUpdate = true;
       scene.add(instances);
+
 
       const createForestSymbol = () => {
         const group = new THREE.Group();
@@ -913,6 +915,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       animate();
 
       const handleResize = () => {
+        if (!containerRef.current) return;
         const newW = containerRef.current.clientWidth;
         const newH = containerRef.current.clientHeight;
         renderer.setSize(newW, newH);
