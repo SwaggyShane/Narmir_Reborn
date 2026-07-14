@@ -673,11 +673,75 @@ async function initDb(options = {}) {
     }
   }
 
+  // Migration: make kingdom_id nullable in resource_nodes
+  const resourceNodesMigration = '003_make_kingdom_id_nullable_in_resource_nodes';
+  const existingResourceNodesMigration = await _db.get('SELECT id FROM migrations WHERE name = $1', [resourceNodesMigration]);
+  if (!existingResourceNodesMigration) {
+    try {
+      await _db.run(`ALTER TABLE resource_nodes ALTER COLUMN kingdom_id DROP NOT NULL`);
+      await _db.run('INSERT INTO migrations (name) VALUES ($1)', [resourceNodesMigration]);
+      console.log('[db] Migration applied:', resourceNodesMigration);
+    } catch (err) {
+      console.warn('[db] Migration skipped (kingdom_id may already be nullable):', err.message);
+    }
+  }
+
+  // Migration: add x and y columns for kingdom spawn coordinates
+  const kingdomXYMigration = '004_add_kingdom_coordinates';
+  const existingXYMigration = await _db.get('SELECT id FROM migrations WHERE name = $1', [kingdomXYMigration]);
+  if (!existingXYMigration) {
+    try {
+      const kingdomsColsCheck = await getTableColumns('kingdoms');
+      if (!kingdomsColsCheck.includes('x')) {
+        await _db.run(`ALTER TABLE kingdoms ADD COLUMN x INTEGER NOT NULL DEFAULT 0`);
+      }
+      if (!kingdomsColsCheck.includes('y')) {
+        await _db.run(`ALTER TABLE kingdoms ADD COLUMN y INTEGER NOT NULL DEFAULT 0`);
+      }
+
+      // Seed coordinates from RACE_HOMES based on race (kingdoms store race, not region name)
+      const RACE_HOMES_MAP = {
+        dwarf: { x: 400, y: 488 },
+        high_elf: { x: 1155, y: 340 },
+        wood_elf: { x: 1599, y: 467 },
+        vampire: { x: 933, y: 701 },
+        ogre: { x: 1777, y: 828 },
+        dark_elf: { x: 1243, y: 913 },
+        orc: { x: 1555, y: 1040 },
+        human: { x: 666, y: 913 },
+        dire_wolf: { x: 289, y: 849 },
+      };
+
+      const kingdoms = await _db.all('SELECT id, race FROM kingdoms');
+      for (const k of kingdoms) {
+        if (k.race && RACE_HOMES_MAP[k.race]) {
+          const coords = RACE_HOMES_MAP[k.race];
+          await _db.run('UPDATE kingdoms SET x = $1, y = $2 WHERE id = $3', [coords.x, coords.y, k.id]);
+        }
+      }
+
+      await _db.run('INSERT INTO migrations (name) VALUES ($1)', [kingdomXYMigration]);
+      console.log('[db] Migration applied:', kingdomXYMigration);
+    } catch (err) {
+      console.warn('[db] Migration skipped (columns may already exist):', err.message);
+    }
+  }
+
   // Trade offers table
 
   // market prices seeding now in init-data
   const { initializeMarketPrices } = require('./init-data');
   await initializeMarketPrices(_db);
+
+  // Initialize fresh world FIRST: ensures world_state seed exists
+  // (MUST be before initializeResourceNodes, which checks world_state)
+  let seedJustCreated = false;
+  try {
+    const { initializeWorld } = require('../game/world-initialization');
+    seedJustCreated = await initializeWorld(_db);
+  } catch (err) {
+    console.error('[db] World initialization failed:', err.message);
+  }
 
   // Seed season state
   await _db.run(
@@ -688,8 +752,9 @@ async function initDb(options = {}) {
   );
 
   // events seeding now in init-data
-  const { initializeDefaultEvents } = require('./init-data');
+  const { initializeDefaultEvents, initializeResourceNodes } = require('./init-data');
   await initializeDefaultEvents(_db);
+  await initializeResourceNodes(_db);
 
   // random/tax seeds now in init-data
   const { initializeRandomEvents, initializeTaxEvents } = require('./init-data');
@@ -752,12 +817,23 @@ async function initDb(options = {}) {
 
   // Load it into the in-memory cache immediately, here inside initDb() —
   // not later in index.js's boot sequence — because backfillResourceNodeMapCoords()
-  // below (and anything else initDb() itself invokes) needs it via
+  // Load the world seed (either existing or newly created by initializeWorld above)
+  // This seed is needed by anything below (and anything else initDb() itself invokes) via
   // game/world-map-coords.js, which reads the cache synchronously and
   // throws if it hasn't been loaded yet. Deferring this to after initDb()
   // returns would crash boot the first time a fresh DB actually has
   // resource_nodes rows needing a coordinate backfill.
   await require('../game/world-seed').loadWorldSeed(_db);
+
+  // If seed was just created, run full resource initialization
+  if (seedJustCreated) {
+    try {
+      const { initializeWorld } = require('../game/world-initialization');
+      await initializeWorld(_db);
+    } catch (err) {
+      console.error('[db] World resource initialization failed:', err.message);
+    }
+  }
 
   try {
     const { backfillResourceNodeMapCoords } = require('../game/world-map-coords');

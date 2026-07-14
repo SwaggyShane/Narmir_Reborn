@@ -1043,7 +1043,7 @@ export function renderWorldMap(
 
           if (Number.isFinite(Number(k.map_x)) && Number.isFinite(Number(k.map_y))) {
 
-            kdCoords[k.id] = { x: Number(k.map_x), y: Number(k.map_y) };
+            kdCoords[k.id] = { x: Number(k.map_x) * SCALE, y: Number(k.map_y) * SCALE };
 
             return;
 
@@ -1085,11 +1085,11 @@ export function renderWorldMap(
 
               '" x2="' +
 
-              Number(exp.map_x) +
+              (Number(exp.map_x) * SCALE) +
 
               '" y2="' +
 
-              Number(exp.map_y) +
+              (Number(exp.map_y) * SCALE) +
 
               '" stroke="#7ec8ff" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.55" />';
 
@@ -1111,9 +1111,9 @@ export function renderWorldMap(
 
             var meta = NODE_TYPE_META[node.type] || NODE_TYPE_META.wood;
 
-            var nx = Number(node.map_x);
+            var nx = Number(node.map_x) * SCALE;
 
-            var ny = Number(node.map_y);
+            var ny = Number(node.map_y) * SCALE;
 
             var nr = getNodeRadius(node.richness);
 
@@ -1358,37 +1358,21 @@ export function renderWorldMap(
 
 
           if (isMe || k.land > 5000 || k.rank <= 3) {
-
             svg +=
-
               '<text class="wm-kingdom-label text-label" x="' +
-
               jx +
-
               '" y="' +
-
               (jy - r - 5) +
-
               '" text-anchor="middle" font-family="Arial, sans-serif" font-size="' +
-
               (isMe ? 10 : 8) +
-
               '" font-weight="' +
-
               (isMe ? 900 : 700) +
-
               '" fill="' +
-
               (isMe ? "#e8b84b" : "#fff") +
-
               '" pointer-events="none" style="dominant-baseline:middle">' +
-
               escapeHtml(k.name.slice(0, 10)) +
-
               "</text>";
-
           }
-
         });
 
         svg += '</g>';

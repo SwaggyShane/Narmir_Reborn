@@ -397,6 +397,85 @@ async function initializeKingdomColumns(db, getTableColumns, getColumnType, addC
   }
 }
 
+async function initializeResourceNodes(db) {
+  // Skip if world_state exists (fresh seeded world - world-initialization.js handles it)
+  const worldState = await db.get("SELECT seed FROM world_state WHERE id = 1");
+  if (worldState) return; // Fresh seeded world, skip old random initialization
+
+  const hasNodes = await db.get("SELECT COUNT(*) as cnt FROM resource_nodes");
+  if (hasNodes && hasNodes.cnt > 0) return;
+
+  const RACE_REGIONS = {
+    dwarf: 'The Iron Holds',
+    high_elf: 'The Silverwood',
+    wood_elf: 'The Wildwood',
+    vampire: 'The Crimson Vales',
+    ogre: 'The Shattered Peaks',
+    dark_elf: 'The Underspire',
+    orc: 'The Bloodplains',
+    human: 'The Heartlands',
+    dire_wolf: 'The Ashfang Wilds',
+  };
+
+  const RESOURCE_ABUNDANCE = {
+    'The Iron Holds': { abundant: 'iron', count: 3 }, // dwarf
+    'The Silverwood': { abundant: 'wood', count: 3 }, // high elf - forest
+    'The Wildwood': { abundant: 'wood', count: 3 }, // wood elf - forest
+    'The Crimson Vales': { abundant: 'stone', count: 1 }, // vampire - swamp
+    'The Shattered Peaks': { abundant: 'iron', count: 3 }, // ogre - mountains
+    'The Underspire': { abundant: 'stone', count: 3 }, // dark elf - hills
+    'The Bloodplains': { abundant: 'stone', count: 1 }, // orc - plains
+    'The Heartlands': { abundant: 'stone', count: 1 }, // human - plains
+    'The Ashfang Wilds': { abundant: 'stone', count: 3 }, // dire wolf - hills
+  };
+
+  const kingdoms = await db.all('SELECT id, x, y, region FROM kingdoms');
+
+  for (const region of Object.values(RACE_REGIONS)) {
+    // Base 3 nodes per region (wood, stone, iron)
+    const baseResources = ['wood', 'stone', 'iron'];
+    for (const resource of baseResources) {
+      const x = Math.floor(Math.random() * 1999);
+      const y = Math.floor(Math.random() * 1380);
+      await db.run(
+        'INSERT INTO resource_nodes (kingdom_id, name, type, distance, richness, map_x, map_y, terrain) VALUES (NULL, $1, $2, $3, $4, $5, $6, $7)',
+        [`${region} ${resource}`, resource, 100, 1, x, y, 'plains']
+      );
+    }
+
+    // Abundant resource nodes
+    const abundance = RESOURCE_ABUNDANCE[region];
+    if (abundance) {
+      for (let i = 0; i < abundance.count; i++) {
+        const x = Math.floor(Math.random() * 1999);
+        const y = Math.floor(Math.random() * 1380);
+        await db.run(
+          'INSERT INTO resource_nodes (kingdom_id, name, type, distance, richness, map_x, map_y, terrain) VALUES (NULL, $1, $2, $3, $4, $5, $6, $7)',
+          [`${region} ${abundance.abundant} +`, abundance.abundant, 100, 2, x, y, 'plains']
+        );
+      }
+    }
+
+    // 1 Dungeon per region
+    const dungeonX = Math.floor(Math.random() * 1999);
+    const dungeonY = Math.floor(Math.random() * 1380);
+    await db.run(
+      'INSERT INTO resource_nodes (kingdom_id, name, type, distance, richness, map_x, map_y, terrain) VALUES (NULL, $1, $2, $3, $4, $5, $6, $7)',
+      [`${region} Dungeon`, 'dungeon', 150, 1, dungeonX, dungeonY, 'mountains']
+    );
+
+    // 1 Mountain Heart per region
+    const mountainX = Math.floor(Math.random() * 1999);
+    const mountainY = Math.floor(Math.random() * 1380);
+    await db.run(
+      'INSERT INTO resource_nodes (kingdom_id, name, type, distance, richness, map_x, map_y, terrain) VALUES (NULL, $1, $2, $3, $4, $5, $6, $7)',
+      [`${region} Mountain Heart`, 'mountain_heart', 200, 1, mountainX, mountainY, 'mountains']
+    );
+  }
+
+  console.log('[db] Resource nodes seeded for all regions');
+}
+
 module.exports = {
   initializeRegions,
   initializeAdditionalColumns,
@@ -405,5 +484,6 @@ module.exports = {
   initializeWishlist,
   initializeRandomEvents,
   initializeTaxEvents,
-  initializeKingdomColumns
+  initializeKingdomColumns,
+  initializeResourceNodes
 };

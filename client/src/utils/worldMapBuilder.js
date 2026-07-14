@@ -3,7 +3,22 @@
  * Shared utility to ensure both renderers use identical data
  */
 
-import { hexCenter, HEX_SIZE, HEX_W, HEX_VERT } from './hexMap/HexGeometry.ts';
+import { hexCenter, hexCorners, HEX_SIZE, HEX_W, HEX_VERT } from './hexMap/HexGeometry.ts';
+
+// Hex neighbor directions and edge corners for odd-r offset
+const ODDR_DIRECTIONS = [
+  [[1, 0], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]],
+  [[1, 0], [1, -1], [0, -1], [-1, 0], [0, 1], [1, 1]],
+];
+
+const DIRECTION_EDGE_CORNERS = [
+  [0, 1], // E
+  [5, 0], // NE
+  [4, 5], // NW
+  [3, 4], // W
+  [2, 3], // SW
+  [1, 2], // SE
+];
 
 const RACE_HOMES = {
   dwarf: { x: 400, y: 488 },
@@ -68,6 +83,176 @@ function nearestRaceHome(x, y) {
   return nearest || 'human';
 }
 
+function hexNeighborKeys(col, row) {
+  const parity = row & 1;
+  return ODDR_DIRECTIONS[parity].map(([dc, dr]) => `${col + dc},${row + dr}`);
+}
+
+function bfsRiverPath(start, target, cellMap, allowCell) {
+  const startKey = `${start.col},${start.row}`;
+  const targetKey = `${target.col},${target.row}`;
+  if (startKey === targetKey) return [];
+
+  const cameFrom = new Map();
+  const visited = new Set([startKey]);
+  const queue = [start];
+  let head = 0;
+  while (head < queue.length) {
+    const current = queue[head];
+    head++;
+    if (`${current.col},${current.row}` === targetKey) break;
+    const neighborKeys = hexNeighborKeys(current.col, current.row);
+    neighborKeys.forEach((key, dirIndex) => {
+      if (visited.has(key)) return;
+      const nb = cellMap.get(key);
+      if (!nb) return;
+      if (allowCell && nb !== target && !allowCell(nb)) return;
+      visited.add(key);
+      cameFrom.set(key, { from: current, dirIndex });
+      queue.push(nb);
+    });
+  }
+
+  if (!cameFrom.has(targetKey)) return null;
+
+  const edges = [];
+  let currentKey = targetKey;
+  while (currentKey !== startKey) {
+    const step = cameFrom.get(currentKey);
+    const to = cellMap.get(currentKey);
+    edges.unshift({
+      from: step.from,
+      to,
+      dirIndex: step.dirIndex,
+      key: [`${step.from.col},${step.from.row}`, currentKey].sort().join('|'),
+    });
+    currentKey = `${step.from.col},${step.from.row}`;
+  }
+  return edges;
+}
+
+function buildRegionAdjacency(cells, cellMap) {
+  const adjacentPairs = new Set();
+  cells.forEach((cell) => {
+    hexNeighborKeys(cell.col, cell.row).forEach((key) => {
+      const nb = cellMap.get(key);
+      if (nb && nb.race !== cell.race) {
+        adjacentPairs.add([cell.race, nb.race].sort().join('|'));
+      }
+    });
+  });
+  return adjacentPairs;
+}
+
+function buildRegionMST(races, adjacentPairs) {
+  const mstEdges = [];
+  const visited = new Set([races[0]]);
+  const remaining = new Set(races.slice(1));
+
+  const homeDistSq = (a, b) => {
+    const ha = RACE_HOMES[a];
+    const hb = RACE_HOMES[b];
+    return (ha.x - hb.x) ** 2 + (ha.y - hb.y) ** 2;
+  };
+
+  while (remaining.size > 0) {
+    let bestAdjacent = null;
+    let bestAdjacentDist = Infinity;
+    let bestAny = null;
+    let bestAnyDist = Infinity;
+
+    visited.forEach((a) => {
+      remaining.forEach((b) => {
+        const dist = homeDistSq(a, b);
+        if (dist < bestAnyDist) {
+          bestAnyDist = dist;
+          bestAny = [a, b];
+        }
+        if (adjacentPairs.has([a, b].sort().join('|')) && dist < bestAdjacentDist) {
+          bestAdjacentDist = dist;
+          bestAdjacent = [a, b];
+        }
+      });
+    });
+
+    const chosen = bestAdjacent || bestAny;
+    if (!chosen) break;
+    mstEdges.push(chosen);
+    visited.add(chosen[1]);
+    remaining.delete(chosen[1]);
+  }
+  return mstEdges;
+}
+
+function buildRiverNetwork(cells, cellMap, lakeByRace) {
+  const riverSegments = [];
+  const visitedEdges = new Set();
+  const waterGraph = new Map();
+
+  const isWaterTerrain = (t) => t === 'lake' || t === 'ocean';
+
+  const addSegment = (edge, kind) => {
+    if (visitedEdges.has(edge.key)) return;
+    visitedEdges.add(edge.key);
+    const fromWater = isWaterTerrain(edge.from.terrain);
+    const toWater = isWaterTerrain(edge.to.terrain);
+    let p1 = [edge.from.x, edge.from.y];
+    let p2 = [edge.to.x, edge.to.y];
+    if (fromWater !== toWater) {
+      const corners = hexCorners(edge.from.x, edge.from.y, HEX_SIZE);
+      const edgeCorners = DIRECTION_EDGE_CORNERS[edge.dirIndex];
+      const c1 = corners[edgeCorners[0]];
+      const c2 = corners[edgeCorners[1]];
+      const mid = [(c1[0] + c2[0]) / 2, (c1[1] + c2[1]) / 2];
+      if (fromWater) p1 = mid;
+      if (toWater) p2 = mid;
+    }
+    riverSegments.push({ p1, p2, kind });
+    const fromKey = `${edge.from.col},${edge.from.row}`;
+    const toKey = `${edge.to.col},${edge.to.row}`;
+    if (!waterGraph.has(fromKey)) waterGraph.set(fromKey, new Set());
+    if (!waterGraph.has(toKey)) waterGraph.set(toKey, new Set());
+    waterGraph.get(fromKey).add(toKey);
+    waterGraph.get(toKey).add(fromKey);
+  };
+
+  const isLand = (cell) => cell.terrain !== 'lake' && cell.terrain !== 'ocean';
+
+  const oceanCells = cells.filter((c) => c.terrain === 'ocean');
+  const coastalOceanCells = oceanCells.filter((oc) => hexNeighborKeys(oc.col, oc.row).some((key) => {
+    const nb = cellMap.get(key);
+    return nb && isLand(nb);
+  }));
+
+  Object.keys(lakeByRace).forEach((race) => {
+    const lake = lakeByRace[race];
+    const home = RACE_HOMES[race];
+    let nearestOcean = null;
+    let nearestDist = Infinity;
+    coastalOceanCells.forEach((oc) => {
+      const dist = (oc.x - home.x) ** 2 + (oc.y - home.y) ** 2;
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestOcean = oc;
+      }
+    });
+    if (!nearestOcean) return;
+
+    const edges = bfsRiverPath(nearestOcean, lake, cellMap, isLand);
+    if (edges) edges.forEach((edge) => addSegment(edge, 'tributary'));
+  });
+
+  const races = Object.keys(lakeByRace);
+  const adjacentPairs = buildRegionAdjacency(cells, cellMap);
+  const mstEdges = buildRegionMST(races, adjacentPairs);
+  mstEdges.forEach(([raceA, raceB]) => {
+    const edges = bfsRiverPath(lakeByRace[raceA], lakeByRace[raceB], cellMap, isLand);
+    if (edges) edges.forEach((edge) => addSegment(edge, 'trunk'));
+  });
+
+  return { riverSegments, waterGraph };
+}
+
 export function buildHexGrid(W = 1999, H = 1380, worldSeed = 0) {
   const cols = Math.ceil(W / HEX_W) + 2;
   const rows = Math.ceil(H / HEX_VERT) + 2;
@@ -91,7 +276,7 @@ export function buildHexGrid(W = 1999, H = 1380, worldSeed = 0) {
         terrain = hexSeededRandom(col, row, 3, worldSeed) < 0.55 ? 'desert' : 'volcanic';
       } else {
         const dominant = RACE_TO_TERRAIN[race] || 'plains';
-        if (hexSeededRandom(col, row, 1, worldSeed) < 0.7) {
+        if (hexSeededRandom(col, row, 1, worldSeed) < 0.85) {
           terrain = dominant;
         } else {
           const alternates = BIOME_MIX_ALTERNATES[dominant] || ['plains'];
@@ -105,7 +290,38 @@ export function buildHexGrid(W = 1999, H = 1380, worldSeed = 0) {
     }
   }
 
-  return { cells, cellMap, W, H };
+  // Generate lakes - one per race
+  const lakeByRace = {};
+  Object.keys(RACE_HOMES).forEach((race) => {
+    const home = RACE_HOMES[race];
+    let best = null;
+    let bestDist = Infinity;
+    cells.forEach((c) => {
+      if (c.race !== race) return;
+      if (c.terrain === 'ocean' || c.terrain === 'tundra') return;
+      const touchesOcean = hexNeighborKeys(c.col, c.row).some((key) => {
+        const nb = cellMap.get(key);
+        return nb && nb.terrain === 'ocean';
+      });
+      if (touchesOcean) return;
+      const dx = c.x - home.x;
+      const dy = c.y - home.y;
+      const dist = dx * dx + dy * dy;
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = c;
+      }
+    });
+    if (best) {
+      best.terrain = 'lake';
+      lakeByRace[race] = best;
+    }
+  });
+
+  // Generate rivers
+  const network = buildRiverNetwork(cells, cellMap, lakeByRace);
+
+  return { cells, cellMap, W, H, riverSegments: network.riverSegments, waterGraph: network.waterGraph, lakeByRace };
 }
 
 export { RACE_HOMES, RACE_TO_TERRAIN };

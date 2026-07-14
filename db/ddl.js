@@ -121,6 +121,8 @@ const coreSchema = `
       steel             INTEGER NOT NULL DEFAULT 0,
       school_of_magic   TEXT,
       school_spellbook  INTEGER NOT NULL DEFAULT 0,
+      x                 INTEGER NOT NULL DEFAULT 0,
+      y                 INTEGER NOT NULL DEFAULT 0,
       created_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
       updated_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
@@ -533,6 +535,21 @@ const coreSchema = `
     );
     CREATE INDEX IF NOT EXISTS idx_admin_constants_section ON admin_game_constants(section);
 
+    CREATE TABLE IF NOT EXISTS resource_nodes (
+      id SERIAL PRIMARY KEY,
+      kingdom_id INTEGER REFERENCES kingdoms(id),
+      name TEXT NOT NULL,
+      type TEXT NOT NULL,
+      distance INTEGER NOT NULL,
+      richness INTEGER NOT NULL DEFAULT 1,
+      discovered_at INTEGER,
+      map_x INTEGER,
+      map_y INTEGER,
+      terrain TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_resource_nodes_kingdom ON resource_nodes(kingdom_id);
+    CREATE INDEX IF NOT EXISTS idx_resource_nodes_coords ON resource_nodes(map_x, map_y);
+
     CREATE TABLE IF NOT EXISTS resource_expeditions (
       id SERIAL PRIMARY KEY,
       kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
@@ -704,21 +721,6 @@ const coreSchema = `
     );
     CREATE INDEX IF NOT EXISTS idx_trade_offers_receiver ON trade_offers(receiver_id, status);
     CREATE INDEX IF NOT EXISTS idx_trade_offers_sender_created ON trade_offers(sender_id, created_at DESC);
-
-    CREATE TABLE IF NOT EXISTS resource_nodes (
-      id SERIAL PRIMARY KEY,
-      kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
-      name TEXT NOT NULL,
-      type TEXT NOT NULL,
-      distance INTEGER NOT NULL,
-      richness INTEGER NOT NULL DEFAULT 1,
-      discovered_at INTEGER,
-      map_x INTEGER,
-      map_y INTEGER,
-      terrain TEXT
-    );
-    CREATE INDEX IF NOT EXISTS idx_resource_nodes_kingdom ON resource_nodes(kingdom_id);
-    CREATE INDEX IF NOT EXISTS idx_resource_nodes_coords ON resource_nodes(map_x, map_y);
 `;
 
 async function applySchema(db) {

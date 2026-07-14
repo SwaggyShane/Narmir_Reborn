@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import * as THREE from 'three';
 import { apiCall } from '../../utils/api';
 import { setWorldMapData } from '../../utils/worldMapData.js';
 import { renderWorldMap } from './WorldmapRenderer.jsx';
@@ -8,6 +9,7 @@ import { buildHexGrid } from '../../utils/worldMapBuilder.js';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
+import { getRaceSVGIcon } from '../../utils/raceIconsSVG.js';
 import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 import { NODE_TYPE_META, formatNodeDistance } from '../../utils/worldMapNodeMeta.js';
 import { openKingdomProfile } from './KingdomProfileModal.jsx';
@@ -25,16 +27,30 @@ import {
 } from '../../utils/worldMapGsap.js';
 import { useWorldMapViewport } from '../../hooks/useWorldMapViewport.js';
 
+const TERRAIN_COLORS = {
+  plains: '#556b2f',
+  forest: '#2d4a2d',
+  mountains: '#5c4033',
+  hills: '#6b5b3f',
+  swamp: '#3a3f2a',
+  desert: '#8b7355',
+  coast: '#3a5f7a',
+  tundra: '#7a8a94',
+  volcanic: '#7a2e1a',
+  lake: '#2a5f8a',
+  ocean: '#0d3a5c',
+};
+
 const TERRAIN_LEGEND = [
-  { type: 'plains', name: 'Plains', symbol: '🌾' },
-  { type: 'forest', name: 'Forest', symbol: '🌲' },
-  { type: 'mountains', name: 'Mountains', symbol: '🏔️' },
-  { type: 'hills', name: 'Hills', symbol: '⛰️' },
-  { type: 'swamp', name: 'Swamp', symbol: '🐊' },
-  { type: 'desert', name: 'Desert', symbol: '🏜️' },
-  { type: 'coast', name: 'Coast', symbol: '🌊' },
-  { type: 'tundra', name: 'Tundra', symbol: '❄️' },
-  { type: 'volcanic', name: 'Volcanic', symbol: '🌋' },
+  { type: 'plains', name: 'Plains', symbol: '◯' },
+  { type: 'forest', name: 'Forest', symbol: '△' },
+  { type: 'mountains', name: 'Mountains', symbol: '▲' },
+  { type: 'hills', name: 'Hills', symbol: '▲' },
+  { type: 'swamp', name: 'Swamp', symbol: '◯' },
+  { type: 'desert', name: 'Desert', symbol: '▭' },
+  { type: 'coast', name: 'Coast', symbol: '◯' },
+  { type: 'tundra', name: 'Tundra', symbol: '◈' },
+  { type: 'volcanic', name: 'Volcanic', symbol: '▲' },
 ];
 
 const MAP_REGIONS = Object.keys(REGION_META);
@@ -98,17 +114,292 @@ async function establishTradeRoute(targetId, onSuccess) {
   }
 }
 
+function HexLegendPreview({ terrain }) {
+  const canvasRef = React.useRef(null);
+  const containerRef = React.useRef(null);
+  const terrainColor = TERRAIN_COLORS[terrain.type] || '#ffffff';
+
+  React.useEffect(() => {
+    if (terrain.type === 'plains' || terrain.type === 'forest' || terrain.type === 'mountains' || terrain.type === 'hills' || terrain.type === 'swamp' || terrain.type === 'desert' || terrain.type === 'volcanic') {
+      // Plains/Forest: Three.js hex + symbol
+      if (!containerRef.current) return;
+
+      const container = containerRef.current;
+      container.innerHTML = '';
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x040710);
+
+      const camera = new THREE.OrthographicCamera(-35, 35, 35, -35, 0.1, 1000);
+      camera.position.set(0, 0, 50);
+      camera.lookAt(0, 0, 0);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setSize(90, 90);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+      scene.add(ambientLight);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8);
+      directionalLight.position.set(0, 0, 100);
+      scene.add(directionalLight);
+
+      // Hex
+      const hexGeo = new THREE.CylinderGeometry(22, 22, 7, 6);
+      const hexMat = new THREE.MeshPhongMaterial({ color: terrainColor, shininess: 10, flatShading: false });
+      const hex = new THREE.Mesh(hexGeo, hexMat);
+      hex.rotation.x = Math.PI / 2;
+      hex.position.z = 3.5;
+      scene.add(hex);
+
+      if (terrain.type === 'plains') {
+        // Plains symbol - wheat columns in circle
+        const wheatColor = new THREE.Color(0xDAA520).multiplyScalar(0.5);
+        const wheatMat = new THREE.MeshBasicMaterial({ color: wheatColor });
+        const scale = 0.9;
+
+        for (let i = 0; i < 12; i++) {
+          const angle = (i / 12) * Math.PI * 2;
+          const x = Math.cos(angle) * 10 * scale;
+          const y = Math.sin(angle) * 10 * scale;
+          const colGeo = new THREE.CylinderGeometry(1.5 * scale, 1.5 * scale, 11 * scale, 6);
+          const col = new THREE.Mesh(colGeo, wheatMat);
+          col.rotation.x = Math.PI / 2;
+          col.position.set(x, y, 7);
+          scene.add(col);
+        }
+      } else if (terrain.type === 'forest') {
+        // Forest symbol - dark green base + white tip
+        const scale = 0.9;
+
+        // Dark green base cone
+        const darkGreen = 0x0a1a0a;
+        const forestMat = new THREE.MeshPhongMaterial({ color: darkGreen, shininess: 30 });
+        const coneGeo = new THREE.ConeGeometry(22 * scale, 18 * scale, 8);
+        const cone = new THREE.Mesh(coneGeo, forestMat);
+        cone.rotation.x = Math.PI / 2;
+        cone.position.z = 7;
+        scene.add(cone);
+
+        // White tip
+        const whiteMat = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 30 });
+        const tipGeo = new THREE.ConeGeometry(4 * scale, 6 * scale, 8);
+        const tip = new THREE.Mesh(tipGeo, whiteMat);
+        tip.rotation.x = Math.PI / 2;
+        tip.position.z = 7 + 8 * scale;
+        scene.add(tip);
+      } else if (terrain.type === 'mountains') {
+        // Mountains symbol - central tall cone + 4 surrounding peaks
+        const scale = 0.9;
+        const brown = 0x5c4033;
+        const mountainMat = new THREE.MeshPhongMaterial({ color: brown, shininess: 30 });
+
+        // Central peak
+        const coneGeo = new THREE.ConeGeometry(18 * scale, 24 * scale, 8);
+        const cone = new THREE.Mesh(coneGeo, mountainMat);
+        cone.rotation.x = Math.PI / 2;
+        cone.position.z = 7;
+        scene.add(cone);
+
+        // White tip on central peak
+        const whiteMat = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 30 });
+        const tipGeo = new THREE.ConeGeometry(5 * scale, 8 * scale, 8);
+        const tip = new THREE.Mesh(tipGeo, whiteMat);
+        tip.rotation.x = Math.PI / 2;
+        tip.position.z = 7 + 10 * scale;
+        scene.add(tip);
+
+        // 4 surrounding peaks
+        const peakPositions = [
+          { x: 12 * scale, y: 0 },
+          { x: -12 * scale, y: 0 },
+          { x: 0, y: 12 * scale },
+          { x: 0, y: -12 * scale },
+        ];
+
+        peakPositions.forEach((pos) => {
+          const peakGeo = new THREE.ConeGeometry(8 * scale, 13 * scale, 8);
+          const peak = new THREE.Mesh(peakGeo, mountainMat);
+          peak.rotation.x = Math.PI / 2;
+          peak.position.set(pos.x, pos.y, 7);
+          scene.add(peak);
+
+          // Small white tip
+          const smallTipGeo = new THREE.ConeGeometry(2.5 * scale, 4 * scale, 8);
+          const smallTip = new THREE.Mesh(smallTipGeo, whiteMat);
+          smallTip.rotation.x = Math.PI / 2;
+          smallTip.position.set(pos.x, pos.y, 7 + 5 * scale);
+          scene.add(smallTip);
+        });
+      } else if (terrain.type === 'hills') {
+        // Hills symbol - overlapping spheres
+        const scale = 0.9;
+        const hillColor = 0x6b5b3f;
+        const hillMat = new THREE.MeshPhongMaterial({ color: hillColor, shininess: 30 });
+
+        const hillPositions = [
+          { x: -8 * scale, y: -6 * scale },
+          { x: 8 * scale, y: -6 * scale },
+          { x: 0, y: 8 * scale },
+          { x: -5 * scale, y: 2 * scale },
+          { x: 5 * scale, y: 2 * scale },
+        ];
+
+        hillPositions.forEach((pos) => {
+          const sphereGeo = new THREE.SphereGeometry(8 * scale, 8, 8);
+          const sphere = new THREE.Mesh(sphereGeo, hillMat);
+          sphere.position.set(pos.x, pos.y, 7);
+          scene.add(sphere);
+        });
+      } else if (terrain.type === 'swamp') {
+        // Swamp symbol - 4 twisted cones
+        const scale = 0.9;
+        const swampColor = 0x3a3f2a;
+        const swampMat = new THREE.MeshPhongMaterial({ color: swampColor, shininess: 30 });
+
+        const conePositions = [
+          { x: -8 * scale, y: -8 * scale, rot: 0.3 },
+          { x: 8 * scale, y: -8 * scale, rot: -0.3 },
+          { x: -8 * scale, y: 8 * scale, rot: -0.2 },
+          { x: 8 * scale, y: 8 * scale, rot: 0.2 },
+        ];
+
+        conePositions.forEach((pos) => {
+          const coneGeo = new THREE.ConeGeometry(6 * scale, 14 * scale, 6);
+          const cone = new THREE.Mesh(coneGeo, swampMat);
+          cone.rotation.x = Math.PI / 2;
+          cone.rotation.z = pos.rot;
+          cone.position.set(pos.x, pos.y, 7);
+          scene.add(cone);
+        });
+      } else if (terrain.type === 'desert') {
+        // Desert symbol - pyramid (4-sided)
+        const scale = 0.9;
+        const desertColor = 0x8b7355;
+        const desertMat = new THREE.MeshPhongMaterial({ color: desertColor, shininess: 30 });
+
+        // Create pyramid using custom geometry
+        const pyramidGeo = new THREE.BufferGeometry();
+        const size = 18 * scale;
+        const height = 22 * scale;
+
+        const vertices = new Float32Array([
+          // Base
+          -size / 2, -size / 2, 0,
+          size / 2, -size / 2, 0,
+          size / 2, size / 2, 0,
+          -size / 2, size / 2, 0,
+          // Apex
+          0, 0, height,
+        ]);
+
+        const indices = new Uint32Array([
+          // Base
+          0, 2, 1,
+          0, 3, 2,
+          // Sides
+          0, 1, 4,
+          1, 2, 4,
+          2, 3, 4,
+          3, 0, 4,
+        ]);
+
+        pyramidGeo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        pyramidGeo.setIndex(new THREE.BufferAttribute(indices, 1));
+        pyramidGeo.computeVertexNormals();
+
+        const pyramid = new THREE.Mesh(pyramidGeo, desertMat);
+        pyramid.rotation.z = Math.PI / 4;
+        pyramid.position.z = 7;
+        scene.add(pyramid);
+      } else if (terrain.type === 'volcanic') {
+        // Volcanic symbol - dark base cone + red tip
+        const scale = 1.1;
+
+        // Dark base cone
+        const darkRed = 0x4a1a1a;
+        const volcanicMat = new THREE.MeshPhongMaterial({ color: darkRed, shininess: 30 });
+        const coneGeo = new THREE.ConeGeometry(20 * scale, 18 * scale, 8);
+        const cone = new THREE.Mesh(coneGeo, volcanicMat);
+        cone.rotation.x = Math.PI / 2;
+        cone.position.z = 7;
+        scene.add(cone);
+
+        // Red tip
+        const redMat = new THREE.MeshPhongMaterial({ color: 0xff4444, shininess: 30 });
+        const tipGeo = new THREE.ConeGeometry(3.8 * scale, 6 * scale, 8);
+        const tip = new THREE.Mesh(tipGeo, redMat);
+        tip.rotation.x = Math.PI / 2;
+        tip.position.z = 7 + 8 * scale;
+        scene.add(tip);
+      }
+
+      renderer.render(scene, camera);
+
+      return () => {
+        renderer.dispose();
+      };
+    } else {
+      // Other terrains: canvas hexagon only
+      if (!canvasRef.current) return;
+
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // Clear
+      ctx.fillStyle = '#040710';
+      ctx.fillRect(0, 0, w, h);
+
+      // Draw hexagon
+      const centerX = w / 2;
+      const centerY = h / 2;
+      const radius = 35;
+
+      ctx.fillStyle = terrainColor;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      // Add edge highlight for depth
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }, [terrainColor, terrain.type]);
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      {terrain.type === 'plains' || terrain.type === 'forest' || terrain.type === 'mountains' || terrain.type === 'hills' || terrain.type === 'swamp' || terrain.type === 'desert' || terrain.type === 'volcanic' ? (
+        <div ref={containerRef} className="w-24 h-24 rounded bg-[#040710]" />
+      ) : (
+        <canvas
+          ref={canvasRef}
+          width={90}
+          height={90}
+          className="rounded"
+        />
+      )}
+      <span className="text-xs font-semibold text-[var(--text)]">{terrain.name}</span>
+    </div>
+  );
+}
+
 function TerrainLegend() {
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+    <div className="grid grid-cols-3 gap-2">
       {TERRAIN_LEGEND.map((terrain) => (
-        <div
-          key={terrain.type}
-          className="flex items-center gap-2 text-left"
-        >
-          <span className="text-sm">{terrain.symbol}</span>
-          <span className="text-xs font-semibold text-[var(--text)]">{terrain.name}</span>
-        </div>
+        <HexLegendPreview key={terrain.type} terrain={terrain} />
       ))}
     </div>
   );
@@ -138,7 +429,17 @@ function RegionLegend({ kingdoms, highlightedRace, onHighlight }) {
               className="inline-block h-3 w-3 shrink-0 rounded-sm border-[1.5px]"
               style={{ background: meta.color, borderColor: meta.stroke }}
             />
-            <span className="text-sm">{icon}</span>
+            <span className="inline-block w-4 h-4 shrink-0 text-[var(--gold)]">
+              {getRaceSVGIcon(race) ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-full h-full"
+                  dangerouslySetInnerHTML={{ __html: getRaceSVGIcon(race) }}
+                />
+              ) : (
+                icon
+              )}
+            </span>
             <div className="min-w-0 flex-1">
               <div className="text-xs font-semibold text-[var(--text)]">{meta.name}</div>
               <div className="text-[10px] text-[var(--text3)]">
@@ -198,6 +499,9 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
   const [layers, setLayers] = useState(DEFAULT_LAYERS);
   const [useWebGL, setUseWebGL] = useState(false);
   const [hexGrid, setHexGrid] = useState(null);
+  const [showAllKingdoms, setShowAllKingdoms] = useState(false);
+  const [clickedKingdom, setClickedKingdom] = useState(null);
+  const [clickedHex, setClickedHex] = useState(null);
   const currentKingdomId = useKingdomId();
   const marketUpgrades = useMarketUpgrades();
   const mapContainerRef = useRef(null);
@@ -212,6 +516,27 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
       setHexGrid(grid);
     }
   }, [worldSeed]);
+
+  // Listen for kingdom and hex clicks from WebGL
+  useEffect(() => {
+    const handleKingdomClick = (e) => {
+      setClickedKingdom(e.detail);
+      setClickedHex(null);
+    };
+
+    const handleHexClick = (e) => {
+      setClickedHex(e.detail);
+      setClickedKingdom(null);
+    };
+
+    window.addEventListener('kingdomClicked', handleKingdomClick);
+    window.addEventListener('hexClicked', handleHexClick);
+
+    return () => {
+      window.removeEventListener('kingdomClicked', handleKingdomClick);
+      window.removeEventListener('hexClicked', handleHexClick);
+    };
+  }, []);
 
   const mapSvg = useMemo(() => {
     if (!kingdoms.length && !nodes.length) return '';
@@ -416,7 +741,13 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
             {!loading && !error && mapSvg && (
               <>
                 <div className="flex gap-2 items-center justify-between mb-2">
-                  <div></div>
+                  <button
+                    className="base-btn px-2 py-1 text-[10px] bg-[var(--red)]"
+                    onClick={() => setShowAllKingdoms(!showAllKingdoms)}
+                    title="Debug: Show all kingdoms on map"
+                  >
+                    🔍 {showAllKingdoms ? 'Hide' : 'Show'} All Kingdoms
+                  </button>
                   <div className="text-xs text-[var(--text3)]">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -432,9 +763,10 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                 {useWebGL && hexGrid ? (
                   <div
                     id="world-map-webgl"
-                    className="relative min-h-[520px] overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[#040710]"
+                    className="relative w-full h-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[#040710]"
+                    style={{ minHeight: '520px', height: '600px' }}
                   >
-                    <WorldmapWebGL hexGrid={hexGrid} highlightedRace={highlightedRace} />
+                    <WorldmapWebGL hexGrid={hexGrid} kingdoms={kingdoms} highlightedRace={highlightedRace} />
                   </div>
                 ) : (
                   <div
@@ -509,6 +841,43 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                     Close
                   </button>
                 </div>
+              </div>
+            )}
+
+            {clickedKingdom && (
+              <div className="card">
+                <div className="card-title !mb-2">
+                  {RACE_ICONS[clickedKingdom.race] || '🏰'} {repairMojibake(clickedKingdom.name || 'Kingdom')}
+                </div>
+                <div className="text-[12px] text-[var(--text3)] mb-2">
+                  <div>Coordinates: ({clickedKingdom.map_x}, {clickedKingdom.map_y})</div>
+                  <div>Race: {clickedKingdom.race}</div>
+                  {clickedKingdom.turn !== undefined && <div>Turn: {clickedKingdom.turn}</div>}
+                </div>
+                <button
+                  className="base-btn text-[11px] px-2 py-1 w-full"
+                  onClick={() => setClickedKingdom(null)}
+                >
+                  Close
+                </button>
+              </div>
+            )}
+
+            {clickedHex && (
+              <div className="card">
+                <div className="card-title !mb-2">📍 Hex Info</div>
+                <div className="text-[12px] text-[var(--text3)] mb-2">
+                  <div><strong>Coordinates:</strong> ({clickedHex.col}, {clickedHex.row})</div>
+                  <div><strong>World Position:</strong> ({Math.round(clickedHex.x)}, {Math.round(clickedHex.y)})</div>
+                  <div><strong>Terrain:</strong> {clickedHex.terrain}</div>
+                  <div><strong>Region:</strong> {clickedHex.race || 'Unknown'}</div>
+                </div>
+                <button
+                  className="base-btn text-[11px] px-2 py-1 w-full"
+                  onClick={() => setClickedHex(null)}
+                >
+                  Close
+                </button>
               </div>
             )}
 

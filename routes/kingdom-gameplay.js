@@ -1671,8 +1671,13 @@ module.exports = function (db) {
       });
 
       const kingdomsWithCoords = filtered.map((row) => {
-        const coords = getKingdomMapCoords(row);
-        return { ...row, map_x: coords.map_x, map_y: coords.map_y, terrain: getTerrainForRace(row.race) };
+        try {
+          const coords = getKingdomMapCoords(row);
+          return { ...row, map_x: coords.map_x, map_y: coords.map_y, terrain: getTerrainForRace(row.race) };
+        } catch (err) {
+          console.error(`[world-map] ERROR computing coords for K${row.id} ${row.name}:`, err.message);
+          return { ...row, map_x: 0, map_y: 0, terrain: getTerrainForRace(row.race) };
+        }
       });
 
       const tradeRoutes = await db.all(
@@ -1682,8 +1687,7 @@ module.exports = function (db) {
 
       const nodes = await db.all(
         `SELECT id, kingdom_id, name, type, distance, richness, map_x, map_y, terrain
-         FROM resource_nodes WHERE kingdom_id = $1 ORDER BY discovered_at DESC`,
-        [k.id],
+         FROM resource_nodes ORDER BY discovered_at DESC`
       );
 
       // Phase 3 gating + explicit node reveal: only include nodes in scouted hexes.

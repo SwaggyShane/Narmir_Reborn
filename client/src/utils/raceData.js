@@ -2,7 +2,7 @@ export const REGION_META = {
   dwarf: { name: 'The Iron Holds', color: '#8B6914', stroke: '#c8962a', icon: '', x: 150, y: 200, w: 200, h: 180 },
   high_elf: { name: 'The Silverwood', color: '#1a4a2e', stroke: '#4caf82', icon: '', x: 420, y: 80, w: 220, h: 200 },
   orc: { name: 'The Bloodplains', color: '#4a1010', stroke: '#e05c5c', icon: '', x: 560, y: 300, w: 200, h: 200 },
-  dark_elf: { name: 'The Underspire', color: '#1a1030', stroke: 'var(--accent1)', icon: '', x: 380, y: 340, w: 180, h: 200 },
+  dark_elf: { name: 'The Underspire', color: '#1a1030', stroke: '#9d4edd', icon: '', x: 380, y: 340, w: 180, h: 200 },
   human: { name: 'The Heartlands', color: '#1a2a10', stroke: '#8fb84a', icon: '', x: 200, y: 380, w: 200, h: 180 },
   dire_wolf: { name: 'The Ashfang Wilds', color: '#0d1a20', stroke: '#4a8fb8', icon: '', x: 60, y: 390, w: 160, h: 170 },
   vampire: { name: 'The Nightfall Marshes', color: '#2a0a1a', stroke: '#8b1a4a', icon: '', x: 420, y: 320, w: 180, h: 170 },
