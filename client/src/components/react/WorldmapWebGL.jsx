@@ -287,17 +287,44 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         });
       });
 
-      // Render border lines as tubes
+      // Render border lines as thin colored planes
       borderLines.forEach(({ p1, p2, race }) => {
-        const curve = new THREE.LineCurve3(p1, p2);
         const raceRegion = REGION_META[race];
         const color = raceRegion ? new THREE.Color(raceRegion.stroke) : new THREE.Color(0xffffff);
-        const tubeGeo = new THREE.TubeGeometry(curve, 8, 0.5, 6, false);
-        const tubeMat = new THREE.MeshPhongMaterial({ color });
-        const tube = new THREE.Mesh(tubeGeo, tubeMat);
-        scene.add(tube);
+
+        // Create a thin plane between the two points
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const thickness = 1.5;
+
+        const planeGeo = new THREE.PlaneGeometry(length, thickness);
+        const planeMat = new THREE.MeshPhongMaterial({ color, side: THREE.DoubleSide });
+        const plane = new THREE.Mesh(planeGeo, planeMat);
+
+        // Position at midpoint
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2;
+        const midZ = (p1.z + p2.z) / 2;
+        plane.position.set(midX, midY, midZ);
+
+        // Rotate to align with the edge
+        const angle = Math.atan2(dy, dx);
+        plane.rotation.z = angle;
+
+        scene.add(plane);
       });
-      console.log(`Created ${borderLines.length} border segments`);
+
+      if (borderLines.length > 0) {
+        console.log(`Created ${borderLines.length} border segments`);
+        const first = borderLines[0];
+        const dist = Math.sqrt(
+          (first.p2.x - first.p1.x) ** 2 +
+          (first.p2.y - first.p1.y) ** 2 +
+          (first.p2.z - first.p1.z) ** 2
+        );
+        console.log(`First border: p1=(${first.p1.x.toFixed(2)}, ${first.p1.y.toFixed(2)}, ${first.p1.z.toFixed(2)}), p2=(${first.p2.x.toFixed(2)}, ${first.p2.y.toFixed(2)}, ${first.p2.z.toFixed(2)}), len=${dist.toFixed(2)}`);
+      }
 
       const createForestSymbol = () => {
         const group = new THREE.Group();
