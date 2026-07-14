@@ -274,8 +274,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
               const c2 = corners[edgeCorners[1]];
 
               const neighborElev = getCellElevation(neighbor);
-              const avgElev = (elev + neighborElev) / 2;
-              const borderZ = avgElev + 2;
+              const borderZ = Math.max(elev, neighborElev) + 1;
 
               borderLines.push({
                 p1: new THREE.Vector3(c1[0], c1[1], borderZ),
