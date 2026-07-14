@@ -227,9 +227,16 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       const cellMap = new Map();
       hexGrid.cells.forEach((cell) => {
         const key = `${cell.col},${cell.row}`;
-        cell.race = nearestRaceHome(cell.x * 2, -cell.y * 2);
+        // Check if race already exists on cell, otherwise compute it
+        if (!cell.race) {
+          cell.race = nearestRaceHome(cell.x * 2, -cell.y * 2);
+        }
         cellMap.set(key, cell);
       });
+      const validCells = hexGrid.cells.filter(c => c.col >= 0 && c.row >= 0);
+      console.log(`Total cells: ${hexGrid.cells.length}, valid cells: ${validCells.length}`);
+      console.log(`First cell: col=${hexGrid.cells[0]?.col}, row=${hexGrid.cells[0]?.row}, race=${hexGrid.cells[0]?.race}`);
+      console.log(`First valid cell: col=${validCells[0]?.col}, row=${validCells[0]?.row}, race=${validCells[0]?.race}`);
 
       // ODDR neighbor offsets (pointy-top, odd-r)
       const ODDR_DIRECTIONS = [
@@ -246,12 +253,15 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         [1, 2], // SE
       ];
 
-      // Draw region borders
+      // Draw region borders (only for valid cells)
       const borderLines = [];
       const drawnEdges = new Set();
       const BORDER_INSET = 4;
 
       hexGrid.cells.forEach((cell) => {
+        // Skip invalid cells (col/row < 0)
+        if (cell.col < 0 || cell.row < 0) return;
+
         const key = `${cell.col},${cell.row}`;
         const parity = cell.row & 1;
         const directions = ODDR_DIRECTIONS[parity];
@@ -264,6 +274,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
           const neighborKey = `${neighborCol},${neighborRow}`;
           const neighbor = cellMap.get(neighborKey);
 
+          // Only draw border if neighbor exists and has different race
           if (neighbor && neighbor.race !== cell.race) {
             const edgeKey = [key, neighborKey].sort().join('|');
             if (!drawnEdges.has(edgeKey)) {
