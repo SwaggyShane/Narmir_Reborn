@@ -7,9 +7,18 @@ export function useActiveExpeditionsSummary() {
 
   const refresh = useCallback(async () => {
     try {
-      const data = await apiCall('/api/kingdom/expedition/list');
+      const [data, harvests] = await Promise.all([
+        apiCall('/api/kingdom/expedition/list'),
+        apiCall('/api/kingdom/resource-harvests'),
+      ]);
       const rows = Array.isArray(data?.active) ? data.active : [];
-      setActive(rows.filter((row) => Number(row?.turns_left ?? 0) > 0 || row?.rewards == null));
+      const harvestRows = Array.isArray(harvests)
+        ? harvests.map((h) => ({ id: `harvest-${h.id}`, type: 'resource-harvest', turns_left: h.turns_left }))
+        : [];
+      setActive([
+        ...rows.filter((row) => Number(row?.turns_left ?? 0) > 0 || row?.rewards == null),
+        ...harvestRows,
+      ]);
     } catch (err) {
       console.error('[expeditions] summary refresh failed:', err);
     }
@@ -24,10 +33,9 @@ export function useActiveExpeditionsSummary() {
       const reason = String(event?.reason || '');
       if (
         reason === 'turn' ||
-        reason === 'expedition-start' ||
-        reason === 'expedition-complete' ||
-        reason === 'expedition-cancel' ||
-        reason.startsWith('expedition')
+        reason === 'resources-refresh' || // fired after launching a resource harvest
+        reason.startsWith('expedition') ||
+        reason.startsWith('epic-trek')
       ) {
         void refresh();
       }

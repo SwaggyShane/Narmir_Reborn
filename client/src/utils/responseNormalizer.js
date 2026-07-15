@@ -17,6 +17,7 @@ import { useMilitaryStore } from '../stores';
 import { useResearchStore } from '../stores';
 import { usePopulationStore } from '../stores';
 import { useProfileStore } from '../stores';
+import { AppEvent, emitAppEvent } from './appEvents.js';
 
 /**
  * Validates that response follows standardized contract.
@@ -151,13 +152,21 @@ export function normalizeAndRouteResponse(response, context = {}) {
     }
   }
 
+  const updatedDomains = Object.keys(normalized)
+    .filter(k => Object.keys(normalized[k]).length > 0);
+
   // Debug logging (dev only)
-  if (process.env.NODE_ENV === 'development' && context.reason) {
-    const updated = Object.keys(normalized)
-      .filter(k => Object.keys(normalized[k]).length > 0);
-    if (updated.length > 0) {
-      console.log(`[Router] ${context.reason}`, { stores_updated: updated });
-    }
+  if (process.env.NODE_ENV === 'development' && context.reason && updatedDomains.length > 0) {
+    console.log(`[Router] ${context.reason}`, { stores_updated: updatedDomains });
+  }
+
+  // Notify any listeners (e.g. useGameMutationEvents) that a server-driven
+  // state change just happened, so they can react without polling. This is
+  // the successor to the old GameStateManager mutation-event pipeline --
+  // every response that reaches this router passes through here, so it's
+  // the single point that can stand in for "something changed".
+  if (updatedDomains.length > 0) {
+    emitAppEvent(AppEvent.GAME_MUTATION, { ...context, updatedDomains });
   }
 
   return normalized;

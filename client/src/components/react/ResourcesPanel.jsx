@@ -6,6 +6,7 @@ import { useActivePanel } from '../../hooks/useActivePanel';
 import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
 import { dispatchExpeditionLogEntry } from '../../utils/expeditionLog.js';
 import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
+import { registerResourcesTab, consumePendingResourcesTab } from '../../utils/resourcesTabs.js';
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
@@ -80,7 +81,7 @@ function itemIcon(id) {
 }
 
 const ResourcesPanel = () => {
-  const [activeTab, setActiveTab] = useState('stockpiles');
+  const [activeTab, setActiveTab] = useState(() => consumePendingResourcesTab() || 'stockpiles');
   const [activeBldTab, setActiveBldTab] = useState('wood');
   const [showGuide, setShowGuide] = useState(false);
   const [kingdom, setKingdom] = useState({});
@@ -187,6 +188,14 @@ const ResourcesPanel = () => {
     if (activeTab === 'nodes') { loadNodes(); loadHarvests(); }
     if (activeTab === 'inventory') syncFromState();
   }, [activeTab, syncFromState]);
+
+  // Lets switchTab('nodes') (e.g. clicking a harvest in the "Underway" nav
+  // indicator) jump straight to this specific sub-tab, mirroring how
+  // WarfarePanel registers itself for its own attack/spells/covert sub-tabs.
+  useEffect(() => {
+    const unregister = registerResourcesTab(setActiveTab);
+    return unregister;
+  }, []);
 
   const getBldCap = (bld) => {
     if (bld.stage === 1) return 3;
@@ -635,6 +644,30 @@ const ResourcesPanel = () => {
         <div>
           <div className="card mb-3">
             <div className='flex justify-between items-center'>
+              <div className="card-title">Active Harvests ({activeHarvests.length})</div>
+              <button onClick={loadHarvests} className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--bg2)] text-[var(--text3)] cursor-pointer text-[11px]">Refresh</button>
+            </div>
+            {activeHarvests.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No active harvests.</div>}
+            {activeHarvests.map(h => (
+              <div key={h.id} className="mt-2.5 p-2.5 rounded-lg bg-[var(--bg2)] border border-[var(--border)]">
+                <div className='flex justify-between items-start flex-wrap gap-2'>
+                  <div>
+                    <div className='font-semibold text-sm'>{h.node_name} <span className="text-[11px] text-[var(--text3)]">({typeIcon(h.resource_type)} {h.resource_type})</span></div>
+                    <div className='text-[11px] text-[var(--text3)] mt-0.5'>
+                      Pop: {fmt(h.population_sent)} &middot; {h.harvest_turns} harvest turns
+                      {h.food_taken > 0 && <span> &middot; 🍖 {fmt(h.food_taken)} food taken</span>}
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-[var(--text3)] text-right whitespace-nowrap">
+                    <span className='text-[var(--gold)]'>{h.turns_left}</span> turns remaining
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="card mb-3">
+            <div className='flex justify-between items-center'>
               <div className="card-title">Revealed Nodes ({nodes.length})</div>
               <button onClick={loadNodes} className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--bg2)] text-[var(--text3)] cursor-pointer text-[11px]">Refresh</button>
             </div>
@@ -664,30 +697,6 @@ const ResourcesPanel = () => {
                       className={clsx('px-2.5 py-[5px] rounded border-none cursor-pointer text-[12px] font-semibold text-white', hasActiveHarvest(node.id) ? 'bg-[var(--text3)] cursor-not-allowed' : 'bg-[#3b82f6]')}>
                       {hasActiveHarvest(node.id) ? 'Active' : launching[node.id] ? '...' : 'Send'}
                     </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="card mb-3">
-            <div className='flex justify-between items-center'>
-              <div className="card-title">Active Harvests ({activeHarvests.length})</div>
-              <button onClick={loadHarvests} className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--bg2)] text-[var(--text3)] cursor-pointer text-[11px]">Refresh</button>
-            </div>
-            {activeHarvests.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No active harvests.</div>}
-            {activeHarvests.map(h => (
-              <div key={h.id} className="mt-2.5 p-2.5 rounded-lg bg-[var(--bg2)] border border-[var(--border)]">
-                <div className='flex justify-between items-start flex-wrap gap-2'>
-                  <div>
-                    <div className='font-semibold text-sm'>{h.node_name} <span className="text-[11px] text-[var(--text3)]">({typeIcon(h.resource_type)} {h.resource_type})</span></div>
-                    <div className='text-[11px] text-[var(--text3)] mt-0.5'>
-                      Pop: {fmt(h.population_sent)} &middot; {h.harvest_turns} harvest turns
-                      {h.food_taken > 0 && <span> &middot; 🍖 {fmt(h.food_taken)} food taken</span>}
-                    </div>
-                  </div>
-                  <div className="text-[11px] text-[var(--text3)] text-right whitespace-nowrap">
-                    <span className='text-[var(--gold)]'>{h.turns_left}</span> turns remaining
                   </div>
                 </div>
               </div>

@@ -39,7 +39,7 @@ import WarfareReportsTab from './WarfareReportsTab';
 import { registerTargetFromRankings } from '../../utils/rankingsTarget.js';
 import { getLastSpellTarget, setLastSpellTarget } from '../../utils/spellTargetHistory.js';
 import { switchTab } from '../../utils/panelNav.js';
-import { registerWarfareTab } from '../../utils/warfareTabs.js';
+import { registerWarfareTab, consumePendingWarfareTab } from '../../utils/warfareTabs.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { playGameSound } from '../../utils/audio.js';
 import { registerShowBattleReport } from '../../utils/showBattleReport.js';
@@ -230,7 +230,7 @@ const WarfarePanel = () => {
   const discoveredKingdoms = useDiscoveredKingdoms();
   const happiness = useHappiness();
 
-  const [activeTab, setActiveTab] = useState('attack');
+  const [activeTab, setActiveTab] = useState(() => consumePendingWarfareTab() || 'attack');
   const [battleReport, setBattleReport] = useState(null);
 
   // target data

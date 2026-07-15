@@ -158,6 +158,15 @@ async function initializeAdditionalColumns(db, getTableColumns, addCol) {
   } catch (e) {
     console.error('[db] Migration: failed to relax news NOT NULL constraints:', e.message);
   }
+
+  // spy_reports.target_name/outcome: routes/kingdom-warfare.js inserts and
+  // reads both (the covert-spy INSERT, the /spy-reports GET, and the
+  // alliance intel GET), but the DDL only ever defined the base columns --
+  // every spy report insert and every spy-reports/alliance-intel fetch was
+  // failing outright.
+  const srCols = await getTableColumns('spy_reports');
+  if (!srCols.includes('target_name')) await addCol('spy_reports', 'target_name', 'TEXT', srCols);
+  if (!srCols.includes('outcome')) await addCol('spy_reports', 'outcome', 'TEXT', srCols);
 }
 
 async function initializeMarketPrices(db) {

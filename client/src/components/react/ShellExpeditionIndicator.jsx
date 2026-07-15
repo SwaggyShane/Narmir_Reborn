@@ -18,13 +18,14 @@ const ShellExpeditionIndicator = () => {
           const type = exp.type || 'scout';
           const label = EXPEDITION_TYPE_LABELS[type] || type;
           const turnsLeft = Math.max(0, Number(exp.turns_left ?? 0));
+          const targetTab = type === 'resource-harvest' ? 'nodes' : 'exploration';
           return (
             <button
               key={exp.id}
               type="button"
               className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-left text-[11px] text-text2 transition hover:bg-white/5"
-              onClick={() => switchTab('exploration')}
-              title="Open Exploration"
+              onClick={() => switchTab(targetTab)}
+              title={targetTab === 'nodes' ? 'Open Resources — Nodes' : 'Open Exploration'}
             >
               <span className="truncate font-semibold text-text">{label}</span>
               <span className="shrink-0 tabular-nums text-gold">

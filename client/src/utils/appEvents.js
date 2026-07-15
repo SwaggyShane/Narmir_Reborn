@@ -15,6 +15,7 @@ export const AppEvent = {
   EXPEDITION_LOG_ENTRY: 'expedition-log-entry',
   NAV_LAYOUT_CHANGE: 'nav-layout-change',
   COLOR_THEME_CHANGE: 'color-theme-change',
+  GAME_MUTATION: 'game-mutation',
 };
 
 export function subscribeAppEvent(event, handler) {

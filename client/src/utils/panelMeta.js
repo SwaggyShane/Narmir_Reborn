@@ -75,6 +75,7 @@ export const EXPEDITION_TYPE_LABELS = Object.freeze({
   deep: 'Deep',
   dungeon: 'Dungeon',
   mountain: "Mountain's Heart",
+  'resource-harvest': 'Harvest',
 });
 
 export function getPanelMeta(panelId) {

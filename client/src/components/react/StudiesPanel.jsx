@@ -75,6 +75,17 @@ const StudiesPanel = () => {
     setSchoolForm((prev) => ({ ...prev, [key]: value }));
   }, []);
 
+  // Stable identities for SchoolTab's props: SchoolTab's own sync-with-server
+  // effect lists these setters in its dependency array and unconditionally
+  // calls them, so passing fresh inline closures here on every render would
+  // make that effect re-fire every render, which calls these setters again,
+  // which re-renders this component, forever ("Maximum update depth
+  // exceeded").
+  const setMageSpellbookValue = useCallback((value) => updateSchoolForm('mageSpellbookValue', value), [updateSchoolForm]);
+  const setMageSchoolValue = useCallback((value) => updateSchoolForm('mageSchoolValue', value), [updateSchoolForm]);
+  const setFocus1Value = useCallback((value) => updateSchoolForm('focus1Value', value), [updateSchoolForm]);
+  const setFocus2Value = useCallback((value) => updateSchoolForm('focus2Value', value), [updateSchoolForm]);
+
   const state = useMemo(() => ({
     race,
     mages,
@@ -142,13 +153,13 @@ const StudiesPanel = () => {
           onUpgraded={handleTabUpgraded}
           mages={mages}
           mageSpellbookValue={schoolForm.mageSpellbookValue}
-          setMageSpellbookValue={(value) => updateSchoolForm('mageSpellbookValue', value)}
+          setMageSpellbookValue={setMageSpellbookValue}
           mageSchoolValue={schoolForm.mageSchoolValue}
-          setMageSchoolValue={(value) => updateSchoolForm('mageSchoolValue', value)}
+          setMageSchoolValue={setMageSchoolValue}
           focus1Value={schoolForm.focus1Value}
-          setFocus1Value={(value) => updateSchoolForm('focus1Value', value)}
+          setFocus1Value={setFocus1Value}
           focus2Value={schoolForm.focus2Value}
-          setFocus2Value={(value) => updateSchoolForm('focus2Value', value)}
+          setFocus2Value={setFocus2Value}
           fetchStudiesData={fetchStudiesData}
         />
       )}
