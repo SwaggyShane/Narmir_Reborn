@@ -4,8 +4,6 @@ import { AppEvent, emitAppEvent } from './appEvents.js';
 export function syncKingdom(data, reason = 'sync') {
   if (!data) return null;
 
-  console.log(`🔗 syncKingdom(${reason}):`, data);
-
   // Apply to all Zustand stores
   normalizeAndRouteResponse(data, { reason });
 

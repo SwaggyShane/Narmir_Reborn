@@ -542,8 +542,6 @@ async function initializeResourceNodes(db) {
       [`${region} Mountain Heart`, 'mountain_heart', 200, 1, mountainX, mountainY, 'mountains']
     );
   }
-
-  console.log('[db] Resource nodes seeded for all regions');
 }
 
 module.exports = {

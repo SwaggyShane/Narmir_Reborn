@@ -155,11 +155,6 @@ export function normalizeAndRouteResponse(response, context = {}) {
   const updatedDomains = Object.keys(normalized)
     .filter(k => Object.keys(normalized[k]).length > 0);
 
-  // Debug logging (dev only)
-  if (process.env.NODE_ENV === 'development' && context.reason && updatedDomains.length > 0) {
-    console.log(`[Router] ${context.reason}`, { stores_updated: updatedDomains });
-  }
-
   // Notify any listeners (e.g. useGameMutationEvents) that a server-driven
   // state change just happened, so they can react without polling. This is
   // the successor to the old GameStateManager mutation-event pipeline --

@@ -31,7 +31,6 @@ async function ensureWorldElevation(db, worldState, hexGrid) {
     [JSON.stringify(elevationMap)]
   );
 
-  console.log('[elevation] Generated and stored elevation for', Object.keys(elevationMap).length, 'hexes');
   return elevationMap;
 }
 

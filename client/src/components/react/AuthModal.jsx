@@ -29,7 +29,6 @@ export async function loadKingdom() {
     let scouts = null;
     try {
       scouts = await apiCall('/api/kingdom/scouts');
-      console.log('[auth] Fetched scouts:', scouts);
     } catch (err) {
       console.warn('[auth] Scouts fetch failed:', err);
     }
@@ -37,7 +36,6 @@ export async function loadKingdom() {
     // Combine kingdom and scouts data into single snapshot to avoid multiple re-renders
     const combinedData = { ...kingdom };
     if (scouts && !scouts.error) {
-      console.log('[auth] Merging scouts into profile update');
       combinedData.scout_allocation = scouts.scout_allocation;
       combinedData.scout_progress = scouts.scout_progress;
     }

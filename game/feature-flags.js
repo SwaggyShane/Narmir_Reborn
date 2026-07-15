@@ -29,7 +29,6 @@ function initializeFlags(envFlags = {}) {
       return acc;
     }, {})
   };
-  console.log('[feature-flags] Initialized:', currentFlags);
 }
 
 /**
@@ -52,7 +51,6 @@ function getFlag(name) {
 function setFlag(name, value) {
   if (name in DEFAULT_FLAGS) {
     currentFlags[name] = value;
-    console.log(`[feature-flags] ${name} = ${value}`);
   }
 }
 

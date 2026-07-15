@@ -17,7 +17,6 @@ module.exports = {
       await db.run(
         `ALTER TABLE world_state ADD COLUMN elevation_grid JSONB DEFAULT '{}' NOT NULL`
       );
-      console.log('[migration] Added elevation_grid column to world_state');
     }
   },
 

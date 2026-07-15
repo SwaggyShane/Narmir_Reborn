@@ -24,14 +24,11 @@ async function executeTurnInTransaction(db, kingdom, processTurn) {
 
   try {
     return await db.withTransaction(async () => {
-      console.log(`[turn-tx-${kingdom.id}] processTurn`);
       const { updates, events } = await processTurn();
 
-      console.log(`[turn-tx-${kingdom.id}] apply updates`);
       const sqlUpdates = buildUpdateSQL(updates);
       await db.run(sqlUpdates.sql, [...sqlUpdates.params, kingdom.id]);
 
-      console.log(`[turn-tx-${kingdom.id}] write outbox (${events.length} events)`);
       if (events.length > 0) {
         for (const event of events) {
           await db.run(
@@ -43,7 +40,6 @@ async function executeTurnInTransaction(db, kingdom, processTurn) {
       }
 
       const elapsedMs = Date.now() - startTime;
-      console.log(`[turn-tx-${kingdom.id}] Success (${elapsedMs}ms)`);
 
       return { updates, events, transactionTime: elapsedMs };
     });
@@ -101,7 +97,6 @@ async function initializeOutboxTable(db) {
         processed_at TIMESTAMP
       )
     `);
-    console.log('[outbox] Table initialized');
   } catch (err) {
     console.error('[outbox] Failed to initialize:', err.message);
   }

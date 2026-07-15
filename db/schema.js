@@ -541,7 +541,6 @@ async function initDb(options = {}) {
       // Limit deferral to 30 attempts (~30 seconds) to ensure process can exit
       if (_db && !_db.bootComplete && shutdownAttempts < 30) {
         shutdownAttempts++;
-        console.log(`[db] SIGTERM during boot - deferring pool close (attempt ${shutdownAttempts}/30)`);
         // Set a timeout to check again in 1 second (allows boot to progress)
         shutdownTimer = setTimeout(() => {
           shutdownTimer = null;
@@ -656,7 +655,6 @@ async function initDb(options = {}) {
     if (!existing) {
       await _db.run(`UPDATE kingdoms SET defense_upgrades = defence_upgrades WHERE defense_upgrades = '{}' AND defence_upgrades != '{}'`);
       await _db.run('INSERT INTO migrations (name) VALUES ($1)', [migrationName]);
-      console.log('[db] Migration applied:', migrationName);
     }
   }
 
@@ -667,7 +665,6 @@ async function initDb(options = {}) {
     try {
       await _db.run(`ALTER TABLE kingdoms ALTER COLUMN scout_progress TYPE NUMERIC(10,2) USING scout_progress::NUMERIC(10,2)`);
       await _db.run('INSERT INTO migrations (name) VALUES ($1)', [migrationName]);
-      console.log('[db] Migration applied:', migrationName);
     } catch (err) {
       console.warn('[db] Migration skipped (column may already be NUMERIC):', err.message);
     }
@@ -680,7 +677,6 @@ async function initDb(options = {}) {
     try {
       await _db.run(`ALTER TABLE resource_nodes ALTER COLUMN kingdom_id DROP NOT NULL`);
       await _db.run('INSERT INTO migrations (name) VALUES ($1)', [resourceNodesMigration]);
-      console.log('[db] Migration applied:', resourceNodesMigration);
     } catch (err) {
       console.warn('[db] Migration skipped (kingdom_id may already be nullable):', err.message);
     }
@@ -721,7 +717,6 @@ async function initDb(options = {}) {
       }
 
       await _db.run('INSERT INTO migrations (name) VALUES ($1)', [kingdomXYMigration]);
-      console.log('[db] Migration applied:', kingdomXYMigration);
     } catch (err) {
       console.warn('[db] Migration skipped (columns may already exist):', err.message);
     }

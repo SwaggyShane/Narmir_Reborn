@@ -156,7 +156,6 @@ async function ensureWorldSeed(db) {
       'INSERT INTO world_state (id, seed) VALUES ($1, $2)',
       [1, randomSeed]
     );
-    console.log('[world-init] Created world_state with seed:', randomSeed);
     return true;
   }
   return false;
@@ -179,15 +178,12 @@ async function initializeWorld(db) {
     // Step 2: Check if already initialized
     const alreadyInit = await isWorldInitialized(db);
     if (alreadyInit) {
-      console.log('[world-init] World already initialized');
       return;
     }
 
     const worldSeed = getWorldSeed();
-    console.log('[world-init] Initializing world with seed:', worldSeed.toString());
 
     const races = Object.keys(RACE_HOMES);
-    let totalNodesSeeded = 0;
 
     // Step 3: Seed resource nodes for each region
     for (const race of races) {
@@ -211,17 +207,11 @@ async function initializeWorld(db) {
               nodeSpec.terrain,
             ]
           );
-
-          totalNodesSeeded++;
         } catch (err) {
           console.error(`[world-init] Failed to seed resource node for ${race}:`, err.message);
         }
       }
     }
-
-    console.log(`[world-init] ✓ World initialized: ${totalNodesSeeded} resource nodes seeded`);
-    console.log('[world-init] ✓ Terrain distribution: 75% dominant + 25% mixed per region');
-    console.log('[world-init] ✓ Resource distribution: 1 of each type, 3 of prevalent type per region');
 
   } catch (err) {
     console.error('[world-init] World initialization failed:', err.message);

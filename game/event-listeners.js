@@ -41,13 +41,12 @@ function initializeEventListeners() {
  * Scout system emits this; Visibility system listens.
  */
 function handleRingCompleted(data) {
-  const { kingdomId, ringNumber, hexes } = data || {};
+  const { kingdomId, ringNumber } = data || {};
   // Visibility system would:
   // 1. Load kingdom's current visibility bitmap
   // 2. Add hexes to seen_cells
   // 3. Store in database
   // 4. Emit 'visibility-updated' event for client sync
-  console.log(`[visibility] Ring ${ringNumber} for kingdom ${kingdomId}: reveal ${hexes?.length || 0} hexes`);
   eventBus.emit('visibility-updated', { kingdomId, ringNumber });
 }
 
@@ -57,13 +56,12 @@ function handleRingCompleted(data) {
  * Combat system emits this; XP system listens.
  */
 function handleCombatResolved(data) {
-  const { attackerId, defenderId, attacker_damage, defender_damage } = data;
+  const { attackerId, defenderId, attacker_damage } = data;
   // XP system would:
   // 1. Award XP to attacker based on damage
   // 2. Award XP to defender if surviving
   // 3. Update xp_sources tracking
   // 4. Emit 'xp-awarded' event
-  console.log(`[xp] Combat: attacker=${attackerId} dealt ${attacker_damage}, defender=${defenderId} took ${defender_damage}`);
   eventBus.emit('xp-awarded', { attackerId, defenderId, xp: Math.floor(attacker_damage / 10) });
 }
 
@@ -72,14 +70,12 @@ function handleCombatResolved(data) {
  * Handle research XP award event.
  * Research system emits this; Level system listens.
  */
-function handleResearchXpAwarded(data) {
-  const { kingdomId, xpAmount } = data;
+function handleResearchXpAwarded(_data) {
   // Level system would:
   // 1. Add XP to kingdom's total XP
   // 2. Check for level-up
   // 3. Award milestones if level increased
   // 4. Emit 'level-changed' event if applicable
-  console.log(`[level] Kingdom ${kingdomId}: award ${xpAmount} XP for research`);
   // Would trigger level-up checks here
 }
 
@@ -89,14 +85,13 @@ function handleResearchXpAwarded(data) {
  * Expedition system emits this; Reward system listens.
  */
 function handleExpeditionCompleted(data) {
-  const { kingdomId, expeditionId, expeditionType } = data;
+  const { kingdomId, expeditionId } = data;
   // Reward system would:
   // 1. Look up expedition rewards table based on type
   // 2. Generate loot (gold, resources, items, etc.)
   // 3. Add to kingdom inventory
   // 4. Create news event
   // 5. Emit 'loot-received' event
-  console.log(`[rewards] Expedition ${expeditionId} (${expeditionType}) completed for kingdom ${kingdomId}`);
   eventBus.emit('loot-received', { kingdomId, expeditionId });
 }
 

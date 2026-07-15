@@ -2348,7 +2348,6 @@ module.exports = function (db, io) {
         [JSON.stringify({}), k.id]
       );
 
-      console.log(`[admin] Reset allocations for kingdom ${k.id} (player ${k.player_id})`);
       res.json({ ok: true, message: "Engineer allocations cleared" });
     } catch (err) {
       console.error("[admin] reset-allocations error:", err.message);

@@ -395,9 +395,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         }
       }
 
-      let borderSegmentCount = 0;
       colorGeometriesByRace.forEach((geometries, race) => {
-        borderSegmentCount += geometries.length;
         const merged = mergeGeometries(geometries);
         geometries.forEach(g => g.dispose());
         if (merged) {
@@ -409,8 +407,6 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
           console.warn(`Border color geometry merge failed for race "${race}"; skipping.`);
         }
       });
-
-      console.log(`Total boundary edges: ${borderSegmentCount}`);
 
       const createForestSymbol = () => {
         const group = new THREE.Group();

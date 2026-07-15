@@ -133,8 +133,6 @@ async function start() {
 
 // Graceful shutdown handler (Priority #1 for Railway stability)
 const gracefulShutdown = async (exitCode = 0) => {
-  console.log('[shutdown] Received termination signal...');
-
   // Set a fallback timeout to force exit if graceful shutdown hangs
   const forceExitTimeout = setTimeout(() => {
     console.error('[shutdown] Graceful shutdown timed out after 10 seconds. Forcing exit...');
@@ -147,7 +145,6 @@ const gracefulShutdown = async (exitCode = 0) => {
     if (server) {
       await new Promise((resolve) => {
         server.close(() => {
-          console.log('[shutdown] HTTP server closed');
           resolve();
         });
       });
@@ -157,7 +154,6 @@ const gracefulShutdown = async (exitCode = 0) => {
     if (io) {
       await new Promise((resolve) => {
         io.close(() => {
-          console.log('[shutdown] Socket.io closed');
           resolve();
         });
       });
@@ -167,13 +163,11 @@ const gracefulShutdown = async (exitCode = 0) => {
     if (global._audit_scheduler) {
       try {
         global._audit_scheduler.shutdown();
-        console.log('[shutdown] Audit scheduler shut down');
       } catch (err) {
         console.error('[shutdown] Error closing audit scheduler:', err.message);
       }
     }
 
-    console.log('[shutdown] Cleanup complete. Process will exit after all handles close.');
     clearTimeout(forceExitTimeout); // Cancel fallback timeout
     // Don't call process.exit() here - let process exit naturally when all handles close.
     // This allows db/schema.js shutdownPool to complete its async pool.end() call.
