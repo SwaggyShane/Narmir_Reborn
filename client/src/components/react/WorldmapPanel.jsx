@@ -63,7 +63,7 @@ const DEFAULT_LAYERS = {
   terrain: false,
 };
 
-export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions, setWorldSeed, setVisibility } = {}) {
+export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions, setWorldSeed, setVisibility, setPlayerKingdomId } = {}) {
   if (typeof setLoading === 'function') setLoading(true);
   if (typeof setError === 'function') setError('');
   try {
@@ -78,6 +78,11 @@ export async function loadWorldMap({ setLoading, setError, setKingdoms, setTrade
     if (typeof setTradeRoutes === 'function') setTradeRoutes(tradeRoutes);
     if (typeof setNodes === 'function') setNodes(nodes);
     if (typeof setExpeditions === 'function') setExpeditions(expeditions);
+    // Arrives in the same response as kingdoms, unlike the profile store's
+    // kingdom_id (useKingdomId()), which is populated by a separate,
+    // independent fetch and can still be null the first time the WebGL
+    // view mounts and needs to know which kingdom to focus on.
+    if (typeof setPlayerKingdomId === 'function') setPlayerKingdomId(data.playerKingdomId ?? null);
     // Fog of War Phase 1.5: worldSeed arrives as a string (BigInt can't be
     // JSON-serialized) — passed through as-is, WorldmapRenderer.jsx parses
     // it back to BigInt itself so terrain biome patterns change per world.
@@ -502,6 +507,7 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
   const [showAllKingdoms, setShowAllKingdoms] = useState(false);
   const [clickedKingdom, setClickedKingdom] = useState(null);
   const [clickedHex, setClickedHex] = useState(null);
+  const [playerKingdomId, setPlayerKingdomId] = useState(null);
   const currentKingdomId = useKingdomId();
   const marketUpgrades = useMarketUpgrades();
   const mapContainerRef = useRef(null);
@@ -628,6 +634,7 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
       setExpeditions,
       setWorldSeed,
       setVisibility,
+      setPlayerKingdomId,
     }),
     [],
   );
@@ -766,7 +773,7 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                     className="relative w-full h-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[#040710]"
                     style={{ minHeight: '520px', height: '600px' }}
                   >
-                    <WorldmapWebGL hexGrid={hexGrid} kingdoms={kingdoms} highlightedRace={highlightedRace} />
+                    <WorldmapWebGL hexGrid={hexGrid} kingdoms={kingdoms} highlightedRace={highlightedRace} currentKingdomId={playerKingdomId} />
                   </div>
                 ) : (
                   <div

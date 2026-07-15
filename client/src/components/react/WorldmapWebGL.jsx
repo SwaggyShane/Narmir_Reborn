@@ -25,7 +25,7 @@ function hexToColor(hex) {
   return new THREE.Color(hex);
 }
 
-export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevationData = null, highlightedRace = null }) {
+export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevationData = null, highlightedRace = null, currentKingdomId = null }) {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
@@ -1116,6 +1116,12 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       const centerY = -mapHeight / 2;
       const mapCenter = new THREE.Vector3(centerX, centerY, 0);
 
+      // Default view focuses the player's own kingdom (falls back to the
+      // map's geometric center if it isn't in the kingdoms list yet).
+      const playerKingdom = kingdoms.find((k) => String(k.id) === String(currentKingdomId));
+      const initialFocusX = playerKingdom ? Number(playerKingdom.map_x) : centerX;
+      const initialFocusY = playerKingdom ? -Number(playerKingdom.map_y) : centerY;
+
       // Start with orthographic camera showing entire map
       const initialFrustumWidth = mapWidth + 100;
       const initialFrustumHeight = mapHeight + 100;
@@ -1125,9 +1131,6 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         initialFrustumHeight / 2, -initialFrustumHeight / 2,
         0.1, 10000
       );
-      orthoCamera.position.set(centerX, centerY, 500);
-      orthoCamera.lookAt(centerX, centerY, 0);
-      orthoCamera.updateProjectionMatrix();
 
       // Perspective camera for pitch controls
       const perspCamera = new THREE.PerspectiveCamera(60, w / h, 0.1, 10000);
@@ -1137,13 +1140,16 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
 
       // Camera controls state
       const cameraState = {
-        pitch: 30, // degrees
+        pitch: 30, // degrees, elevation angle
+        yaw: 0, // degrees, rotation around the vertical axis
         distance: 450,
-        minPitch: 5,
+        minPitch: -120,
         maxPitch: 120,
+        minYaw: -120,
+        maxYaw: 120,
         inPerspective: false,
-        camX: centerX,
-        camY: centerY,
+        camX: initialFocusX,
+        camY: initialFocusY,
         zoomLevel: 2.0,
       };
 
@@ -1160,6 +1166,12 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         orthoCamera.lookAt(cameraState.camX, cameraState.camY, 0);
         orthoCamera.updateProjectionMatrix();
       };
+      // Apply the real starting state (2x zoom, focused on the player's
+      // kingdom) immediately — orthoCamera's constructor above only sets
+      // up a full-map frustum with no regard for cameraState.zoomLevel,
+      // which would otherwise only take effect the first time the user
+      // zooms/pans/resets, producing a jarring jump on first interaction.
+      updateOrthoCamera();
 
       const updatePerspCamera = () => {
         cameraState.inPerspective = true;
@@ -1167,15 +1179,34 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         cameraRef.current = camera;
 
         const pitchRad = (cameraState.pitch * Math.PI) / 180;
+        const yawRad = (cameraState.yaw * Math.PI) / 180;
         const horizontalDist = cameraState.distance * Math.cos(pitchRad);
         const verticalDist = cameraState.distance * Math.sin(pitchRad);
 
         perspCamera.position.set(
-          cameraState.camX,
-          cameraState.camY - horizontalDist * 0.3,
+          cameraState.camX - horizontalDist * Math.sin(yawRad) * 0.3,
+          cameraState.camY - horizontalDist * Math.cos(yawRad) * 0.3,
           verticalDist
         );
         perspCamera.lookAt(cameraState.camX, cameraState.camY, 0);
+      };
+
+      // Middle-mouse click reverts to the full-map top-down orthographic
+      // view — the only way back once tilted into perspective mode, since
+      // nothing else ever flips inPerspective back to false. zoomLevel 1.0
+      // is the true full-map frustum (initialFrustumWidth/Height, computed
+      // as mapWidth/Height + 100 padding) — 2.0 is just the app's default
+      // startup zoom, already 2x zoomed in from the whole map.
+      const resetToOrthoView = () => {
+        cameraState.pitch = 30;
+        cameraState.yaw = 0;
+        cameraState.zoomLevel = 1.0;
+        cameraState.camX = centerX;
+        cameraState.camY = centerY;
+        cameraState.inPerspective = false;
+        camera = orthoCamera;
+        cameraRef.current = camera;
+        updateOrthoCamera();
       };
 
       let isRightMouseDown = false;
@@ -1184,6 +1215,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
 
       const onKeyDown = (e) => {
         const pitchStep = 3; // degrees
+        const yawStep = 3; // degrees
         if (e.key === 'ArrowUp') {
           cameraState.pitch = Math.min(
             cameraState.pitch + pitchStep,
@@ -1195,6 +1227,20 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
           cameraState.pitch = Math.max(
             cameraState.pitch - pitchStep,
             cameraState.minPitch
+          );
+          updatePerspCamera();
+          e.preventDefault();
+        } else if (e.key === 'ArrowLeft') {
+          cameraState.yaw = Math.max(
+            cameraState.yaw - yawStep,
+            cameraState.minYaw
+          );
+          updatePerspCamera();
+          e.preventDefault();
+        } else if (e.key === 'ArrowRight') {
+          cameraState.yaw = Math.min(
+            cameraState.yaw + yawStep,
+            cameraState.maxYaw
           );
           updatePerspCamera();
           e.preventDefault();
@@ -1224,6 +1270,9 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
           lastMouseX = e.clientX;
           lastMouseY = e.clientY;
           e.preventDefault();
+        } else if (e.button === 1) { // Middle mouse button
+          e.preventDefault(); // Suppress the browser's native autoscroll cursor
+          resetToOrthoView();
         }
       };
 
@@ -1314,7 +1363,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       cancelled = true;
       if (cleanup) cleanup();
     };
-  }, [hexGrid, elevationData, kingdoms]);
+  }, [hexGrid, elevationData, kingdoms, currentKingdomId]);
 
   return (
     <div
