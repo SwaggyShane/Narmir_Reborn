@@ -1038,8 +1038,16 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         return [name.slice(0, best), name.slice(best + 1)];
       }
 
+      // The Iron Holds label sits over dark mountain terrain at its literal
+      // home point and is hard to read there; move just this one label
+      // north into the ocean band (rows 4-5, y ~204-306 — see
+      // oceanBandForColumn in worldMapBuilder.js) instead of its home x/y.
+      const REGION_LABEL_OVERRIDES = {
+        dwarf: { x: 400, y: 260 },
+      };
+
       Object.entries(REGION_META).forEach(([race, meta]) => {
-        const home = RACE_HOMES[race];
+        const home = REGION_LABEL_OVERRIDES[race] || RACE_HOMES[race];
         if (!home) return;
 
         const titleLines = wrapRegionName(meta.name).map((l) => l.toUpperCase());
