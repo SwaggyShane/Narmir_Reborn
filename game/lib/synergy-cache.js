@@ -13,6 +13,7 @@
 // bonuses without pulling in engine.
 
 const attunementManager = require("../attunement-manager");
+const { getProfiler } = require("../profiling");
 
 const activeSynergyCache = new Map();
 const MAX_SYNERGY_CACHE = 2000;
@@ -29,6 +30,7 @@ const COMBAT_RELEVANT_SYNERGY_CAPS = {
 
 function getActiveSynergyCached(kingdom) {
   if (!kingdom) return null;
+  getProfiler().recordSynergyLookup();
   const key =
     typeof kingdom.fragment_bonuses === "string"
       ? kingdom.fragment_bonuses

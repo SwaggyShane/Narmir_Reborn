@@ -4,14 +4,14 @@
 // Usage: node game/measure-turn-real.js <kingdomId> [--json]
 // --json : output machine-readable JSON (easier for local scripts / CI)
 
-const Database = require('../db/index');
+require('dotenv').config();
+const { initDb } = require('../db/schema');
 const engine = require('./engine');
 const { initProfiler, runWithProfiler } = require('./profiling');
 
 async function measureRealTurn(kingdomId, options = {}) {
   const { json: jsonOutput = false } = options;
-  const db = new Database();
-  await db.init();
+  const db = await initDb();
 
   if (!jsonOutput) {
     console.log(`\n🔍 Measuring REAL turn execution for kingdom ${kingdomId}...\n`);
@@ -110,14 +110,12 @@ async function measureRealTurn(kingdomId, options = {}) {
     error = err;
     console.error('❌ Measurement failed:', err.message);
     console.error(err.stack);
-  } finally {
-    await db.close();
   }
 
-  // Exit only after finally block completes (db cleanup)
   if (error) {
     process.exit(1);
   }
+  process.exit(0);
 }
 
 // Run if invoked directly

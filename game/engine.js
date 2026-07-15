@@ -21,7 +21,7 @@ const effectsProcessor = require("./synergy-effects-processor");
 const { processScoutProgress } = require("./scout-progress");
 const { getProgressMetrics } = require("./scout-rings");
 const { revealRingHexes } = require("./visibility");
-const { safeJsonParse, clearParseCache, roll, rand } = require('../utils/helpers');
+const { safeJsonParse, safeJsonStringify, clearParseCache, roll, rand } = require('../utils/helpers');
 const { EPOCH_NOW } = require('../lib/db-sql');
 const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
 const { getProfiler, resetDevProfiler } = require('./profiling');
@@ -383,7 +383,7 @@ function processTurn(k, db = null) {
       if (decayEffects.fragment_happiness_penalty === 0) {
         delete decayEffects.fragment_happiness_penalty;
       }
-      updates.active_effects = JSON.stringify(decayEffects);
+      updates.active_effects = safeJsonStringify(decayEffects);
     }
   }
 
@@ -618,7 +618,7 @@ function processTurn(k, db = null) {
     }
     changed = true;
   }
-  if (changed) updates.active_event = JSON.stringify(activeEv2);
+  if (changed) updates.active_event = safeJsonStringify(activeEv2);
 
   // ── 4e-i. Scout ring progression ──────────────────────────────────────────────
   {
@@ -737,7 +737,7 @@ function processTurn(k, db = null) {
       if (ev) {
         if (!loreCollected.includes(ev.id)) {
           loreCollected.push(ev.id);
-          updates.collected_lore = JSON.stringify(loreCollected);
+          updates.collected_lore = safeJsonStringify(loreCollected);
 
           // Historian unlocks when the kingdom's reachable pool is complete
           // (narmir + general + own race — other races' lore can't drop here)
@@ -801,7 +801,7 @@ function processTurn(k, db = null) {
   }
 
   if (buildQueueChanged) {
-    updates.build_queue = JSON.stringify(buildQueue);
+    updates.build_queue = safeJsonStringify(buildQueue);
   }
 
   // ── 6. Troop upkeep ───────────────────────────────────────────────────────────
@@ -1248,7 +1248,7 @@ function processTurn(k, db = null) {
         ALL_DISCIPLINES[0],
       );
       focus = [top.key];
-      updates.research_focus = JSON.stringify(focus);
+      updates.research_focus = safeJsonStringify(focus);
     }
     focus = focus.slice(0, maxSlots);
     const perSlot = Math.floor(researchers / focus.length);
@@ -1316,7 +1316,7 @@ function processTurn(k, db = null) {
       }
     });
 
-    updates.research_progress = JSON.stringify(rProgress);
+    updates.research_progress = safeJsonStringify(rProgress);
 
     // Award Researcher XP even if no technical advances occurred
     if (researchers > 0) {
@@ -1459,7 +1459,7 @@ function processTurn(k, db = null) {
         }
       }
 
-      updates.mage_research_progress = JSON.stringify(mageRProgress);
+      updates.mage_research_progress = safeJsonStringify(mageRProgress);
 
       // Award Mage XP
       if (spellbookMages > 0 || schoolSpellbookMages > 0) {
@@ -1550,7 +1550,7 @@ function processTurn(k, db = null) {
 
   if (hasCompleted) {
     deposits = deposits.filter((d) => d.status === "active");
-    updates.bank_deposits = JSON.stringify(deposits);
+    updates.bank_deposits = safeJsonStringify(deposits);
     updates.gold = (updates.gold || k.gold) + depositPayout;
     events.push({
       type: "system",
@@ -1733,7 +1733,7 @@ function processTurn(k, db = null) {
 
   updates.xp = totalXp;
   updates.level = currentLevel;
-  updates.xp_sources = JSON.stringify(xpSourcesAccum);
+  updates.xp_sources = safeJsonStringify(xpSourcesAccum);
 
   // ── Milestone check ───────────────────────────────────────────────────────────
   if (currentLevel > prevLevel) {
@@ -1770,7 +1770,7 @@ function processTurn(k, db = null) {
       const unitLevel = tls[keyUnit]?.level || 1;
       if (unitLevel >= 25) {
         racialData[keyUnit] = true;
-        updates.racial_bonuses_unlocked = JSON.stringify(racialData);
+        updates.racial_bonuses_unlocked = safeJsonStringify(racialData);
         const RACIAL_MSGS = {
           dwarf:
             "⚒️ Your engineers have reached mastery — Dwarven war machines now need only 1 engineer to crew.",
@@ -1963,7 +1963,7 @@ async function resolveEpicTrek(db, exp, kingdom) {
         }
 
         if (discoveredCount > 0) {
-          updates.discovered_kingdoms = JSON.stringify(disc);
+          updates.discovered_kingdoms = safeJsonStringify(disc);
           rewards.push({
             text: `Your explorers discovered ${discoveredCount} kingdom${discoveredCount !== 1 ? 's' : ''}!`,
           });
@@ -2133,7 +2133,7 @@ async function resolveExpeditions(db, k, engine) {
           } catch {}
           if (!disc[other.id]) {
             disc[other.id] = { found: true, name: other.name };
-            updates.discovered_kingdoms = JSON.stringify(disc);
+            updates.discovered_kingdoms = safeJsonStringify(disc);
             rewards.push({
               text: `Your rangers discovered the kingdom of ${other.name}!`,
             });
@@ -2150,7 +2150,7 @@ async function resolveExpeditions(db, k, engine) {
         const frag =
           WORLD_FRAGMENTS[Math.floor(Math.random() * WORLD_FRAGMENTS.length)];
         frags.push(frag);
-        updates.world_fragments = JSON.stringify(frags);
+        updates.world_fragments = safeJsonStringify(frags);
         rewards.push({
           text: `Your rangers recovered a World Fragment: ${frag}`,
         });
@@ -2257,7 +2257,7 @@ async function resolveExpeditions(db, k, engine) {
       const kingdomXp = awardXp(freshK, "exploration", kingdomXpBase * (exp.rangers + (exp.fighters || 0)));
       updates.xp = kingdomXp.xp;
       updates.level = kingdomXp.level;
-      updates.xp_sources = JSON.stringify(kingdomXp.xp_sources);
+      updates.xp_sources = safeJsonStringify(kingdomXp.xp_sources);
       if (kingdomXp.events.length > 0) {
         events.push(...kingdomXp.events);
       }
@@ -2278,7 +2278,7 @@ async function resolveExpeditions(db, k, engine) {
         try {
           let disc = safeJsonParse(updates.discovered_kingdoms || k.discovered_kingdoms, {}, "reveal_all:discovered_kingdoms");
           disc._all_revealed = true;
-          updates.discovered_kingdoms = JSON.stringify(disc);
+          updates.discovered_kingdoms = safeJsonStringify(disc);
         } catch (err) {
           console.error("[resolveExpeditions] Error revealing all locations:", err);
         }
@@ -2347,7 +2347,7 @@ async function resolveExpeditions(db, k, engine) {
       }
 
       // Save rewards to expedition row for log display
-      const rewardJson = JSON.stringify(rewards.map((r) => r.text));
+      const rewardJson = safeJsonStringify(rewards.map((r) => r.text));
       await db.run("UPDATE expeditions SET rewards = $1 WHERE id = $2", [
         rewardJson,
         exp.id,
@@ -2374,7 +2374,7 @@ async function resolveExpeditions(db, k, engine) {
         );
       const errMsg = `${exp.type} expedition returned -- an error occurred calculating rewards (troops returned safely).`;
       await db.run("UPDATE expeditions SET rewards = $1 WHERE id = $2", [
-        JSON.stringify([errMsg]),
+        safeJsonStringify([errMsg]),
         exp.id,
       ]);
       await db.run(

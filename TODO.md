@@ -2,20 +2,13 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-15 (tidy-up: removed stale/duplicate sections already covered in ARCHIVAL.md, archived resolved items, corrected the elevation system's status, dropped the now-superseded region-randomization item)
+**Last updated:** 2026-07-15 (closed Turn Processing Phase 3d — measured against real data, no optimization needed; tidy-up: removed stale/duplicate sections already covered in ARCHIVAL.md, archived resolved items, corrected the elevation system's status, dropped the now-superseded region-randomization item)
 
 ---
 
 ## Active Work
 
-### Turn Processing Phase 3d — CPU optimization (conditional, not yet gated)
-**Status:** Profiling infrastructure is fully built and instrumented (Phase 3a/3b/3c — see ARCHIVAL.md). Nobody has run it against real data yet.
-**Next step:** Run `node game/measure-turn-real.js <kingdomId>` against a real kingdom. Only proceed with optimization work if the results show:
-- JSON parsing cost >100ms, OR
-- any single attunement function >10ms, OR
-- synergy lookups >100/turn
-
-If none of those trip, this item can close with no further work needed.
+_(none — see ARCHIVAL.md's 2026-07-15 entry for Turn Processing Phase 3d closure)_
 
 ---
 

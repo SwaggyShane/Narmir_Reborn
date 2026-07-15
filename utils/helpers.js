@@ -1,5 +1,7 @@
 // Shared utility functions
 
+const { getProfiler } = require('../game/profiling');
+
 const _parseCache = new Map();
 const MAX_CACHE_SIZE = 5000;
 
@@ -31,8 +33,10 @@ function safeJsonParse(str, fallback = {}, context = "unknown") {
     return shallowCopy(val);
   }
 
+  const start = performance.now();
   try {
     const val = JSON.parse(str);
+    getProfiler().recordJsonParse(performance.now() - start);
     if (_parseCache.size >= MAX_CACHE_SIZE) {
       const oldestKey = _parseCache.keys().next().value;
       _parseCache.delete(oldestKey);
@@ -45,6 +49,17 @@ function safeJsonParse(str, fallback = {}, context = "unknown") {
     );
     return fallback;
   }
+}
+
+// Timed counterpart to safeJsonParse, for the write side (turn processing
+// serializes ~15 JSON columns per turn). Feeds the same profiler so
+// TODO.md's "JSON cost >100ms" budget check reflects real parse+stringify
+// cost instead of only counting attunement time.
+function safeJsonStringify(value) {
+  const start = performance.now();
+  const result = JSON.stringify(value);
+  getProfiler().recordJsonStringify(performance.now() - start);
+  return result;
 }
 
 function roll(chance) {
@@ -65,6 +80,7 @@ function devLog(...args) {
 
 module.exports = {
   safeJsonParse,
+  safeJsonStringify,
   roll,
   rand,
   clearParseCache,
