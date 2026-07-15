@@ -2,17 +2,11 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-15 (closed Turn Processing Phase 3d — measured against real data, no optimization needed; tidy-up: removed stale/duplicate sections already covered in ARCHIVAL.md, archived resolved items, corrected the elevation system's status, dropped the now-superseded region-randomization item)
+**Last updated:** 2026-07-15 (moved all previously-deferred items — elevation system, Fog of War Phase 5, Admin Wishlist — into Active Work per explicit instruction; closed Turn Processing Phase 3d — measured against real data, no optimization needed; tidy-up: removed stale/duplicate sections already covered in ARCHIVAL.md, archived resolved items, corrected the elevation system's status, dropped the now-superseded region-randomization item)
 
 ---
 
 ## Active Work
-
-_(none — see ARCHIVAL.md's 2026-07-15 entry for Turn Processing Phase 3d closure)_
-
----
-
-## Deferred Work — Post-Beta / Future Phases
 
 ### Elevation system — partially coded, not connected (verified 2026-07-15)
 **Status:** Real implementation exists for parts of all three original phases, but nothing is wired end-to-end. Not "spec-only" and not "done" — see the correction note in ARCHIVAL.md's 2026-07-15 entry for how this was found to diverge from an earlier (false) completion claim.
@@ -30,17 +24,17 @@ What's actually true today:
 3. Decide whether the river-flow DAG is worth connecting to anything, or should be deleted as dead code (nothing currently consumes it, and the map's actual rivers use a different system already).
 4. Decide whether to actually flip `FEATURE_ELEVATION_COMBAT` / `_MOVEMENT` / `_SPELLS` on, and whether `USE_COMBAT_V2` needs to become the default combat path first.
 
-### Fog of War Phase 5: Expansion Hooks — POST-PHASE 4
-**Status:** Deferred, scope defined, no work started.
+### Fog of War Phase 5: Expansion Hooks
+**Status:** Scope defined, no work started yet.
 **Scope:** Special locations, map items, terrain-scoped discovery difficulty.
-**Gate:** Deferred post-Phase 4 fog rendering completion (Phase 4 is done — see ARCHIVAL.md).
+**Note:** Was previously gated on Phase 4 fog rendering completion — Phase 4 is done (see ARCHIVAL.md), so this is now unblocked.
 
-### Admin Wishlist Plan (40+ Deferred Features) — LONG-TERM BACKLOG
-**Status:** Backlog, organized, no work started.
+### Admin Wishlist Plan (40+ Features)
+**Status:** Organized backlog, no work started yet.
 **Categories (7):** Gameplay (7), Combat (7), Economy (5), World (6), Polish (4), Partial features (4).
 **Notable items:** Diplomacy, espionage, religion, artifact hunting, auction house, weather systems, dynamic world events, custom UI themes.
 **Reference:** `/home/user/Narmir_Reborn/ADMIN_WISHLIST_PLAN.md`
-**Timeline:** Post-Beta; prioritize based on player feedback.
+**Note:** 40+ discrete features — pick items to prioritize rather than treating this as one task.
 
 ---
 

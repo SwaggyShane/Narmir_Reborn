@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-15 (closed Turn Processing Phase 3d after fixing broken measurement script and unwired profiler counters; TODO.md tidy-up: archived Turn Processing Phase 2/3a/3b, corrected false elevation completion claim)
+**Last updated:** 2026-07-15 (noted: elevation system, Fog of War Phase 5, and Admin Wishlist moved from TODO.md's Deferred Work into Active Work per explicit instruction — this is a prioritization change, not new completed work; closed Turn Processing Phase 3d after fixing broken measurement script and unwired profiler counters; TODO.md tidy-up: archived Turn Processing Phase 2/3a/3b, corrected false elevation completion claim)
 
 ---
 
