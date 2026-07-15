@@ -566,6 +566,29 @@ const coreSchema = `
     CREATE INDEX IF NOT EXISTS idx_res_expeditions_kingdom_recent ON resource_expeditions(kingdom_id, status, depart_at DESC);
     CREATE INDEX IF NOT EXISTS idx_res_expeditions_kingdom_depart ON resource_expeditions(kingdom_id, depart_at DESC);
 
+    -- Turn-based node harvesting (replaces resource_expeditions' real-time
+    -- outbound/harvesting/returning model): travel_turns is a fixed cost
+    -- computed once at launch (1.5 turns/hex, round trip included, matching
+    -- game/location-distance.js's dungeon/mountain convention), harvest_turns
+    -- is player-chosen (higher turns = higher yield), turns_left counts both
+    -- down together each turn tick until the party returns.
+    CREATE TABLE IF NOT EXISTS resource_harvests (
+      id SERIAL PRIMARY KEY,
+      kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
+      node_id INTEGER NOT NULL REFERENCES resource_nodes(id),
+      population_sent INTEGER NOT NULL,
+      travel_turns INTEGER NOT NULL,
+      harvest_turns INTEGER NOT NULL,
+      turns_left INTEGER NOT NULL,
+      food_taken INTEGER NOT NULL DEFAULT 0,
+      resource_type TEXT NOT NULL,
+      richness INTEGER NOT NULL DEFAULT 1,
+      yield_amount INTEGER,
+      rewards_claimed INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
+    );
+    CREATE INDEX IF NOT EXISTS idx_resource_harvests_kingdom ON resource_harvests(kingdom_id, turns_left);
+
     -- Discord / chat sync / world seed / test
     CREATE TABLE IF NOT EXISTS discord_links (
       id SERIAL PRIMARY KEY,

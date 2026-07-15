@@ -22,9 +22,9 @@ const { structureUpdates } = require('./response-structurer');
 const { decorateNewsMessage } = require("../game/news-emoji");
 const { EPOCH_NOW } = require("../lib/db-sql");
 const { pgInList, pgValueTuples } = require("../lib/pg-placeholders");
-const { getKingdomMapCoords, placeResourceNodeCoords } = require("../game/world-map-coords");
+const { getKingdomMapCoords } = require("../game/world-map-coords");
 const { getRegionLocations, isPubliclyDiscovered } = require("../game/world-locations");
-const { getTerrainForRace, getTerrainModifiers, generateMixedBiomes } = require("../game/terrain");
+const { getTerrainForRace } = require("../game/terrain");
 const { getWorldSeed } = require("../game/world-seed");
 const { getKingdomVisibility, updateKingdomVisibility } = require('../game/visibility');
 const { getCompletedRing } = require('../game/scout-rings');
@@ -93,50 +93,6 @@ async function getRandomKingdom(db, selfId, excludedIds = [], columns = "id, nam
   }
 
   return null;
-}
-
-async function batchUpdateExpeditions(db, updates, staticStatus, variableFields = []) {
-  if (!updates || updates.length === 0) return;
-
-  const ids = updates
-    .map((row) => Number(row.id))
-    .filter((id) => Number.isInteger(id) && id > 0);
-  if (ids.length === 0) return;
-
-  let paramIdx = 1;
-  const setParts = [`status = $${paramIdx++}`];
-  const params = [staticStatus];
-
-  for (const field of variableFields) {
-    const caseParts = updates.map(() => {
-      const part = `WHEN $${paramIdx} THEN $${paramIdx + 1}`;
-      paramIdx += 2;
-      return part;
-    }).join(" ");
-    setParts.push(`${field} = CASE id ${caseParts} END`);
-    for (const row of updates) {
-      params.push(row.id, row[field]);
-    }
-  }
-
-  const inList = pgInList(ids.length, paramIdx);
-  params.push(...ids);
-  await db.run(
-    `UPDATE resource_expeditions SET ${setParts.join(", ")} WHERE id IN (${inList})`,
-    params,
-  );
-}
-
-async function batchCompleteExpeditions(db, ids) {
-  const cleanIds = ids
-    .map((id) => Number(id))
-    .filter((id) => Number.isInteger(id) && id > 0);
-  if (cleanIds.length === 0) return;
-
-  await db.run(
-    `UPDATE resource_expeditions SET status = 'completed' WHERE id IN (${pgInList(cleanIds.length)})`,
-    cleanIds,
-  );
 }
 
 // Kingdoms we've already logged deprecated-inventory items for, so the warning fires
@@ -465,7 +421,8 @@ module.exports = function (db) {
         engine,
       );
       console.timeEnd(`[turn-${k.id}] resolveExpeditions`);
-      expeditionEvents = expeditionEvents.map(normalizeNewsRow);
+      const harvestEvents = await engine.resolveResourceHarvests(db, { ...k, ...updates });
+      expeditionEvents = expeditionEvents.concat(harvestEvents).map(normalizeNewsRow);
       if (expeditionEvents.length > 0) {
         const turnNum = updates.turn || k.turn;
         await bulkInsertNews(
@@ -522,32 +479,6 @@ module.exports = function (db) {
     }
 
     const allEvents = [...cleanEvents, ...expeditionEvents];
-
-    // Process real-time resource expeditions and persist their loot
-    try {
-      console.time(`[turn-${k.id}] processResourceExpeditions`);
-      const { kUpdates: expUpdates, lootEvents } = await processResourceExpeditionsDb(k.id, { ...k, ...updates });
-      console.timeEnd(`[turn-${k.id}] processResourceExpeditions`);
-      if (Object.keys(expUpdates).length > 0) {
-        await applyUpdates(db, k.id, expUpdates);
-        Object.assign(updates, expUpdates);
-      }
-      if (lootEvents.length > 0) {
-        const turnNum = updates.turn || k.turn;
-        const cleanLootEvents = lootEvents.map(normalizeNewsRow);
-        await bulkInsertNews(db, cleanLootEvents.map(ev => ({ kingdom_id: k.id, type: ev.type || 'system', message: ev.message, turn_num: turnNum })));
-        allEvents.push(...cleanLootEvents);
-      }
-    } catch (err) {
-      console.error('[runTurn] resource expedition resolve error:', err.message);
-      // Only throw if in an active transaction (safe to rollback)
-      // Endpoints like /search call runTurn without transaction context
-      const store = db.transactionStorage?.getStore?.();
-      if (store && !store.released) {
-        throw err; // Rethrow to trigger transaction rollback
-      }
-      // If no transaction: log but don't throw (prevent lost turns)
-    }
 
     return { updates, events: allEvents };
   }
@@ -2011,147 +1942,135 @@ module.exports = function (db) {
   // RESOURCE GATHERING SYSTEM
   // â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
-  const {
-    initItemsArray,
-    addItemToInventory,
-  } = engine;
-
-  const { RARE_RESOURCE_ITEMS, RESOURCE_NODE_NAMES, HARVEST_DURATION_BY_RICHNESS } = config;
-
-  // GET /resource-nodes — list all discovered nodes for this kingdom
+  // GET /resource-nodes — list world-seeded nodes this kingdom has revealed
+  // (scouted into view via fog of war), each annotated with hex distance
+  // from home and the turn cost to travel there and back (1.5 turns/hex,
+  // matching game/location-distance.js's dungeon/mountain convention).
   router.get('/resource-nodes', requireAuth, async (req, res) => {
     try {
-      const k = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
+      const k = await db.get('SELECT id, race, visibility FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
-      const nodes = await db.all('SELECT * FROM resource_nodes WHERE kingdom_id = $1 ORDER BY discovered_at DESC', [k.id]);
-      res.json(nodes);
+
+      const vis = await getKingdomVisibility(db, k);
+      const homeCoords = getKingdomMapCoords(k);
+
+      const nodes = await db.all('SELECT * FROM resource_nodes WHERE kingdom_id IS NULL ORDER BY id ASC');
+      const revealed = nodes
+        .filter((n) => {
+          const h = pixelToHex(n.map_x, n.map_y);
+          return safeBitmapHasCell(vis.seenCells, h.col, h.row);
+        })
+        .map((n) => {
+          const hexDistance = hexUnitDistance(homeCoords.map_x, homeCoords.map_y, n.map_x, n.map_y);
+          return {
+            ...n,
+            hex_distance: Math.round(hexDistance * 10) / 10,
+            travel_turns: Math.ceil(hexDistance * 1.5),
+          };
+        });
+
+      res.json(revealed);
     } catch (e) {
       console.error('[resource-nodes] GET:', e.message);
       res.status(500).json({ error: 'Failed to load resource nodes' });
     }
   });
 
-  // GET /expeditions — list all resource expeditions for this kingdom
-  router.get('/resource-expeditions', requireAuth, async (req, res) => {
+  // GET /resource-harvests — list this kingdom's active turn-based harvest engagements
+  router.get('/resource-harvests', requireAuth, async (req, res) => {
     try {
       const k = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
-      const exps = await db.all(
-        `SELECT re.*, rn.name as node_name, rn.type as node_type, rn.richness, rn.distance
-         FROM resource_expeditions re
-         JOIN resource_nodes rn ON re.node_id = rn.id
-         WHERE re.kingdom_id = $1 AND re.status != 'completed'
-         ORDER BY re.depart_at DESC`,
-        [k.id]
+      const harvests = await db.all(
+        `SELECT rh.*, rn.name as node_name
+         FROM resource_harvests rh
+         JOIN resource_nodes rn ON rh.node_id = rn.id
+         WHERE rh.kingdom_id = $1 AND rh.turns_left > 0
+         ORDER BY rh.created_at DESC`,
+        [k.id],
       );
-      res.json(exps.map(e => ({ ...e, loot: safeJsonParse(e.loot, {}, 'expeditions:loot') })));
+      res.json(harvests);
     } catch (e) {
-      console.error('[resource-expeditions] GET:', e.message);
-      res.status(500).json({ error: 'Failed to load expeditions' });
+      console.error('[resource-harvests] GET:', e.message);
+      res.status(500).json({ error: 'Failed to load resource harvests' });
     }
   });
 
-  // POST /scout-node — pay 500 gold, generate a random resource node
-  router.post('/scout-node', requireAuth, requireCsrfToken, async (req, res) => {
+  // POST /resource-harvest/launch — send population to harvest a revealed node.
+  // Travel turns are fixed by distance; harvest turns are player-chosen
+  // (higher turns = higher yield). Food for the whole engagement (travel
+  // there + harvest + travel back) is deducted upfront, matching how
+  // dungeon/mountain/epic-trek expeditions already charge food up front.
+  router.post('/resource-harvest/launch', requireAuth, requireCsrfToken, async (req, res) => {
     try {
-      const k = await db.get('SELECT id, gold, race FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
+      const { nodeId, population, harvestTurns } = req.body;
+      const pop = parseInt(population, 10);
+      const hTurns = parseInt(harvestTurns, 10);
+      if (!nodeId || !Number.isInteger(pop) || pop < 1) {
+        return res.status(400).json({ error: 'nodeId and a positive population are required' });
+      }
+      if (!Number.isInteger(hTurns) || hTurns < 1) {
+        return res.status(400).json({ error: 'harvestTurns must be a positive integer' });
+      }
+
+      const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [req.player.playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
-      if (k.gold < 500) return res.status(400).json({ error: 'Need 500 gold to scout a node.' });
 
-      // Weighted type selection
-      const typeRoll = Math.random();
-      let nodeType;
-      if (typeRoll < 0.35) nodeType = 'wood';
-      else if (typeRoll < 0.65) nodeType = 'stone';
-      else if (typeRoll < 0.90) nodeType = 'iron';
-      else nodeType = 'gold';
+      const node = await db.get('SELECT * FROM resource_nodes WHERE id = $1 AND kingdom_id IS NULL', [nodeId]);
+      if (!node) return res.status(404).json({ error: 'Node not found' });
 
-      // Weighted richness selection (1:30%, 2:30%, 3:25%, 4:10%, 5:5%)
-      const rRoll = Math.random();
-      let richness;
-      if (rRoll < 0.30) richness = 1;
-      else if (rRoll < 0.60) richness = 2;
-      else if (rRoll < 0.85) richness = 3;
-      else if (rRoll < 0.95) richness = 4;
-      else richness = 5;
+      const vis = await getKingdomVisibility(db, k);
+      const nodeHex = pixelToHex(node.map_x, node.map_y);
+      if (!safeBitmapHasCell(vis.seenCells, nodeHex.col, nodeHex.row)) {
+        return res.status(400).json({ error: 'You have not revealed this node yet' });
+      }
 
-      // Random distance 600—28800 seconds
-      const distance = Math.floor(Math.random() * 28200) + 600;
+      const homeCoords = getKingdomMapCoords(k);
+      const hexDistance = hexUnitDistance(homeCoords.map_x, homeCoords.map_y, node.map_x, node.map_y);
+      const travelTurns = Math.ceil(hexDistance * 1.5);
+      const totalTurns = travelTurns + hTurns;
 
-      // Pick name from pool
-      const namePool = RESOURCE_NODE_NAMES[nodeType] || RESOURCE_NODE_NAMES.wood;
-      const name = namePool[Math.floor(Math.random() * namePool.length)];
+      const onHarvest = await db.get(
+        "SELECT COALESCE(SUM(population_sent), 0) as total FROM resource_harvests WHERE kingdom_id = $1 AND turns_left > 0",
+        [k.id],
+      );
+      const freePop = Math.max(0, (k.population || 0) - engine.totalHiredUnits(k) - Number(onHarvest.total));
+      if (pop > freePop) {
+        return res.status(400).json({ error: `Only ${freePop.toLocaleString()} free population available.` });
+      }
 
-      // Get home coordinates to determine biome generation seed
-      const home = getKingdomMapCoords({ id: k.id, race: k.race });
-      const hex = pixelToHex(home.map_x, home.map_y);
+      const FOOD_PER_POP_PER_TURN = 0.5; // matches the Mountain's Heart expedition's away-from-home food rate
+      const foodNeeded = Math.ceil(pop * totalTurns * FOOD_PER_POP_PER_TURN);
+      if (k.food < foodNeeded) {
+        return res.status(400).json({ error: `Requires ${foodNeeded.toLocaleString()} food for the journey (you have ${Math.floor(k.food).toLocaleString()}).` });
+      }
 
-      // Generate mixed biomes for this region (deterministic based on race)
-      // Seed with race and region to ensure consistency
-      const regionSeed = k.race.charCodeAt(0) * 101 + hex.col * 97 + hex.row * 73;
-      const seedRandom = (seed) => {
-        const x = Math.sin(seed) * 10000;
-        return x - Math.floor(x);
-      };
-
-      // Generate 6-8 biome patches for the region
-      const patchCount = 6 + Math.floor(seedRandom(regionSeed) * 3);
-      const regionBiomes = generateMixedBiomes(k.race, patchCount);
-
-      // Select terrain from biome mix based on distance (pseudo-random but deterministic per location)
-      const nodeSeed = distance * 37 + k.race.charCodeAt(Math.min(1, k.race.length - 1)) * 89;
-      const terrainIndex = Math.floor(seedRandom(nodeSeed) * regionBiomes.length);
-      const terrain = regionBiomes[terrainIndex];
-      let result;
-      let nodeCoords;
-      await db.run("BEGIN TRANSACTION");
+      await db.run('BEGIN TRANSACTION');
       try {
-        // Atomic balance check: verify sufficient gold within UPDATE to prevent race conditions
-        const goldResult = await db.run('UPDATE kingdoms SET gold = gold - 500 WHERE id = $1 AND gold >= 500', [k.id]);
-        if (goldResult.changes === 0) {
-          await db.run("ROLLBACK");
-          return res.status(400).json({ error: 'Need 500 gold to scout a node.' });
+        const deduct = await db.run(
+          'UPDATE kingdoms SET food = GREATEST(0, food - $1), population = GREATEST(0, population - $2) WHERE id = $3 AND food >= $4 AND population >= $5',
+          [foodNeeded, pop, k.id, foodNeeded, pop],
+        );
+        if (deduct.changes === 0) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: 'Insufficient food or population (concurrent change).' });
         }
-        result = await db.run(
-          'INSERT INTO resource_nodes (kingdom_id, name, type, distance, richness, terrain) VALUES ($1, $2, $3, $4, $5, $6)',
-          [k.id, name, nodeType, distance, richness, terrain]
-        );
-        nodeCoords = placeResourceNodeCoords({
-          kingdomId: k.id,
-          nodeId: result.lastID,
-          race: k.race,
-          distance,
-          kingdomX: home.map_x,
-          kingdomY: home.map_y,
-        });
         await db.run(
-          'UPDATE resource_nodes SET map_x = $1, map_y = $2 WHERE id = $3',
-          [nodeCoords.map_x, nodeCoords.map_y, result.lastID],
+          `INSERT INTO resource_harvests
+             (kingdom_id, node_id, population_sent, travel_turns, harvest_turns, turns_left, food_taken, resource_type, richness)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [k.id, nodeId, pop, travelTurns, hTurns, totalTurns, foodNeeded, node.type, node.richness],
         );
-        await db.run("COMMIT");
+        await db.run('COMMIT');
       } catch (txErr) {
-        await db.run("ROLLBACK");
+        await db.run('ROLLBACK');
         throw txErr;
       }
 
-      res.json({
-        ok: true,
-        node: {
-          id: result.lastID,
-          kingdom_id: k.id,
-          name,
-          type: nodeType,
-          distance,
-          richness,
-          terrain,
-          map_x: nodeCoords.map_x,
-          map_y: nodeCoords.map_y,
-          discovered_at: Math.floor(Date.now() / 1000),
-        },
-      });
+      res.json({ ok: true, travelTurns, totalTurns, foodTaken: foodNeeded });
     } catch (e) {
-      console.error('[scout-node] POST:', e.message);
-      res.status(500).json({ error: 'Failed to scout node' });
+      console.error('[resource-harvest/launch] POST:', e.message);
+      res.status(500).json({ error: 'Failed to launch harvest' });
     }
   });
 
@@ -2311,191 +2230,6 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/launch — start a resource expedition to a discovered node
-  router.post('/expedition/launch', requireAuth, requireCsrfToken, async (req, res) => {
-    try {
-      const { nodeId, populationSent } = req.body;
-      if (!nodeId || !populationSent) return res.status(400).json({ error: 'nodeId and populationSent required' });
-      if (populationSent < 10) return res.status(400).json({ error: 'Must send at least 10 population.' });
-
-      // Lock kingdom to prevent concurrent launches from using same resources
-      const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [req.player.playerId]);
-      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
-
-      // Free population cap — max 25% of free pop can go on an expedition
-      // Also subtract population already deployed on active expeditions (belt-and-suspenders)
-      const onExp = await db.get(
-        "SELECT SUM(population_sent) as total FROM resource_expeditions WHERE kingdom_id = $1 AND status NOT IN ('completed','intercepted')",
-        [k.id]
-      );
-      const freePop = Math.max(0, k.population - engine.totalHiredUnits(k) - (onExp?.total || 0));
-      const maxPop = Math.floor(freePop * 0.25);
-      if (populationSent > maxPop)
-        return res.status(400).json({ error: `Can only send up to 25% of free population (${maxPop.toLocaleString()} max).` });
-
-      const node = await db.get('SELECT * FROM resource_nodes WHERE id = $1 AND kingdom_id = $2', [nodeId, k.id]);
-      if (!node) return res.status(404).json({ error: 'Node not found or does not belong to you.' });
-
-      // Check no active expedition to this node
-      const activeExp = await db.get(
-        "SELECT id FROM resource_expeditions WHERE kingdom_id = $1 AND node_id = $2 AND status NOT IN ('completed','intercepted')",
-        [k.id, nodeId]
-      );
-      if (activeExp) return res.status(400).json({ error: 'You already have an active expedition to this node.' });
-
-      // Get expedition speed bonus (race + terrain)
-      const raceBonus = engine.raceBonus ? (engine.raceBonus(k, 'expedition_speed') || 1.0) : 1.0;
-      const terrainMods = getTerrainModifiers(node.terrain);
-      const travelTime = Math.ceil(node.distance / raceBonus / terrainMods.expSpeed);
-      const harvestDuration = HARVEST_DURATION_BY_RICHNESS[node.richness] || 3600;
-      const totalSeconds = travelTime * 2 + harvestDuration; // outbound + harvest + return
-      const totalMinutes = totalSeconds / 60;
-      const TURNS_PER_MINUTE = 0.28; // 7 turns per 25-minute regen cycle
-      const turnsEquiv = totalMinutes * TURNS_PER_MINUTE;
-      // Food rate: floor(populationSent / 100) per turn Ã— racial multiplier, same as kingdom pop formula
-      const raceFoodMult = engine.FOOD_CONSUMPTION_MULT[k.race] || 1.0;
-      const foodPerTurn = Math.max(1, Math.floor(populationSent / 100)) * raceFoodMult;
-      const foodNeeded = Math.ceil(turnsEquiv * foodPerTurn * 0.75); // 25% discount
-      if (k.food < foodNeeded)
-        return res.status(400).json({ error: `Expedition requires ${foodNeeded.toLocaleString()} food for the journey (you have ${k.food.toLocaleString()}).` });
-
-      const now = Math.floor(Date.now() / 1000);
-      const arrive_at = now + travelTime;
-
-      // Depart: remove population and food from kingdom atomically
-      await db.run("BEGIN TRANSACTION");
-      try {
-        // Atomic check-and-deduct: verify sufficient resources AND deduct in single UPDATE
-        // This prevents two simultaneous launches from both seeing sufficient food
-        const foodResult = await db.run(
-          'UPDATE kingdoms SET food = GREATEST(0, food - $1), population = GREATEST(0, population - $2) WHERE id = $3 AND food >= $4 AND population >= $5',
-          [foodNeeded, populationSent, k.id, foodNeeded, populationSent]
-        );
-        if (foodResult.changes === 0) {
-          await db.run("ROLLBACK");
-          return res.status(400).json({
-            error: `Expedition requires ${foodNeeded.toLocaleString()} food and ${populationSent.toLocaleString()} population. Check your resources.`
-          });
-        }
-        await db.run(
-          'INSERT INTO resource_expeditions (kingdom_id, node_id, population_sent, depart_at, arrive_at, status, loot, food_taken) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-          [k.id, nodeId, populationSent, now, arrive_at, 'outbound', '{}', foodNeeded]
-        );
-        await db.run("COMMIT");
-      } catch (txErr) {
-        await db.run("ROLLBACK");
-        throw txErr;
-      }
-
-      // Expedition ahead reveal: reveal the target node's hex (per 'ahead' mode in plan)
-      try {
-        const nodeHex = pixelToHex(node.map_x, node.map_y);
-        await updateKingdomVisibility(db, k.id, (current) => {
-          let seen = current.seenCells;
-          if (!safeBitmapHasCell(seen, nodeHex.col, nodeHex.row)) {
-            seen = safeBitmapAddCell(seen, nodeHex.col, nodeHex.row);
-          }
-          return { seenCells: seen, currentCells: seen, version: current.version || 1 };
-        });
-      } catch (visErr) {
-        console.error('Failed to update visibility after expedition launch (non-fatal):', visErr);
-        // Continue to return success to avoid inconsistent client state; visibility can be refreshed on next load
-      }
-
-      res.json({ ok: true, arrive_at, travelTime, foodTaken: foodNeeded });
-    } catch (e) {
-      console.error('[expedition/launch] POST:', e.message);
-      res.status(500).json({ error: 'Failed to launch expedition' });
-    }
-  });
-
-  // POST /expedition/intercept — orc-only interception
-  router.post('/expedition/intercept', requireAuth, requireCsrfToken, async (req, res) => {
-    try {
-      const { expeditionId, fighters } = req.body;
-      const k = await db.get('SELECT id, name, turn, race, fighters, wood, stone, iron, gold FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
-      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
-      if (k.race !== 'orc') return res.status(403).json({ error: 'Only Orcs can intercept expeditions.' });
-      if (!fighters || fighters < 1) return res.status(400).json({ error: 'Must send at least 1 fighter.' });
-      if (k.fighters < fighters) return res.status(400).json({ error: 'Not enough fighters.' });
-
-      const exp = await db.get(
-        "SELECT re.*, rn.type as node_type, rn.richness FROM resource_expeditions re JOIN resource_nodes rn ON re.node_id = rn.id WHERE re.id = $1 AND re.status IN ('outbound','harvesting')",
-        [expeditionId]
-      );
-      if (!exp) return res.status(404).json({ error: 'Expedition not found or not interceptable.' });
-      if (exp.kingdom_id === k.id) return res.status(400).json({ error: 'Cannot intercept your own expedition.' });
-
-      const defender = await db.get('SELECT id FROM kingdoms WHERE id = $1', [exp.kingdom_id]);
-      if (!defender) return res.status(404).json({ error: 'Defending kingdom not found.' });
-
-      // Combat: attacker power = fighters, defender power = populationSent * 0.1
-      const attackPower = fighters;
-      const defendPower = exp.population_sent * 0.1;
-      const success = attackPower > defendPower * 3;
-
-      let loot = safeJsonParse(exp.loot, {}, 'intercept:loot');
-      const newsMessages = [];
-
-      if (success) {
-        // Steal loot and return the expedition population to the defender
-        await db.run("UPDATE resource_expeditions SET status = 'intercepted', loot = '{}' WHERE id = $1", [exp.id]);
-        await db.run('UPDATE kingdoms SET population = population + $1 WHERE id = $2', [exp.population_sent, exp.kingdom_id]);
-        // Give loot to attacker
-        const lootUpdates = {};
-        for (const [res, qty] of Object.entries(loot)) {
-          if (qty > 0 && ['wood','stone','iron','gold'].includes(res)) {
-            lootUpdates[res] = (k[res] || 0) + qty;
-          }
-        }
-        if (Object.keys(lootUpdates).length > 0) {
-          await applyKingdomUpdates(k.id, lootUpdates);
-        }
-      newsMessages.push({ kingdom_id: k.id, message: repairMojibake(`âš"ï¸ Your warriors intercepted an expedition! You seized: ${JSON.stringify(loot)}.`) });
-      newsMessages.push({ kingdom_id: exp.kingdom_id, message: repairMojibake(`ðŸš¨ Orc raiders from ${k.name} intercepted your expedition and stole your loot! Your ${exp.population_sent.toLocaleString()} people fled home.`) });
-      } else {
-        // Attacker takes casualties
-        const casualties = Math.floor(fighters * 0.3);
-        await db.run('UPDATE kingdoms SET fighters = fighters - $1 WHERE id = $2', [casualties, k.id]);
-        newsMessages.push({ kingdom_id: k.id, message: repairMojibake(`âš"ï¸ Your warriors failed to intercept the expedition. Lost ${casualties} fighters.`) });
-        newsMessages.push({ kingdom_id: exp.kingdom_id, message: repairMojibake(`ðŸ›¡ï¸ Your expedition successfully repelled Orc raiders from ${k.name}!`) });
-      }
-
-      for (const nm of newsMessages) {
-        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1, $2, $3, $4)', [nm.kingdom_id, 'system', nm.message, 0]);
-      }
-
-      res.json({ ok: true, success, loot: success ? loot : null });
-    } catch (e) {
-      console.error('[expedition/intercept] POST:', e.message);
-      res.status(500).json({ error: 'Failed to process interception' });
-    }
-  });
-
-  // GET /expeditions/visible — orc-only, returns other kingdoms' active expeditions
-  router.get('/expeditions/visible', requireAuth, async (req, res) => {
-    try {
-      const k = await db.get('SELECT id, race FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
-      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
-      if (k.race !== 'orc') return res.status(403).json({ error: 'Only Orcs can see other expeditions.' });
-
-      const exps = await db.all(
-        `SELECT re.id, re.status, re.arrive_at, re.harvest_ends_at, re.return_at,
-                re.population_sent, rn.type as node_type, kk.name as kingdom_name
-         FROM resource_expeditions re
-         JOIN resource_nodes rn ON re.node_id = rn.id
-         JOIN kingdoms kk ON re.kingdom_id = kk.id
-         WHERE re.kingdom_id != $1 AND re.status NOT IN ('completed','intercepted')
-         ORDER BY re.depart_at DESC LIMIT 100`,
-        [k.id]
-      );
-      res.json(exps);
-    } catch (e) {
-      console.error('[expeditions/visible] GET:', e.message);
-      res.status(500).json({ error: 'Failed to load visible expeditions' });
-    }
-  });
-
   // POST /resource-upgrade — purchase stage 2 or 3 upgrade for a resource type
   router.post('/resource-upgrade', requireAuth, requireCsrfToken, async (req, res) => {
     try {
@@ -2577,102 +2311,6 @@ module.exports = function (db) {
       res.status(500).json({ error: 'Failed to process resource upgrade' });
     }
   });
-
-  // â"€â"€ Process resource expeditions (called lazily from processTurn endpoint) â"€â"€â"€â"€
-  async function processResourceExpeditionsDb(kingdomId, k) {
-    const now = Math.floor(Date.now() / 1000);
-    const exps = await db.all(
-      "SELECT re.*, rn.type as node_type, rn.richness, rn.terrain FROM resource_expeditions re JOIN resource_nodes rn ON re.node_id = rn.id WHERE re.kingdom_id = $1 AND re.status NOT IN ('completed','intercepted')",
-      [kingdomId]
-    );
-
-    const lootEvents = [];
-    const kUpdates = {};
-    const outboundUpdates = [];
-    const harvestingUpdates = [];
-    const returningIds = [];
-
-    for (const exp of exps) {
-      const arriveAt = Number(exp.arrive_at) || 0;
-      const harvestEndsAt = Number(exp.harvest_ends_at) || 0;
-      const returnAt = Number(exp.return_at) || 0;
-
-      if (exp.status === 'outbound' && now >= arriveAt) {
-        const harvestDuration = HARVEST_DURATION_BY_RICHNESS[exp.richness] || 3600;
-        outboundUpdates.push({ id: exp.id, harvest_ends_at: now + harvestDuration });
-      } else if (exp.status === 'harvesting' && harvestEndsAt && now >= harvestEndsAt) {
-        // Compute loot (terrain resourceYield modifier applies a small bias)
-        const terrainMods = getTerrainModifiers(exp.terrain);
-        const baseLoot = exp.richness * 50 * (exp.population_sent / 100) * terrainMods.resourceYield;
-        const loot = { [exp.node_type]: Math.floor(baseLoot) };
-
-        // 5% chance bonus rare item
-        const rareItems = RARE_RESOURCE_ITEMS[exp.node_type];
-        const rareFindMult = engine.raceBonus ? (engine.raceBonus(k, 'rare_find') || 1.0) : 1.0;
-        const items = initItemsArray(safeJsonParse(k.items, [], 'processExpeditions:items'));
-        let itemsChanged = false;
-
-        if (Math.random() < 0.02 * rareFindMult) {
-          // 2% earth fragment
-          const ef = items.find(i => i.id === 'earth_fragment');
-          if (!ef || (ef.qty || 0) === 0) {
-            addItemToInventory(items, 'earth_fragment', 'Earth Fragment', 1);
-            itemsChanged = true;
-            loot._item = 'Earth Fragment';
-          }
-        } else if (rareItems && Math.random() < 0.05) {
-          // 5% rare resource item
-          const chosen = rareItems[Math.floor(Math.random() * rareItems.length)];
-          const existing = items.find(i => i.id === chosen.id);
-          if (!existing || (existing.qty || 0) < 3) {
-            addItemToInventory(items, chosen.id, chosen.name, 1);
-            itemsChanged = true;
-            loot._item = chosen.name;
-          }
-        }
-
-        if (itemsChanged) {
-          kUpdates.items = JSON.stringify(items);
-          k.items = kUpdates.items; // update local reference for subsequent expeditions
-        }
-
-        // Get race + terrain bonus for speed (already used arrive_at, but for return trip)
-        const raceSpeedMult = engine.raceBonus ? (engine.raceBonus(k, 'expedition_speed') || 1.0) : 1.0;
-        const travelTime = Math.ceil((exp.distance || 3600) / raceSpeedMult / terrainMods.expSpeed);
-        const return_at = now + travelTime;
-
-        harvestingUpdates.push({ id: exp.id, loot: JSON.stringify(loot), return_at });
-      } else if (exp.status === 'returning' && returnAt && now >= returnAt) {
-        const loot = safeJsonParse(exp.loot, {}, 'expedition:loot');
-        // Apply loot to kingdom
-        for (const [res, qty] of Object.entries(loot)) {
-          if (res.startsWith('_')) continue; // skip metadata
-          if (['wood','stone','iron','gold'].includes(res) && qty > 0) {
-            kUpdates[res] = (kUpdates[res] !== undefined ? kUpdates[res] : (k[res] || 0)) + qty;
-          }
-        }
-        // Return population to kingdom
-        kUpdates.population = (kUpdates.population !== undefined ? kUpdates.population : k.population) + exp.population_sent;
-        returningIds.push(exp.id);
-        lootEvents.push({ type: 'system', message: `ðŸ—‚ï¸ Expedition returned with: ${Object.entries(loot).filter(([k]) => !k.startsWith('_')).map(([r,q]) => `${q} ${r}`).join(', ')}.` });
-      }
-    }
-
-    if (outboundUpdates.length > 0) {
-      await batchUpdateExpeditions(db, outboundUpdates, 'harvesting', ['harvest_ends_at']);
-    }
-    if (harvestingUpdates.length > 0) {
-      await batchUpdateExpeditions(db, harvestingUpdates, 'returning', ['loot', 'return_at']);
-    }
-    if (returningIds.length > 0) {
-      await batchCompleteExpeditions(db, returningIds);
-    }
-
-    return { kUpdates, lootEvents };
-  }
-
-  // Attach this helper to be callable from the processTurn route
-  router._processResourceExpeditions = processResourceExpeditionsDb;
 
   // â"€â"€ Inventory â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.get('/inventory', requireAuth, async (req, res) => {

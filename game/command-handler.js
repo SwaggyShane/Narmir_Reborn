@@ -96,8 +96,10 @@ class CommandHandler {
   }
 
   // ── Expeditions ──
-  handleExpeditions(kingdom, db) {
-    return this.engine.resolveExpeditions(db, kingdom, this.engine);
+  async handleExpeditions(kingdom, db) {
+    const expeditionEvents = await this.engine.resolveExpeditions(db, kingdom, this.engine);
+    const harvestEvents = await this.engine.resolveResourceHarvests(db, kingdom);
+    return expeditionEvents.concat(harvestEvents);
   }
 
   // ── Combat ──

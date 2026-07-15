@@ -25,7 +25,7 @@ const { initDb } = require('../db/schema');
   
   // Decode col=5, row=4 (should be 589)
   const idx589 = (12 * 48) + 13;
-  console.log(`\nBit 589 is ${(bitmap & (1n << BigInt(589))) !== 0n ? 'SET' : 'NOT SET'}`);
+  console.log(`\nBit 589 is ${(bitmap & (1n << BigInt(idx589))) !== 0n ? 'SET' : 'NOT SET'}`);
   console.log(`Bit 633 is ${(bitmap & (1n << BigInt(633))) !== 0n ? 'SET' : 'NOT SET'}`);
   
   process.exit(0);

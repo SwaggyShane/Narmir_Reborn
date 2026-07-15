@@ -59,10 +59,9 @@ function stringHash(str) {
   return h;
 }
 
-function oceanBandForColumn(col) {
+function computeOceanBand(worldHeight) {
   const oceanLatitude = 0.2;
   const oceanBandWidth = 0.08;
-  const worldHeight = 1380;
   const startRow = Math.floor((oceanLatitude - oceanBandWidth / 2) * (worldHeight / HEX_VERT));
   const endRow = Math.floor((oceanLatitude + oceanBandWidth / 2) * (worldHeight / HEX_VERT));
   return { start: startRow, end: endRow };
@@ -269,6 +268,7 @@ export function buildHexGrid(W = 1999, H = 1380, worldSeed = 0) {
   const rows = Math.ceil(H / HEX_VERT) + 2;
   const cells = [];
   const cellMap = new Map();
+  const oceanBand = computeOceanBand(H);
 
   // Build cells
   for (let row = -1; row < rows; row++) {
@@ -277,7 +277,6 @@ export function buildHexGrid(W = 1999, H = 1380, worldSeed = 0) {
       if (x < -HEX_W || x > W + HEX_W || y < -HEX_VERT || y > H + HEX_VERT) continue;
 
       const race = nearestRaceHome(x, y);
-      const oceanBand = oceanBandForColumn(col);
       let terrain;
       if (row < oceanBand.start) {
         terrain = 'tundra';

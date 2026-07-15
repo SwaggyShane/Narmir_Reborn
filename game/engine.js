@@ -2387,6 +2387,53 @@ async function resolveExpeditions(db, k, engine) {
   return expeditionEvents;
 }
 
+// Turn-based node harvesting (replaces the old real-time resource_expeditions
+// flow): each row's turns_left covers travel there+back plus the chosen
+// harvest duration, ticking down by 1 per turn. Deliberately isolated from
+// resolveExpeditions/expeditionRewards above -- those are built around
+// rangers/fighters (attrition, troop XP, forage-rate formulas), none of
+// which apply to a population-based harvesting party.
+// yield = population * (richness / 100) * harvestTurns * this. richness is
+// stored on a 0-100 scale (currently a flat 100 default for every
+// world-seeded node -- see game/world-initialization.js), so dividing by
+// 100 keeps it a neutral 1.0x factor today while still leaving room to
+// vary node quality later without needing to touch this formula.
+const HARVEST_YIELD_RATE = 0.1;
+async function resolveResourceHarvests(db, k) {
+  const events = [];
+  const harvests = await db.all(
+    "SELECT * FROM resource_harvests WHERE kingdom_id = $1 AND turns_left > 0",
+    [k.id],
+  );
+
+  for (const h of harvests) {
+    const newTurnsLeft = Math.max(0, h.turns_left - 1);
+    if (newTurnsLeft > 0) {
+      await db.run("UPDATE resource_harvests SET turns_left = $1 WHERE id = $2", [newTurnsLeft, h.id]);
+      continue;
+    }
+
+    const yieldAmount = Math.round(h.population_sent * (h.richness / 100) * h.harvest_turns * HARVEST_YIELD_RATE);
+    const col = ["wood", "stone", "iron", "gold"].includes(h.resource_type) ? h.resource_type : "wood";
+
+    await db.run(
+      `UPDATE kingdoms SET ${col} = ${col} + $1, population = population + $2 WHERE id = $3`,
+      [yieldAmount, h.population_sent, k.id],
+    );
+    await db.run(
+      "UPDATE resource_harvests SET turns_left = 0, yield_amount = $1, rewards_claimed = 1 WHERE id = $2",
+      [yieldAmount, h.id],
+    );
+
+    events.push({
+      type: "system",
+      message: `Harvesting party returned from a node with ${yieldAmount.toLocaleString()} ${h.resource_type}.`,
+    });
+  }
+
+  return events;
+}
+
 // ── Mage Tower — scroll crafting and mana production ──────────────────────────
 
 // ── Gameplay (processActiveEffects extracted to game/lib/gameplay.js) ──
@@ -2580,6 +2627,7 @@ module.exports = {
   covertSabotage,
   resolveAllianceDefense,
   resolveExpeditions,
+  resolveResourceHarvests,
   awardXp,
   xpForLevel,
   xpToNextLevel,

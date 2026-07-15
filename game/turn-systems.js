@@ -15,7 +15,7 @@ class TurnSystem {
    * @param {array} events - Accumulated events
    * @returns {object} { updates: {...}, events: [...] } or null if no changes
    */
-  process(state, events) {
+  process(_state, _events) {
     throw new Error(`${this.name}.process() not implemented`);
   }
 }

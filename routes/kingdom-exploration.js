@@ -211,6 +211,7 @@ module.exports = function (db) {
       let expeditionEvents = [];
       try {
         expeditionEvents = await engine.resolveExpeditions(db, updatedK, engine);
+        expeditionEvents = expeditionEvents.concat(await engine.resolveResourceHarvests(db, updatedK));
       } catch (expErr) {
         console.error('[expedition/start] immediate resolution error:', expErr.message);
       }

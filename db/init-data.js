@@ -135,6 +135,29 @@ async function initializeAdditionalColumns(db, getTableColumns, addCol) {
   } catch (e) {
     console.error('[db] Migration: failed to relax admin_goal_definitions NOT NULL constraints:', e.message);
   }
+
+  // heroes.status/hp/max_hp: routes/hero.js inserts them and game/heroes.js's
+  // recruitHero() default object includes them, but the DDL only ever
+  // defined the base identity columns -- every turn's "idle heroes" query
+  // (routes/kingdom-gameplay.js) and combat's "idle heroes" lookups
+  // (routes/kingdom-warfare.js) were failing on every single turn.
+  const hCols = await getTableColumns('heroes');
+  if (!hCols.includes('status')) await addCol('heroes', 'status', "TEXT NOT NULL DEFAULT 'idle'", hCols);
+  if (!hCols.includes('hp')) await addCol('heroes', 'hp', 'INTEGER NOT NULL DEFAULT 200', hCols);
+  if (!hCols.includes('max_hp')) await addCol('heroes', 'max_hp', 'INTEGER NOT NULL DEFAULT 200', hCols);
+
+  // news.message: bulkInsertNews() and the client's NewsPanel.jsx both read
+  // and write a single "message" field, but the DDL only ever defined the
+  // older title/content shape -- every turn's news insert (and its dedup
+  // pre-check) was failing on every single turn.
+  const newsCols = await getTableColumns('news');
+  if (!newsCols.includes('message')) await addCol('news', 'message', 'TEXT', newsCols);
+  try {
+    await db.run('ALTER TABLE news ALTER COLUMN title DROP NOT NULL');
+    await db.run('ALTER TABLE news ALTER COLUMN content DROP NOT NULL');
+  } catch (e) {
+    console.error('[db] Migration: failed to relax news NOT NULL constraints:', e.message);
+  }
 }
 
 async function initializeMarketPrices(db) {

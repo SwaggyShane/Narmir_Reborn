@@ -6,14 +6,13 @@ import { useActivePanel } from '../../hooks/useActivePanel';
 import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
 import { dispatchExpeditionLogEntry } from '../../utils/expeditionLog.js';
 import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
-import { useRace } from '../../stores';
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
 const tabs = [
   { id: 'stockpiles', label: '📦 Stockpiles' },
   { id: 'buildings', label: '🏭 Buildings' },
-  { id: 'expeditions', label: '🧭 Expeditions' },
+  { id: 'nodes', label: '⛏️ Nodes' },
   { id: 'inventory', label: '🎒 Inventory' },
 ];
 
@@ -69,20 +68,7 @@ function getParsedStateProp(propName, fallback = {}) {
   return prop || fallback;
 }
 function fmt(n) { return (n || 0).toLocaleString(); }
-function formatDuration(secs) {
-  const h = Math.floor(secs / 3600);
-  const m = Math.floor((secs % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
-}
 function typeIcon(type) { return { wood: '🪵', stone: '🪨', iron: '🔗', gold: '💰' }[type] || '❓'; }
-function formatLoot(loot) {
-  if (!loot || typeof loot !== 'object') return '';
-  return Object.entries(loot).filter(([k]) => !k.startsWith('_')).map(([r, q]) => `${q} ${r}`).join(', ');
-}
-function statusColor(status) {
-  return { outbound: { color: 'var(--text3)' }, harvesting: { color: 'var(--gold)' }, returning: { color: 'var(--green)' }, completed: { color: 'var(--text3)' }, intercepted: { color: 'var(--red)' } }[status] || { color: 'var(--text3)' };
-}
 function itemIcon(id) {
   const icons = {
     earth_fragment: '🌍', water_fragment: '💧', fire_fragment: '🔥', air_fragment: '💨',
@@ -99,28 +85,20 @@ const ResourcesPanel = () => {
   const [showGuide, setShowGuide] = useState(false);
   const [kingdom, setKingdom] = useState({});
   const [items, setItems] = useState([]);
-  const [isOrc, setIsOrc] = useState(false);
   const [buildingInProgress, setBuildingInProgress] = useState({});
 
   const [nodes, setNodes] = useState([]);
-  const [activeExpeditions, setActiveExpeditions] = useState([]);
-  const [visibleExps, setVisibleExps] = useState([]);
-  const [expPop, setExpPop] = useState({});
+  const [activeHarvests, setActiveHarvests] = useState([]);
+  const [harvestPop, setHarvestPop] = useState({});
+  const [harvestTurns, setHarvestTurns] = useState({});
   const [launching, setLaunching] = useState({});
-  const [interceptFighters, setInterceptFighters] = useState({});
-  const [intercepting, setIntercepting] = useState({});
-  const [scouting, setScouting] = useState(false);
-  const [scoutMsg, setScoutMsg] = useState('');
-  const [now, setNow] = useState(Math.floor(Date.now() / 1000));
   const [engineerAllocations, setEngineerAllocations] = useState({});
   const { activePanel } = useActivePanel();
-  const race = useRace();
   currentResourcesState = {};
 
   const syncFromState = useCallback(() => {
     const s = getState();
     setKingdom(s);
-    setIsOrc(race === 'orc');
 
     const bq = getParsedStateProp('build_queue');
     setBuildingInProgress(prev => {
@@ -150,7 +128,7 @@ const ResourcesPanel = () => {
     let seq = s.resource_sequence || {};
     if (typeof seq === 'string') { try { seq = JSON.parse(seq); } catch { seq = {}; } }
     setKingdom(prev => ({...prev, _seq: seq}));
-  }, [race]);
+  }, []);
 
   const loadNodes = async () => {
     try {
@@ -158,17 +136,11 @@ const ResourcesPanel = () => {
       if (r.ok) setNodes(await r.json());
     } catch(e) { console.error(e); }
   };
-  const loadExpeditions = async () => {
+  const loadHarvests = async () => {
     try {
-      const r = await fetch('/api/kingdom/resource-expeditions', { credentials: 'include' });
-      if (r.ok) setActiveExpeditions(await r.json());
+      const r = await fetch('/api/kingdom/resource-harvests', { credentials: 'include' });
+      if (r.ok) setActiveHarvests(await r.json());
     } catch(e) { console.error(e); }
-  };
-  const loadVisibleExps = async () => {
-    try {
-      const r = await fetch('/api/kingdom/expeditions/visible', { credentials: 'include' });
-      if (r.ok) setVisibleExps(await r.json());
-    } catch (e) { console.error(e); }
   };
 
   const refreshKingdom = async () => {
@@ -196,11 +168,9 @@ const ResourcesPanel = () => {
   useEffect(() => {
     syncFromState();
     loadNodes();
-    loadExpeditions();
-    const cdt = setInterval(() => setNow(Math.floor(Date.now()/1000)), 1000);
+    loadHarvests();
     const refreshTimer = setInterval(syncFromState, REFRESH_INTERVAL_MS);
     return () => {
-      clearInterval(cdt);
       clearInterval(refreshTimer);
     };
   }, [syncFromState]);
@@ -209,12 +179,12 @@ const ResourcesPanel = () => {
     if (activePanel !== 'resources') return;
     syncFromState();
     loadNodes();
-    loadExpeditions();
+    loadHarvests();
   }, [activePanel, syncFromState]);
 
   useEffect(() => {
     if (activeTab === 'stockpiles' || activeTab === 'buildings') syncFromState();
-    if (activeTab === 'expeditions') { loadNodes(); loadExpeditions(); }
+    if (activeTab === 'nodes') { loadNodes(); loadHarvests(); }
     if (activeTab === 'inventory') syncFromState();
   }, [activeTab, syncFromState]);
 
@@ -340,59 +310,26 @@ const ResourcesPanel = () => {
     return isFinite(result) && result > 0 ? result : '∞';
   };
 
-  const scoutNode = async () => {
-    setScouting(true); setScoutMsg('');
-    try {
-      const data = await apiCall('/api/kingdom/scout-node', { method: 'POST' });
-      if (data.ok) {
-        setScoutMsg(`Discovered: ${data.node.name} (${data.node.type}, richness ${data.node.richness})`);
-        await loadNodes();
-        await refreshKingdom();
-        emitAppEvent(AppEvent.WORLDMAP_REFRESH);
-      } else {
-        setScoutMsg('Error: ' + (data.error || 'Unknown'));
-      }
-    } catch(e) { setScoutMsg('Error: ' + e.message); }
-    setScouting(false);
-  };
-  const launchExpedition = async (node) => {
-    const pop = expPop[node.id] || 0;
-    if (pop < 10) return;
+  const launchHarvest = async (node) => {
+    const pop = harvestPop[node.id] || 0;
+    const turns = harvestTurns[node.id] || 0;
+    if (pop < 1 || turns < 1) return;
     setLaunching(p => ({...p, [node.id]: true}));
     try {
-      const data = await apiCall('/api/kingdom/expedition/launch', {
+      const data = await apiCall('/api/kingdom/resource-harvest/launch', {
         method: 'POST',
-        body: { nodeId: node.id, populationSent: pop }
+        body: { nodeId: node.id, population: pop, harvestTurns: turns }
       });
       if (data.ok) {
-        await loadExpeditions();
-        const typeEmoji = { wood: '🪵', stone: '🪨', iron: '🔗' };
-        const icon = typeEmoji[node.type] || '🧭';
-        const foodStr = data.foodTaken > 0 ? ` - food ${data.foodTaken.toLocaleString()} taken` : '';
-        dispatchExpeditionLogEntry(icon, `Resource expedition departed to ${node.name}`, `${pop.toLocaleString()} civilians - ${node.type}${foodStr}`);
+        await loadHarvests();
+        const typeEmoji = { wood: '🪵', stone: '🪨', iron: '🔗', gold: '💰' };
+        const icon = typeEmoji[node.type] || '⛏️';
+        dispatchExpeditionLogEntry(icon, `Harvesting party departed to ${node.name}`, `${pop.toLocaleString()} civilians - ${data.totalTurns} turns total (${data.travelTurns} travel) - ${data.foodTaken.toLocaleString()} food taken`);
         await refreshKingdom();
         emitAppEvent(AppEvent.WORLDMAP_REFRESH);
       } else { if(toast) toast('Failed: ' + (data.error || 'Unknown'), 'error'); }
     } catch(e) { if(toast) toast('Error: ' + e.message, 'error'); }
     setLaunching(p => ({...p, [node.id]: false}));
-  };
-
-  const interceptExpedition = async (expId) => {
-    const fighters = interceptFighters[expId] || 0;
-    if (fighters < 1) return toast('Enter number of fighters.', 'error');
-    setIntercepting(p => ({...p, [expId]: true}));
-    try {
-      const data = await apiCall('/api/kingdom/expedition/intercept', {
-        method: 'POST',
-        body: { expeditionId: expId, fighters }
-      });
-      if (data.ok) {
-        if(toast) toast(data.success ? `Interception successful! Loot: ${JSON.stringify(data.loot)}` : 'Interception failed. Took casualties.', data.success ? 'success' : 'error');
-        await loadVisibleExps();
-        await refreshKingdom();
-      } else { if(toast) toast('Error: ' + (data.error || 'Unknown'), 'error'); }
-    } catch(e) { if(toast) toast('Error: ' + e.message, 'error'); }
-    setIntercepting(p => ({...p, [expId]: false}));
   };
   const startBuild = async (bld) => {
     const type = BUILDING_CONFIG[bld.key]?.type;
@@ -447,18 +384,7 @@ const ResourcesPanel = () => {
     }
   };
 
-  const hasActiveExpedition = (nodeId) => activeExpeditions.some(e => e.node_id === nodeId);
-  const countdown = (ts) => {
-    if (!ts) return 'N/A';
-    const diff = ts - now;
-    if (diff <= 0) return 'Done';
-    const h = Math.floor(diff / 3600);
-    const m = Math.floor((diff % 3600) / 60);
-    const s = diff % 60;
-    if (h > 0) return `${h}h ${m}m`;
-    if (m > 0) return `${m}m ${s}s`;
-    return `${s}s`;
-  };
+  const hasActiveHarvest = (nodeId) => activeHarvests.some(h => h.node_id === nodeId);
 
   const setMax = (bld) => {
     setEngineerAllocations((prev) => ({ ...prev, [bld.key]: getAvailableEngineers() }));
@@ -475,7 +401,7 @@ const ResourcesPanel = () => {
   const handleRefresh = useCallback(() => {
     syncFromState();
     loadNodes();
-    loadExpeditions();
+    loadHarvests();
   }, [syncFromState]);
 
   return (
@@ -705,44 +631,38 @@ const ResourcesPanel = () => {
         </div>
       )}
 
-      {activeTab === 'expeditions' && (
+      {activeTab === 'nodes' && (
         <div>
           <div className="card mb-3">
-            <div className="card-title">Scout New Nodes</div>
-            <div className='text-xs text-[var(--text3)] my-1.5 mb-2.5'>Pay 500 gold to discover a new resource node.</div>
-            <button onClick={scoutNode} disabled={scouting}
-              className="px-4 py-2 rounded-lg border-none cursor-pointer font-semibold bg-[var(--green)] text-black">
-              {scouting ? 'Scouting...' : '🔭 Scout Node (500 gold)'}
-            </button>
-            {scoutMsg && (
-              <div className={clsx('mt-2 text-[12px]', scoutMsg.startsWith('Error') ? 'text-[var(--red)]' : 'text-[var(--green)]')}>{scoutMsg}</div>
-            )}
-          </div>
-
-          <div className="card mb-3">
             <div className='flex justify-between items-center'>
-              <div className="card-title">Discovered Nodes ({nodes.length})</div>
+              <div className="card-title">Revealed Nodes ({nodes.length})</div>
               <button onClick={loadNodes} className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--bg2)] text-[var(--text3)] cursor-pointer text-[11px]">Refresh</button>
             </div>
-            {nodes.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No nodes discovered yet. Scout to find resource nodes!</div>}
+            <div className='text-xs text-[var(--text3)] my-1.5 mb-2.5'>
+              Scout hexes to reveal nodes. Sending population costs 1.5 turns per hex to travel there and back, plus however many turns you choose to harvest — more harvest turns means more resources, but the party needs enough food to last the whole trip.
+            </div>
+            {nodes.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No nodes revealed yet. Scout nearby hexes to find them.</div>}
             {nodes.map(node => (
               <div key={node.id} className="mt-2.5 p-2.5 rounded-lg bg-[var(--bg2)] border border-[var(--border)]">
                 <div className='flex justify-between items-start flex-wrap gap-2'>
                   <div>
                     <div className='font-semibold text-sm'>{node.name}</div>
                     <div className='text-[11px] text-[var(--text3)] mt-0.5'>
-                      {typeIcon(node.type)} {node.type} &nbsp;&middot;&nbsp; Richness: <span className='text-[var(--gold)]'>{'★'.repeat(node.richness)}</span>
-                      &nbsp;&middot;&nbsp; Distance: {formatDuration(node.distance)}
+                      {typeIcon(node.type)} {node.type} &nbsp;&middot;&nbsp; {node.hex_distance} hexes away
+                      &nbsp;&middot;&nbsp; {node.travel_turns} turns travel (there &amp; back)
                     </div>
                   </div>
-                  <div className='flex items-center gap-1.5'>
-                    <input type="number" min="10" placeholder="Pop (min 10)"
-                      value={expPop[node.id] || ''} onChange={(e) => setExpPop(p => ({...p, [node.id]: parseInt(e.target.value)}))}
-                      className="w-[100px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />
-                    <button onClick={() => launchExpedition(node)}
-                      disabled={hasActiveExpedition(node.id) || (expPop[node.id] || 0) < 10 || launching[node.id]}
-                      className={clsx('px-2.5 py-[5px] rounded border-none cursor-pointer text-[12px] font-semibold text-white', hasActiveExpedition(node.id) ? 'bg-[var(--text3)] cursor-not-allowed' : 'bg-[#3b82f6]')}>
-                      {hasActiveExpedition(node.id) ? 'Active' : launching[node.id] ? '...' : 'Dispatch'}
+                  <div className='flex items-center gap-1.5 flex-wrap'>
+                    <input type="number" min="1" placeholder="Pop"
+                      value={harvestPop[node.id] || ''} onChange={(e) => setHarvestPop(p => ({...p, [node.id]: parseInt(e.target.value, 10) || 0}))}
+                      className="w-[80px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />
+                    <input type="number" min="1" placeholder="Harvest turns"
+                      value={harvestTurns[node.id] || ''} onChange={(e) => setHarvestTurns(p => ({...p, [node.id]: parseInt(e.target.value, 10) || 0}))}
+                      className="w-[110px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />
+                    <button onClick={() => launchHarvest(node)}
+                      disabled={hasActiveHarvest(node.id) || (harvestPop[node.id] || 0) < 1 || (harvestTurns[node.id] || 0) < 1 || launching[node.id]}
+                      className={clsx('px-2.5 py-[5px] rounded border-none cursor-pointer text-[12px] font-semibold text-white', hasActiveHarvest(node.id) ? 'bg-[var(--text3)] cursor-not-allowed' : 'bg-[#3b82f6]')}>
+                      {hasActiveHarvest(node.id) ? 'Active' : launching[node.id] ? '...' : 'Send'}
                     </button>
                   </div>
                 </div>
@@ -752,58 +672,27 @@ const ResourcesPanel = () => {
 
           <div className="card mb-3">
             <div className='flex justify-between items-center'>
-              <div className="card-title">Active Expeditions ({activeExpeditions.length})</div>
-              <button onClick={loadExpeditions} className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--bg2)] text-[var(--text3)] cursor-pointer text-[11px]">Refresh</button>
+              <div className="card-title">Active Harvests ({activeHarvests.length})</div>
+              <button onClick={loadHarvests} className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--bg2)] text-[var(--text3)] cursor-pointer text-[11px]">Refresh</button>
             </div>
-            {activeExpeditions.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No active expeditions.</div>}
-            {activeExpeditions.map(exp => (
-              <div key={exp.id} className="mt-2.5 p-2.5 rounded-lg bg-[var(--bg2)] border border-[var(--border)]">
+            {activeHarvests.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No active harvests.</div>}
+            {activeHarvests.map(h => (
+              <div key={h.id} className="mt-2.5 p-2.5 rounded-lg bg-[var(--bg2)] border border-[var(--border)]">
                 <div className='flex justify-between items-start flex-wrap gap-2'>
                   <div>
-                    <div className='font-semibold text-sm'>{exp.node_name} <span className="text-[11px] text-[var(--text3)]">({typeIcon(exp.node_type)} {exp.node_type})</span></div>
+                    <div className='font-semibold text-sm'>{h.node_name} <span className="text-[11px] text-[var(--text3)]">({typeIcon(h.resource_type)} {h.resource_type})</span></div>
                     <div className='text-[11px] text-[var(--text3)] mt-0.5'>
-                      Pop: {fmt(exp.population_sent)} &middot; Status: <span style={statusColor(exp.status)}>{exp.status}</span>
-                      {exp.food_taken > 0 && <span> &middot; 🍖 {fmt(exp.food_taken)} food taken</span>}
+                      Pop: {fmt(h.population_sent)} &middot; {h.harvest_turns} harvest turns
+                      {h.food_taken > 0 && <span> &middot; 🍖 {fmt(h.food_taken)} food taken</span>}
                     </div>
-                    {exp.loot && Object.keys(exp.loot).filter(k => !k.startsWith('_')).length > 0 && (
-                      <div className="text-[11px] text-[var(--green)] mt-0.5">
-                        Loot: {formatLoot(exp.loot)}
-                      </div>
-                    )}
                   </div>
                   <div className="text-[11px] text-[var(--text3)] text-right whitespace-nowrap">
-                    {exp.status === 'outbound' && <div>Arrives: <span className='text-[var(--text)]'>{countdown(exp.arrive_at)}</span></div>}
-                    {exp.status === 'harvesting' && <div>Done: <span className='text-[var(--gold)]'>{countdown(exp.harvest_ends_at)}</span></div>}
-                    {exp.status === 'returning' && <div>Returns: <span className='text-[var(--green)]'>{countdown(exp.return_at)}</span></div>}
+                    <span className='text-[var(--gold)]'>{h.turns_left}</span> turns remaining
                   </div>
                 </div>
               </div>
             ))}
           </div>
-
-          {isOrc && (
-            <div className="card border border-[var(--red)]">
-              <div className="card-title" className='text-[var(--red)]'>Orc Interception</div>
-              <div className='text-xs text-[var(--text3)] my-1.5 mb-2.5'>Intercept other kingdoms' expeditions. Need 3x combat power of the civilians.</div>
-              <button onClick={loadVisibleExps} className="px-2.5 py-1 rounded border border-[var(--red)] bg-transparent text-[var(--red)] cursor-pointer text-[11px] mb-2">Scan Expeditions</button>
-              {visibleExps.length === 0 && <div className="text-[12px] text-[var(--text3)]">No visible expeditions.</div>}
-              {visibleExps.map(vExp => (
-                <div key={vExp.id} className="mt-2 p-2 bg-[var(--bg2)] rounded flex justify-between items-center flex-wrap gap-2">
-                  <div className='text-xs'>
-                    <span className='text-[var(--text3)]'>{vExp.kingdom_name}</span> - {typeIcon(vExp.node_type)} &middot; <span style={statusColor(vExp.status)}>{vExp.status}</span> &middot; Pop: {fmt(vExp.population_sent)}
-                  </div>
-                  <div className='flex items-center gap-1.5'>
-                    <input type="number" min="1" placeholder="Fighters" value={interceptFighters[vExp.id] || ''} onChange={(e) => setInterceptFighters(p => ({...p, [vExp.id]: parseInt(e.target.value)}))}
-                      className="w-[80px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />
-                    <button onClick={() => interceptExpedition(vExp.id)} disabled={intercepting[vExp.id]}
-                      className={clsx('px-2.5 py-[5px] rounded border-none cursor-pointer text-[12px] font-semibold bg-[var(--red)] text-white', intercepting[vExp.id] && 'opacity-50')}>
-                      {intercepting[vExp.id] ? '...' : 'Intercept'}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 

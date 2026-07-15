@@ -30,7 +30,7 @@ const clientConstants = {
     let serverIdx, clientIdx;
     try {
       serverIdx = serverHex.cellIndex(col, row);
-    } catch (e) {
+    } catch {
       serverIdx = -1; // treat throw as invalid for comparison
     }
     clientIdx = clientConstants.cellIndex(col, row);

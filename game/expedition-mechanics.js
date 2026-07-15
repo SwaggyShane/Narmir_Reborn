@@ -106,22 +106,10 @@ function validateTargetHex(durationVariant, homeCol, homeRow, targetCol, targetR
   return { valid: false, error: 'Invalid duration variant' };
 }
 
-/**
- * Calculate ETA (milliseconds from now) for expedition completion.
- * Each turn = 1500ms (25-minute turns in real time).
- */
-function calculateETA(totalTurns) {
-  const MS_PER_TURN = 1500; // 25 minutes = 1500 seconds = 1.5 million ms? No, 25 min = 25*60 = 1500 sec
-  // Actually, looking at the code, turns seem to be game turns. Let me use a reasonable approximation.
-  // Since we don't know the actual turn tick interval here, return total_turns for client to format.
-  return totalTurns;
-}
-
 module.exports = {
   calculateHexDistance,
   calculateTravelTime,
   calculateExpeditionDuration,
   isHexExplored,
   validateTargetHex,
-  calculateETA,
 };
