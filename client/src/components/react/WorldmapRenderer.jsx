@@ -221,18 +221,17 @@ const RACE_HOMES = {
   dire_wolf: { x: 289, y: 849 },
 };
 
-// Regions where a dominant biome, when it isn't chosen, can plausibly bleed
-// into an adjacent patch instead (keeps mixed biomes thematically coherent
-// rather than fully random).
-const BIOME_MIX_ALTERNATES = {
-  mountains: ['hills', 'forest'],
-  forest: ['hills', 'swamp'],
-  plains: ['hills', 'coast'],
-  hills: ['plains', 'forest', 'mountains'],
-  swamp: ['forest', 'coast'],
-  desert: ['hills', 'volcanic'],
-  coast: ['plains', 'swamp'],
-};
+// The 6 biomes every region must contain at least one hex of, on top of
+// its own predominant biome — excludes tundra/ocean/volcanic, which are
+// fixed by row-band position rather than region biome. Matches
+// worldMapBuilder.js's canonical list so both renderers agree.
+const ALL_BIOMES = ['plains', 'forest', 'mountains', 'hills', 'swamp', 'desert'];
+
+function stringHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  return h;
+}
 
 const SOUTH_BAND_FRAC = 0.15; // bottom strip of the map -> desert/volcanic
 
@@ -362,13 +361,10 @@ function buildHexGrid(W, H, worldSeed = 0) {
       } else if (y > H * (1 - SOUTH_BAND_FRAC)) {
         terrain = hexSeededRandom(col, row, 3, worldSeed) < 0.55 ? 'desert' : 'volcanic';
       } else {
-        const dominant = RACE_TO_TERRAIN[race] || 'plains';
-        if (hexSeededRandom(col, row, 1, worldSeed) < 0.7) {
-          terrain = dominant;
-        } else {
-          const alternates = BIOME_MIX_ALTERNATES[dominant] || ['plains'];
-          terrain = alternates[Math.floor(hexSeededRandom(col, row, 2, worldSeed) * alternates.length)];
-        }
+        // Predominant biome fill — the "at least one of every other biome"
+        // guarantee is applied in a second pass below, once every cell's
+        // race/dominant terrain is known. No percentage roll here.
+        terrain = RACE_TO_TERRAIN[race] || 'plains';
       }
 
       const cell = { col, row, x, y, race, terrain };
@@ -377,37 +373,74 @@ function buildHexGrid(W, H, worldSeed = 0) {
     }
   }
 
-  // One lake per region: the cell nearest that race's home point (guaranteed
-  // to belong to that race, since it's the same point the Voronoi assignment
-  // above is measured from) is overridden to lake terrain, regardless of what
-  // biome mix would otherwise have put there. Explicitly excludes ocean/
-  // tundra cells — a race's home can end up geometrically close to that
-  // latitude band, and picking one of those cells as the lake would steal a
-  // tile from the ocean, breaking its contiguity as one connected body. Also
-  // excludes any cell touching an ocean tile: a lake directly beside the
-  // ocean reads as the same body of water split by an arbitrary terrain
-  // label, not two distinct features.
+  // Guarantee every region contains at least one hex of every other biome
+  // (excluding tundra/ocean/volcanic, which are fixed by row-band position,
+  // not region biome). Deterministically reassign one dominant-biome cell
+  // per missing biome per race, seeded so the same world seed always picks
+  // the same cells.
+  Object.keys(RACE_HOMES).forEach((race) => {
+    const dominant = RACE_TO_TERRAIN[race] || 'plains';
+    const eligible = cells.filter((c) => c.race === race && c.terrain === dominant);
+    const raceHash = stringHash(race);
+
+    ALL_BIOMES.filter((b) => b !== dominant).forEach((biome, idx) => {
+      if (eligible.length === 0) return;
+      const pick = Math.floor(hexSeededRandom(raceHash, idx, 5, worldSeed) * eligible.length);
+      eligible[pick].terrain = biome;
+      eligible.splice(pick, 1);
+    });
+  });
+
+  // One lake per region — but only when the region actually needs it for
+  // water access. A region whose territory already borders the ocean has
+  // water access on its own, so a lake there is opportunistic, not
+  // required. A region with no direct ocean access MUST get one —
+  // hardened with a relaxed fallback so it can never silently end up with
+  // neither. Excludes ocean/tundra cells outright (stealing a tile from
+  // the ocean band would break its contiguity as one connected body), and
+  // prefers non-coastal candidates so a lake doesn't just read as the same
+  // body of water split by an arbitrary terrain label.
+  const touchesOcean = (c) => hexNeighborKeys(c.col, c.row).some((key) => {
+    const nb = cellMap.get(key);
+    return nb && nb.terrain === 'ocean';
+  });
+
   const lakeByRace = {};
   Object.keys(RACE_HOMES).forEach((race) => {
     const home = RACE_HOMES[race];
-    let best = null;
-    let bestDist = Infinity;
-    cells.forEach((c) => {
-      if (c.race !== race) return;
-      if (c.terrain === 'ocean' || c.terrain === 'tundra') return;
-      const touchesOcean = hexNeighborKeys(c.col, c.row).some((key) => {
-        const nb = cellMap.get(key);
-        return nb && nb.terrain === 'ocean';
+    const dominant = RACE_TO_TERRAIN[race] || 'plains';
+    const raceCells = cells.filter((c) => c.race === race);
+    const hasDirectOceanAccess = raceCells.some((c) => c.terrain === 'ocean' || touchesOcean(c));
+
+    const findBest = (allowCoastal) => {
+      let best = null;
+      let bestDist = Infinity;
+      raceCells.forEach((c) => {
+        // Restricted to still-dominant-biome cells only: the biome
+        // guarantee above deliberately converted a handful of cells to
+        // each of the region's other biomes, and with only one guaranteed
+        // cell per biome, this search picking one of those as the lake
+        // (it's just "closest to home", with no awareness of that
+        // reservation) would silently erase that biome from the region
+        // entirely. A dominant-biome cell can't cannibalize anything —
+        // there are dozens left after converting only 5 of them.
+        if (c.terrain !== dominant) return;
+        if (!allowCoastal && touchesOcean(c)) return;
+        const dx = c.x - home.x;
+        const dy = c.y - home.y;
+        const dist = dx * dx + dy * dy;
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = c;
+        }
       });
-      if (touchesOcean) return;
-      const dx = c.x - home.x;
-      const dy = c.y - home.y;
-      const dist = dx * dx + dy * dy;
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = c;
-      }
-    });
+      return best;
+    };
+
+    let best = findBest(false);
+    if (!best && !hasDirectOceanAccess) {
+      best = findBest(true);
+    }
     if (best) {
       best.terrain = 'lake';
       lakeByRace[race] = best;

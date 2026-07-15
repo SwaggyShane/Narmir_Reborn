@@ -44,19 +44,19 @@ const RACE_TO_TERRAIN = {
   ogre: 'mountains',
 };
 
-const BIOME_MIX_ALTERNATES = {
-  mountains: ['hills'],
-  forest: ['hills', 'swamp'],
-  hills: ['forest', 'plains'],
-  plains: ['hills', 'forest'],
-  swamp: ['forest', 'plains'],
-};
+const ALL_BIOMES = ['plains', 'forest', 'mountains', 'hills', 'swamp', 'desert'];
 
 const SOUTH_BAND_FRAC = 0.15;
 
 function hexSeededRandom(col, row, channel, seed = 0) {
   const x = Math.sin(col * 12.9898 + row * 78.233 + channel * 45.164 + seed * 94.67) * 43758.5453;
   return x - Math.floor(x);
+}
+
+function stringHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  return h;
 }
 
 function oceanBandForColumn(col) {
@@ -286,13 +286,10 @@ export function buildHexGrid(W = 1999, H = 1380, worldSeed = 0) {
       } else if (y > H * (1 - SOUTH_BAND_FRAC)) {
         terrain = hexSeededRandom(col, row, 3, worldSeed) < 0.55 ? 'desert' : 'volcanic';
       } else {
-        const dominant = RACE_TO_TERRAIN[race] || 'plains';
-        if (hexSeededRandom(col, row, 1, worldSeed) < 0.85) {
-          terrain = dominant;
-        } else {
-          const alternates = BIOME_MIX_ALTERNATES[dominant] || ['plains'];
-          terrain = alternates[Math.floor(hexSeededRandom(col, row, 2, worldSeed) * alternates.length)];
-        }
+        // Predominant biome fill — the "at least one of every other biome"
+        // guarantee is applied in a second pass below, once every cell's
+        // race/dominant terrain is known. No percentage roll here.
+        terrain = RACE_TO_TERRAIN[race] || 'plains';
       }
 
       const cell = { col, row, x, y, race, terrain };
@@ -301,28 +298,72 @@ export function buildHexGrid(W = 1999, H = 1380, worldSeed = 0) {
     }
   }
 
-  // Generate lakes - one per race
+  // Guarantee every region contains at least one hex of every other biome
+  // (excluding tundra/ocean/volcanic, which are fixed by row-band position,
+  // not region biome). Deterministically reassign one dominant-biome cell
+  // per missing biome per race, seeded so the same world seed always picks
+  // the same cells.
+  Object.keys(RACE_HOMES).forEach((race) => {
+    const dominant = RACE_TO_TERRAIN[race] || 'plains';
+    const eligible = cells.filter((c) => c.race === race && c.terrain === dominant);
+    const raceHash = stringHash(race);
+
+    ALL_BIOMES.filter((b) => b !== dominant).forEach((biome, idx) => {
+      if (eligible.length === 0) return;
+      const pick = Math.floor(hexSeededRandom(raceHash, idx, 5, worldSeed) * eligible.length);
+      eligible[pick].terrain = biome;
+      eligible.splice(pick, 1);
+    });
+  });
+
+  // Generate lakes - one per race. The real requirement is water access
+  // (a lake, a river, or direct ocean frontage all satisfy it), not
+  // literally owning a lake cell: a region whose territory already
+  // borders the ocean has water access on its own, so a lake there is
+  // opportunistic, not required. A region with no direct ocean access
+  // MUST get one — hardened with a relaxed fallback so it can never
+  // silently end up with neither.
+  const touchesOcean = (c) => hexNeighborKeys(c.col, c.row).some((key) => {
+    const nb = cellMap.get(key);
+    return nb && nb.terrain === 'ocean';
+  });
+
   const lakeByRace = {};
   Object.keys(RACE_HOMES).forEach((race) => {
     const home = RACE_HOMES[race];
-    let best = null;
-    let bestDist = Infinity;
-    cells.forEach((c) => {
-      if (c.race !== race) return;
-      if (c.terrain === 'ocean' || c.terrain === 'tundra') return;
-      const touchesOcean = hexNeighborKeys(c.col, c.row).some((key) => {
-        const nb = cellMap.get(key);
-        return nb && nb.terrain === 'ocean';
+    const dominant = RACE_TO_TERRAIN[race] || 'plains';
+    const raceCells = cells.filter((c) => c.race === race);
+    const hasDirectOceanAccess = raceCells.some((c) => c.terrain === 'ocean' || touchesOcean(c));
+
+    const findBest = (allowCoastal) => {
+      let best = null;
+      let bestDist = Infinity;
+      raceCells.forEach((c) => {
+        // Restricted to still-dominant-biome cells only: the biome
+        // guarantee above deliberately converted a handful of cells to
+        // each of the region's other biomes, and with only one guaranteed
+        // cell per biome, this search picking one of those as the lake
+        // (it's just "closest to home", with no awareness of that
+        // reservation) would silently erase that biome from the region
+        // entirely. A dominant-biome cell can't cannibalize anything —
+        // there are dozens left after converting only 5 of them.
+        if (c.terrain !== dominant) return;
+        if (!allowCoastal && touchesOcean(c)) return;
+        const dx = c.x - home.x;
+        const dy = c.y - home.y;
+        const dist = dx * dx + dy * dy;
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = c;
+        }
       });
-      if (touchesOcean) return;
-      const dx = c.x - home.x;
-      const dy = c.y - home.y;
-      const dist = dx * dx + dy * dy;
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = c;
-      }
-    });
+      return best;
+    };
+
+    let best = findBest(false);
+    if (!best && !hasDirectOceanAccess) {
+      best = findBest(true);
+    }
     if (best) {
       best.terrain = 'lake';
       lakeByRace[race] = best;

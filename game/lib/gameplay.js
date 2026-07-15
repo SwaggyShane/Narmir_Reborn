@@ -921,8 +921,8 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
     updates.items = JSON.stringify(inventory);
   }
 
-  // ── Throne of Nazdreg (0.1% on deep/epic-trek/dungeon, unique forever) ────────────────
-  const throneChance = (type === "deep" || type === "epic-trek" || type === "dungeon") ? 0.001 : 0;
+  // ── Throne of Nazdreg (0.1% on epic-trek/dungeon, unique forever) ────────────────
+  const throneChance = (type === "epic-trek" || type === "dungeon") ? 0.001 : 0;
   if (throneChance > 0 && roll(throneChance)) {
     updates._check_throne = true; // resolveExpeditions will check server_state and apply if unclaimed
   }

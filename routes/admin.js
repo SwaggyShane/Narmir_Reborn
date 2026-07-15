@@ -14,6 +14,7 @@ const { computeNextRunAt } = require("../lib/audit-scheduler");
 const { EPOCH_NOW } = require("../lib/db-sql");
 const { pgSetClause, pgSetClauseWithNextPlaceholder, pgValueTuples } = require("../lib/pg-placeholders");
 const { incrementUnread } = require("../cache");
+const { seedFirstRingNode } = require("../game/first-ring-node");
 
 const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
 const ALLOWED_SOUND_EXTENSIONS = new Set([".mp3", ".wav"]);
@@ -516,6 +517,9 @@ module.exports = function (db, io) {
           ],
         );
         kingdom = { id: insertResult.lastID, race };
+        seedFirstRingNode(db, kingdom.id, race).catch((err) =>
+          console.error(`[admin] Failed to seed first-ring node for kingdom ${kingdom.id}:`, err.message)
+        );
       } else {
         await db.run(
           "UPDATE kingdoms SET name = $1, race = $2, gender = $3, region = $4 WHERE id = $5",
@@ -1037,6 +1041,9 @@ module.exports = function (db, io) {
             ],
           );
           kingdom = { id: insertResult.lastID, race };
+          seedFirstRingNode(db, kingdom.id, race).catch((err) =>
+            console.error(`[admin] Failed to seed first-ring node for AI kingdom ${kingdom.id}:`, err.message)
+          );
         }
 
         results.push({ race, username, kingdomName, kingdomId: kingdom.id, created });

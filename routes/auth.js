@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const engine = require("../game/engine");
 const { generateCsrfToken } = require("./middleware");
+const { seedFirstRingNode } = require("../game/first-ring-node");
 
 const router = express.Router();
 
@@ -151,7 +152,7 @@ module.exports = function (db) {
         startingLand += count * cost;
       }
 
-      await db.run(
+      const kingdomResult = await db.run(
         `INSERT INTO kingdoms (
           player_id, name, race, gender, region, gold, land, population, food,
           researchers, engineers, fighters, rangers, thralls, turns_stored,
@@ -183,6 +184,9 @@ module.exports = function (db) {
           buildings.bld_training,
           buildings.bld_mausoleums || 0,
         ],
+      );
+      seedFirstRingNode(db, kingdomResult.lastID, chosenRace).catch((err) =>
+        console.error(`[auth] Failed to seed first-ring node for kingdom ${kingdomResult.lastID}:`, err.message)
       );
       const token = jwt.sign(
         { playerId: playerResult.lastID, username, isAdmin: isAdminUser },

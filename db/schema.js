@@ -823,6 +823,7 @@ async function initDb(options = {}) {
   // throws if it hasn't been loaded yet. Deferring this to after initDb()
   // returns would crash boot the first time a fresh DB actually has
   // resource_nodes rows needing a coordinate backfill.
+  const { getWorldSeed } = require('../game/world-seed');
   await require('../game/world-seed').loadWorldSeed(_db);
 
   // If seed was just created, run full resource initialization
@@ -833,6 +834,19 @@ async function initDb(options = {}) {
     } catch (err) {
       console.error('[db] World resource initialization failed:', err.message);
     }
+  }
+
+  // Seed the one dungeon + one mountain location per region (idempotent —
+  // seedRegionLocations only inserts whichever are missing) and load them
+  // into the in-memory cache. Must run every boot, not just on a fresh
+  // seed: this was previously never called anywhere, so world_locations
+  // stayed empty forever and dungeon/mountain expeditions could never be
+  // discovered regardless of any other fix.
+  try {
+    const { seedRegionLocations } = require('../game/world-locations');
+    await seedRegionLocations(_db, getWorldSeed().toString());
+  } catch (err) {
+    console.error('[db] Region location seeding failed:', err.message);
   }
 
   try {

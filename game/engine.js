@@ -21,7 +21,7 @@ const effectsProcessor = require("./synergy-effects-processor");
 const { processScoutProgress } = require("./scout-progress");
 const { getProgressMetrics } = require("./scout-rings");
 const { revealRingHexes } = require("./visibility");
-const { safeJsonParse, clearParseCache } = require('../utils/helpers');
+const { safeJsonParse, clearParseCache, roll, rand } = require('../utils/helpers');
 const { EPOCH_NOW } = require('../lib/db-sql');
 const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
 const { getProfiler, resetDevProfiler } = require('./profiling');
@@ -642,11 +642,72 @@ function processTurn(k, db = null) {
             subtitle: `Scout allocation progress`,
           },
         });
-        // Reveal new ring hexes if ring was completed
+        // Reveal new ring hexes if a ring was completed. scout_progress is
+        // cumulative, so a single turn's gain (e.g. a large ranger
+        // allocation) can cross more than one ring threshold at once —
+        // completed_ring_number is only the LAST one reached. Loop every
+        // ring from previous_ring+1 through completed_ring_number, or the
+        // in-between rings' hexes (and anything seeded on them, like a
+        // region's dungeon/mountain location) would never get revealed at
+        // all despite the kingdom's progress having already passed them.
         if (scoutResult.ring_completed && db && k.id) {
-          revealRingHexes(db, k.id, { ...k, ...updates }, scoutResult.completed_ring_number).catch(err =>
-            console.error(`[engine] Failed to reveal scout ring ${scoutResult.completed_ring_number}: ${err.message}`)
-          );
+          for (let r = scoutResult.previous_ring + 1; r <= scoutResult.completed_ring_number; r++) {
+            revealRingHexes(db, k.id, { ...k, ...updates }, r).catch(err =>
+              console.error(`[engine] Failed to reveal scout ring ${r}: ${err.message}`)
+            );
+          }
+        }
+
+        // Passive scouting prizes: junk + a small amount of a real
+        // resource, rolled every turn scouting is actively allocated —
+        // not just on ring completion. The active expedition types
+        // (scout/deep/dungeon/mountain/epic-trek) already have their own
+        // reward pools; passive ring-scouting previously had none at all,
+        // so junk could never actually turn up from it.
+        if (roll(0.05)) {
+          if (roll(0.7)) {
+            const found = junkPrize(k, updates);
+            events.push({
+              type: "system",
+              message: `🔍 Your scouts also found ${found}`,
+              skipNews: true,
+              expeditionLogEntry: {
+                icon: '🔍',
+                title: 'Scouting find',
+                subtitle: found,
+              },
+            });
+          } else {
+            const resourceRoll = Math.random();
+            let resourceType;
+            let amount;
+            if (resourceRoll < 0.4) {
+              resourceType = "gold";
+              amount = rand(10, 50);
+            } else if (resourceRoll < 0.65) {
+              resourceType = "wood";
+              amount = rand(5, 20);
+            } else if (resourceRoll < 0.9) {
+              resourceType = "stone";
+              amount = rand(5, 20);
+            } else {
+              resourceType = "land";
+              amount = rand(1, 2);
+            }
+            updates[resourceType] = (updates[resourceType] !== undefined ? updates[resourceType] : k[resourceType] || 0) + amount;
+            const label = resourceType === "land" ? `${amount} acre${amount > 1 ? "s" : ""} of land` : `${amount} ${resourceType}`;
+            const msg = `🔍 Your scouts also found +${label}`;
+            events.push({
+              type: "system",
+              message: msg,
+              skipNews: true,
+              expeditionLogEntry: {
+                icon: '🔍',
+                title: 'Scouting find',
+                subtitle: `+${label}`,
+              },
+            });
+          }
         }
       }
     } catch (err) {
