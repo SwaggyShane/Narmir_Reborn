@@ -2,11 +2,17 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-10 (GameStateManager migration, Elevation system, Exploration/Fog of War complete, upgrade UX fixes)
+**Last updated:** 2026-07-15 (TODO.md tidy-up: archived Turn Processing Phase 2/3a/3b, corrected false elevation completion claim)
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-15 (archived from TODO.md during cleanup — original work predates this date; see TODO.md history for exact timing)
+
+- **Turn Processing Fix Phase 2 — analysis complete, 2b rejected:** Investigated removing the kingdom re-fetch inside `resolveExpeditions` as a further optimization after Phase 1 (PR #845). Gemini review confirmed a real data-corruption risk: `processTurn` returns an `updates` object without mutating the in-memory kingdom, so skipping the re-fetch would let `resolveExpeditions` compute XP/rewards against stale values and silently corrupt the database. **Decision: kept the fetch.** 2a (batch expedition updates via CASE/WHEN) and 2c (batch hero XP updates via CASE/WHEN) were already implemented and remain in place.
+- **Turn Processing Fix Phase 3a/3b — profiling infrastructure complete (PR #837, #838):** Built `TurnProfiler` (JSON op timing, attunement call measurements, synergy lookup counts) using `AsyncLocalStorage` for thread-safe per-request profiling, integrated into `processTurn` and the `/turn` route, and instrumented all 18 attunement functions with `measureAttunement()`. Phase 3c (PR #839) added `game/measure-turn-real.js` for profiling real kingdoms. **Phase 3d (applying targeted optimizations) remains conditional** — only proceed if real profiling data shows JSON cost >100ms, any attunement >10ms, or synergy lookups >100/turn; this gate has not yet been checked against real data. See `TODO.md` for the still-open conditional item.
+- **World Generation Randomization item dropped (was: "FOG_OF_WAR_PLAN Phase 1.5", validated-but-deferred since 2026-07-03):** That item's own findings were a 47% region-misalignment rate in human kingdoms and 0.12% water spawns, with "REGION_SEEDS/RACE_HOMES realignment confirmed necessary" as the fix. That realignment has since happened (see Fog of War's "REGION_SEEDS/RACE_HOMES alignment verified" above) — re-ran `test/world-map-coords.test.js` on 2026-07-15 and confirmed 0% region misalignment and 0% water/tundra spawns across the sample. Separately, this session (2026-07-15) locked "the regions are always the same, the region borders are always the same" as an explicit, tested design decision (predominant-biome + guaranteed-diversity terrain generation, one lake/water-access rule per region, etc.) — which directly contradicts the old item's premise of *randomizing* region/biome placement per world. The bug that motivated this item is fixed, and its broader ask is now superseded by a deliberate opposite decision. Dropped from `TODO.md` rather than carried forward as either "deferred" or "complete."
 
 ### 2026-07-09
 
@@ -1968,7 +1974,7 @@ Completed work that was previously tracked in `ROADMAP.md` has been consolidated
 
 - **GameStateManager → Zustand Migration** (MIGRATION_GAMESTATE.md, completed 2026-07-09): Full migration complete in single sprint. All 6 phases implemented: Phase 1 (UIStore), Phase 1.5 (Normalizer), Phase 2 (Sync Points), Phase 3A (Dual Sources), Phase 3B (Smoke Gate), Phase 4-6 (Cleanup & Audit). Zero legacy references in active code.
 
-- **Elevation System Implementation** (ELEVATION_SYSTEM_IMPLEMENTATION.md, completed 2026-07-04): All 5 phases complete. Seeded FBM noise generation, organic river flow (DAG layer), tectonic plate alignment, erosion simulation, and biome-aware sea level normalization fully implemented and wired into world boot.
+- **Elevation System — correction (2026-07-15):** the entry previously here claimed "all 5 phases complete... wired into world boot," citing a `ELEVATION_SYSTEM_IMPLEMENTATION.md` that does not exist in this repo. That claim was false and has been removed. Verified ground truth as of 2026-07-15: `game/elevation.js`'s `generateElevationGrid` (Simplex-noise FBM + biome-band correlation) is real and correct, but its orchestrator `ensureWorldElevation` is never called from anywhere, and the `db/migrations/001-add-elevation-grid.js` migration that would add the storage column is never run — the column does not exist in the live database. `game/world-elevation.js`'s river-flow DAG (`buildDownhillDAG`, `computeFlowAccumulation`) has zero callers anywhere. Of the three Phase 3 gameplay hooks: combat (`calculateElevationBonus`) is correctly wired into `combat-resolver.js` but only reachable if `USE_COMBAT_V2=1` (unset locally); movement (`calculateMovementCost`) is correctly implemented inside `getEpicTrekTurns` but the live call site in `routes/kingdom-gameplay.js` never passes the elevation data it needs; spells (`canCastSpell`) has zero callers. No tectonic-plate or erosion-simulation code exists anywhere in the codebase. See the current `TODO.md` for the accurate status and what remains to actually finish this.
 
 - **Phase 2 Architectural Refactoring** (PHASE_2_COMPLETION.md, sandbox 2026-07-09): Command → Simulation → Events architecture complete in sandbox. All 6 critical slices implemented locally with atomic persistence and event-driven coordination. Addresses 4-tier coupling analysis.
 
