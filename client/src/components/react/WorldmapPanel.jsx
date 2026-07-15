@@ -905,6 +905,10 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                     <div className="text-[10px] text-[var(--text3)]">LAND</div>
                     <div className="text-[var(--gold)] font-bold">{fmtShort(mapCard.kingdom.land)}</div>
                   </div>
+                  <div className="bg-[var(--bg3)] rounded text-center p-2">
+                    <div className="text-[10px] text-[var(--text3)]">COORDINATES</div>
+                    <div className="font-bold">({Math.round(mapCard.kingdom.map_x)}, {Math.round(mapCard.kingdom.map_y)})</div>
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {!mapCard.isMe ? (

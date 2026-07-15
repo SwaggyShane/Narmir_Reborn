@@ -6,6 +6,7 @@ import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { getRaceSVGIcon } from '../../utils/raceIconsSVG.js';
 import { hexCenter, hexCorners, HEX_SIZE, HEX_W, HEX_VERT } from '../../utils/hexMap/HexGeometry.ts';
 import { RACE_HOMES } from '../../utils/worldMapBuilder.js';
+import { showMapKingdomCard } from './MapKingdomCard.jsx';
 
 const TERRAIN_COLORS = {
   plains: '#556b2f',
@@ -918,6 +919,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       }
 
       // Kingdom markers with race icons
+      const kingdomHitMeshes = [];
       kingdoms.forEach((kingdom) => {
         if (!kingdom.map_x || !kingdom.map_y) return;
 
@@ -961,7 +963,9 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const bgMaterial = new THREE.MeshBasicMaterial({ map: bgTexture, transparent: true });
         const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
         bgMesh.position.set(kingdom.map_x, -kingdom.map_y, 25);
+        bgMesh.userData.kingdomId = kingdom.id;
         scene.add(bgMesh);
+        kingdomHitMeshes.push(bgMesh);
 
         // Draw symbol (race icon from SVG with stroke)
         const symbolCanvas = document.createElement('canvas');
@@ -975,7 +979,9 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const symbolMesh = new THREE.Mesh(symbolGeometry, symbolMaterial);
         const symbolX = -bgWidth / 2 + padding + symbolSize / 2;
         symbolMesh.position.set(kingdom.map_x + symbolX, -kingdom.map_y, 26);
+        symbolMesh.userData.kingdomId = kingdom.id;
         scene.add(symbolMesh);
+        kingdomHitMeshes.push(symbolMesh);
 
         const svgString = getRaceSVGIcon(kingdom.race);
         if (svgString) {
@@ -1015,7 +1021,9 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const nameMesh = new THREE.Mesh(nameGeometry, nameMaterial);
         const nameX = -bgWidth / 2 + padding + symbolSize + textWidth / 2;
         nameMesh.position.set(kingdom.map_x + nameX, -kingdom.map_y, 26);
+        nameMesh.userData.kingdomId = kingdom.id;
         scene.add(nameMesh);
+        kingdomHitMeshes.push(nameMesh);
       });
 
       // Region name labels: wrapped title (matches the canvas renderer's
@@ -1304,6 +1312,29 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         e.preventDefault();
       };
 
+      // Left-click a kingdom marker to open the same interactive card the
+      // canvas renderer uses (attack/spell/trade/profile buttons) — 'click'
+      // only ever fires for the primary button, so this never conflicts
+      // with the right-click-drag pan or middle-click ortho reset above.
+      const raycaster = new THREE.Raycaster();
+      const mouseNDC = new THREE.Vector2();
+      const onContainerClick = (e) => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        mouseNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouseNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        const activeCamera = cameraState.inPerspective ? perspCamera : orthoCamera;
+        raycaster.setFromCamera(mouseNDC, activeCamera);
+        const intersects = raycaster.intersectObjects(kingdomHitMeshes);
+        if (intersects.length > 0) {
+          const kingdomId = intersects[0].object.userData.kingdomId;
+          if (kingdomId != null) {
+            showMapKingdomCard(kingdomId);
+          }
+        }
+      };
+
       window.addEventListener('keydown', onKeyDown);
       window.addEventListener('mousedown', onMouseDown);
       window.addEventListener('mousemove', onMouseMove);
@@ -1312,6 +1343,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       containerRef.current.addEventListener('wheel', onMouseWheel, {
         passive: false,
       });
+      containerRef.current.addEventListener('click', onContainerClick);
 
       let frame = 0;
       let animationFrameId = null;
@@ -1349,6 +1381,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         window.removeEventListener('contextmenu', onContextMenu);
         if (containerRef.current) {
           containerRef.current.removeEventListener('wheel', onMouseWheel);
+          containerRef.current.removeEventListener('click', onContainerClick);
           if (renderer.domElement.parentNode === containerRef.current) {
             containerRef.current.removeChild(renderer.domElement);
           }
