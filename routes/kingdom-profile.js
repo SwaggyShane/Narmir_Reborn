@@ -48,6 +48,7 @@ module.exports = function (db) {
 
     k.score = engine.calculateScore(k);
     k.defense_rating = engine.defenseRating(k);
+    k.fog_of_war_disabled = process.env.DISABLE_FOG_OF_WAR === 'true';
 
     let builtLand = 0;
     for (const [building, cost] of Object.entries(config.BUILDING_LAND_COST)) {

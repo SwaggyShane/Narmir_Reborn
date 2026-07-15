@@ -18,22 +18,11 @@ module.exports = function (db) {
     { name: 'gameplay', factory: require('./kingdom-gameplay') },
   ];
 
-  let kingdomGameplayRouter = null;
-
-  for (const { name, factory } of orderedRouters) {
-    const sub = factory(db);
-    if (name === 'gameplay') {
-      kingdomGameplayRouter = sub;
-    }
-    router.use(sub);
+  for (const { factory } of orderedRouters) {
+    router.use(factory(db));
   }
 
-  // Exploration depends on the gameplay router for some helpers (must be after)
-  if (kingdomGameplayRouter) {
-    router.use(require('./kingdom-exploration')(db, kingdomGameplayRouter));
-  } else {
-    router.use(require('./kingdom-exploration')(db, null));
-  }
+  router.use(require('./kingdom-exploration')(db));
 
   return router;
 };

@@ -95,6 +95,46 @@ async function initializeAdditionalColumns(db, getTableColumns, addCol) {
     await addCol('bounties', 'claimed_by_id', 'INTEGER');
     console.log('[db] Added missing claimed_by_id column to bounties');
   }
+
+  // news.is_read: read by game/sockets.js and routes/kingdom-gameplay.js for
+  // unread-count queries, but was never added to the DDL.
+  if (!nCols.includes('is_read')) await addCol('news', 'is_read', 'INTEGER NOT NULL DEFAULT 0', nCols);
+
+  // forum_boards category columns: lib/forum-seed.js groups boards under
+  // categories (community/warfare/alliances/roleplaying), but the DDL only
+  // ever defined the flat pre-category shape.
+  const fbCols = await getTableColumns('forum_boards');
+  const fbAdds = [
+    ['category_key', 'TEXT'],
+    ['category_label', 'TEXT'],
+    ['category_order', 'INTEGER'],
+  ];
+  for (const [col, def] of fbAdds) {
+    if (!fbCols.includes(col)) await addCol('forum_boards', col, def, fbCols);
+  }
+
+  // admin_goal_definitions: routes/admin.js reads/writes label, min_target,
+  // max_target, prize_type, prize_multiplier, but the DDL only ever defined
+  // title/description (an earlier goal-definition shape). Since the app no
+  // longer supplies title/description, they must stop being NOT NULL or
+  // every insert from routes/admin.js would fail constraint checks.
+  const agCols = await getTableColumns('admin_goal_definitions');
+  const agAdds = [
+    ['label', 'TEXT'],
+    ['min_target', 'INTEGER'],
+    ['max_target', 'INTEGER'],
+    ['prize_type', 'TEXT'],
+    ['prize_multiplier', 'NUMERIC'],
+  ];
+  for (const [col, def] of agAdds) {
+    if (!agCols.includes(col)) await addCol('admin_goal_definitions', col, def, agCols);
+  }
+  try {
+    await db.run('ALTER TABLE admin_goal_definitions ALTER COLUMN title DROP NOT NULL');
+    await db.run('ALTER TABLE admin_goal_definitions ALTER COLUMN description DROP NOT NULL');
+  } catch (e) {
+    console.error('[db] Migration: failed to relax admin_goal_definitions NOT NULL constraints:', e.message);
+  }
 }
 
 async function initializeMarketPrices(db) {
@@ -428,8 +468,6 @@ async function initializeResourceNodes(db) {
     'The Heartlands': { abundant: 'stone', count: 1 }, // human - plains
     'The Ashfang Wilds': { abundant: 'stone', count: 3 }, // dire wolf - hills
   };
-
-  const kingdoms = await db.all('SELECT id, x, y, region FROM kingdoms');
 
   for (const region of Object.values(RACE_REGIONS)) {
     // Base 3 nodes per region (wood, stone, iron)

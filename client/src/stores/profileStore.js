@@ -61,6 +61,9 @@ export const useProfileStore = create(
       // Scout allocation and progression
       scout_allocation: 0,
       scout_progress: 0,
+      first_dungeon_found_turn: null,
+      first_mountain_found_turn: null,
+      fog_of_war_disabled: false,
 
       // ===== ACTIONS =====
 
@@ -104,6 +107,9 @@ export const useProfileStore = create(
         if (data?.milestone_title !== undefined) state.milestone_title = data.milestone_title;
         if (data?.scout_allocation !== undefined) state.scout_allocation = data.scout_allocation;
         if (data?.scout_progress !== undefined) state.scout_progress = data.scout_progress;
+        if (data?.first_dungeon_found_turn !== undefined) state.first_dungeon_found_turn = data.first_dungeon_found_turn;
+        if (data?.first_mountain_found_turn !== undefined) state.first_mountain_found_turn = data.first_mountain_found_turn;
+        if (data?.fog_of_war_disabled !== undefined) state.fog_of_war_disabled = data.fog_of_war_disabled;
       }),
 
       /**

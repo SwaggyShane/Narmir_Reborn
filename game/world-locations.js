@@ -190,6 +190,18 @@ function hasDiscovered(location, kingdomId) {
   return location.discovered_by_kingdom_ids.includes(kingdomId);
 }
 
+/**
+ * Check if a location has been discovered at all, by anyone.
+ * Locations aren't owned by whichever kingdom finds them first — once any
+ * kingdom scouts one into view it's public knowledge for every kingdom of
+ * that region, not a private fact tied to the discovering kingdom's id.
+ * @param {object} location - Location object from DB
+ * @returns {boolean} True if any kingdom has discovered this location
+ */
+function isPubliclyDiscovered(location) {
+  return !!(location && location.discovered_by_kingdom_ids && location.discovered_by_kingdom_ids.length > 0);
+}
+
 module.exports = {
   loadLocationCache,
   seedRegionLocations,
@@ -197,5 +209,6 @@ module.exports = {
   getLocationByRegionAndType,
   markLocationDiscovered,
   hasDiscovered,
+  isPubliclyDiscovered,
   getRegionLocationCoords,
 };

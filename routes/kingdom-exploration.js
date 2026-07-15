@@ -39,7 +39,7 @@ function repairMojibake(value) {
   return text;
 }
 
-module.exports = function (db, kingdomGameplayRouter) {
+module.exports = function (db) {
   const router = express.Router();
   const EXP_TURNS = config.EXPEDITION_TURNS;
 
@@ -102,11 +102,14 @@ module.exports = function (db, kingdomGameplayRouter) {
 
           await markLocationDiscovered(db, location.id, k.id);
 
-          // Track first discovery (use === null to properly handle turn 0)
-          if (type === 'dungeon' && k.first_dungeon_found_turn === null) {
-            await db.run('UPDATE kingdoms SET first_dungeon_found_turn = $1 WHERE id = $2', [k.turn || 0, k.id]);
-          } else if (type === 'mountain' && k.first_mountain_found_turn === null) {
-            await db.run('UPDATE kingdoms SET first_mountain_found_turn = $1 WHERE id = $2', [k.turn || 0, k.id]);
+          // Track first discovery region-wide (use IS NULL to properly handle turn
+          // 0, and to leave any kingdom that already has it set alone). Locations
+          // aren't owned by whichever kingdom finds them first -- it's public
+          // domain knowledge for the whole region once anyone's discovered it.
+          if (type === 'dungeon') {
+            await db.run('UPDATE kingdoms SET first_dungeon_found_turn = $1 WHERE race = $2 AND first_dungeon_found_turn IS NULL', [k.turn || 0, k.race]);
+          } else if (type === 'mountain') {
+            await db.run('UPDATE kingdoms SET first_mountain_found_turn = $1 WHERE race = $2 AND first_mountain_found_turn IS NULL', [k.turn || 0, k.race]);
           }
 
           return { turnCost, distance, newTurnsStored };

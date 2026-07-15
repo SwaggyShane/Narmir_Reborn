@@ -63,7 +63,7 @@ const DEFAULT_LAYERS = {
   terrain: false,
 };
 
-export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions, setWorldSeed, setVisibility, setPlayerKingdomId } = {}) {
+export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions, setWorldLocations, setWorldSeed, setVisibility, setPlayerKingdomId } = {}) {
   if (typeof setLoading === 'function') setLoading(true);
   if (typeof setError === 'function') setError('');
   try {
@@ -74,10 +74,12 @@ export async function loadWorldMap({ setLoading, setError, setKingdoms, setTrade
     const tradeRoutes = data.tradeRoutes || [];
     const nodes = data.nodes || [];
     const expeditions = data.expeditions || [];
+    const worldLocations = data.worldLocations || [];
     if (typeof setKingdoms === 'function') setKingdoms(kingdoms);
     if (typeof setTradeRoutes === 'function') setTradeRoutes(tradeRoutes);
     if (typeof setNodes === 'function') setNodes(nodes);
     if (typeof setExpeditions === 'function') setExpeditions(expeditions);
+    if (typeof setWorldLocations === 'function') setWorldLocations(worldLocations);
     // Arrives in the same response as kingdoms, unlike the profile store's
     // kingdom_id (useKingdomId()), which is populated by a separate,
     // independent fetch and can still be null the first time the WebGL
@@ -501,6 +503,8 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
   const [highlightedRace, setHighlightedRace] = useState(null);
   const [mapCard, setMapCard] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [worldLocations, setWorldLocations] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState(null);
   const [layers, setLayers] = useState(DEFAULT_LAYERS);
   const [useWebGL, setUseWebGL] = useState(false);
   const [hexGrid, setHexGrid] = useState(null);
@@ -514,6 +518,7 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
   const mapAnimatedKeyRef = useRef('');
   const nodeCardRef = useRef(null);
   const kingdomCardRef = useRef(null);
+  const locationCardRef = useRef(null);
 
   // Build hexGrid when worldSeed changes (for WebGL rendering)
   useEffect(() => {
@@ -523,23 +528,41 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
     }
   }, [worldSeed]);
 
-  // Listen for kingdom and hex clicks from WebGL
+  // Listen for kingdom, node, and hex clicks from WebGL
   useEffect(() => {
     const handleKingdomClick = (e) => {
       setClickedKingdom(e.detail);
       setClickedHex(null);
+      setSelectedLocation(null);
+    };
+
+    const handleNodeClick = (e) => {
+      setSelectedNode(e.detail);
+      setSelectedLocation(null);
+      setMapCard(null);
+    };
+
+    const handleLocationClick = (e) => {
+      setSelectedLocation(e.detail);
+      setSelectedNode(null);
+      setMapCard(null);
     };
 
     const handleHexClick = (e) => {
       setClickedHex(e.detail);
       setClickedKingdom(null);
+      setSelectedLocation(null);
     };
 
     window.addEventListener('kingdomClicked', handleKingdomClick);
+    window.addEventListener('nodeClicked', handleNodeClick);
+    window.addEventListener('locationClicked', handleLocationClick);
     window.addEventListener('hexClicked', handleHexClick);
 
     return () => {
       window.removeEventListener('kingdomClicked', handleKingdomClick);
+      window.removeEventListener('nodeClicked', handleNodeClick);
+      window.removeEventListener('locationClicked', handleLocationClick);
       window.removeEventListener('hexClicked', handleHexClick);
     };
   }, []);
@@ -609,6 +632,14 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
     return cleanup;
   }, [mapCard]);
 
+  useLayoutEffect(() => {
+    const cleanup = animateMapPanelCard(locationCardRef.current, { visible: Boolean(selectedLocation) });
+    if (selectedLocation && locationCardRef.current) {
+      locationCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    return cleanup;
+  }, [selectedLocation]);
+
   // Separate effect for layer visibility toggles (doesn't require full re-entrance animation).
   // We deliberately avoid putting the full `layers` object into the mapSvg useMemo deps
   // (only .terrain affects SVG *content*). Toggling other layers only runs this effect
@@ -632,6 +663,7 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
       setTradeRoutes,
       setNodes,
       setExpeditions,
+      setWorldLocations,
       setWorldSeed,
       setVisibility,
       setPlayerKingdomId,
@@ -773,9 +805,20 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                     className="relative w-full h-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[#040710]"
                     style={{ minHeight: '520px', height: '600px' }}
                   >
-                    <WorldmapWebGL hexGrid={hexGrid} kingdoms={kingdoms} highlightedRace={highlightedRace} currentKingdomId={playerKingdomId} />
+                    <WorldmapWebGL hexGrid={hexGrid} kingdoms={kingdoms} highlightedRace={highlightedRace} currentKingdomId={playerKingdomId} nodes={nodes} tradeRoutes={tradeRoutes} expeditions={expeditions} worldLocations={worldLocations} layers={layers} />
                   </div>
-                ) : (
+                ) : null}
+                {useWebGL && hexGrid && (
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 px-1 text-[10px] text-[var(--text3)]">
+                    <span><strong className="text-[var(--text2)]">Left-click</strong> — select kingdoms, nodes, dungeons & mountain hearts</span>
+                    <span><strong className="text-[var(--text2)]">Right-click drag</strong> — pan</span>
+                    <span><strong className="text-[var(--text2)]">Scroll</strong> — zoom</span>
+                    <span><strong className="text-[var(--text2)]">↑ / ↓</strong> — pitch camera</span>
+                    <span><strong className="text-[var(--text2)]">← / →</strong> — rotate camera</span>
+                    <span><strong className="text-[var(--text2)]">Middle-click</strong> — reset to full map view</span>
+                  </div>
+                )}
+                {!useWebGL && (
                   <div
                     ref={viewportRef}
                     id="world-map-viewport"
@@ -845,6 +888,25 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                     ⛏️ Manage in Resources
                   </button>
                   <button className="base-btn text-[11px] px-2 py-1" onClick={() => setSelectedNode(null)}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {selectedLocation && (
+              <div ref={locationCardRef} className="card">
+                <div className="card-title !mb-2">
+                  {selectedLocation.type === 'dungeon' ? '⚔️ Dungeon' : "🏔️ Mountain's Heart"}
+                </div>
+                <div className="text-[12px] text-[var(--text3)] mb-3">
+                  Coordinates: ({Math.round(selectedLocation.x)}, {Math.round(selectedLocation.y)})
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button className="btn text-[11px] px-2 py-1" onClick={() => switchTab('exploration')}>
+                    {selectedLocation.type === 'dungeon' ? '⚔️ Launch Dungeon Raid' : "🏔️ Explore Mountain's Heart"}
+                  </button>
+                  <button className="base-btn text-[11px] px-2 py-1" onClick={() => setSelectedLocation(null)}>
                     Close
                   </button>
                 </div>

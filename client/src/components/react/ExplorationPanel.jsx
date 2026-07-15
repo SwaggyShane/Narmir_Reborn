@@ -90,6 +90,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const scout_progress = useProfileStore((state) => state.scout_progress);
   const first_dungeon_found_turn = useProfileStore((state) => state.first_dungeon_found_turn);
   const first_mountain_found_turn = useProfileStore((state) => state.first_mountain_found_turn);
+  const fog_of_war_disabled = useProfileStore((state) => state.fog_of_war_disabled);
   const population = usePopulationStore((state) => state.population);
   useGameMutationEvents();
 
@@ -988,8 +989,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               </div>
             </div>
 
-            {/* Epic Trek visible when Ring 2 complete: Ring 1 (20 turns) + Ring 2 (25 turns) = 45 scout-turns */}
-            {scout_progress >= 45 && (
+            {/* Epic Trek unlocks once passive scouting has completed Ring 2 -- or unconditionally when fog of war is disabled (test/debug mode). */}
+            {(fog_of_war_disabled || getCompletedRing(scout_progress) >= 2) && (
               <div className="card">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div className="card-title !mb-0">🛤️ Epic Trek</div>
@@ -1038,8 +1039,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               </div>
             )}
 
-            {/* Dungeon/Mountain expeditions - visible once discovered */}
-            {(first_dungeon_found_turn !== null && first_dungeon_found_turn !== undefined) || (first_mountain_found_turn !== null && first_mountain_found_turn !== undefined) ? (
+            {/* Dungeon/Mountain expeditions - visible once discovered, or unconditionally when fog of war is disabled (test/debug mode). */}
+            {fog_of_war_disabled || (first_dungeon_found_turn !== null && first_dungeon_found_turn !== undefined) || (first_mountain_found_turn !== null && first_mountain_found_turn !== undefined) ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
               <div className="card border-l-[3px] border-l-[var(--red)]">
                 <div className="mb-2 flex items-center justify-between gap-3">

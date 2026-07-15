@@ -23,7 +23,7 @@ const { migrateVisibility, DEFAULT_VISIBILITY } = require('./visibility-migratio
 const { encodeCellSet, cellIndex } = require('./visibility-cells');
 const { pixelToHex } = require('./hex-utils');
 const { getKingdomMapCoords } = require('./world-map-coords');
-const { getLocationByRegionAndType, markLocationDiscovered, hasDiscovered } = require('./world-locations');
+const { getLocationByRegionAndType, markLocationDiscovered, isPubliclyDiscovered } = require('./world-locations');
 const config = require('./config');
 
 /**
@@ -250,6 +250,11 @@ async function revealRingHexes(db, kingdomId, kingdom, ring) {
     // launch button was previously gated on having already launched once).
     // Checked independently of the visibility update below so a failure
     // here can never block the actual fog-of-war reveal.
+    //
+    // Locations aren't owned by whichever kingdom scouts them first — it's
+    // public domain knowledge for the whole region once anyone finds it, so
+    // discovering it unlocks the expedition for every kingdom of that race,
+    // not just the one that did the scouting.
     if (db && kingdom.race) {
       try {
         const revealedKeys = new Set(ringHexes.map((hexKey) =>
@@ -259,17 +264,18 @@ async function revealRingHexes(db, kingdomId, kingdom, ring) {
         for (const locType of ['dungeon', 'mountain']) {
           const location = getLocationByRegionAndType(kingdom.race, locType);
           if (!location) continue;
+          if (isPubliclyDiscovered(location)) continue;
 
           const locHex = pixelToHex(location.x, location.y);
           if (!revealedKeys.has(`${locHex.col},${locHex.row}`)) continue;
-          if (hasDiscovered(location, kingdomId)) continue;
 
           await markLocationDiscovered(db, location.id, kingdomId);
 
           const turnColumn = locType === 'dungeon' ? 'first_dungeon_found_turn' : 'first_mountain_found_turn';
-          if (kingdom[turnColumn] === null || kingdom[turnColumn] === undefined) {
-            await db.run(`UPDATE kingdoms SET ${turnColumn} = $1 WHERE id = $2`, [kingdom.turn || 0, kingdomId]);
-          }
+          await db.run(
+            `UPDATE kingdoms SET ${turnColumn} = $1 WHERE race = $2 AND ${turnColumn} IS NULL`,
+            [kingdom.turn || 0, kingdom.race],
+          );
         }
       } catch (discErr) {
         console.error(`[visibility] Failed to check dungeon/mountain discovery for kingdom ${kingdomId}:`, discErr.message);

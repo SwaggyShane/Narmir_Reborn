@@ -7,6 +7,7 @@ import { getRaceSVGIcon } from '../../utils/raceIconsSVG.js';
 import { hexCenter, hexCorners, HEX_SIZE, HEX_W, HEX_VERT } from '../../utils/hexMap/HexGeometry.ts';
 import { RACE_HOMES } from '../../utils/worldMapBuilder.js';
 import { showMapKingdomCard } from './MapKingdomCard.jsx';
+import { NODE_TYPE_META, getNodeRadius } from '../../utils/worldMapNodeMeta.js';
 
 const TERRAIN_COLORS = {
   plains: '#556b2f',
@@ -26,11 +27,12 @@ function hexToColor(hex) {
   return new THREE.Color(hex);
 }
 
-export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevationData = null, highlightedRace = null, currentKingdomId = null }) {
+export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevationData = null, highlightedRace = null, currentKingdomId = null, nodes = [], tradeRoutes = [], expeditions = [], worldLocations = [], layers = {} }) {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
   const cameraRef = useRef(null);
+  const layerGroupsRef = useRef({});
 
   useEffect(() => {
     if (!containerRef.current || !hexGrid) {
@@ -66,6 +68,27 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       scene.background = new THREE.Color(0x040710);
       scene.fog = new THREE.Fog(0x040710, 5000, 10000);
       sceneRef.current = scene;
+
+      // Toggleable layer groups: a separate, lightweight effect (below)
+      // flips .visible on these based on the `layers` prop, instead of
+      // that prop triggering a full scene rebuild — this scene is
+      // expensive to construct (merged geometries, canvas textures for
+      // every label/icon), so a mere visibility toggle must not rebuild it.
+      const kingdomMarkersGroup = new THREE.Group();
+      const terrainSymbolsGroup = new THREE.Group();
+      const resourceNodesGroup = new THREE.Group();
+      const tradeRoutesGroup = new THREE.Group();
+      const expeditionsGroup = new THREE.Group();
+      const worldLocationsGroup = new THREE.Group();
+      scene.add(kingdomMarkersGroup, terrainSymbolsGroup, resourceNodesGroup, tradeRoutesGroup, expeditionsGroup, worldLocationsGroup);
+      layerGroupsRef.current = {
+        kingdoms: kingdomMarkersGroup,
+        terrain: terrainSymbolsGroup,
+        nodes: resourceNodesGroup,
+        routes: tradeRoutesGroup,
+        expeditions: expeditionsGroup,
+        locations: worldLocationsGroup,
+      };
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, logarithmicDepthBuffer: true });
       renderer.setSize(w, h);
@@ -192,6 +215,30 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         }
         return 0.5;
       }
+
+      // Nearest-cell elevation lookup, shared by river rendering below and
+      // by resource-node/dungeon/mountain markers further down — anything
+      // positioned at a flat world z can get visually swallowed by taller
+      // neighboring terrain (mountains reach up to z≈24) from the map's
+      // tilted camera angle, so markers need to clear the *local* terrain
+      // height, not just a fixed constant.
+      const cellElevations = hexGrid.cells.map((cell) => ({
+        x: cell.x, y: cell.y, elev: getCellElevation(cell),
+      }));
+      const getElevation = (x, y) => {
+        let best = 0.5;
+        let bestDist = Infinity;
+        for (const c of cellElevations) {
+          const dx = c.x - x;
+          const dy = c.y - y;
+          const dist = dx * dx + dy * dy;
+          if (dist < bestDist) {
+            bestDist = dist;
+            best = c.elev;
+          }
+        }
+        return best;
+      };
 
       hexGrid.cells.forEach((cell, index) => {
         const terrainColor = TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.plains;
@@ -712,7 +759,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         if (!symbol) return;
 
         symbol.position.set(cell.x, -cell.y, elevation);
-        scene.add(symbol);
+        terrainSymbolsGroup.add(symbol);
       });
 
       const backgroundGeometry = new THREE.BoxGeometry(hexGrid.W + 150, hexGrid.H + 150, 1);
@@ -725,31 +772,6 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       if (hexGrid.riverSegments && hexGrid.riverSegments.length > 0) {
         const tributaryColor = new THREE.Color(0x4a9fd0);
         const trunkColor = new THREE.Color(0x5cc0e8);
-
-        // Elevation by nearest actual cell center, not an exact-coordinate
-        // map lookup: river endpoints that touch a lake/ocean are snapped
-        // to an edge midpoint (see addSegment() in worldMapBuilder.js),
-        // which never matches any cell's exact center, so the old lookup
-        // silently fell back to a flat default there — often lower than
-        // the real surrounding terrain, letting hills/mountains poke
-        // through the river at exactly those points.
-        const cellElevations = hexGrid.cells.map((cell) => ({
-          x: cell.x, y: cell.y, elev: getCellElevation(cell),
-        }));
-        const getElevation = (x, y) => {
-          let best = 0.5;
-          let bestDist = Infinity;
-          for (const c of cellElevations) {
-            const dx = c.x - x;
-            const dy = c.y - y;
-            const dist = dx * dx + dy * dy;
-            if (dist < bestDist) {
-              bestDist = dist;
-              best = c.elev;
-            }
-          }
-          return best;
-        };
 
         // Same noise-driven meander as the canvas renderer's
         // generateMeanderingPath (WorldmapRenderer.jsx): a few waypoints
@@ -964,7 +986,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
         bgMesh.position.set(kingdom.map_x, -kingdom.map_y, 25);
         bgMesh.userData.kingdomId = kingdom.id;
-        scene.add(bgMesh);
+        kingdomMarkersGroup.add(bgMesh);
         kingdomHitMeshes.push(bgMesh);
 
         // Draw symbol (race icon from SVG with stroke)
@@ -980,7 +1002,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const symbolX = -bgWidth / 2 + padding + symbolSize / 2;
         symbolMesh.position.set(kingdom.map_x + symbolX, -kingdom.map_y, 26);
         symbolMesh.userData.kingdomId = kingdom.id;
-        scene.add(symbolMesh);
+        kingdomMarkersGroup.add(symbolMesh);
         kingdomHitMeshes.push(symbolMesh);
 
         const svgString = getRaceSVGIcon(kingdom.race);
@@ -1022,8 +1044,170 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const nameX = -bgWidth / 2 + padding + symbolSize + textWidth / 2;
         nameMesh.position.set(kingdom.map_x + nameX, -kingdom.map_y, 26);
         nameMesh.userData.kingdomId = kingdom.id;
-        scene.add(nameMesh);
+        kingdomMarkersGroup.add(nameMesh);
         kingdomHitMeshes.push(nameMesh);
+      });
+
+      // Kingdom id -> map position, shared by trade routes (kingdom to
+      // kingdom) and expeditions (the player's own kingdom to the
+      // expedition's target) below.
+      const kingdomCoordsById = new Map(
+        kingdoms
+          .filter((k) => Number.isFinite(Number(k.map_x)) && Number.isFinite(Number(k.map_y)))
+          .map((k) => [String(k.id), { x: Number(k.map_x), y: -Number(k.map_y) }])
+      );
+
+      function dashedLine(x1, y1, x2, y2, z, color, opacity) {
+        const geometry = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(x1, y1, z),
+          new THREE.Vector3(x2, y2, z),
+        ]);
+        const material = new THREE.LineDashedMaterial({
+          color, transparent: true, opacity, dashSize: 6, gapSize: 4,
+        });
+        const line = new THREE.Line(geometry, material);
+        line.computeLineDistances(); // required for dashes to render at all
+        return line;
+      }
+
+      // Trade routes: dashed gold line between the two partner kingdoms.
+      tradeRoutes.forEach((route) => {
+        const p1 = kingdomCoordsById.get(String(route.kingdom_id));
+        const p2 = kingdomCoordsById.get(String(route.partner_id));
+        if (!p1 || !p2) return;
+        tradeRoutesGroup.add(dashedLine(p1.x, p1.y, p2.x, p2.y, 40, 0xe8b84b, 0.4));
+      });
+
+      // Expeditions: dashed blue line from the player's own kingdom to the
+      // expedition's target coordinates.
+      const homeCoords = kingdomCoordsById.get(String(currentKingdomId));
+      if (homeCoords) {
+        expeditions.forEach((exp) => {
+          const ex = Number(exp.map_x);
+          const ey = Number(exp.map_y);
+          if (!Number.isFinite(ex) || !Number.isFinite(ey)) return;
+          expeditionsGroup.add(dashedLine(homeCoords.x, homeCoords.y, ex, -ey, 41, 0x7ec8ff, 0.55));
+        });
+      }
+
+      // Resource nodes: halo + colored disc (by terrain, falling back to
+      // the node type's own color) + an icon rendered the same
+      // canvas-texture way as the kingdom markers above. A separate,
+      // larger invisible disc is the actual click target — the visible
+      // parts (especially the icon plane) are too small to reliably hit.
+      const nodeHitMeshes = [];
+      nodes.forEach((node) => {
+        const nx = Number(node.map_x);
+        const ny = Number(node.map_y);
+        if (!Number.isFinite(nx) || !Number.isFinite(ny)) return;
+
+        const meta = NODE_TYPE_META[node.type] || NODE_TYPE_META.wood;
+        const nr = getNodeRadius(node.richness);
+        const fillColor = node.terrain ? (TERRAIN_COLORS[node.terrain] || TERRAIN_COLORS.plains) : meta.fill;
+        const posX = nx;
+        const posY = -ny;
+        // Interactive layer clears the local terrain height (mountains reach
+        // z≈24) as well as the requested z26 floor, so markers on elevated
+        // ground don't sink behind a neighboring ridge from the tilted camera.
+        const hitZ = Math.max(26, getElevation(nx, ny) + 10);
+
+        const haloGeometry = new THREE.CircleGeometry(nr + 3, 16);
+        const haloMaterial = new THREE.MeshBasicMaterial({ color: meta.fill, transparent: true, opacity: 0.18 });
+        const haloMesh = new THREE.Mesh(haloGeometry, haloMaterial);
+        haloMesh.position.set(posX, posY, hitZ - 3);
+        resourceNodesGroup.add(haloMesh);
+
+        const nodeGeometry = new THREE.CircleGeometry(nr, 16);
+        const nodeMaterial = new THREE.MeshBasicMaterial({ color: fillColor });
+        const nodeMesh = new THREE.Mesh(nodeGeometry, nodeMaterial);
+        nodeMesh.position.set(posX, posY, hitZ - 2);
+        resourceNodesGroup.add(nodeMesh);
+
+        const iconCanvas = document.createElement('canvas');
+        iconCanvas.width = 24;
+        iconCanvas.height = 24;
+        const iconCtx = iconCanvas.getContext('2d');
+        iconCtx.font = '16px Arial';
+        iconCtx.textAlign = 'center';
+        iconCtx.textBaseline = 'middle';
+        iconCtx.fillText(meta.icon || '', 12, 13);
+
+        const iconTexture = new THREE.CanvasTexture(iconCanvas);
+        const iconGeometry = new THREE.PlaneGeometry(nr * 1.6, nr * 1.6);
+        const iconMaterial = new THREE.MeshBasicMaterial({ map: iconTexture, transparent: true });
+        const iconMesh = new THREE.Mesh(iconGeometry, iconMaterial);
+        iconMesh.position.set(posX, posY, hitZ - 1);
+        resourceNodesGroup.add(iconMesh);
+
+        const hitGeometry = new THREE.CircleGeometry(nr + 8, 16);
+        const hitMaterial = new THREE.MeshBasicMaterial();
+        const hitMesh = new THREE.Mesh(hitGeometry, hitMaterial);
+        hitMesh.position.set(posX, posY, hitZ);
+        hitMesh.visible = false; // raycasting ignores .visible, so this stays clickable while invisible
+        hitMesh.userData.node = node;
+        resourceNodesGroup.add(hitMesh);
+        nodeHitMeshes.push(hitMesh);
+      });
+
+      // Dungeon / Mountain's Heart: only ones the player's kingdom has
+      // already discovered (via scouting) are ever sent down by the server,
+      // so anything here is safe to render unconditionally. Same
+      // icon+halo+hit-circle pattern as resource nodes above.
+      const locationHitMeshes = [];
+      worldLocations.forEach((loc) => {
+        const lx = Number(loc.x);
+        const ly = Number(loc.y);
+        if (!Number.isFinite(lx) || !Number.isFinite(ly)) return;
+
+        const isDungeon = loc.type === 'dungeon';
+        const icon = isDungeon ? '⚔️' : '🏔️';
+        const color = isDungeon ? 0xc0392b : 0x8899aa;
+        const lr = 14;
+        const posX = lx;
+        const posY = -ly;
+        // Dungeons/mountains are seeded near each region's dominant terrain
+        // (mountains for the mountain heart especially), so the interactive
+        // layer must clear the *local* elevation, not just a flat z26 --
+        // otherwise a taller neighboring ridge can visually swallow the
+        // marker from the map's tilted camera angle.
+        const hitZ = Math.max(26, getElevation(lx, ly) + 10);
+
+        const haloGeometry = new THREE.CircleGeometry(lr + 4, 16);
+        const haloMaterial = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.22 });
+        const haloMesh = new THREE.Mesh(haloGeometry, haloMaterial);
+        haloMesh.position.set(posX, posY, hitZ - 3);
+        worldLocationsGroup.add(haloMesh);
+
+        const discGeometry = new THREE.CircleGeometry(lr, 16);
+        const discMaterial = new THREE.MeshBasicMaterial({ color });
+        const discMesh = new THREE.Mesh(discGeometry, discMaterial);
+        discMesh.position.set(posX, posY, hitZ - 2);
+        worldLocationsGroup.add(discMesh);
+
+        const iconCanvas = document.createElement('canvas');
+        iconCanvas.width = 28;
+        iconCanvas.height = 28;
+        const iconCtx = iconCanvas.getContext('2d');
+        iconCtx.font = '20px Arial';
+        iconCtx.textAlign = 'center';
+        iconCtx.textBaseline = 'middle';
+        iconCtx.fillText(icon, 14, 15);
+
+        const iconTexture = new THREE.CanvasTexture(iconCanvas);
+        const iconGeometry = new THREE.PlaneGeometry(lr * 1.8, lr * 1.8);
+        const iconMaterial = new THREE.MeshBasicMaterial({ map: iconTexture, transparent: true });
+        const iconMesh = new THREE.Mesh(iconGeometry, iconMaterial);
+        iconMesh.position.set(posX, posY, hitZ - 1);
+        worldLocationsGroup.add(iconMesh);
+
+        const hitGeometry = new THREE.CircleGeometry(lr + 8, 16);
+        const hitMaterial = new THREE.MeshBasicMaterial();
+        const hitMesh = new THREE.Mesh(hitGeometry, hitMaterial);
+        hitMesh.position.set(posX, posY, hitZ);
+        hitMesh.visible = false;
+        hitMesh.userData.location = loc;
+        worldLocationsGroup.add(hitMesh);
+        locationHitMeshes.push(hitMesh);
       });
 
       // Region name labels: wrapped title (matches the canvas renderer's
@@ -1320,18 +1504,37 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       const mouseNDC = new THREE.Vector2();
       const onContainerClick = (e) => {
         if (!containerRef.current) return;
+
         const rect = containerRef.current.getBoundingClientRect();
         mouseNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         mouseNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
         const activeCamera = cameraState.inPerspective ? perspCamera : orthoCamera;
         raycaster.setFromCamera(mouseNDC, activeCamera);
-        const intersects = raycaster.intersectObjects(kingdomHitMeshes);
-        if (intersects.length > 0) {
-          const kingdomId = intersects[0].object.userData.kingdomId;
-          if (kingdomId != null) {
-            showMapKingdomCard(kingdomId);
-          }
+
+        // Raycasting ignores .visible entirely (that flag only affects
+        // rendering), so each list is only included when its layer is
+        // actually shown — otherwise clicking where a hidden
+        // marker/node used to be would still open its card. Both lists
+        // go into one intersectObjects call so whichever is actually
+        // closer to the camera wins (results come back sorted by
+        // distance), rather than always favoring kingdoms.
+        const targets = [];
+        if (kingdomMarkersGroup.visible) targets.push(...kingdomHitMeshes);
+        if (resourceNodesGroup.visible) targets.push(...nodeHitMeshes);
+        if (worldLocationsGroup.visible) targets.push(...locationHitMeshes);
+        if (targets.length === 0) return;
+
+        const intersects = raycaster.intersectObjects(targets);
+        if (intersects.length === 0) return;
+
+        const hit = intersects[0].object;
+        if (hit.userData.kingdomId != null) {
+          showMapKingdomCard(hit.userData.kingdomId);
+        } else if (hit.userData.node) {
+          window.dispatchEvent(new CustomEvent('nodeClicked', { detail: hit.userData.node }));
+        } else if (hit.userData.location) {
+          window.dispatchEvent(new CustomEvent('locationClicked', { detail: hit.userData.location }));
         }
       };
 
@@ -1396,7 +1599,21 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       cancelled = true;
       if (cleanup) cleanup();
     };
-  }, [hexGrid, elevationData, kingdoms, currentKingdomId]);
+  }, [hexGrid, elevationData, kingdoms, currentKingdomId, nodes, tradeRoutes, expeditions, worldLocations]);
+
+  // Layer visibility toggles: intentionally a separate, lightweight effect
+  // from the one above — flips .visible on the pre-built groups instead of
+  // rebuilding the whole scene, so clicking a toggle button is instant
+  // rather than re-running every terrain/border/river computation.
+  useEffect(() => {
+    const groups = layerGroupsRef.current;
+    if (groups.kingdoms) groups.kingdoms.visible = layers.kingdoms !== false;
+    if (groups.terrain) groups.terrain.visible = layers.terrain !== false;
+    if (groups.nodes) groups.nodes.visible = layers.nodes !== false;
+    if (groups.routes) groups.routes.visible = layers.routes !== false;
+    if (groups.expeditions) groups.expeditions.visible = layers.expeditions !== false;
+    if (groups.locations) groups.locations.visible = layers.locations !== false;
+  }, [layers]);
 
   return (
     <div

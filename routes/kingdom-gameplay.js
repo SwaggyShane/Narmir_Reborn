@@ -23,9 +23,11 @@ const { decorateNewsMessage } = require("../game/news-emoji");
 const { EPOCH_NOW } = require("../lib/db-sql");
 const { pgInList, pgValueTuples } = require("../lib/pg-placeholders");
 const { getKingdomMapCoords, placeResourceNodeCoords } = require("../game/world-map-coords");
+const { getRegionLocations, isPubliclyDiscovered } = require("../game/world-locations");
 const { getTerrainForRace, getTerrainModifiers, generateMixedBiomes } = require("../game/terrain");
 const { getWorldSeed } = require("../game/world-seed");
 const { getKingdomVisibility, updateKingdomVisibility } = require('../game/visibility');
+const { getCompletedRing } = require('../game/scout-rings');
 const { safeBitmapHasCell, safeBitmapAddCell, isValidCell } = require('../game/visibility-cells');
 const { pixelToHex, getHexesInRadius, isFrontier, hexUnitDistance } = require('../game/hex-utils');
 const { scoutRevealRadius, scoutFoodCostPerHex } = require('../game/scout-economy');
@@ -1713,6 +1715,18 @@ module.exports = function (db) {
         return safeBitmapHasCell(seenCells, h.col, h.row);
       });
 
+      // Dungeon/mountain heart: only the player's own region's locations, and
+      // only once discovered — by ANY kingdom, not specifically this one.
+      // Locations aren't owned by whichever kingdom scouts them first; once
+      // revealed they're public domain for the whole region. Also bypassed
+      // entirely when fog of war is disabled (DISABLE_FOG_OF_WAR=true), which
+      // bypasses seenCells gating everywhere else in this response too.
+      const fogDisabled = process.env.DISABLE_FOG_OF_WAR === 'true';
+      const regionLocations = getRegionLocations(k.race);
+      const worldLocations = regionLocations
+        ? Object.values(regionLocations).filter((loc) => fogDisabled || isPubliclyDiscovered(loc))
+        : [];
+
       // Fog of War Phase 1.5: BigInt can't be JSON-serialized directly, so
       // the seed goes over the wire as a string; the client parses it back
       // to BigInt before feeding it into the same seeded-random mixing the
@@ -1725,6 +1739,7 @@ module.exports = function (db) {
         tradeRoutes,
         nodes: visibleNodes,
         expeditions: visibleExpeditions,
+        worldLocations,
         worldSeed: getWorldSeed().toString(),
         visibility: {
           seenCells: seenCells.toString(),
@@ -1804,15 +1819,23 @@ module.exports = function (db) {
           return safeBitmapHasCell(seenCells, h.col, h.row);
         });
 
+        const fogDisabled = process.env.DISABLE_FOG_OF_WAR === 'true';
+        const regionLocations = k ? getRegionLocations(k.race) : null;
+        const worldLocations = regionLocations
+          ? Object.values(regionLocations).filter((loc) => fogDisabled || isPubliclyDiscovered(loc))
+          : [];
+
         // Fog of War Phase 1.5: BigInt can't be JSON-serialized directly, so
       // the seed goes over the wire as a string; the client parses it back
       // to BigInt before feeding it into the same seeded-random mixing the
       // server uses, so terrain biome patterns change across resets too.
       res.json({
+        playerKingdomId: k ? k.id : null,
         kingdoms: kingdomsWithCoords,
         tradeRoutes,
         nodes: visibleNodes,
         expeditions: visibleExpeditions,
+        worldLocations,
         worldSeed: getWorldSeed().toString(),
         visibility: {
           seenCells: seenCells.toString(),
@@ -3269,10 +3292,14 @@ module.exports = function (db) {
           throw err;
         }
 
-        // Gating: Ring 2 completion check
-        const parsedVis = safeJsonParse(k.visibility || '{}', {}, 'auto:visibility');
-        const highestCompletedRing = parsedVis.highest_completed_ring || 0;
-        if (highestCompletedRing < 2) {
+        // Gating: Ring 2 completion check. scout_progress (not the
+        // visibility JSON's dead `highest_completed_ring`, which nothing
+        // ever wrote) is the single source of truth for ring progress —
+        // getCompletedRing derives the ring from it the same way the
+        // client's Epic Trek button visibility does. Bypassed entirely
+        // when fog of war is disabled (test/debug mode).
+        const fogDisabled = process.env.DISABLE_FOG_OF_WAR === 'true';
+        if (!fogDisabled && getCompletedRing(k.scout_progress) < 2) {
           const err = new Error('Epic Trek unlocks at Ring 2 Scout completion');
           err.statusCode = 403;
           throw err;
