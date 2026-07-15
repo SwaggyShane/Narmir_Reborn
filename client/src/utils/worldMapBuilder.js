@@ -189,11 +189,22 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
   const visitedEdges = new Set();
   const waterGraph = new Map();
 
-  const isWaterTerrain = (t) => t === 'lake' || t === 'ocean';
+  const isWaterTerrain = (t) => t === 'lake' || t === 'ocean' || t === 'swamp';
 
   const addSegment = (edge, kind) => {
     if (visitedEdges.has(edge.key)) return;
     visitedEdges.add(edge.key);
+    // Whichever endpoint is lake/ocean/swamp stops at the shared border
+    // instead of reaching that cell's center — a river should visibly meet
+    // the water, not run on top of it. Unlike lake/ocean (excluded from
+    // isLand below, so never an intermediate hop), swamp is still passable
+    // land for pathfinding, so a path can cross several consecutive swamp
+    // cells — both sides of that inner hop count as "water" and neither
+    // gets snapped here. Renderers skip drawing swamp-to-swamp segments
+    // entirely instead (fromTerrain/toTerrain below), so the river still
+    // visibly stops at the first swamp edge rather than crossing every
+    // swamp cell it happens to pass through in a straight center-to-center
+    // line.
     const fromWater = isWaterTerrain(edge.from.terrain);
     const toWater = isWaterTerrain(edge.to.terrain);
     let p1 = [edge.from.x, edge.from.y];
@@ -207,7 +218,7 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
       if (fromWater) p1 = mid;
       if (toWater) p2 = mid;
     }
-    riverSegments.push({ p1, p2, kind });
+    riverSegments.push({ p1, p2, kind, fromTerrain: edge.from.terrain, toTerrain: edge.to.terrain });
     const fromKey = `${edge.from.col},${edge.from.row}`;
     const toKey = `${edge.to.col},${edge.to.row}`;
     if (!waterGraph.has(fromKey)) waterGraph.set(fromKey, new Set());

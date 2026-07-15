@@ -5,6 +5,7 @@ import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { getRaceSVGIcon } from '../../utils/raceIconsSVG.js';
 import { hexCenter, hexCorners, HEX_SIZE, HEX_W, HEX_VERT } from '../../utils/hexMap/HexGeometry.ts';
+import { RACE_HOMES } from '../../utils/worldMapBuilder.js';
 
 const TERRAIN_COLORS = {
   plains: '#556b2f',
@@ -392,41 +393,10 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         return group;
       };
 
-      const mountainSnowParticles = []; // Track snow for animation
-
       const createMountainSymbol = () => {
         const group = new THREE.Group();
         const mountainGrey = new THREE.Color('#777777');
         const white = new THREE.Color(0xffffff);
-
-        // Falling snow on mountain
-        const snowCount = 200;
-        const snowGeo = new THREE.BufferGeometry();
-        const snowPos = new Float32Array(snowCount * 3);
-        const snowVel = new Float32Array(snowCount * 3);
-
-        for (let i = 0; i < snowCount; i++) {
-          snowPos[i * 3] = (Math.random() - 0.5) * 30;
-          snowPos[i * 3 + 1] = (Math.random() - 0.5) * 30;
-          snowPos[i * 3 + 2] = Math.random() * 80;
-
-          snowVel[i * 3] = (Math.random() - 0.5) * 0.15;
-          snowVel[i * 3 + 1] = (Math.random() - 0.5) * 0.15;
-          snowVel[i * 3 + 2] = -0.4 - Math.random() * 0.2;
-        }
-
-        snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
-        const snowMat = new THREE.PointsMaterial({
-          color: 0xffffff,
-          size: 1.5,
-          sizeAttenuation: true,
-          transparent: true,
-          opacity: 0.7,
-        });
-        const snowMesh = new THREE.Points(snowGeo, snowMat);
-        group.add(snowMesh);
-
-        mountainSnowParticles.push({ geo: snowGeo, pos: snowPos, vel: snowVel, count: snowCount });
 
         // Central tall spire - truncated cylinder
         const centerTopRadius = 6.699;
@@ -752,53 +722,199 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
 
       // Add rivers if available
       if (hexGrid.riverSegments && hexGrid.riverSegments.length > 0) {
-        const riverPositions = [];
-        const riverColors = [];
         const tributaryColor = new THREE.Color(0x4a9fd0);
         const trunkColor = new THREE.Color(0x5cc0e8);
 
-        const elevations = new Map();
-        if (hexGrid.cells) {
-          hexGrid.cells.forEach(cell => {
-            const key = Math.round(cell.x) + ',' + Math.round(cell.y);
-            elevations.set(key, getCellElevation(cell));
-          });
-        }
-
+        // Elevation by nearest actual cell center, not an exact-coordinate
+        // map lookup: river endpoints that touch a lake/ocean are snapped
+        // to an edge midpoint (see addSegment() in worldMapBuilder.js),
+        // which never matches any cell's exact center, so the old lookup
+        // silently fell back to a flat default there — often lower than
+        // the real surrounding terrain, letting hills/mountains poke
+        // through the river at exactly those points.
+        const cellElevations = hexGrid.cells.map((cell) => ({
+          x: cell.x, y: cell.y, elev: getCellElevation(cell),
+        }));
         const getElevation = (x, y) => {
-          const key = Math.round(x) + ',' + Math.round(y);
-          return elevations.get(key) || 0.5;
+          let best = 0.5;
+          let bestDist = Infinity;
+          for (const c of cellElevations) {
+            const dx = c.x - x;
+            const dy = c.y - y;
+            const dist = dx * dx + dy * dy;
+            if (dist < bestDist) {
+              bestDist = dist;
+              best = c.elev;
+            }
+          }
+          return best;
         };
 
-        hexGrid.riverSegments.forEach((seg) => {
-          const p1 = seg.p1;
-          const p2 = seg.p2;
-          const z1 = getElevation(p1[0], p1[1]);
-          const z2 = getElevation(p2[0], p2[1]);
-          const color = seg.kind === 'trunk' ? trunkColor : tributaryColor;
+        // Same noise-driven meander as the canvas renderer's
+        // generateMeanderingPath (WorldmapRenderer.jsx): a few waypoints
+        // offset perpendicular to the p1->p2 line by multi-octave
+        // deterministic noise, then a quadratic-bezier chain through them.
+        // WebGL has no native curve primitive here, so the bezier chain is
+        // flattened into a dense straight-segment polyline instead of an
+        // SVG path string.
+        function smoothNoise(seed) {
+          const x = Math.sin(seed) * 10000;
+          return x - Math.floor(x);
+        }
 
-          for (let i = 0; i <= 5; i++) {
-            const t = i / 5;
-            const x = p1[0] + (p2[0] - p1[0]) * t;
-            const y = p1[1] + (p2[1] - p1[1]) * t;
-            const z = z1 + (z2 - z1) * t + 0.5;
-            riverPositions.push(x, -y, z);
-            riverColors.push(color.r, color.g, color.b);
+        function meanderPolyline(p1, p2) {
+          const dx = p2[0] - p1[0];
+          const dy = p2[1] - p1[1];
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 15) return [p1, p2];
+
+          const perpX = -dy / dist;
+          const perpY = dx / dist;
+          const numWaypoints = Math.max(3, Math.ceil(dist / 50));
+          const baseSeed = (p1[0] * 73856093) ^ (p1[1] * 19349663) ^ (p2[0] * 83492791);
+
+          const waypoints = [p1];
+          for (let i = 1; i < numWaypoints; i++) {
+            const t = i / numWaypoints;
+            const x = p1[0] + dx * t;
+            const y = p1[1] + dy * t;
+
+            let noise = 0;
+            let amplitude = 1;
+            let maxAmplitude = 0;
+            for (let octave = 0; octave < 3; octave++) {
+              const noiseVal = smoothNoise(baseSeed + i * 997 + octave * 1337) - 0.5;
+              noise += noiseVal * amplitude;
+              maxAmplitude += amplitude;
+              amplitude *= 0.5;
+            }
+            noise /= maxAmplitude;
+            const offset = noise * Math.min(dist / 4, 24);
+            waypoints.push([x + perpX * offset, y + perpY * offset]);
           }
+          waypoints.push(p2);
+
+          const SAMPLES_PER_CURVE = 8;
+          const polyline = [waypoints[0]];
+          let curveStart = waypoints[0];
+          for (let i = 1; i < waypoints.length - 1; i++) {
+            const cp = waypoints[i];
+            const ep = i === waypoints.length - 2
+              ? waypoints[i + 1]
+              : [(waypoints[i][0] + waypoints[i + 1][0]) / 2, (waypoints[i][1] + waypoints[i + 1][1]) / 2];
+
+            for (let s = 1; s <= SAMPLES_PER_CURVE; s++) {
+              const t = s / SAMPLES_PER_CURVE;
+              const mt = 1 - t;
+              polyline.push([
+                mt * mt * curveStart[0] + 2 * mt * t * cp[0] + t * t * ep[0],
+                mt * mt * curveStart[1] + 2 * mt * t * cp[1] + t * t * ep[1],
+              ]);
+            }
+            curveStart = ep;
+          }
+          return polyline;
+        }
+
+        // Rendered as flat ribbon geometry (reusing the same technique as
+        // region borders) rather than THREE.Line/LineSegments, since
+        // LineBasicMaterial's linewidth is ignored by most WebGL
+        // implementations — that's why rivers looked thin regardless of
+        // the linewidth value here. A dark underline + colored top pass,
+        // trunk rivers wider than tributaries, matches the canvas
+        // renderer's water-edge stroke treatment.
+        const riverOutlineGeometries = [];
+        const tributaryGeometries = [];
+        const trunkGeometries = [];
+
+        // River mouth: widen toward whichever endpoint touches the ocean,
+        // easing in over the last ~30% of the edge, so the river visibly
+        // fans out into a delta rather than just stopping at a fixed width.
+        const MOUTH_WIDTH_MULTIPLIER = 2.5;
+        const isWaterTerrain = (t) => t === 'lake' || t === 'ocean' || t === 'swamp';
+
+        hexGrid.riverSegments.forEach((seg) => {
+          // Swamp is still passable land for pathfinding (unlike
+          // lake/ocean, which are pure endpoints), so a path can cross
+          // several consecutive swamp/lake cells — e.g. a lake sitting
+          // inside a swamp region. The land-to-water edge is already
+          // snapped to the shared border above; an inner hop between two
+          // water-classified cells (swamp-swamp, swamp-lake, etc.) has
+          // nothing to snap to on either side and would otherwise run
+          // straight through both cell centers. Skip rendering any such
+          // segment entirely instead — the river should visibly stop at
+          // the first water edge it reaches, not cross it in a straight
+          // line to the next water cell.
+          if (isWaterTerrain(seg.fromTerrain) && isWaterTerrain(seg.toTerrain)) return;
+
+          const isTrunk = seg.kind === 'trunk';
+          const outlineHalfWidth = isTrunk ? 3 : 2.25;
+          const colorHalfWidth = isTrunk ? 1.625 : 1.125;
+          const colorList = isTrunk ? trunkGeometries : tributaryGeometries;
+          const oceanAtStart = seg.fromTerrain === 'ocean';
+          const oceanAtEnd = seg.toTerrain === 'ocean';
+
+          const polyline = meanderPolyline(seg.p1, seg.p2);
+          const points3d = polyline.map(([x, y]) => [x, -y, getElevation(x, y) + 1.5]);
+          const lastIndex = points3d.length - 1;
+
+          for (let i = 0; i < lastIndex; i++) {
+            const a = points3d[i];
+            const b = points3d[i + 1];
+            const midZ = (a[2] + b[2]) / 2;
+
+            let widthScale = 1;
+            if (oceanAtEnd) {
+              const t = (i + 1) / lastIndex;
+              widthScale = 1 + Math.max(0, (t - 0.7) / 0.3) * (MOUTH_WIDTH_MULTIPLIER - 1);
+            } else if (oceanAtStart) {
+              const t = i / lastIndex;
+              widthScale = 1 + Math.max(0, (0.3 - t) / 0.3) * (MOUTH_WIDTH_MULTIPLIER - 1);
+            }
+
+            const outline = ribbonGeometry([a[0], a[1]], [b[0], b[1]], midZ, outlineHalfWidth * widthScale);
+            if (outline) riverOutlineGeometries.push(outline);
+
+            const colorRibbon = ribbonGeometry([a[0], a[1]], [b[0], b[1]], midZ + 0.1, colorHalfWidth * widthScale);
+            if (colorRibbon) colorList.push(colorRibbon);
+          }
+
+          // Cap only the true start/end of this river edge — the dense
+          // interior joints already overlap enough not to need one each.
+          // Whichever end touches the ocean gets a mouth-width cap to
+          // match the taper above.
+          const first = points3d[0];
+          const last = points3d[lastIndex];
+          const startScale = oceanAtStart ? MOUTH_WIDTH_MULTIPLIER : 1;
+          const endScale = oceanAtEnd ? MOUTH_WIDTH_MULTIPLIER : 1;
+          riverOutlineGeometries.push(capGeometry([first[0], first[1]], first[2], outlineHalfWidth * startScale));
+          riverOutlineGeometries.push(capGeometry([last[0], last[1]], last[2], outlineHalfWidth * endScale));
+          colorList.push(capGeometry([first[0], first[1]], first[2] + 0.1, colorHalfWidth * startScale));
+          colorList.push(capGeometry([last[0], last[1]], last[2] + 0.1, colorHalfWidth * endScale));
         });
 
-        const riverGeometry = new THREE.BufferGeometry();
-        riverGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(riverPositions), 3));
-        riverGeometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(riverColors), 3));
-
-        const riverMaterial = new THREE.LineBasicMaterial({
-          vertexColors: true,
-          linewidth: 3,
-          fog: false
-        });
-
-        const riverLines = new THREE.Line(riverGeometry, riverMaterial);
-        scene.add(riverLines);
+        if (riverOutlineGeometries.length > 0) {
+          const merged = mergeGeometries(riverOutlineGeometries);
+          riverOutlineGeometries.forEach((g) => g.dispose());
+          if (merged) {
+            const mat = new THREE.MeshBasicMaterial({ color: 0x0d2a3a, transparent: true, opacity: 0.6 });
+            scene.add(new THREE.Mesh(merged, mat));
+          }
+        }
+        if (tributaryGeometries.length > 0) {
+          const merged = mergeGeometries(tributaryGeometries);
+          tributaryGeometries.forEach((g) => g.dispose());
+          if (merged) {
+            scene.add(new THREE.Mesh(merged, new THREE.MeshBasicMaterial({ color: tributaryColor })));
+          }
+        }
+        if (trunkGeometries.length > 0) {
+          const merged = mergeGeometries(trunkGeometries);
+          trunkGeometries.forEach((g) => g.dispose());
+          if (merged) {
+            scene.add(new THREE.Mesh(merged, new THREE.MeshBasicMaterial({ color: trunkColor })));
+          }
+        }
       }
 
       // Kingdom markers with race icons
@@ -900,6 +1016,90 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const nameX = -bgWidth / 2 + padding + symbolSize + textWidth / 2;
         nameMesh.position.set(kingdom.map_x + nameX, -kingdom.map_y, 26);
         scene.add(nameMesh);
+      });
+
+      // Region name labels: wrapped title (matches the canvas renderer's
+      // wrapRegionName — splits long names near their midpoint space) plus
+      // a bonus subtitle, centered on each race's home point. Drawn well
+      // above everything else with depth testing off so they always read,
+      // same intent as the canvas renderer drawing these in the topmost layer.
+      function wrapRegionName(name) {
+        if (!name || name.length <= 14) return [name || ''];
+        const spaceIndices = [];
+        for (let i = 0; i < name.length; i++) {
+          if (name[i] === ' ') spaceIndices.push(i);
+        }
+        if (!spaceIndices.length) return [name];
+        const mid = name.length / 2;
+        let best = spaceIndices[0];
+        spaceIndices.forEach((idx) => {
+          if (Math.abs(idx - mid) < Math.abs(best - mid)) best = idx;
+        });
+        return [name.slice(0, best), name.slice(best + 1)];
+      }
+
+      Object.entries(REGION_META).forEach(([race, meta]) => {
+        const home = RACE_HOMES[race];
+        if (!home) return;
+
+        const titleLines = wrapRegionName(meta.name).map((l) => l.toUpperCase());
+        const subtitle = REGION_BONUSES[race] || '';
+        const titleFontPx = 32;
+        const subtitleFontPx = 20;
+        const lineGap = 6;
+
+        const measureCanvas = document.createElement('canvas');
+        const measureCtx = measureCanvas.getContext('2d');
+        measureCtx.font = `bold ${titleFontPx}px Georgia, serif`;
+        let maxWidth = 0;
+        titleLines.forEach((line) => {
+          maxWidth = Math.max(maxWidth, measureCtx.measureText(line).width);
+        });
+        if (subtitle) {
+          measureCtx.font = `600 ${subtitleFontPx}px sans-serif`;
+          maxWidth = Math.max(maxWidth, measureCtx.measureText(subtitle).width);
+        }
+
+        const padding = 12;
+        const canvasWidth = Math.ceil(maxWidth + padding * 2);
+        const titleBlockHeight = titleLines.length * (titleFontPx + lineGap);
+        const subtitleBlockHeight = subtitle ? subtitleFontPx + lineGap : 0;
+        const canvasHeight = Math.ceil(titleBlockHeight + subtitleBlockHeight + padding);
+
+        const labelCanvas = document.createElement('canvas');
+        labelCanvas.width = canvasWidth;
+        labelCanvas.height = canvasHeight;
+        const ctx = labelCanvas.getContext('2d');
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 1;
+
+        ctx.font = `bold ${titleFontPx}px Georgia, serif`;
+        ctx.fillStyle = meta.stroke || '#ffffff';
+        titleLines.forEach((line, i) => {
+          ctx.fillText(line, canvasWidth / 2, (titleFontPx + lineGap) * (i + 0.5) + padding / 2);
+        });
+
+        if (subtitle) {
+          ctx.font = `600 ${subtitleFontPx}px sans-serif`;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(subtitle, canvasWidth / 2, titleBlockHeight + subtitleFontPx / 2 + padding / 2);
+        }
+
+        const labelTexture = new THREE.CanvasTexture(labelCanvas);
+        const labelGeometry = new THREE.PlaneGeometry(canvasWidth, canvasHeight);
+        const labelMaterial = new THREE.MeshBasicMaterial({
+          map: labelTexture,
+          transparent: true,
+          depthWrite: false,
+          depthTest: false,
+        });
+        const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
+        labelMesh.position.set(home.x, -home.y, 80);
+        labelMesh.renderOrder = 999;
+        scene.add(labelMesh);
       });
 
       const mapWidth = hexGrid.W;
@@ -1063,24 +1263,6 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         if (disposed) return;
         animationFrameId = requestAnimationFrame(animate);
         frame++;
-
-        // Update mountain snow
-        mountainSnowParticles.forEach(snow => {
-          const pos = snow.pos;
-          for (let i = 0; i < snow.count; i++) {
-            pos[i * 3] += snow.vel[i * 3];
-            pos[i * 3 + 1] += snow.vel[i * 3 + 1];
-            pos[i * 3 + 2] += snow.vel[i * 3 + 2];
-
-            // Loop snow back to top
-            if (pos[i * 3 + 2] < -10) {
-              pos[i * 3 + 2] = 80;
-              pos[i * 3] = (Math.random() - 0.5) * 30;
-              pos[i * 3 + 1] = (Math.random() - 0.5) * 30;
-            }
-          }
-          snow.geo.attributes.position.needsUpdate = true;
-        });
 
         const activeCamera = cameraState.inPerspective ? perspCamera : orthoCamera;
         renderer.render(scene, activeCamera);

@@ -551,7 +551,7 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
   const visitedEdges = new Set();
   const waterGraph = new Map(); // "col,row" -> Set of connected "col,row" neighbor keys
 
-  const isWaterTerrain = (t) => t === 'lake' || t === 'ocean';
+  const isWaterTerrain = (t) => t === 'lake' || t === 'ocean' || t === 'swamp';
 
   const addSegment = (edge, kind) => {
     if (visitedEdges.has(edge.key)) return;
@@ -562,12 +562,17 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
     // endpoint and the drawn line fragments into disconnected dashes. Two
     // cell centers are always connectable regardless of the path's turn
     // angle, which is what a continuous, always-connected river needs.
-    // Exception: whichever endpoint is a lake/ocean cell stops at the
+    // Exception: whichever endpoint is a lake/ocean/swamp cell stops at the
     // shared border instead of reaching all the way to that cell's center —
-    // a river should visibly meet the lake/ocean, not get drawn on top of
-    // it. The two cells are never both water (the isLand filter below
-    // guarantees that for every hop except the case of two directly
-    // adjacent lakes, handled separately).
+    // a river should visibly meet the water, not get drawn on top of it.
+    // Unlike lake/ocean (excluded from isLand below, so never an
+    // intermediate hop), swamp IS still passable land for pathfinding, so a
+    // path can run through several consecutive swamp cells — both sides of
+    // that inner hop count as "water" and neither gets snapped here. The
+    // renderer skips drawing those swamp-to-swamp segments entirely instead
+    // (fromTerrain/toTerrain below), so the river still visibly stops at
+    // the first swamp edge it reaches rather than crossing every swamp cell
+    // it happens to pass through in a straight center-to-center line.
     const fromWater = isWaterTerrain(edge.from.terrain);
     const toWater = isWaterTerrain(edge.to.terrain);
     let p1 = [edge.from.x, edge.from.y];
@@ -581,7 +586,7 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
       if (fromWater) p1 = mid;
       if (toWater) p2 = mid;
     }
-    riverSegments.push({ p1, p2, kind });
+    riverSegments.push({ p1, p2, kind, fromTerrain: edge.from.terrain, toTerrain: edge.to.terrain });
     const fromKey = `${edge.from.col},${edge.from.row}`;
     const toKey = `${edge.to.col},${edge.to.row}`;
     if (!waterGraph.has(fromKey)) waterGraph.set(fromKey, new Set());
@@ -917,12 +922,25 @@ export function renderWorldMap(
         // Trunk segments (spanning-tree connectors linking every region's lake to every other)
         // render thicker/brighter than local tributaries — the "roadway" a navy travels.
         svg += '<g class="wm-layer wm-layer-rivers">';
-        hexGrid.riverSegments.forEach(function (seg) {
+        // Swamp is still passable land for pathfinding (unlike lake/ocean,
+        // which are pure endpoints), so a path can cross several
+        // consecutive water-classified cells — e.g. a lake sitting inside
+        // a swamp region. An inner hop between two such cells (swamp-swamp,
+        // swamp-lake, etc.) has nothing to snap to on either side (see
+        // addSegment above) and would otherwise draw straight through both
+        // cell centers. Skip it entirely — the river should visibly stop
+        // at the first water edge it reaches, not cross it in a straight
+        // line to the next water cell.
+        var isRiverWaterTerrain = function (t) { return t === 'lake' || t === 'ocean' || t === 'swamp'; };
+        var visibleRiverSegments = hexGrid.riverSegments.filter(function (seg) {
+          return !(isRiverWaterTerrain(seg.fromTerrain) && isRiverWaterTerrain(seg.toTerrain));
+        });
+        visibleRiverSegments.forEach(function (seg) {
           var underWidth = seg.kind === 'trunk' ? 6 : 4.5;
           var pathD = generateMeanderingPath(seg.p1, seg.p2);
           svg += '<path d="' + pathD + '" stroke="#0d2a3a" stroke-width="' + underWidth + '" stroke-linecap="round" fill="none" opacity="0.5" pointer-events="none"/>';
         });
-        hexGrid.riverSegments.forEach(function (seg) {
+        visibleRiverSegments.forEach(function (seg) {
           var topWidth = seg.kind === 'trunk' ? 3.25 : 2.25;
           var color = seg.kind === 'trunk' ? '#5cc0e8' : '#4a9fd0';
           var pathD = generateMeanderingPath(seg.p1, seg.p2);
