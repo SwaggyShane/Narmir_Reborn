@@ -1,5 +1,6 @@
 const express = require('express');
 const { requireAuth } = require('./middleware');
+const { safeEmit } = require('../game/safe-socket-emit');
 
 module.exports = (db, io) => {
   const router = express.Router();
@@ -15,9 +16,17 @@ module.exports = (db, io) => {
         'INSERT INTO test_results (player_id, player_name, test_key, test_group, test_name, passed, comment) VALUES ($1, $2, $3, $4, $5, $6, $7)',
         [player.playerId, player.username, testKey, testGroup, testName, passed !== undefined ? (passed ? 1 : 0) : null, comment || null]
       );
-      // Broadcast to all connected clients
+      // Dev test harness channel — still uses safeEmit for serializable payloads
       if (io) {
-        io.emit('test-result-update', { player: player.username, testKey, testGroup, testName, passed, comment, timestamp: Date.now() });
+        safeEmit(io, 'test-result-update', {
+          player: player.username,
+          testKey,
+          testGroup,
+          testName,
+          passed,
+          comment,
+          timestamp: Date.now(),
+        });
       }
       res.json({ ok: true });
     } catch (e) { console.error('[test-result] Database error:', e); res.status(500).json({ error: 'Failed to save test result' }); }
