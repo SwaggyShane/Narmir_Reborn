@@ -3,7 +3,6 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
-const engine = require("../game/engine");
 const config = require("../game/config");
 const commandHandler = require("../game/command-handler");
 const { initProfiler, runWithProfiler } = require("../game/profiling");
@@ -332,9 +331,9 @@ module.exports = function (db) {
 
     const heroBatch = [];
     for (const hero of (k.heroes || [])) {
-      const xpResult = engine.awardHeroXp(hero, 10);
+      const xpResult = commandHandler.awardHeroXp(hero, 10);
       heroBatch.push({ id: hero.id, level: xpResult.level, xp: xpResult.xp });
-      engine.applyHeroTurnBonuses(hero, k, updates, events);
+      commandHandler.applyHeroTurnBonuses(hero, k, updates, events);
     }
 
     updates.turns_stored = k.turns_stored - 1;
@@ -371,6 +370,75 @@ module.exports = function (db) {
       )
         continue; // already sent — skip
       filteredEvents.push(ev);
+    }
+
+    // Resolve kingdom-discovery flags BEFORE applyUpdates so discovered_kingdoms
+    // persists with the turn write. Flags are not DB columns (stripped below).
+    // Passive scout kingdom_signal sets _find_kingdom; surveyor sets _find_kingdom_surveyor.
+    const discoveryEvents = [];
+    {
+      const { mergeKingdomDiscovery, stripDiscoveryFlags } = require('../game/kingdom-discovery-resolve');
+      const stateForMerge = { ...k, ...updates };
+
+      if (updates._find_kingdom_surveyor) {
+        const other = await getRandomKingdom(db, k.id, [], 'id, name');
+        const merged = mergeKingdomDiscovery(stateForMerge, updates, other, { source: 'surveyor' });
+        if (merged.applied) {
+          updates.discovered_kingdoms = merged.discovered_kingdoms;
+          stateForMerge.discovered_kingdoms = merged.discovered_kingdoms;
+          const msg = repairMojibake(merged.message);
+          discoveryEvents.push({ type: 'system', message: msg });
+          filteredEvents.push({ type: 'system', message: msg });
+        }
+      }
+
+      if (updates._find_kingdom) {
+        const other = await getRandomKingdom(db, k.id, [], 'id, name');
+        const merged = mergeKingdomDiscovery(stateForMerge, updates, other, { source: 'scout' });
+        if (merged.applied) {
+          updates.discovered_kingdoms = merged.discovered_kingdoms;
+          const msg = repairMojibake(merged.message);
+          discoveryEvents.push({
+            type: 'system',
+            message: msg,
+            expeditionLogEntry: {
+              icon: '🔍',
+              title: 'Kingdom discovered',
+              subtitle: merged.otherName || 'kingdom',
+            },
+          });
+          filteredEvents.push({ type: 'system', message: msg });
+        }
+      }
+
+      if (updates._spawn_resource_node) {
+        const nodeType = updates._spawn_resource_node;
+        delete updates._spawn_resource_node;
+        try {
+          const { spawnPassiveScoutResourceNode } = require('../game/passive-resource-node-spawn');
+          const spawned = await spawnPassiveScoutResourceNode(db, { ...k, ...updates }, nodeType);
+          if (spawned.ok) {
+            const msg = repairMojibake(
+              `🔍 Your scouts charted a new ${spawned.type} deposit on the map`,
+            );
+            discoveryEvents.push({
+              type: 'system',
+              message: msg,
+              expeditionLogEntry: {
+                icon: '🔍',
+                title: 'Resource node found',
+                subtitle: spawned.type,
+              },
+            });
+            filteredEvents.push({ type: 'system', message: msg });
+          }
+        } catch (spawnErr) {
+          console.error('[commitTurnResults] resource node spawn:', spawnErr.message);
+        }
+      }
+
+      stripDiscoveryFlags(updates);
+      delete updates._spawn_resource_node;
     }
 
     try {
@@ -415,14 +483,13 @@ module.exports = function (db) {
     let expeditionEvents = [];
     try {
       console.time(`[turn-${k.id}] resolveExpeditions`);
-      expeditionEvents = await engine.resolveExpeditions(
-        db,
-        { ...k, ...updates },
-        engine,
+      // commandHandler.handle({type:'expeditions'}) already includes resource harvests
+      expeditionEvents = await commandHandler.handle(
+        { type: 'expeditions' },
+        { kingdom: { ...k, ...updates }, db },
       );
       console.timeEnd(`[turn-${k.id}] resolveExpeditions`);
-      const harvestEvents = await engine.resolveResourceHarvests(db, { ...k, ...updates });
-      expeditionEvents = expeditionEvents.concat(harvestEvents).map(normalizeNewsRow);
+      expeditionEvents = expeditionEvents.map(normalizeNewsRow);
       if (expeditionEvents.length > 0) {
         const turnNum = updates.turn || k.turn;
         await bulkInsertNews(
@@ -435,38 +502,6 @@ module.exports = function (db) {
           })),
         );
       }
-
-      if (updates._find_kingdom_surveyor) {
-        const discoveredSource = updates.discovered_kingdoms ?? k.discovered_kingdoms;
-        const other = await getRandomKingdom(db, k.id, [], "id, name");
-        if (other) {
-          let disc = {};
-          try {
-            disc = safeJsonParse(discoveredSource, {}, "auto:discovered_kingdoms");
-          } catch {}
-          if (!disc[other.id]) {
-            disc[other.id] = { found: true, name: other.name };
-            await db.run(
-              "UPDATE kingdoms SET discovered_kingdoms = $1 WHERE id = $2",
-              [JSON.stringify(disc), k.id],
-            );
-            const turnNum = updates.turn || k.turn;
-            await db.run(
-              "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1, $2, $3, $4)",
-              [
-                k.id,
-                "system",
-                repairMojibake(`ðŸ"­ Your Surveyors discovered the kingdom of ${other.name}!`),
-                turnNum,
-              ],
-            );
-            events.push({
-              type: "system",
-              message: repairMojibake(`ðŸ"­ Your Surveyors discovered the kingdom of ${other.name}!`),
-            });
-          }
-        }
-      }
     } catch (err) {
       console.error("[runTurn] expedition resolve error:", err.message);
       // Only throw if in an active transaction (safe to rollback)
@@ -478,7 +513,7 @@ module.exports = function (db) {
       // If no transaction: log but don't throw (prevent lost turns)
     }
 
-    const allEvents = [...cleanEvents, ...expeditionEvents];
+    const allEvents = [...cleanEvents, ...discoveryEvents, ...expeditionEvents];
 
     return { updates, events: allEvents };
   }
@@ -506,7 +541,10 @@ module.exports = function (db) {
       });
 
       console.time(`[turn-${k.id}] engine.processTurn`);
-      const { updates, events } = engine.processTurn(lockedK, db);
+      const { updates, events } = await commandHandler.handle(
+        { type: 'turn' },
+        { kingdom: lockedK, db },
+      );
       console.timeEnd(`[turn-${k.id}] engine.processTurn`);
 
       // Don't deduct a turn (it was already deducted by the action that called this)
@@ -539,7 +577,10 @@ module.exports = function (db) {
 
     // Calculate new score after turn
     const finalState = { ...k, ...finalUpdates };
-    finalUpdates.score = engine.calculateScore(finalState);
+    finalUpdates.score = await commandHandler.handle(
+      { type: 'calculate-score' },
+      { kingdom: finalState },
+    );
 
     console.timeEnd(`[turn-${k.id}] effects-only`);
     return { updates: finalUpdates, events: finalEvents };
@@ -552,7 +593,10 @@ module.exports = function (db) {
     await loadTurnContext(db, k);
 
     console.time(`[turn-${k.id}] engine.processTurn`);
-    const { updates, events } = engine.processTurn(k, db);
+    const { updates, events } = await commandHandler.handle(
+      { type: 'turn' },
+      { kingdom: k, db },
+    );
     console.timeEnd(`[turn-${k.id}] engine.processTurn`);
 
     const { updates: finalUpdates, events: finalEvents } = await commitTurnResults(db, k, updates, events);
@@ -575,7 +619,10 @@ module.exports = function (db) {
 
     // Calculate new score after turn
     const finalState = { ...k, ...finalUpdates };
-    finalUpdates.score = engine.calculateScore(finalState);
+    finalUpdates.score = await commandHandler.handle(
+      { type: 'calculate-score' },
+      { kingdom: finalState },
+    );
 
     console.timeEnd(`[turn-${k.id}] total`);
     return { updates: finalUpdates, events: finalEvents };
@@ -691,7 +738,10 @@ module.exports = function (db) {
 
         // Final score on merged state
         const finalState = { ...k, ...txUpdates };
-        txUpdates.score = engine.calculateScore(finalState);
+        txUpdates.score = await commandHandler.handle(
+          { type: 'calculate-score' },
+          { kingdom: finalState },
+        );
 
         const totalTime = Date.now() - startTime;
         console.log(`[turn] complete for player ${req.player.playerId} in ${totalTime}ms (prefetch+process+tx+postfetch)`);
@@ -769,7 +819,10 @@ module.exports = function (db) {
         throw new Error("Kingdom not found");
       }
 
-      const hireResult = engine.hireUnits(k, unit, amountValidation.value);
+      const hireResult = await commandHandler.handle(
+        { type: 'hire-units', unitType: unit, quantity: amountValidation.value },
+        { kingdom: k },
+      );
       if (hireResult.error) {
         const error = new Error(hireResult.error);
         error.statusCode = 400;
@@ -852,10 +905,13 @@ module.exports = function (db) {
     try {
       const { updates, events } = await runTurn(db, k);
       const kAfterTurn = { ...k, ...updates };
-      const toolResult = engine.forgeTools(
-        kAfterTurn,
-        toolType,
-        Number(quantity) || 1,
+      const toolResult = await commandHandler.handle(
+        {
+          type: 'forge-tools',
+          toolType,
+          quantity: Number(quantity) || 1,
+        },
+        { kingdom: kAfterTurn },
       );
       if (toolResult.error)
         return res.status(400).json({ error: toolResult.error });
@@ -890,7 +946,7 @@ module.exports = function (db) {
     const r = Number(rangers) || 0;
     if (r <= 0)
       return res.status(400).json({ error: "Send at least some rangers" });
-    if (r > engine.getAvailableUnits(k, "rangers"))
+    if (r > commandHandler.getAvailableUnits(k, "rangers"))
       return res.status(400).json({
         error: "Not enough available rangers (some may be in training)",
       });
@@ -912,7 +968,7 @@ module.exports = function (db) {
             dwarf: 0.9,
             high_elf: 0.95,
           }[kAfterTurn.race] || 1.0;
-        const rangerLvBonus = engine.unitLevelMult(kAfterTurn, "rangers");
+        const rangerLvBonus = commandHandler.unitLevelMult(kAfterTurn, "rangers");
 
         const currentLand = kAfterTurn.land || 0;
         // Exponentially harder with more land
@@ -996,23 +1052,30 @@ module.exports = function (db) {
       const turnNum = updates.turn || k.turn;
       // Removed bulkInsertNews for search results as per user request (only in log)
 
-      const xpResult = engine.awardXp(
-        kAfterTurn,
-        "exploration",
-        type === "land"
-          ? searchResult.found
-          : type === "gold"
-            ? Math.floor(searchResult.found / 1000)
-            : 5,
+      const xpResult = await commandHandler.handle(
+        {
+          type: 'award-xp',
+          activity: 'exploration',
+          amount:
+            type === 'land'
+              ? searchResult.found
+              : type === 'gold'
+                ? Math.floor(searchResult.found / 1000)
+                : 5,
+        },
+        { kingdom: kAfterTurn },
       );
       updates.xp = xpResult.xp;
       updates.level = xpResult.level;
 
       // Award Troop XP to Rangers for exploration
-      const rTroopXp = engine.awardTroopXp(
-        { ...kAfterTurn, xp: updates.xp, level: updates.level },
-        "rangers",
-        8,
+      const rTroopXp = await commandHandler.handle(
+        {
+          type: 'award-troop-xp',
+          unitType: 'rangers',
+          amount: 8,
+        },
+        { kingdom: { ...kAfterTurn, xp: updates.xp, level: updates.level } },
       );
       updates.troop_levels = rTroopXp.troop_levels;
       if (rTroopXp.levelUps && rTroopXp.levelUps.length > 0) {
@@ -1806,12 +1869,12 @@ module.exports = function (db) {
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
-    if (!engine.canPrestige(k))
+    if (!commandHandler.canPrestige(k))
       return res
         .status(400)
         .json({ error: "Require Kingdom Level 50 to Rebirth." });
 
-    const result = engine.processPrestige(k);
+    const result = await commandHandler.handle({ type: 'prestige' }, { kingdom: k });
     await applyUpdates(db, k.id, result.updates);
 
     await db.run(
@@ -2054,7 +2117,7 @@ module.exports = function (db) {
         "SELECT COALESCE(SUM(population_sent), 0) as total FROM resource_harvests WHERE kingdom_id = $1 AND turns_left > 0",
         [k.id],
       );
-      const freePop = Math.max(0, (k.population || 0) - engine.totalHiredUnits(k) - Number(onHarvest.total));
+      const freePop = Math.max(0, (k.population || 0) - commandHandler.totalHiredUnits(k) - Number(onHarvest.total));
       if (pop > freePop) {
         return res.status(400).json({ error: `Only ${freePop.toLocaleString()} free population available.` });
       }
@@ -2173,9 +2236,23 @@ module.exports = function (db) {
         return res.status(400).json({ error: 'No new hexes revealed' });
       }
 
-      // Costs: food per *newly* revealed hex (per-hex model)
-      const foodPerHex = scoutFoodCostPerHex(rangerLevel);
-      const foodCost = foodPerHex * newlyRevealed.length;
+      // Costs: food per *newly* revealed hex — average terrain food mult on those hexes (FoW 5C frontier)
+      let foodCost = 0;
+      try {
+        const { getTerrainScoutModifiers, getKingdomScoutFoodMult } = require('../game/terrain-scout');
+        const { getTerrainAt, hasHexGrid } = require('../game/world-hex-grid-cache');
+        const homeMult = getKingdomScoutFoodMult(k);
+        for (const cell of newlyRevealed) {
+          let mult = homeMult;
+          if (hasHexGrid()) {
+            const t = getTerrainAt(cell.col, cell.row);
+            if (t) mult = getTerrainScoutModifiers(t).foodCostMult;
+          }
+          foodCost += scoutFoodCostPerHex(rangerLevel, mult);
+        }
+      } catch {
+        foodCost = scoutFoodCostPerHex(rangerLevel) * newlyRevealed.length;
+      }
       const currentFood = Number(k.food) || 0;
       if (currentFood < foodCost) {
         return res.status(400).json({ error: `Not enough food (need ${foodCost})` });
@@ -2871,7 +2948,7 @@ module.exports = function (db) {
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
       // Get current happiness components
-      const happinessResult = engine.calculateHappiness(k);
+      const happinessResult = commandHandler.calculateHappiness(k);
 
       // Get last 50 turns of happiness history
       const history = await db.all(

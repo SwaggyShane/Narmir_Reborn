@@ -20,6 +20,7 @@ const fragmentBonusManager = require("./fragment-bonus-manager");
 const effectsProcessor = require("./synergy-effects-processor");
 const { processScoutProgress } = require("./scout-progress");
 const { getProgressMetrics } = require("./scout-rings");
+const { processPassiveScoutFinds } = require("./passive-scout-finds");
 const { revealRingHexes } = require("./visibility");
 const { safeJsonParse, safeJsonStringify, clearParseCache, roll, rand } = require('../utils/helpers');
 const { EPOCH_NOW } = require('../lib/db-sql');
@@ -658,57 +659,14 @@ function processTurn(k, db = null) {
           }
         }
 
-        // Passive scouting prizes: junk + a small amount of a real
-        // resource, rolled every turn scouting is actively allocated —
-        // not just on ring completion. The active expedition types
-        // (scout/deep/dungeon/mountain/epic-trek) already have their own
-        // reward pools; passive ring-scouting previously had none at all,
-        // so junk could never actually turn up from it.
-        if (roll(0.05)) {
-          if (roll(0.7)) {
-            const found = junkPrize(k, updates);
-            events.push({
-              type: "system",
-              message: `🔍 Your scouts also found ${found}`,
-              skipNews: true,
-              expeditionLogEntry: {
-                icon: '🔍',
-                title: 'Scouting find',
-                subtitle: found,
-              },
-            });
-          } else {
-            const resourceRoll = Math.random();
-            let resourceType;
-            let amount;
-            if (resourceRoll < 0.4) {
-              resourceType = "gold";
-              amount = rand(10, 50);
-            } else if (resourceRoll < 0.65) {
-              resourceType = "wood";
-              amount = rand(5, 20);
-            } else if (resourceRoll < 0.9) {
-              resourceType = "stone";
-              amount = rand(5, 20);
-            } else {
-              resourceType = "land";
-              amount = rand(1, 2);
-            }
-            updates[resourceType] = (updates[resourceType] !== undefined ? updates[resourceType] : k[resourceType] || 0) + amount;
-            const label = resourceType === "land" ? `${amount} acre${amount > 1 ? "s" : ""} of land` : `${amount} ${resourceType}`;
-            const msg = `🔍 Your scouts also found +${label}`;
-            events.push({
-              type: "system",
-              message: msg,
-              skipNews: true,
-              expeditionLogEntry: {
-                icon: '🔍',
-                title: 'Scouting find',
-                subtitle: `+${label}`,
-              },
-            });
-          }
-        }
+        // Passive scouting continuous finds (P0 §3a): allocation-scaled
+        // table in game/passive-scout-finds.js — replaces flat 5% junk/resource stub.
+        processPassiveScoutFinds(
+          { ...k, ...updates, scout_allocation: k.scout_allocation },
+          updates,
+          events,
+          { junkPrize },
+        );
       }
     } catch (err) {
       console.error('[engine] Scout progression error:', err.message);
@@ -1930,15 +1888,18 @@ async function resolveEpicTrek(db, exp, kingdom) {
     });
   }
 
-  // Process discoveries along path
+  // Process discoveries along path — kingdom matches + real loot + regional locations.
+  // No flavor-only "found N locations" lines; only rewards that mutate state.
   try {
+    const {
+      applyLootDiscoveries,
+      findRegionalLocationsOnPath,
+    } = require('./epic-trek-discovery');
     const discoveries = processPathDiscoveries(pathHexes, kingdom);
     if (discoveries && discoveries.length > 0) {
-      const newKingdoms = discoveries.filter(d => d.type === 'kingdom');
-      const newLocations = discoveries.filter(d => d.type === 'location');
+      const newKingdoms = discoveries.filter((d) => d.type === 'kingdom');
 
-      // Update discovered_kingdoms
-      if (newKingdoms.length > 0) {
+      if (newKingdoms.length > 0 && db) {
         const { getKingdomMapCoords } = require('./world-map-coords');
         const { pixelToHex } = require('./hex-utils');
         const otherKingdoms = await db.all('SELECT id, race, name FROM kingdoms WHERE id != $1', [kingdom.id]);
@@ -1946,18 +1907,22 @@ async function resolveEpicTrek(db, exp, kingdom) {
         let disc = {};
         try {
           disc = safeJsonParse(kingdom.discovered_kingdoms, {}, 'epic-trek:discovered_kingdoms');
-        } catch {}
+        } catch { /* keep empty */ }
 
         let discoveredCount = 0;
         for (const discovered of newKingdoms) {
-          const match = otherKingdoms.find(ok => {
+          const match = otherKingdoms.find((ok) => {
             const coords = getKingdomMapCoords({ id: ok.id, race: ok.race });
             const h = pixelToHex(coords.map_x, coords.map_y);
             return h.col === discovered.hex_col && h.row === discovered.hex_row;
           });
 
           if (match && !disc[match.id]) {
-            disc[match.id] = { found: true, discovered_turn: discovered.discovered_turn, name: match.name };
+            disc[match.id] = {
+              found: true,
+              discovered_turn: discovered.discovered_turn,
+              name: match.name,
+            };
             discoveredCount++;
           }
         }
@@ -1970,10 +1935,45 @@ async function resolveEpicTrek(db, exp, kingdom) {
         }
       }
 
-      if (newLocations.length > 0) {
-        rewards.push({
-          text: `Your explorers found ${newLocations.length} location${newLocations.length !== 1 ? 's' : ''}!`,
-        });
+      const lootResult = applyLootDiscoveries(
+        { ...kingdom, ...updates },
+        discoveries,
+      );
+      Object.assign(updates, lootResult.updates);
+      for (const r of lootResult.rewards) {
+        rewards.push(r);
+      }
+    }
+
+    // FoW 5A: dungeon/mountain hex on path unlocks regional location (same as scout ring).
+    if (db && kingdom.race) {
+      try {
+        const { pixelToHex } = require('./hex-utils');
+        const {
+          getLocationByRegionAndType,
+          markLocationDiscovered,
+          isPubliclyDiscovered,
+        } = require('./world-locations');
+        const onPath = findRegionalLocationsOnPath(
+          pathHexes,
+          kingdom.race,
+          getLocationByRegionAndType,
+          pixelToHex,
+        );
+        for (const { type: locType, location } of onPath) {
+          if (isPubliclyDiscovered(location)) continue;
+          await markLocationDiscovered(db, location.id, kingdom.id);
+          const turnColumn = locType === 'dungeon' ? 'first_dungeon_found_turn' : 'first_mountain_found_turn';
+          await db.run(
+            `UPDATE kingdoms SET ${turnColumn} = $1 WHERE race = $2 AND ${turnColumn} IS NULL`,
+            [kingdom.turn || 0, kingdom.race],
+          );
+          rewards.push({
+            text: `Your explorers uncovered the regional ${locType}!`,
+          });
+        }
+      } catch (locErr) {
+        console.error(`[epic-trek] Regional location check failed:`, locErr.message);
       }
     }
   } catch (err) {
@@ -2125,19 +2125,17 @@ async function resolveExpeditions(db, k, engine) {
 
       if (updates._find_kingdom) {
         delete updates._find_kingdom;
+        const { mergeKingdomDiscovery } = require('./kingdom-discovery-resolve');
         const other = await getRandomKingdom(db, freshK.id);
-        if (other) {
-          let disc = {};
-          try {
-            disc = safeJsonParse(freshK.discovered_kingdoms, {}, "auto:discovered_kingdoms");
-          } catch {}
-          if (!disc[other.id]) {
-            disc[other.id] = { found: true, name: other.name };
-            updates.discovered_kingdoms = safeJsonStringify(disc);
-            rewards.push({
-              text: `Your rangers discovered the kingdom of ${other.name}!`,
-            });
-          }
+        const merged = mergeKingdomDiscovery(
+          { ...freshK, ...updates },
+          updates,
+          other,
+          { source: 'expedition' },
+        );
+        if (merged.applied) {
+          updates.discovered_kingdoms = merged.discovered_kingdoms;
+          rewards.push({ text: merged.message });
         }
       }
 
@@ -2339,11 +2337,13 @@ async function resolveExpeditions(db, k, engine) {
           );
           offset += BATCH_SIZE;
         }
-        if (engine.io)
-          engine.io.emit("chat:system", {
+        if (engine.io) {
+          const { safeEmit } = require('./safe-socket-emit');
+          safeEmit(engine.io, "chat:system", {
             message: serverAnnounce,
             ts: Date.now(),
           });
+        }
       }
 
       // Save rewards to expedition row for log display
@@ -2497,13 +2497,15 @@ async function resolveRegions(db, io) {
               "SELECT name FROM alliances WHERE id = $1",
               [topAllianceId],
             );
-            if (io)
-              io.emit("chat", {
+            if (io) {
+              const { safeEmit } = require('./safe-socket-emit');
+              safeEmit(io, "chat", {
                 room: "global",
                 username: "System",
                 message: `🚩 REGION CAPTURED: The alliance [${alliance.name}] has seized control of ${region.name}!`,
                 is_system: true,
               });
+            }
           } else {
             await db.run(
               "UPDATE regions SET contest_progress = $1 WHERE name = $2",
