@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const engine = require("./engine");
 const { setUnreadCount, incrementUnread, unreadNewsCache } = require("../cache.js");
 const { devLog } = require("../utils/helpers");
+const { safeEmit } = require("./safe-socket-emit");
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_fallback_12345";
 const onlinePlayers = new Map(); // playerId → { socketId, username, race, isMod, isAdmin, kingdomName }
@@ -38,7 +39,7 @@ module.exports = function (io, db) {
       if (!kingdom || !player) return socket.disconnect();
 
       if (player.chat_banned)
-        socket.emit("chat:banned", { reason: "You are banned from chat." });
+        safeEmit(socket, "chat:banned", { reason: "You are banned from chat." });
 
       const isMod = !!(player.is_chat_mod || player.is_admin);
 
@@ -95,7 +96,7 @@ module.exports = function (io, db) {
             count = row?.c || 0;
             setUnreadCount(kid, count);
           }
-          io.to(`kingdom:${kid}`).emit("unread_news", { count });
+          safeEmit(io.to(`kingdom:${kid}`), "unread_news", { count });
         } catch (err) {
           console.error(`[socket] notifyUnread error for kingdom ${kid}:`, err.message);
         }
@@ -108,11 +109,11 @@ module.exports = function (io, db) {
       );
       const unreadCount = unreadRow?.c || 0;
       setUnreadCount(kingdom.id, unreadCount);
-      socket.emit("unread_news", { count: unreadCount });
+      safeEmit(socket, "unread_news", { count: unreadCount });
       devLog(`[socket] ${username} (${kingdom.name}) connected`);
     } catch (err) {
       console.error(`[socket] Connection handler error for ${socket.id}:`, err.message);
-      socket.emit("error", { message: "Server error during connection setup" });
+      safeEmit(socket, "error", { message: "Server error during connection setup" });
       socket.disconnect();
     }
 
@@ -168,7 +169,7 @@ module.exports = function (io, db) {
 
         const defInfo = onlinePlayers.get(defender.player_id);
         if (defInfo)
-          io.to(defInfo.socketId).emit("event:attack_received", {
+          safeEmit(io.to(defInfo.socketId), "event:attack_received", {
             from: attacker.name,
             message: result.defEvent,
             report: result.report,
@@ -240,7 +241,7 @@ module.exports = function (io, db) {
         const tgtInfo = onlinePlayers.get(target.player_id);
         if (tgtInfo && result.targetEvent) {
           const eventName = isFriendlySpell ? "event:blessing_received" : "event:spell_received";
-          io.to(tgtInfo.socketId).emit(eventName, {
+          safeEmit(io.to(tgtInfo.socketId), eventName, {
             from: data.obscure ? null : caster.name,
             spellId: data.spellId,
             message: result.targetEvent,
@@ -294,7 +295,7 @@ module.exports = function (io, db) {
           await notifyUnread(target.id);
           const ti = onlinePlayers.get(target.player_id);
           if (ti)
-            io.to(ti.socketId).emit("event:covert", {
+            safeEmit(io.to(ti.socketId), "event:covert", {
               message: result.targetEvent,
             });
         }
@@ -358,7 +359,7 @@ module.exports = function (io, db) {
           await notifyUnread(target.id);
           const ti = onlinePlayers.get(target.player_id);
           if (ti)
-            io.to(ti.socketId).emit("event:covert", {
+            safeEmit(io.to(ti.socketId), "event:covert", {
               message: result.targetEvent,
             });
         }
@@ -418,7 +419,7 @@ module.exports = function (io, db) {
           await notifyUnread(target.id);
           const ti = onlinePlayers.get(target.player_id);
           if (ti)
-            io.to(ti.socketId).emit("event:covert", {
+            safeEmit(io.to(ti.socketId), "event:covert", {
               message: result.targetEvent,
             });
         }
@@ -430,7 +431,7 @@ module.exports = function (io, db) {
     });
 
     socket.on("chat:request_online", () => {
-      socket.emit("chat:online", { users: buildOnlineList() });
+      safeEmit(socket, "chat:online", { users: buildOnlineList() });
     });
 
     // ── GLOBAL CHAT ──────────────────────────────────────────────────────────
@@ -461,7 +462,7 @@ module.exports = function (io, db) {
             "INSERT INTO chat_messages (kingdom_id,player_id,username,room,message) VALUES ($1,$2,$3,$4,$5)",
             [kingdom.id, playerId, username, "global", `/me ${action}`],
           );
-          io.to("global").emit("chat:message", {
+          safeEmit(io.to("global"), "chat:message", {
             room: "global",
             type: "me",
             from: activeName,
@@ -537,7 +538,7 @@ module.exports = function (io, db) {
             (p) => p.username === targetName,
           );
           if (tInfo) {
-            io.to(tInfo.socketId).emit("message:received", {
+            safeEmit(io.to(tInfo.socketId), "message:received", {
               sender_id: playerId,
               sender_name: username,
               content: pmMsg,
@@ -547,12 +548,12 @@ module.exports = function (io, db) {
 
           // Legacy whisper events for chat console
           if (tInfo)
-            io.to(tInfo.socketId).emit("chat:whisper", {
+            safeEmit(io.to(tInfo.socketId), "chat:whisper", {
               from: username,
               message: pmMsg,
               ts: Date.now(),
             });
-          socket.emit("chat:whisper_sent", {
+          safeEmit(socket, "chat:whisper_sent", {
             to: targetName,
             message: pmMsg,
             ts: Date.now(),
@@ -572,8 +573,8 @@ module.exports = function (io, db) {
             (p) => p.username === targetName,
           );
           if (!tInfo) return ack?.({ error: `${targetName} is not online` });
-          io.to(tInfo.socketId).emit("chat:kicked", { reason });
-          io.to("global").emit("chat:system", {
+          safeEmit(io.to(tInfo.socketId), "chat:kicked", { reason });
+          safeEmit(io.to("global"), "chat:system", {
             message: `🔨 ${targetName} was kicked. (${reason})`,
             ts: Date.now(),
           });
@@ -596,8 +597,8 @@ module.exports = function (io, db) {
           const tInfo = [...onlinePlayers.values()].find(
             (p) => p.username === targetName,
           );
-          if (tInfo) io.to(tInfo.socketId).emit("chat:banned", { reason });
-          io.to("global").emit("chat:system", {
+          if (tInfo) safeEmit(io.to(tInfo.socketId), "chat:banned", { reason });
+          safeEmit(io.to("global"), "chat:system", {
             message: `🔨 ${targetName} has been banned from chat. (${reason})`,
             ts: Date.now(),
           });
@@ -610,7 +611,7 @@ module.exports = function (io, db) {
             "UPDATE players SET chat_banned=0, chat_ban_reason=NULL WHERE username=$1",
             [targetName],
           );
-          io.to("global").emit("chat:system", {
+          safeEmit(io.to("global"), "chat:system", {
             message: `✅ ${targetName} has been unbanned from chat.`,
             ts: Date.now(),
           });
@@ -623,7 +624,7 @@ module.exports = function (io, db) {
           await db.run("UPDATE chat_messages SET deleted=1 WHERE id=$1", [
             msgId,
           ]);
-          io.to("global").emit("chat:delete", { id: msgId });
+          safeEmit(io.to("global"), "chat:delete", { id: msgId });
           return ack?.({ ok: true });
         }
 
@@ -637,7 +638,7 @@ module.exports = function (io, db) {
         "INSERT INTO chat_messages (kingdom_id,player_id,username,room,message) VALUES ($1,$2,$3,$4,$5)",
         [kingdom.id, playerId, username, "global", raw],
       );
-      io.to("global").emit("chat:message", {
+      safeEmit(io.to("global"), "chat:message", {
         id: res.lastID,
         room: "global",
         type: "normal",
@@ -664,7 +665,7 @@ module.exports = function (io, db) {
         "INSERT INTO chat_messages (kingdom_id,player_id,username,room,message) VALUES ($1,$2,$3,$4,$5)",
         [kingdom.id, playerId, username, String(m.alliance_id), msg],
       );
-      io.to(`alliance:${m.alliance_id}`).emit("chat:message", {
+      safeEmit(io.to(`alliance:${m.alliance_id}`), "chat:message", {
         room: "alliance",
         from: username,
         race: kingdom.race,
@@ -695,7 +696,7 @@ function buildOnlineList() {
 }
 
 function broadcastOnlineList(io) {
-  io.to("global").emit("chat:online", { users: buildOnlineList() });
+  safeEmit(io.to("global"), "chat:online", { users: buildOnlineList() });
 }
 
 const { applyKingdomUpdates } = require("../db/schema");

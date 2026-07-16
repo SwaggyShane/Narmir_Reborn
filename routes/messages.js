@@ -1,5 +1,6 @@
 const express = require('express');
 const { requireAuth } = require('./middleware');
+const { safeEmit } = require('../game/safe-socket-emit');
 
 module.exports = (db, io) => {
   const router = express.Router();
@@ -42,7 +43,7 @@ module.exports = (db, io) => {
 
       // Emit real-time notification
       const senderInfo = await db.get('SELECT username FROM players WHERE id = $1', [myId]);
-      io.to(`player:${recipient_id}`).emit('message:received', {
+      safeEmit(io.to(`player:${recipient_id}`), 'message:received', {
         id: result.lastID,
         sender_id: myId,
         sender_name: senderInfo?.username || 'System',
