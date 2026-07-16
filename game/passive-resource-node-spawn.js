@@ -8,8 +8,16 @@
 const { getKingdomMapCoords } = require('./world-map-coords');
 const { hexCenter, pixelToHex, getHexesInRadius } = require('./hex-utils');
 const { isWaterPoint } = require('./world-regions');
-const { getTerrainAt, hasHexGrid } = require('./world-hex-grid-cache');
 const { getTerrainForRace } = require('./terrain');
+
+// Optional: elevation-lane hex grid cache. This lane must load without it.
+function hexGridApi() {
+  try {
+    return require('./world-hex-grid-cache');
+  } catch {
+    return { hasHexGrid: () => false, getTerrainAt: () => null };
+  }
+}
 
 const VALID_TYPES = new Set(['wood', 'stone', 'iron', 'gold']);
 
@@ -39,8 +47,9 @@ async function spawnPassiveScoutResourceNode(db, kingdom, nodeType) {
     for (const hex of shuffled) {
       const center = hexCenter(hex.col, hex.row);
       if (isWaterPoint(center.x, center.y)) continue;
-      if (hasHexGrid()) {
-        const t = getTerrainAt(hex.col, hex.row);
+      const grid = hexGridApi();
+      if (grid.hasHexGrid()) {
+        const t = grid.getTerrainAt(hex.col, hex.row);
         if (t === 'ocean' || t === 'lake') continue;
         if (t) terrain = t;
       }
