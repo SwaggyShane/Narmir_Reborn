@@ -2,11 +2,31 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-16 (Narmir-shaped architecture complete on local `feature/webgl-worldmap`; elevation + Combat V2 earlier same day)
+**Last updated:** 2026-07-16 (TODO queue emptied on local `feature/webgl-worldmap`; architecture + polish closeouts)
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-16 — TODO queue finished (local; not production)
+
+**Scope:** Close remaining TODO.md items in the same sliced manner as architecture.
+
+**Implemented:**
+- `routes/test-results.js` → `safeEmit` (last route raw emit exception)
+- Manual `BEGIN TRANSACTION` removed from bounties, alliance, kingdom-gameplay (harvest/attunement/synergy), kingdom-warfare covert → `db.withTransaction` + `statusCode` errors
+- `client/src/utils/terrainUtils.js` `buildHexGrid` delegates to canonical `worldMapBuilder` (HexSelection / HexMapProvider parity with WebGL)
+
+**Closed with evidence / product decision (not code):**
+- River network: already in `worldMapBuilder.buildRiverNetwork` used by WebGL path
+- Balance tuning: CUT until play data; tables validated via `validate:game-tables`
+- Outbox event bus + engine.js split: CUT/deferred multi-week debt, not product gates
+- Component tests: ongoing hygiene, not a finite item
+- Admin wishlist: stays in `ADMIN_WISHLIST_PLAN.md` only
+
+**TODO.md:** Active work section empty.
+
+---
 
 ### 2026-07-16 — Narmir-shaped architecture complete (local; not production)
 
