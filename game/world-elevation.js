@@ -4,6 +4,7 @@
  */
 
 const { generateElevationGrid, getElevation, validateElevationBands } = require('./elevation.js');
+const { pixelToHex } = require('./hex-utils');
 
 /**
  * Phase 1: Generate and store elevation data for a world
@@ -147,11 +148,30 @@ function canCastSpell(casterElev, targetElev, featureFlags = {}) {
   return elevDiff >= 0; // Caster must be at same or higher elevation
 }
 
+/**
+ * Look up a kingdom's elevation level from its map position.
+ * This is the piece that was missing for Phase 3A/3B to ever actually fire:
+ * calculateElevationBonus/calculateMovementCost were wired to read
+ * kingdom.elevation_level, but nothing anywhere ever set it — so the
+ * undefined-check guards in combat-resolver.js always failed silently.
+ */
+function getKingdomElevationLevel(kingdom, elevationGrid) {
+  if (!kingdom || !elevationGrid) return undefined;
+  // Lazy require: world-map-coords.js is a heavier module (world seed +
+  // region logic) that several other files already require at load time;
+  // requiring it lazily here avoids adding a new load-order dependency.
+  const { getKingdomMapCoords } = require('./world-map-coords');
+  const { map_x, map_y } = getKingdomMapCoords(kingdom);
+  const { col, row } = pixelToHex(map_x, map_y);
+  return getElevation(elevationGrid, col, row);
+}
+
 module.exports = {
   ensureWorldElevation,
   buildDownhillDAG,
   computeFlowAccumulation,
   calculateElevationBonus,
   calculateMovementCost,
-  canCastSpell
+  canCastSpell,
+  getKingdomElevationLevel,
 };

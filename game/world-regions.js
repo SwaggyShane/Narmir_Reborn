@@ -3,16 +3,21 @@
  * server-side kingdom/node placement (game/world-map-coords.js) and
  * validation tooling (scripts/validate-kingdom-hex-placement.js).
  *
- * Mirrors client/src/components/react/WorldmapRenderer.jsx's RACE_HOMES,
- * nearestRaceHome, and oceanBandForColumn exactly. That file is a
- * browser-only React component and can't be required() from the server, so
- * this logic is kept here as the server-side source of truth and manually
- * synced if the renderer's map geometry ever changes.
+ * Mirrors client/src/utils/worldMapBuilder.js's RACE_HOMES, nearestRaceHome,
+ * and computeOceanBand exactly (the WebGL renderer's terrain generator,
+ * confirmed canonical 2026-07-15 — the older WorldmapRenderer.jsx/SVG
+ * renderer had its own diverging inline copy of this logic; that
+ * divergence is being retired in favor of this one). That file is a
+ * browser-only ES module and can't be required() from the server, so this
+ * logic is kept here as the server-side source of truth and manually
+ * synced if the renderer's map geometry ever changes. game/world-hex-grid.js
+ * builds on top of this module for the full terrain+lake+river grid.
  */
 
 'use strict';
 
-const { pixelToHex } = require('./hex-utils');
+const { pixelToHex, HEX_VERT } = require('./hex-utils');
+const { getTerrainAt } = require('./world-hex-grid-cache');
 
 const RACE_HOMES = {
   dwarf: { x: 400, y: 488 },
@@ -26,15 +31,18 @@ const RACE_HOMES = {
   dire_wolf: { x: 289, y: 849 },
 };
 
-const OCEAN_BASE_ROW = 2;
-const OCEAN_THICKNESS = 2;
-// Note: the desert/volcanic south band never produces water terrain, only
-// the ocean/tundra rows at the top of the map matter for water checks.
+const MAP_HEIGHT = 1380;
 
-function oceanBandForColumn(col) {
-  const wave = Math.sin(col * 0.35) * 1.0 + Math.sin(col * 0.9 + 1.3) * 0.4;
-  const start = Math.round(OCEAN_BASE_ROW + wave);
-  return { start, end: start + OCEAN_THICKNESS };
+/**
+ * Fixed-latitude ocean band (matches worldMapBuilder.js's computeOceanBand).
+ * Rows above `start` are tundra, [start, end) are ocean — both uninhabitable.
+ */
+function oceanBand(worldHeight = MAP_HEIGHT) {
+  const oceanLatitude = 0.2;
+  const oceanBandWidth = 0.08;
+  const start = Math.floor((oceanLatitude - oceanBandWidth / 2) * (worldHeight / HEX_VERT));
+  const end = Math.floor((oceanLatitude + oceanBandWidth / 2) * (worldHeight / HEX_VERT));
+  return { start, end };
 }
 
 const RACE_HOMES_ENTRIES = Object.entries(RACE_HOMES);
@@ -60,18 +68,28 @@ function nearestRaceHome(x, y) {
 }
 
 /**
- * True if pixel (x, y) falls in an ocean/tundra-band hex row (water,
- * unsuitable for a kingdom or resource node spawn).
+ * True if pixel (x, y) falls in an ocean/tundra-band hex row, OR lands
+ * exactly on a per-region lake hex (water either way, unsuitable for a
+ * kingdom or resource node spawn). The lake check needs the built hex grid
+ * (game/world-hex-grid.js's buildHexGrid, cached at boot in
+ * world-hex-grid-cache.js) — before that's populated, or for the (rare,
+ * non-water) 'ocean' terrain that only ever occurs inside the row band
+ * already checked below, this falls back to the row-band check alone.
+ * Found 2026-07-16: without this, a kingdom's home could land exactly on
+ * its own region's lake — a real, pre-existing gap (kingdom placement never
+ * had lake-awareness before game/world-hex-grid.js existed) that surfaced
+ * once elevation gave it a visible effect (permanent elevation 0).
  */
 function isWaterPoint(x, y) {
   const { col, row } = pixelToHex(x, y);
-  const oceanBand = oceanBandForColumn(col);
-  return row < oceanBand.end;
+  const band = oceanBand();
+  if (row < band.end) return true;
+  return getTerrainAt(col, row) === 'lake';
 }
 
 module.exports = {
   RACE_HOMES,
   nearestRaceHome,
-  oceanBandForColumn,
+  oceanBand,
   isWaterPoint,
 };

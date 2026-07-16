@@ -17,6 +17,9 @@ const { applyWarmachineDamage } = require('./defense');
 const heroesMod = require('../heroes');
 const defenseMod = require('../defense');
 const combatResolverV2 = require('../combat-resolver');
+const { getFlag } = require('../feature-flags');
+const { hasElevationGrid, getElevationGrid } = require('../world-elevation-cache');
+const { getKingdomElevationLevel } = require('../world-elevation');
 
 const { getHeroPower } = heroesMod;
 const { wallDefensePower, towerDetectionPower, outpostRangerPower } = defenseMod;
@@ -31,7 +34,9 @@ const {
   WM_CREW_REQUIRED,
 } = config;
 
-const USE_COMBAT_V2 = process.env.USE_COMBAT_V2 === "1";
+// Default-on as of 2026-07-15 (elevation combat bonus only applies on this
+// path). Set USE_COMBAT_V2="0" to force the legacy V1 path.
+const USE_COMBAT_V2 = process.env.USE_COMBAT_V2 !== "0";
 const HAPPINESS_FLOOR = 0;
 
 function wmCrewRequired(race, engineerLevel) {
@@ -49,6 +54,17 @@ function resolveMilitaryAttackV2Adapter(
 ) {
   attacker.heroes = attackerHeroes;
   defender.heroes = defenderHeroes;
+
+  // Phase 3A: attach elevation_level so combat-resolver's
+  // calculateElevationBonus can actually fire. Previously nothing set this
+  // anywhere, so its undefined-check always failed silently even with the
+  // feature flag on and USE_COMBAT_V2 set.
+  if (getFlag('FEATURE_ELEVATION_COMBAT') && hasElevationGrid()) {
+    const grid = getElevationGrid();
+    attacker.elevation_level = getKingdomElevationLevel(attacker, grid);
+    defender.elevation_level = getKingdomElevationLevel(defender, grid);
+  }
+
   const combatIsNight =
     typeof attacker.__combatIsNight === "boolean"
       ? attacker.__combatIsNight
@@ -169,6 +185,38 @@ function resolveMilitaryAttackV2Adapter(
   defenderUpdates.xp = defXp.xp;
   defenderUpdates.level = defXp.level;
 
+  // Post-combat happiness change, ported from V1's resolveMilitaryAttack
+  // formula (below) so V2 doesn't silently drop this outcome when it
+  // becomes the default path — V2's combat-resolver reads happiness as a
+  // combat-power input but never wrote a post-combat change, a gap only
+  // caught by test/combat-comparative.test.js once V2 stopped being opt-in.
+  const powerRatio =
+    (v2Result.report.diagnostics?.attacker?.totalDmg || 0) /
+    Math.max(1, v2Result.report.diagnostics?.defender?.totalDmg || 0);
+  const landRatio = (attacker.land || 1) / Math.max(1, defender.land || 1);
+  const fighterRatio = (attacker.fighters || 1) / Math.max(1, defender.fighters || 1);
+  const bullyRatio = Math.max(landRatio, fighterRatio * 0.5);
+  const victoryMargin = Math.min(2.0, Math.max(0.1, powerRatio));
+  let atkHappinessChange;
+  let defHappinessChange;
+  if (v2Result.win) {
+    atkHappinessChange = Math.floor(5 + Math.min(10, victoryMargin * 5));
+    defHappinessChange = -Math.max(5, Math.floor(Math.min(20, victoryMargin * 10)));
+    if (bullyRatio >= 8) atkHappinessChange -= 15;
+    if (bullyRatio >= 4) atkHappinessChange -= 5;
+  } else {
+    atkHappinessChange = -Math.floor(5 + Math.min(15, (1 / Math.max(0.1, powerRatio)) * 8));
+    defHappinessChange = Math.floor(5 + Math.min(10, (1 / Math.max(0.1, powerRatio)) * 5));
+  }
+  attackerUpdates.happiness = Math.max(
+    HAPPINESS_FLOOR,
+    Math.min(200, (attacker.happiness !== undefined && attacker.happiness !== null ? attacker.happiness : 100) + atkHappinessChange),
+  );
+  defenderUpdates.happiness = Math.max(
+    HAPPINESS_FLOOR,
+    Math.min(200, (defender.happiness !== undefined && defender.happiness !== null ? defender.happiness : 100) + defHappinessChange),
+  );
+
   const attackerDead = v2Result.report.injuredTroops?.attacker?.deadByType || {};
   const defenderDead = v2Result.report.injuredTroops?.defender?.deadByType || {};
   const attackerInjured = v2Result.report.injuredTroops?.attacker?.injuredByType || {};
@@ -189,11 +237,7 @@ function resolveMilitaryAttackV2Adapter(
     combatSystem: "v2",
     atkPower: Math.round(v2Result.report.diagnostics?.attacker?.totalDmg || 0),
     defPower: Math.round(v2Result.report.diagnostics?.defender?.totalDmg || 0),
-    powerRatio: Math.round(
-      ((v2Result.report.diagnostics?.attacker?.totalDmg || 0) /
-        Math.max(1, v2Result.report.diagnostics?.defender?.totalDmg || 0)) *
-        100,
-    ) / 100,
+    powerRatio: Math.round(powerRatio * 100) / 100,
     atkFightersLost: attackerDead.fighters || 0,
     atkThrallsLost: attackerDead.thralls || 0,
     atkRangersLost: attackerDead.rangers || 0,
@@ -232,7 +276,7 @@ function resolveMilitaryAttackV2Adapter(
       {
         phase: "Diagnostics",
         title: "Combat V2",
-        msg: "Experimental HP/DMG combat resolved behind USE_COMBAT_V2.",
+        msg: "HP/DMG combat resolved via Combat V2 (default path as of 2026-07-15).",
         icon: "V2",
       },
       {

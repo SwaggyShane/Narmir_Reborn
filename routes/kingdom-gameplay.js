@@ -1780,6 +1780,26 @@ module.exports = function (db) {
     }
   });
 
+  // GET /world-river-flow - Phase 2 elevation river-flow DAG (downhill graph
+  // + flow accumulation per hex). Computed once at boot (db/schema.js) and
+  // cached — these functions had zero callers anywhere before this. Note:
+  // the world map's actually-rendered rivers still come from the separate
+  // buildRiverNetwork lake/MST system in game/world-hex-grid.js; switching
+  // the renderer to this flow-accumulation data is a distinct follow-up.
+  router.get("/world-river-flow", requireAuth, async (_req, res) => {
+    try {
+      const { hasFlowData, getFlowData } = require("../game/world-elevation-cache");
+      if (!hasFlowData()) {
+        return res.status(503).json({ error: "River flow data not ready yet" });
+      }
+      const { dag, flow } = getFlowData();
+      res.json({ dag, flow });
+    } catch (err) {
+      console.error("[world-river-flow]", err.message);
+      res.status(500).json({ error: "Failed to load river flow data" });
+    }
+  });
+
   router.post("/rebirth", requireAuth, requireCsrfToken, async (req, res) => {
     const k = await db.get("SELECT id, level, prestige_level, land, turn FROM kingdoms WHERE player_id = $1", [
       req.player.playerId,
@@ -2946,7 +2966,16 @@ module.exports = function (db) {
         // Get kingdom position and calculate distance/cost
         const { map_x, map_y } = getKingdomMapCoords(k);
         const distance = hexUnitDistance(map_x, map_y, target_x, target_y);
-        const turnsNeeded = getEpicTrekTurns(map_x, map_y, target_x, target_y);
+        // Phase 3B: pass elevation data so getEpicTrekTurns' movement-penalty
+        // branch actually runs — previously called with 4 args, so its
+        // `opts.elevationGrid` check always failed and FEATURE_ELEVATION_MOVEMENT
+        // did nothing regardless of the flag's value.
+        const { getFlag } = require('../game/feature-flags');
+        const { hasElevationGrid, getElevationGrid } = require('../game/world-elevation-cache');
+        const turnsNeeded = getEpicTrekTurns(map_x, map_y, target_x, target_y, {
+          getFlag,
+          elevationGrid: hasElevationGrid() ? getElevationGrid() : null,
+        });
 
         if (k.turns_stored < turnsNeeded) {
           const err = new Error(`Epic Trek requires ${turnsNeeded} turns (you have ${k.turns_stored})`);

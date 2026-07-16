@@ -118,9 +118,16 @@ function assert(condition, message) {
   }
 }
 
+// V2 became the default combat path 2026-07-15 (elevation combat bonus only
+// applies on this path) — USE_COMBAT_V2 is now opt-OUT ("0"), not opt-in.
 const defaultResult = runSmoke({ USE_COMBAT_V2: '' });
-assert(defaultResult.combatSystem === 'v1', 'V1 should remain the default combat path');
+assert(defaultResult.combatSystem === 'v2', 'V2 should be the default combat path as of 2026-07-15');
 assert(defaultResult.hasContract, 'Default combat path must preserve the attack result contract');
+assert(defaultResult.hasDiagnostics, 'Default (V2) combat path must include diagnostics');
+
+const v1Result = runSmoke({ USE_COMBAT_V2: '0' });
+assert(v1Result.combatSystem === 'v1', 'USE_COMBAT_V2=0 should force the legacy V1 path');
+assert(v1Result.hasContract, 'V1 opt-out path must preserve the attack result contract');
 
 const v2Result = runSmoke({ USE_COMBAT_V2: '1' });
 assert(v2Result.combatSystem === 'v2', 'USE_COMBAT_V2=1 should activate the V2 adapter');

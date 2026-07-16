@@ -20,6 +20,9 @@ const {
 const { getSynergyPassiveBonusMultiplier } = require("./lib/synergy-cache");
 const { naturalHappinessCap } = require("./lib/happiness-cap");
 const { getMasonSigilResist } = require("./lib/defense");
+const { getFlag } = require("./feature-flags");
+const { hasElevationGrid, getElevationGrid } = require("./world-elevation-cache");
+const { canCastSpell, getKingdomElevationLevel } = require("./world-elevation");
 
 const {
   SPELL_DEFS,
@@ -121,6 +124,22 @@ function validateSpellTarget(caster, target, spellId) {
     return {
       error: `${target.name} is under newbie protection until Turn 400 (currently Turn ${target.turn})`,
     };
+  }
+
+  // Phase 3C: elevation line-of-sight — high ground can cast down, low
+  // ground blocked by higher terrain. canCastSpell() itself no-ops (always
+  // true) when the flag is off, so this is safe to call unconditionally
+  // once the grid exists; hasElevationGrid() guards against calling it
+  // before boot's elevation step has populated the cache (e.g. in tests).
+  if (getFlag('FEATURE_ELEVATION_SPELLS') && hasElevationGrid()) {
+    const grid = getElevationGrid();
+    const casterElev = getKingdomElevationLevel(caster, grid);
+    const targetElev = getKingdomElevationLevel(target, grid);
+    if (!canCastSpell(casterElev, targetElev, { FEATURE_ELEVATION_SPELLS: true })) {
+      return {
+        error: `${target.name} is on higher ground — line of sight blocked for offensive spells.`,
+      };
+    }
   }
 
   return { def, isFriendly, target };

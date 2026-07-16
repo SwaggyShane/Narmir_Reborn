@@ -5,7 +5,9 @@
  */
 
 const { PRESTIGE_MODIFIERS } = require('./config');
-const USE_COMBAT_V2 = process.env.USE_COMBAT_V2 === "1";
+// Default-on as of 2026-07-15 (elevation combat bonus only applies on this
+// path). Set USE_COMBAT_V2="0" to force the legacy V1 path below.
+const USE_COMBAT_V2 = process.env.USE_COMBAT_V2 !== "0";
 const { safeJsonParse } = require('../utils/helpers');
 const { raceBonus } = require('./lib/race-bonus');
 const fragmentBonusManager = require('./fragment-bonus-manager');
@@ -525,7 +527,7 @@ function resolveMilitaryAttackV2Adapter(
       {
         phase: "Diagnostics",
         title: "Combat V2",
-        msg: "Experimental HP/DMG combat resolved behind USE_COMBAT_V2.",
+        msg: "HP/DMG combat resolved via Combat V2 (default path as of 2026-07-15).",
         icon: "??",
       },
       {

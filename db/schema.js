@@ -831,6 +831,41 @@ async function initDb(options = {}) {
     }
   }
 
+  // Precompute world elevation (Phase 1 of the elevation system) — was
+  // written but never invoked from anywhere. ensureWorldElevation itself
+  // no-ops if elevation_grid is already populated, so this is cheap on
+  // every boot after the first. Uses the canonical WebGL hex-terrain grid
+  // (game/world-hex-grid.js) so elevation bands correlate with the terrain
+  // actually rendered, not an independently-generated approximation.
+  try {
+    const { ensureWorldElevation, buildDownhillDAG, computeFlowAccumulation } = require('../game/world-elevation');
+    const { setElevationGrid, setFlowData } = require('../game/world-elevation-cache');
+    const { setHexGrid } = require('../game/world-hex-grid-cache');
+    const { buildHexGrid, MAP_WIDTH, MAP_HEIGHT } = require('../game/world-hex-grid');
+    const worldState = await _db.get('SELECT id, seed, elevation_grid FROM world_state WHERE id = 1');
+    if (worldState) {
+      const hexGrid = buildHexGrid(MAP_WIDTH, MAP_HEIGHT, getWorldSeed());
+      setHexGrid(hexGrid);
+      const elevationMap = await ensureWorldElevation(_db, worldState, hexGrid);
+      setElevationGrid(elevationMap);
+      console.log(`[db] Elevation grid ready (${Object.keys(elevationMap).length} hexes cached)`);
+
+      // Phase 2 river flow: buildDownhillDAG/computeFlowAccumulation had zero
+      // callers anywhere. Computed once here (cheap — same ~1000-hex grid)
+      // and cached/exposed via GET /api/kingdom/world-river-flow. Note: this
+      // makes the data real and queryable, but the world map's rendered
+      // rivers still come from the separate buildRiverNetwork lake/MST
+      // system in game/world-hex-grid.js — switching the renderer over to
+      // this flow-accumulation data is a distinct follow-up, not done here.
+      const dag = buildDownhillDAG(elevationMap, hexGrid);
+      const flow = computeFlowAccumulation(dag);
+      setFlowData(dag, flow);
+      console.log(`[db] River flow DAG ready (${Object.keys(dag).length} hexes)`);
+    }
+  } catch (err) {
+    console.error('[db] Elevation initialization failed:', err.message);
+  }
+
   // Seed the one dungeon + one mountain location per region (idempotent —
   // seedRegionLocations only inserts whichever are missing) and load them
   // into the in-memory cache. Must run every boot, not just on a fresh

@@ -167,6 +167,34 @@ async function initializeAdditionalColumns(db, getTableColumns, addCol) {
   const srCols = await getTableColumns('spy_reports');
   if (!srCols.includes('target_name')) await addCol('spy_reports', 'target_name', 'TEXT', srCols);
   if (!srCols.includes('outcome')) await addCol('spy_reports', 'outcome', 'TEXT', srCols);
+
+  // world_state.elevation_grid: precomputed elevation data (game/world-elevation.js's
+  // ensureWorldElevation, called from schema.js after world seed load). Ported from
+  // the never-run db/migrations/001-add-elevation-grid.js (that directory has no
+  // runner anywhere in the codebase) to the addCol pattern that actually executes.
+  const wsCols = await getTableColumns('world_state');
+  if (!wsCols.includes('elevation_grid')) await addCol('world_state', 'elevation_grid', "JSONB NOT NULL DEFAULT '{}'", wsCols);
+
+  // war_log: routes/kingdom-warfare.js and routes/kingdom-gameplay.js insert
+  // and read action_type/outcome/detail/obscured (7+ INSERT sites, plus the
+  // GET /war-log SELECT), but the DDL only ever defined result/gold_stolen/
+  // land_gained (never referenced by any of those queries) -- every single
+  // war_log INSERT in the game was failing outright, both on the missing
+  // columns and on the orphaned `result` column's NOT NULL constraint with
+  // no default and no value ever supplied for it. Found while verifying the
+  // Combat V2 default-flip via the route-persistence smoke test.
+  const wlCols = await getTableColumns('war_log');
+  if (!wlCols.includes('action_type')) await addCol('war_log', 'action_type', 'TEXT', wlCols);
+  if (!wlCols.includes('outcome')) await addCol('war_log', 'outcome', 'TEXT', wlCols);
+  if (!wlCols.includes('detail')) await addCol('war_log', 'detail', 'TEXT', wlCols);
+  if (!wlCols.includes('obscured')) await addCol('war_log', 'obscured', 'INTEGER NOT NULL DEFAULT 0', wlCols);
+  if (wlCols.includes('result')) {
+    try {
+      await db.run('ALTER TABLE war_log ALTER COLUMN result DROP NOT NULL');
+    } catch (e) {
+      console.log('[db] Migration: war_log.result NOT NULL drop skipped:', e.message);
+    }
+  }
 }
 
 async function initializeMarketPrices(db) {

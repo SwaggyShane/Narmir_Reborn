@@ -24,8 +24,17 @@ const SUSPICIOUS_PATTERNS = [
   /\u00C2[\u0080-\u00BF]/,
   /\u00E2[\u0080-\u00BF]/,
   /\u00EF\u00BF\u00BD/,
-  /\u00B7/,
 ];
+// Note: a bare /\u00B7/ (middle dot) pattern used to be listed here too, but
+// it matched *any* correctly-encoded standalone "\u00B7" character (e.g. a
+// deliberate " \u00B7 " list separator), not just corruption. The actual mojibake
+// artifact for a middle dot is "\u00C2\u00B7" (U+00C2 U+00B7) \u2014 already caught by the
+// /\u00C2[\u0080-\u00BF]/ pattern above, since \u00B7 falls in that
+// continuation-byte range. Removing the bare pattern loses no real
+// detection coverage, only the false positives on legitimate Unicode.
+// Found 2026-07-16: blocked a commit on pre-existing, correctly-encoded
+// "\uD83D\uDCDC ... \u00B7 ..." strings in game/magic.js that had nothing to do with the
+// change being committed.
 
 function runGit(args) {
   return execFileSync("git", args, { encoding: "utf8", maxBuffer: 20 * 1024 * 1024 });
