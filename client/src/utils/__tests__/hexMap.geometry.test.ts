@@ -38,7 +38,12 @@ describe('HexGeometry', () => {
   });
 
   describe('pixelToHex & hexCenter round-trip', () => {
-    it('should round-trip correctly (pixel → hex → pixel)', () => {
+    it('should be idempotent (pixel → hex → center → same hex)', () => {
+      // An arbitrary pixel need not restore to within a few px of itself —
+      // hexes are ~59x51px, so any interior point can legitimately be
+      // dozens of px from its assigned hex's center. The invariant that
+      // actually matters (and the one the docstring above pixelToHex
+      // describes) is that re-deriving the hex from that center is stable.
       const cases = [
         { x: 100, y: 100 },
         { x: 500, y: 500 },
@@ -48,10 +53,9 @@ describe('HexGeometry', () => {
 
       cases.forEach(({ x, y }) => {
         const hex = pixelToHex(x, y);
-        const { x: restoredX, y: restoredY } = hexCenter(hex.col, hex.row);
-        // Expect restoration to be close (within 1 pixel due to rounding)
-        expect(Math.abs(restoredX - x)).toBeLessThan(5);
-        expect(Math.abs(restoredY - y)).toBeLessThan(5);
+        const { x: cx, y: cy } = hexCenter(hex.col, hex.row);
+        const hex2 = pixelToHex(cx, cy);
+        expect(hex2).toEqual(hex);
       });
     });
 

@@ -143,7 +143,12 @@ const StudiesPanel = () => {
       </div>
 
       {activeTab === 'tower' && (
-        <TowerTab studiesData={studiesData} state={state} onUpgraded={handleTabUpgraded} />
+        <TowerTab
+          studiesData={studiesData}
+          state={state}
+          onUpgraded={handleTabUpgraded}
+          fetchStudiesData={fetchStudiesData}
+        />
       )}
 
       {activeTab === 'school' && (
@@ -169,7 +174,12 @@ const StudiesPanel = () => {
       )}
 
       {activeTab === 'slibrary' && (
-        <LibraryTab studiesData={studiesData} state={state} onUpgraded={handleTabUpgraded} />
+        <LibraryTab
+          studiesData={studiesData}
+          state={state}
+          onUpgraded={handleTabUpgraded}
+          fetchStudiesData={fetchStudiesData}
+        />
       )}
     </div>
   );

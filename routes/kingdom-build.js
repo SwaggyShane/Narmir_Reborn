@@ -711,6 +711,48 @@ module.exports = function (db) {
     res.json({ ok: true, allocation: JSON.stringify(alloc) });
   });
 
+  // POST /tower-allocation — bulk set (replace), matching the same
+  // "one allocate/release round trip for the whole list" pattern as
+  // /library-allocation, /shrine-allocation, etc. /tower-craft and
+  // /tower-cancel (above) are the older per-item, additive/subtractive API;
+  // this is the bulk counterpart the crafting UI actually uses.
+  router.post('/tower-allocation', requireAuth, requireCsrfToken, async (req, res) => {
+    const { allocation } = req.body;
+    if (!allocation || typeof allocation !== 'object')
+      return res.status(400).json({ error: 'allocation required' });
+
+    const validKeys = Object.keys(config.SCROLL_REQUIREMENTS || {});
+    const allocValidation = validateAllocationObject(allocation, {
+      validKeys,
+      maxPerItem: 1000000,
+      maxTotal: 1000000,
+      fieldName: 'allocation',
+    });
+    if (!allocValidation.valid) {
+      return res.status(400).json({ error: allocValidation.error });
+    }
+
+    const k = await db.get(
+      'SELECT id, bld_mage_towers, mages FROM kingdoms WHERE player_id = $1',
+      [req.player.playerId],
+    );
+    if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+    if (k.bld_mage_towers === 0) return res.status(400).json({ error: 'You need at least 1 Mage Tower first' });
+
+    const capacity = k.bld_mage_towers * 20;
+    const maxMages = Math.min(k.mages || 0, capacity);
+    const total = Object.values(allocValidation.values).reduce((s, v) => s + (Number(v) || 0), 0);
+    if (total > maxMages) {
+      return res.status(400).json({ error: `Allocated ${total} but you only have ${maxMages} effective mages` });
+    }
+
+    await db.run('UPDATE kingdoms SET mage_tower_allocation = $1 WHERE id = $2', [
+      JSON.stringify(allocValidation.values),
+      k.id,
+    ]);
+    res.json({ ok: true, allocation: allocValidation.values });
+  });
+
   // POST /shrine-allocation
   router.post('/shrine-allocation', requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;

@@ -4,6 +4,7 @@ import { fmt } from "../../utils/fmt";
 import { toast } from '../../utils/toast.js';
 import ProgressBar from './ProgressBar';
 import HybridBlueprintModal from './HybridBlueprintModal';
+import { AllocationButtons } from './AllocationButtons.jsx';
 import {
   useEconomyStore,
   useRace,
@@ -709,17 +710,6 @@ const BuildPanel = () => {
                 Land: <span id="b-land-available" className="text-text">{fmt(landAvailable)} / {fmt(land)}</span> available
               </div>
             </div>
-            <div className="flex gap-1.5">
-              <button className="base-btn variant-accent flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--accent1)]" onClick={distributeBuildEvenly}>
-                Distribute
-              </button>
-              <button className="base-btn variant-red flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--red)]" onClick={releaseAllEngineers}>
-                Release All
-              </button>
-              <button className="base-btn variant-gold flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--gold)] text-black" onClick={saveBuildAllocation}>
-                Allocate
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -765,6 +755,13 @@ const BuildPanel = () => {
                 })}
               </div>
             )}
+          </div>
+          <div className="px-3 pb-3">
+            <AllocationButtons
+              onDistribute={distributeBuildEvenly}
+              onRelease={releaseAllEngineers}
+              onAllocate={saveBuildAllocation}
+            />
           </div>
         </div>
 

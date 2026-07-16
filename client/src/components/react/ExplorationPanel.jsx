@@ -10,6 +10,7 @@ import { useGameMutationEvents } from '../../hooks/useGameState';
 import { useEconomyStore, useProfileStore, useMilitaryStore, useResearchStore, usePopulationStore, useBuildAllocation, useTrainingAllocation, useResourceBuildAllocation } from '../../stores';
 import EmptyState from './EmptyState.jsx';
 import HexSelectionModal from './HexSelectionModal.jsx';
+import { AllocationButtons } from './AllocationButtons.jsx';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 const EXPEDITION_TURNS = {
@@ -970,23 +971,13 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <button
-                  className="base-btn variant-accent flex-1 bg-[var(--accent2)]"
-                  onClick={handleScoutAllocate}
-                  disabled={scoutAllocationInput === 0}
-                >
-                  Allocate
-                </button>
-                <button
-                  className="base-btn flex-1 text-[12px] text-[var(--text3)]"
-                  onClick={handleScoutReleaseAll}
-                  disabled={scout_allocation === 0}
-                  title="Release all scouts and stop ring progression"
-                >
-                  Release
-                </button>
-              </div>
+              <AllocationButtons
+                onRelease={handleScoutReleaseAll}
+                onAllocate={handleScoutAllocate}
+                releaseDisabled={scout_allocation === 0}
+                allocateDisabled={scoutAllocationInput === 0}
+                releaseTitle="Release all scouts and stop ring progression"
+              />
             </div>
 
             {/* Epic Trek unlocks once passive scouting has completed Ring 2 -- or unconditionally when fog of war is disabled (test/debug mode). */}

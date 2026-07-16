@@ -4,6 +4,7 @@ import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import { toast } from '../../utils/toast.js';
 import ProgressBar from './ProgressBar';
+import { AllocationButtons } from './AllocationButtons.jsx';
 import { useRace, useTroopLevels, useTrainingAllocation, useBuildTraining, useWeaponsStockpile, useArmorStockpile, useEngineers, useScribes, useResearchers, useFighters, useRangers, useClerics, useMages, useThieves, useNinjas, useEconomyStore } from '../../stores';
 
 const TROOP_TYPES = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas'];
@@ -196,11 +197,12 @@ const TrainingPanel = () => {
               {' - Armor: '}<span className="text-text">{fmt(armorStockpile)}</span>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button className="base-btn variant-accent whitespace-nowrap bg-[var(--accent1)]" onClick={distributeTrainingEvenly}>Distribute evenly</button>
-            <button className="base-btn variant-red whitespace-nowrap bg-[var(--red)]" onClick={releaseAllTraining}>Release all</button>
-            <button className="base-btn variant-gold whitespace-nowrap bg-[var(--gold)] text-black" onClick={saveTrainingAllocation}>Save allocation</button>
-          </div>
+          <AllocationButtons
+            onDistribute={distributeTrainingEvenly}
+            onRelease={releaseAllTraining}
+            onAllocate={saveTrainingAllocation}
+            distributeLabel="Distribute evenly"
+          />
         </div>
 
         <div className="text-[12px] text-[var(--text3)] mb-3 leading-relaxed">

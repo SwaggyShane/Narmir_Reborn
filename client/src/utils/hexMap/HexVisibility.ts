@@ -29,6 +29,24 @@ export function createVisibilityLookup(
 }
 
 /**
+ * Marks bits from a BigInt bitmap into visArray. Converts to a base-2
+ * string once (radix-2 BigInt->string conversion is linear in bit count)
+ * instead of testing each cell with `1n << BigInt(idx)`, which reallocates
+ * an idx-bit BigInt per call and makes a full-grid scan O(cells^2).
+ */
+function applyBits(bitmap: bigint, totalCells: number, visArray: Uint8Array, state: FogState): void {
+  if (bitmap === 0n) return;
+  const bin = bitmap.toString(2);
+  const len = bin.length;
+  const max = Math.min(len, totalCells);
+  for (let i = 0; i < max; i++) {
+    if (bin.charCodeAt(len - 1 - i) === 49 /* '1' */) {
+      visArray[i] = state;
+    }
+  }
+}
+
+/**
  * Build a visibility Uint8Array from server BigInt bitmasks.
  * One-time cost during context creation.
  */
@@ -38,23 +56,11 @@ export function buildVisibilityArray(
   seenCells: bigint,
   currentCells: bigint
 ): Uint8Array {
-  const visArray = new Uint8Array(gridWidth * gridHeight);
+  const totalCells = gridWidth * gridHeight;
+  const visArray = new Uint8Array(totalCells);
 
-  for (let row = 0; row < gridHeight; row++) {
-    for (let col = 0; col < gridWidth; col++) {
-      const idx = getFlatIndex(col, row, gridWidth);
-      const bitIdx = idx;
-
-      let state = FogState.Unseen;
-      if ((currentCells & (1n << BigInt(bitIdx))) !== 0n) {
-        state = FogState.Current;
-      } else if ((seenCells & (1n << BigInt(bitIdx))) !== 0n) {
-        state = FogState.Seen;
-      }
-
-      visArray[idx] = state;
-    }
-  }
+  applyBits(seenCells, totalCells, visArray, FogState.Seen);
+  applyBits(currentCells, totalCells, visArray, FogState.Current);
 
   return visArray;
 }

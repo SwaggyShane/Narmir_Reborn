@@ -20,10 +20,12 @@ module.exports = (db, engine, config, rankingsCache, pkg) => {
   });
 
   router.get('/spell-definitions', (_req, res) => {
-    // Return spell definitions and magic schools for admin panel
+    // Return spell definitions and magic schools for admin panel + the
+    // Mage Tower crafting UI (which also needs the mages/turns cost table).
     res.json({
       SPELL_DEFS: engine.SPELL_DEFS,
-      MAGIC_SCHOOLS: engine.MAGIC_SCHOOLS
+      MAGIC_SCHOOLS: config.MAGIC_SCHOOLS,
+      SCROLL_REQUIREMENTS: engine.SCROLL_REQUIREMENTS,
     });
   });
 

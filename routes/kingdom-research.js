@@ -242,7 +242,8 @@ module.exports = function (db) {
               tower_progress, res_economy, res_weapons, res_armor, res_military,
               res_attack_magic, res_defense_magic, res_entertainment, res_construction,
               res_war_machines, res_spellbook, school_of_magic, school_spellbook,
-              divine_sanctuary_used, fragment_bonuses
+              divine_sanctuary_used, fragment_bonuses, maps, blueprints_stored,
+              certified_blueprints_stored, discovered_kingdoms, world_fragments
        FROM kingdoms WHERE player_id = $1`,
       [req.player.playerId]
     );
@@ -339,6 +340,7 @@ module.exports = function (db) {
       mana_per_turn: commandHandler.manaPerTurn(k),
       scribes: k.scribes,
       researchers: k.researchers,
+      mages: k.mages,
       bld_libraries: k.bld_libraries,
       bld_shrines: k.bld_shrines,
       bld_mausoleums: k.bld_mausoleums,
@@ -352,6 +354,11 @@ module.exports = function (db) {
       mausoleum_allocation: safeJsonParse(k.mausoleum_allocation, {}, "studies:mausoleum"),
       research_allocation: safeJsonParse(k.research_allocation, {}, "studies:research"),
       scrolls: safeJsonParse(k.scrolls, {}, "studies:scrolls"),
+      maps: k.maps || 0,
+      blueprints_stored: k.blueprints_stored || 0,
+      certified_blueprints_stored: k.certified_blueprints_stored || 0,
+      discovered_kingdoms: safeJsonParse(k.discovered_kingdoms, {}, "studies:discovered_kingdoms"),
+      world_fragments: safeJsonParse(k.world_fragments, [], "studies:world_fragments"),
       library_progress: safeJsonParse(k.library_progress, {}, "studies:library_progress"),
       tower_progress: safeJsonParse(k.tower_progress, {}, "studies:tower_progress"),
       res_spellbook: k.res_spellbook || 0,

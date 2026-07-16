@@ -7,10 +7,9 @@ import { toast } from '../../../utils/toast.js';
 import { MageAllocationCard } from './MageAllocationCard.jsx';
 import { ResearchFocusSection } from './ResearchFocusSection.jsx';
 import { SpellsGrid } from './SpellsGrid.jsx';
+import { AllocationButtons } from '../AllocationButtons.jsx';
 
 const SCHOOL_SUBTAB_BUTTON_CLASS = 'base-btn admin-tab rounded-none';
-const RELEASE_BUTTON_CLASS = 'base-btn variant-red whitespace-nowrap bg-[var(--red)]';
-const STUDY_BUTTON_CLASS = 'base-btn variant-accent whitespace-nowrap bg-[var(--accent1)] text-white';
 
 export const SchoolTab = ({
   studiesData,
@@ -230,14 +229,11 @@ export const SchoolTab = ({
                   Total Mages: <span className="text-[var(--text)]">{ totalMages}</span> | Available: <span className="text-[var(--green)]">{availableMages}</span> | Allocated: <span className="text-[var(--gold)]">{allocatedMages}</span>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button className={RELEASE_BUTTON_CLASS} onClick={releaseMageAllocation}>
-                  Release all
-                </button>
-                <button className={STUDY_BUTTON_CLASS} onClick={saveMageAllocation}>
-                  Study
-                </button>
-              </div>
+              <AllocationButtons
+                onRelease={releaseMageAllocation}
+                onAllocate={saveMageAllocation}
+                allocateLabel="Study"
+              />
             </div>
 
             <div className="r-grid-2">

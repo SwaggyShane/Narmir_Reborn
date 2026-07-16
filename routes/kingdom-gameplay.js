@@ -1657,6 +1657,12 @@ module.exports = function (db) {
       // Phase 3: load visibility for seen_cells gating (filter content to revealed hexes)
       const vis = await getKingdomVisibility(db, k);
       const seenCells = vis.seenCells;
+      // Bypass all seenCells/discovered_kingdoms gating below when fog of war
+      // is disabled. A comment further down already claimed this flag
+      // "bypasses seenCells gating everywhere else in this response" but
+      // only the worldLocations filter actually checked it -- kingdoms,
+      // nodes, and expeditions stayed gated regardless of the flag's value.
+      const fogDisabledForMap = process.env.DISABLE_FOG_OF_WAR === 'true';
 
       const kingdoms = await db.all(`
         SELECT k.id, k.name, k.race, k.region, k.land, k.level, k.turn        FROM kingdoms k JOIN players p ON k.player_id = p.id
@@ -1664,6 +1670,7 @@ module.exports = function (db) {
 
       const filtered = kingdoms.filter((r) => {
         if (r.id === k.id) return true;
+        if (fogDisabledForMap) return true;
         if (!(discovered[r.id] && discovered[r.id].found)) return false;
         // Phase 3 gating: even discovered kingdoms only visible if their hex is seen
         const coords = getKingdomMapCoords(r);
@@ -1694,6 +1701,7 @@ module.exports = function (db) {
       // Phase 3 gating + explicit node reveal: only include nodes in scouted hexes.
       // Scouting an area hex now makes nodes located there visible.
       const visibleNodes = nodes.filter((n) => {
+        if (fogDisabledForMap) return true;
         const h = pixelToHex(n.map_x, n.map_y);
         return safeBitmapHasCell(seenCells, h.col, h.row);
       });
@@ -1710,6 +1718,7 @@ module.exports = function (db) {
 
       // Gate expeditions by seen hex of their node (Phase 3)
       const visibleExpeditions = expeditions.filter((e) => {
+        if (fogDisabledForMap) return true;
         const h = pixelToHex(e.map_x, e.map_y);
         return safeBitmapHasCell(seenCells, h.col, h.row);
       });
@@ -1719,8 +1728,10 @@ module.exports = function (db) {
       // Locations aren't owned by whichever kingdom scouts them first; once
       // revealed they're public domain for the whole region. Also bypassed
       // entirely when fog of war is disabled (DISABLE_FOG_OF_WAR=true), which
-      // bypasses seenCells gating everywhere else in this response too.
-      const fogDisabled = process.env.DISABLE_FOG_OF_WAR === 'true';
+      // now genuinely bypasses seenCells/discovered_kingdoms gating
+      // everywhere else in this response too (kingdoms/nodes/expeditions
+      // above, via fogDisabledForMap).
+      const fogDisabled = fogDisabledForMap;
       const regionLocations = getRegionLocations(k.race);
       const worldLocations = regionLocations
         ? Object.values(regionLocations).filter((loc) => fogDisabled || isPubliclyDiscovered(loc))
@@ -1761,6 +1772,7 @@ module.exports = function (db) {
         // Phase 3 fallback path: visibility for gating
         const vis = k ? await getKingdomVisibility(db, k) : { seenCells: 0n };
         const seenCells = vis.seenCells || 0n;
+        const fogDisabledForMap = process.env.DISABLE_FOG_OF_WAR === 'true';
 
         const kingdoms = await db.all(`
           SELECT k.id, k.name, k.race, '' as region, k.land, k.level, k.turn          FROM kingdoms k JOIN players p ON k.player_id = p.id
@@ -1769,6 +1781,7 @@ module.exports = function (db) {
         const filtered = kingdoms.filter((r) => {
           if (!k) return false;
           if (r.id === k.id) return true;
+          if (fogDisabledForMap) return true;
           if (!(discovered[r.id] && discovered[r.id].found)) return false;
           const coords = getKingdomMapCoords(r);
           const h = pixelToHex(coords.map_x, coords.map_y);
@@ -1796,6 +1809,7 @@ module.exports = function (db) {
           : [];
 
         const visibleNodes = nodes.filter((n) => {
+          if (fogDisabledForMap) return true;
           const h = pixelToHex(n.map_x, n.map_y);
           return safeBitmapHasCell(seenCells, h.col, h.row);
         });
@@ -1814,11 +1828,12 @@ module.exports = function (db) {
 
         // Phase 3 gating for fallback: filter expeditions by seen hex too.
         const visibleExpeditions = expeditions.filter((e) => {
+          if (fogDisabledForMap) return true;
           const h = pixelToHex(e.map_x, e.map_y);
           return safeBitmapHasCell(seenCells, h.col, h.row);
         });
 
-        const fogDisabled = process.env.DISABLE_FOG_OF_WAR === 'true';
+        const fogDisabled = fogDisabledForMap;
         const regionLocations = k ? getRegionLocations(k.race) : null;
         const worldLocations = regionLocations
           ? Object.values(regionLocations).filter((loc) => fogDisabled || isPubliclyDiscovered(loc))
