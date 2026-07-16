@@ -3,6 +3,7 @@
 // region control resolution, and kingdom score calculation.
 
 const { safeJsonParse } = require('../utils/helpers');
+const { safeEmit } = require('./safe-socket-emit');
 
 function assignRegion(race) {
   return race; // simple mapping for now: race name = region id
@@ -143,7 +144,7 @@ async function resolveRegions(db, io) {
               [topAllianceId],
             );
             if (io)
-              io.emit("chat", {
+              safeEmit(io, "chat", {
                 room: "global",
                 username: "System",
                 message: `\u{1F3F0} REGION CAPTURED: The alliance [${alliance?.name || "Unknown Alliance"}] has seized control of ${region.name}!`,
