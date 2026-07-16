@@ -50,6 +50,15 @@ function getScoutProgressThisTurn(kingdom) {
   const raceModifier = RACE_MODIFIERS[race.toLowerCase()] || 1.0;
   progress *= raceModifier;
 
+  // FoW Phase 5C: home-hex terrain scout rate (plains faster, mountains/swamp slower).
+  // Uses cached world hex grid when available; race-biome fallback otherwise.
+  try {
+    const { getKingdomScoutRate } = require('./terrain-scout');
+    progress *= getKingdomScoutRate(kingdom);
+  } catch {
+    // terrain-scout missing or placement error — leave progress unchanged
+  }
+
   return Math.round(progress * 100) / 100;
 }
 

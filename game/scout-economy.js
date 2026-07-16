@@ -72,11 +72,14 @@ function scoutEffectivePower(rangersSent, rangerLevel) {
 /**
  * Hexes explored per scout action with the given rangers/level.
  * Locked formula 2026-07-04: rangersSent × level multiplier × BASE_HEX_EXPLORATION_PER_RANGER
+ * Optional terrainScoutRate (FoW 5C) multiplies result (1.0 = baseline).
  * (Replaces old scoutRevealRadius model for concentric ring design.)
  */
-function hexesExploredPerAction(rangersSent, rangerLevel) {
+function hexesExploredPerAction(rangersSent, rangerLevel, terrainScoutRate = 1) {
   const power = scoutEffectivePower(rangersSent, rangerLevel);
-  return power * SCOUT_ECONOMY.BASE_HEX_EXPLORATION_PER_RANGER;
+  const rate = Number(terrainScoutRate);
+  const mult = Number.isFinite(rate) && rate > 0 ? rate : 1;
+  return power * SCOUT_ECONOMY.BASE_HEX_EXPLORATION_PER_RANGER * mult;
 }
 
 /**
@@ -90,10 +93,12 @@ function scoutRevealRadius(rangersSent, rangerLevel) {
 
 /**
  * Food cost per hex scouted, discounted by ranger level, floored at
- * MIN_FOOD_COST_PER_HEX.
+ * MIN_FOOD_COST_PER_HEX. Optional terrainFoodMult (FoW 5C) scales cost before floor.
  */
-function scoutFoodCostPerHex(rangerLevel) {
-  const cost = SCOUT_ECONOMY.BASE_FOOD_COST_PER_HEX / levelMultiplier(rangerLevel);
+function scoutFoodCostPerHex(rangerLevel, terrainFoodMult = 1) {
+  const mult = Number(terrainFoodMult);
+  const foodMult = Number.isFinite(mult) && mult > 0 ? mult : 1;
+  const cost = (SCOUT_ECONOMY.BASE_FOOD_COST_PER_HEX * foodMult) / levelMultiplier(rangerLevel);
   return Math.max(SCOUT_ECONOMY.MIN_FOOD_COST_PER_HEX, Math.floor(cost));
 }
 
