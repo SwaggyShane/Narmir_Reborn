@@ -39,6 +39,12 @@ async function initializeAdditionalColumns(db, getTableColumns, addCol) {
   if (!pCols.includes('chat_color'))  await addCol('players', 'chat_color',  "TEXT DEFAULT NULL");
   if (!pCols.includes('chat_name'))   await addCol('players', 'chat_name',   "TEXT DEFAULT NULL");
 
+  // chat_messages: room + soft (used by GET /chat/global and sockets). Older DBs
+  // only had id/kingdom_id/player_id/username/message/created_at from base DDL.
+  const chatCols = await getTableColumns('chat_messages');
+  if (!chatCols.includes('room')) await addCol('chat_messages', 'room', "TEXT NOT NULL DEFAULT 'global'", chatCols);
+  if (!chatCols.includes('deleted')) await addCol('chat_messages', 'deleted', 'INTEGER NOT NULL DEFAULT 0', chatCols);
+
   // Additional evolved columns (moved from schema.js bloat for modularity)
   if (!pCols.includes('email')) await addCol('players', 'email', 'TEXT');
 

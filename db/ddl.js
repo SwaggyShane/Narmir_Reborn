@@ -207,9 +207,12 @@ const coreSchema = `
       kingdom_id  INTEGER REFERENCES kingdoms(id),
       player_id   INTEGER NOT NULL DEFAULT 0,
       username    TEXT NOT NULL DEFAULT '',
+      room        TEXT    NOT NULL DEFAULT 'global',
       message     TEXT NOT NULL,
+      deleted     INTEGER NOT NULL DEFAULT 0,
       created_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
+    CREATE INDEX IF NOT EXISTS idx_chat_room ON chat_messages(room, created_at);
 
     CREATE TABLE IF NOT EXISTS server_state (
       key   TEXT PRIMARY KEY,
