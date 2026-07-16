@@ -35,7 +35,7 @@ const {
 const {
   applyPassiveScoutFind,
   rollPassiveScoutFind,
-  processPassiveScoutFinds,
+  pickWeightedOutcome,
 } = require('../game/passive-scout-finds');
 const { processLocationMapsWip } = require('../game/location-maps');
 const {
@@ -82,7 +82,7 @@ console.log('path 1: passive scout kingdom_signal → _find_kingdom flag');
   // Engine path is roll + apply; kingdom_signal is one weighted outcome.
   // Prove pick → apply end-to-end without depending on full table order.
   const onlySignal = [{ type: 'kingdom_signal', weight: 1 }];
-  const picked = require('../game/passive-scout-finds').pickWeightedOutcome(() => 0, onlySignal);
+  const picked = pickWeightedOutcome(() => 0, onlySignal);
   assert.strictEqual(picked.type, 'kingdom_signal');
   const updates = {};
   const events = [];
