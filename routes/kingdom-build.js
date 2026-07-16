@@ -3,7 +3,7 @@ const { requireAuth, requireCsrfToken } = require('./middleware');
 const { safeJsonParse } = require('../utils/helpers');
 const { validateNonNegativeInteger, validateAllocationObject } = require('../utils/numeric-validation');
 const { applyKingdomUpdates } = require('../db/schema');
-const engine = require('../game/engine');
+const commandHandler = require('../game/command-handler');
 const config = require('../game/config');
 const { structureUpdates } = require('./response-structurer');
 
@@ -57,7 +57,10 @@ module.exports = function (db) {
     } catch {
       k.build_queue = {};
     }
-    const result = engine.queueBuildings(k, ordersValidation.values);
+    const result = await commandHandler.handle(
+      { type: 'queue-buildings', orders: ordersValidation.values },
+      { kingdom: k },
+    );
     if (result.error) return res.status(400).json({ error: result.error });
     await applyUpdates(db, k.id, result.updates);
     res.json({
@@ -334,7 +337,10 @@ module.exports = function (db) {
           throw err;
         }
 
-        const result = engine.demolishBuilding(k, building, amountValidation.value);
+        const result = await commandHandler.handle(
+          { type: 'demolish-building', buildingType: building, amount: amountValidation.value },
+          { kingdom: k },
+        );
         if (result.error) {
           const err = new Error(result.error);
           err.statusCode = 400;
@@ -387,8 +393,8 @@ module.exports = function (db) {
           throw err;
         }
 
-        const buildTime = engine.calculateBuildTime(k, tier);
-        const cost = engine.calculateBuildCost(k, tier);
+        const buildTime = commandHandler.calculateBuildTime(k, tier);
+        const cost = commandHandler.calculateBuildCost(k, tier);
 
         if (k.land < cost.land) {
           const err = new Error('Insufficient land');
@@ -761,7 +767,7 @@ module.exports = function (db) {
     if (k.race !== 'vampire')
       return res.status(403).json({ error: 'Only vampires can buy mausoleum upgrades' });
 
-    const upgrades = engine.MAUSOLEUM_UPGRADES;
+    const upgrades = commandHandler.getConstants().MAUSOLEUM_UPGRADES;
     const upg = upgrades[upgradeKey];
     if (!upg) return res.status(400).json({ error: 'Invalid upgrade' });
 

@@ -3,7 +3,7 @@ const { requireAuth, requireCsrfToken } = require('./middleware');
 const { safeJsonParse, devLog } = require('../utils/helpers');
 const { applyKingdomUpdates } = require('../db/schema');
 const { marketPriceCache } = require('../cache.js');
-const engine = require('../game/engine');
+const commandHandler = require('../game/command-handler');
 const config = require('../game/config');
 const { calculateTradeIncome } = require('../game/economy');
 const fragmentBonusManager = require('../game/fragment-bonus-manager');
@@ -182,9 +182,10 @@ module.exports = function (db) {
       ) t`,
       [k.id, k.id],
     );
-    if (routeCount.count >= (engine.TRADE_ROUTE_MAX || 5)) {
+    const tradeRouteMax = commandHandler.getConstants().TRADE_ROUTE_MAX || 5;
+    if (routeCount.count >= tradeRouteMax) {
       return res.status(400).json({
-        error: `Maximum trade routes reached (${engine.TRADE_ROUTE_MAX || 5})`,
+        error: `Maximum trade routes reached (${tradeRouteMax})`,
       });
     }
 
@@ -612,27 +613,31 @@ module.exports = function (db) {
       [req.player.playerId]
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    const result = engine.purchaseUpgrade(k, category, upgradeKey);
+    const result = await commandHandler.handle(
+      { type: 'purchase-upgrade', category, upgradeKey },
+      { kingdom: k },
+    );
     if (result.error) {
       console.warn('[economy/upgrade] Purchase failed', { category, upgradeKey, error: result.error, kingdomId: k.id });
       return res.status(400).json({ error: result.error });
     }
     devLog('[economy/upgrade] Purchase successful', { category, upgradeKey, kingdomId: k.id, updates: result.updates });
     await applyUpdates(db, k.id, result.updates);
+    const c = commandHandler.getConstants();
     const def =
-      engine.FARM_UPGRADES[upgradeKey] ||
-      engine.GRANARY_UPGRADES[upgradeKey] ||
-      engine.MARKET_UPGRADES[upgradeKey] ||
-      engine.TAVERN_UPGRADES[upgradeKey] ||
-      engine.TOWER_UPGRADES[upgradeKey] ||
-      engine.SCHOOL_UPGRADES[upgradeKey] ||
-      engine.SHRINE_UPGRADES[upgradeKey] ||
-      engine.MAUSOLEUM_UPGRADES[upgradeKey] ||
-      engine.LIBRARY_UPGRADES[upgradeKey] ||
-      engine.WALL_UPGRADES[upgradeKey] ||
-      engine.TOWER_DEF_UPGRADES[upgradeKey] ||
-      engine.OUTPOST_UPGRADES[upgradeKey] ||
-      engine.BANK_UPGRADES[upgradeKey];
+      c.FARM_UPGRADES[upgradeKey] ||
+      c.GRANARY_UPGRADES[upgradeKey] ||
+      c.MARKET_UPGRADES[upgradeKey] ||
+      c.TAVERN_UPGRADES[upgradeKey] ||
+      c.TOWER_UPGRADES[upgradeKey] ||
+      c.SCHOOL_UPGRADES[upgradeKey] ||
+      c.SHRINE_UPGRADES[upgradeKey] ||
+      c.MAUSOLEUM_UPGRADES[upgradeKey] ||
+      c.LIBRARY_UPGRADES[upgradeKey] ||
+      c.WALL_UPGRADES[upgradeKey] ||
+      c.TOWER_DEF_UPGRADES[upgradeKey] ||
+      c.OUTPOST_UPGRADES[upgradeKey] ||
+      c.BANK_UPGRADES[upgradeKey];
     await db.run(
       "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
       [k.id, "system", `⬆️ ${def?.name || upgradeKey} purchased.`, k.turn],
@@ -649,11 +654,14 @@ module.exports = function (db) {
       [req.player.playerId]
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    const result = engine.hireMercenaries(
-      k,
-      unitType,
-      tier,
-      parseInt(count) || 1,
+    const result = await commandHandler.handle(
+      {
+        type: 'hire-mercenaries',
+        unitType,
+        tier,
+        quantity: parseInt(count) || 1,
+      },
+      { kingdom: k },
     );
     if (result.error) return res.status(400).json({ error: result.error });
     await applyUpdates(db, k.id, result.updates);
@@ -933,8 +941,8 @@ module.exports = function (db) {
     const barrackDiscount = Math.min(0.5, Math.floor((k.bld_barracks || 0) / 2) * 0.01 * barracksTrainingMult);
     const troopUpkeep = Math.floor((combatTroops + supportOverflow) * upkeepMult * (1 - barrackDiscount));
 
-    const marketInc = engine.marketIncomeFull(k);
-    const goldIncome = engine.goldPerTurn(k);
+    const marketInc = commandHandler.marketIncomeFull(k);
+    const goldIncome = commandHandler.goldPerTurn(k);
     const tradeRouteIncome = calculateTradeIncome(k);
     const totalIncome = goldIncome + tradeRouteIncome;
 
@@ -946,10 +954,10 @@ module.exports = function (db) {
       totalIncome,
       troopUpkeep,
       netIncome: totalIncome - troopUpkeep,
-      farmProduction: engine.farmProduction(k),
-      foodConsumption: engine.foodConsumption(k),
-      foodBalance: engine.farmProduction(k) - engine.foodConsumption(k),
-      tavernBonus: engine.tavernEntertainmentBonus(k),
+      farmProduction: commandHandler.farmProduction(k),
+      foodConsumption: commandHandler.foodConsumption(k),
+      foodBalance: commandHandler.farmProduction(k) - commandHandler.foodConsumption(k),
+      tavernBonus: commandHandler.tavernEntertainmentBonus(k),
       maxFoodStorage:
         k.bld_granaries *
         (safeJsonParse(k.granary_upgrades, {}, "auto:granary_upgrades").silos ? 150000 : 100000),
@@ -966,7 +974,7 @@ module.exports = function (db) {
         const rate = safeJsonParse(k.granary_upgrades, {}, "auto:granary_upgrades").preservation
           ? 0.05 * 0.7
           : 0.05;
-        const bal = engine.farmProduction(k) - engine.foodConsumption(k);
+        const bal = commandHandler.farmProduction(k) - commandHandler.foodConsumption(k);
         const current = k.food;
         if (current <= 0) return 0;
         // Approximation: how many turns until food is near zero
@@ -985,7 +993,7 @@ module.exports = function (db) {
         return turns;
       })(),
       workedFarms: (() => {
-        let workers = engine.FARM_WORKERS_PER?.[k.race] || 10;
+        let workers = commandHandler.getConstants().FARM_WORKERS_PER?.[k.race] || 10;
         const upg = safeJsonParse(k.farm_upgrades, {}, "auto:farm_upgrades");
         if (upg.iron_plows) workers = Math.max(1, workers - 2);
         return Math.min(

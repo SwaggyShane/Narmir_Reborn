@@ -1,5 +1,5 @@
 const express = require("express");
-const engine = require("../game/engine");
+const commandHandler = require("../game/command-handler");
 const { requireAuth, requireCsrfToken } = require("./middleware");
 const { progressGoal } = require('../game/goals');
 const { safeJsonParse } = require('../utils/helpers');
@@ -111,31 +111,31 @@ module.exports = function (db) {
 
         if (k.turns_stored < 1) throw httpError(429, 'No turns available');
 
-        if (sentUnits.fighters > engine.getAvailableUnits(k, 'fighters')) {
+        if (sentUnits.fighters > commandHandler.getAvailableUnits(k, 'fighters')) {
           throw httpError(400, 'Not enough available fighters (some may be in training)');
         }
-        if (sentUnits.rangers > engine.getAvailableUnits(k, 'rangers')) {
+        if (sentUnits.rangers > commandHandler.getAvailableUnits(k, 'rangers')) {
           throw httpError(400, 'Not enough available rangers (some may be in training)');
         }
-        if (sentUnits.mages > engine.getAvailableUnits(k, 'mages')) {
+        if (sentUnits.mages > commandHandler.getAvailableUnits(k, 'mages')) {
           throw httpError(400, 'Not enough available mages (some may be in training)');
         }
-        if (sentUnits.warMachines > engine.getAvailableUnits(k, 'war_machines')) {
+        if (sentUnits.warMachines > commandHandler.getAvailableUnits(k, 'war_machines')) {
           throw httpError(400, 'Not enough available war machines');
         }
-        if (sentUnits.ninjas > engine.getAvailableUnits(k, 'ninjas')) {
+        if (sentUnits.ninjas > commandHandler.getAvailableUnits(k, 'ninjas')) {
           throw httpError(400, 'Not enough available ninjas (some may be in training)');
         }
-        if (sentUnits.thieves > engine.getAvailableUnits(k, 'thieves')) {
+        if (sentUnits.thieves > commandHandler.getAvailableUnits(k, 'thieves')) {
           throw httpError(400, 'Not enough available thieves (some may be in training)');
         }
-        if (sentUnits.clerics > engine.getAvailableUnits(k, 'clerics')) {
+        if (sentUnits.clerics > commandHandler.getAvailableUnits(k, 'clerics')) {
           throw httpError(400, 'Not enough available clerics/thralls (some may be in training)');
         }
-        if (sentUnits.engineers > engine.getAvailableUnits(k, 'engineers')) {
+        if (sentUnits.engineers > commandHandler.getAvailableUnits(k, 'engineers')) {
           throw httpError(400, 'Not enough available engineers (some may be in training)');
         }
-        if (sentUnits.ladders > engine.getAvailableUnits(k, 'ladders')) {
+        if (sentUnits.ladders > commandHandler.getAvailableUnits(k, 'ladders')) {
           throw httpError(400, 'Not enough available ladders');
         }
 
@@ -166,16 +166,25 @@ module.exports = function (db) {
           await db.run('UPDATE kingdoms SET discovered_kingdoms = $1 WHERE id = $2', [JSON.stringify(defDisc), target.id]);
         }
 
-        const result = engine.resolveMilitaryAttack(k, target, sentUnits, attackerHeroes, defenderHeroes);
+        const result = await commandHandler.handle(
+          {
+            type: 'combat',
+            target,
+            sentUnits,
+            attackerHeroes,
+            defenderHeroes,
+          },
+          { kingdom: k },
+        );
         if (result.error) throw httpError(400, result.error);
 
         const heroUpdates = [];
         for (const h of attackerHeroes) {
-          const resHero = engine.awardHeroXp(h, result.win ? 500 : 100);
+          const resHero = commandHandler.awardHeroXp(h, result.win ? 500 : 100);
           heroUpdates.push([resHero.xp, resHero.level, h.id]);
         }
         for (const h of defenderHeroes) {
-          const resHero = engine.awardHeroXp(h, result.win ? 100 : 500);
+          const resHero = commandHandler.awardHeroXp(h, result.win ? 100 : 500);
           heroUpdates.push([resHero.xp, resHero.level, h.id]);
         }
 
@@ -296,7 +305,7 @@ module.exports = function (db) {
 
     const attackerId = attackerRow.id;
     const targetIdNum = targetId != null ? Number(targetId) : null;
-    const isFriendlySpell = engine.SPELL_DEFS[spellId]?.effect === "friendly";
+    const isFriendlySpell = commandHandler.getConstants().SPELL_DEFS?.[spellId]?.effect === "friendly";
 
     try {
       let response;
@@ -327,10 +336,18 @@ module.exports = function (db) {
           }
         }
 
-        const validation = engine.validateSpellTarget(attackerK, target, spellId);
+        const validation = commandHandler.validateSpellTarget(attackerK, target, spellId);
         if (validation.error) throw httpError(400, validation.error);
 
-        const result = engine.castSpell(attackerK, validation.target, spellId, !!obscure);
+        const result = await commandHandler.handle(
+          {
+            type: 'spell',
+            target: validation.target,
+            spellId,
+            obscure: !!obscure,
+          },
+          { kingdom: attackerK },
+        );
         if (result.error) throw httpError(400, result.error);
 
         progressGoal(attackerK, result.casterUpdates, 'spell_cast', 1);
@@ -463,11 +480,14 @@ module.exports = function (db) {
         let result;
     if (op === "spy") {
       const unitsSent = Math.max(1, parseInt(units) || 0);
-      if (unitsSent > engine.getAvailableUnits(k, "thieves")) {
+      if (unitsSent > commandHandler.getAvailableUnits(k, "thieves")) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Not enough available thieves" });
       }
-      result = engine.covertSpy(attackerK, target, unitsSent);
+      result = await commandHandler.handle(
+        { type: 'covert-spy', target, unitsSent },
+        { kingdom: attackerK },
+      );
       if (result.error) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
@@ -525,12 +545,15 @@ module.exports = function (db) {
       });
     } else if (op === "loot") {
       const thievesSent = Math.max(1, parseInt(units) || 0);
-      if (thievesSent > engine.getAvailableUnits(attackerK, "thieves")) {
+      if (thievesSent > commandHandler.getAvailableUnits(attackerK, "thieves")) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Not enough available thieves" });
       }
       const loot = lootType === "wm" ? "war_machines" : lootType;
-      result = engine.covertLoot(attackerK, target, loot, thievesSent);
+      result = await commandHandler.handle(
+        { type: 'covert-loot', target, lootType: loot, thievesSent },
+        { kingdom: attackerK },
+      );
       if (result.error) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
@@ -580,7 +603,7 @@ module.exports = function (db) {
       });
     } else if (op === "assassinate") {
       const ninjasSent = Math.max(1, parseInt(units) || 0);
-      if (ninjasSent > engine.getAvailableUnits(attackerK, "ninjas")) {
+      if (ninjasSent > commandHandler.getAvailableUnits(attackerK, "ninjas")) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Not enough available ninjas" });
       }
@@ -599,7 +622,10 @@ module.exports = function (db) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Invalid target unit type" });
       }
-      result = engine.covertAssassinate(attackerK, target, ninjasSent, unitType);
+      result = await commandHandler.handle(
+        { type: 'covert-assassinate', target, ninjasSent, unitType },
+        { kingdom: attackerK },
+      );
       if (result.error) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
@@ -648,12 +674,15 @@ module.exports = function (db) {
       });
     } else if (op === "sabotage") {
       const ninjasSent = Math.max(1, parseInt(units) || 0);
-      if (ninjasSent > engine.getAvailableUnits(attackerK, "ninjas")) {
+      if (ninjasSent > commandHandler.getAvailableUnits(attackerK, "ninjas")) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Not enough available ninjas" });
       }
 
-      result = engine.covertSabotage(attackerK, target, ninjasSent, bldType);
+      result = await commandHandler.handle(
+        { type: 'covert-sabotage', target, ninjasSent, bldType },
+        { kingdom: attackerK },
+      );
       if (result.error) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
@@ -713,7 +742,10 @@ module.exports = function (db) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Not enough thieves" });
       }
-      result = engine.raidTradeRoute(attackerK, target, thievesSent);
+      result = await commandHandler.handle(
+        { type: 'raid-trade-route', target, thievesSent },
+        { kingdom: attackerK },
+      );
       if (result.error) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
@@ -839,11 +871,11 @@ module.exports = function (db) {
       tower_def_upgrades: safeJsonParse(k.tower_def_upgrades, {}, "auto:tower_def_upgrades"),
       outpost_upgrades: safeJsonParse(k.outpost_upgrades, {}, "auto:outpost_upgrades"),
       defense_upgrades: safeJsonParse(k.defense_upgrades, {}, "auto:defense_upgrades"),
-      defense_rating: engine.defenseRating(k),
-      wall_power: engine.wallDefensePower(k),
-      tower_power: engine.towerDetectionPower(k),
-      outpost_power: engine.outpostRangerPower(k),
-      citadel_req: engine.CITADEL_REQ,
+      defense_rating: commandHandler.defenseRating(k),
+      wall_power: commandHandler.wallDefensePower(k),
+      tower_power: commandHandler.towerDetectionPower(k),
+      outpost_power: commandHandler.outpostRangerPower(k),
+      citadel_req: commandHandler.getConstants().CITADEL_REQ,
       thieves_on_watch: Math.min(
         k.thieves,
         k.bld_guard_towers * 10,

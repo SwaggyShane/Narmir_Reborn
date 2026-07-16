@@ -3,7 +3,7 @@ const { requireAuth, requireCsrfToken } = require('./middleware');
 const { safeJsonParse, devLog } = require('../utils/helpers');
 const { validateResearchAmount, validateAllocationObject } = require('../utils/numeric-validation');
 const { applyKingdomUpdates } = require('../db/schema');
-const engine = require('../game/engine');
+const commandHandler = require('../game/command-handler');
 const { loadTradeRoutes } = require('../game/engine');
 const config = require('../game/config');
 const { decorateNewsMessage } = require('../game/news-emoji');
@@ -137,15 +137,21 @@ module.exports = function (db) {
 
       // Run full turn first
       await loadTradeRoutes(k);
-      const { updates: turnUpdates, events } = engine.processTurn(k);
+      const { updates: turnUpdates, events } = await commandHandler.handle(
+        { type: 'turn' },
+        { kingdom: k },
+      );
       turnUpdates.turns_stored = k.turns_stored - 1;
 
       // Apply research on top of turn state
       const kAfterTurn = { ...k, ...turnUpdates };
-      const resResult = engine.studyDiscipline(
-        kAfterTurn,
-        discipline,
-        researchValidation.value,
+      const resResult = await commandHandler.handle(
+        {
+          type: 'study-discipline',
+          discipline,
+          allocation: researchValidation.value,
+        },
+        { kingdom: kAfterTurn },
       );
       if (resResult.error) {
         const err = new Error(resResult.error);
@@ -332,7 +338,7 @@ module.exports = function (db) {
       library_upgrades: safeJsonParse(k.library_upgrades, {}, "studies:library_upgrades"),
       research_focus: focus,
       divine_sanctuary_used: k.divine_sanctuary_used,
-      mana_per_turn: engine.manaPerTurn(k),
+      mana_per_turn: commandHandler.manaPerTurn(k),
       scribes: k.scribes,
       researchers: k.researchers,
       bld_libraries: k.bld_libraries,
@@ -371,7 +377,10 @@ module.exports = function (db) {
           throw new Error('Kingdom not found');
         }
 
-        const result = engine.selectSchool(kingdom, school.trim().toLowerCase());
+        const result = await commandHandler.handle(
+          { type: 'select-school', school: school.trim().toLowerCase() },
+          { kingdom },
+        );
         if (result.error) {
           const error = new Error(result.error);
           error.statusCode = 400;

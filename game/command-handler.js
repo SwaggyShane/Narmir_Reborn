@@ -1,191 +1,367 @@
 // game/command-handler.js
-// Command handler abstraction layer for Slice 1 of Phase 2.
-// Routes dispatch commands here instead of calling engine directly.
-// This decouples routes from game logic implementation details.
+// P0 architecture: Route → CommandHandler → Engine boundary.
+// Slice 1: core mutators + correct signatures.
+// Slice 2: expeditions, hero recruit, forge-tools, remaining route wiring.
 
-const engine = require('./engine');
+'use strict';
+
+/** @typedef {{ type: string, [key: string]: any }} GameCommand */
+/** @typedef {{ kingdom?: object, db?: object }} CommandContext */
+
+/**
+ * Canonical mutating command types (Narmir-shaped, not entity MOVE).
+ * Keep in sync with handle() switch and test/command-handler.test.js.
+ */
+const COMMAND_TYPES = Object.freeze([
+  'turn',
+  'expeditions',
+  'combat',
+  'spell',
+  'covert-spy',
+  'covert-loot',
+  'covert-assassinate',
+  'covert-sabotage',
+  'hire-units',
+  'hire-mercenaries',
+  'recruit-hero',
+  'queue-buildings',
+  'demolish-building',
+  'process-build-queue',
+  'study-discipline',
+  'select-school',
+  'purchase-upgrade',
+  'prestige',
+  'calculate-score',
+  'raid-trade-route',
+  'forge-tools',
+  'award-xp',
+  'award-troop-xp',
+]);
+
+/**
+ * Ensure a value is Socket.io / HTTP-safe JSON (no Date, Function, BigInt, Map, Set, circular refs).
+ * Walks the structure before stringify so silent drops (functions) and Date→string coercions fail loudly.
+ * @param {*} data
+ * @param {string} [label]
+ * @param {WeakSet} [seen]
+ */
+function assertSerializable(data, label = 'value', seen = new WeakSet()) {
+  const t = typeof data;
+  if (data === null || t === 'string' || t === 'boolean') {
+    return data;
+  }
+  if (t === 'number') {
+    if (!Number.isFinite(data)) {
+      throw new Error(`assertSerializable(${label}): non-finite number`);
+    }
+    return data;
+  }
+  if (t === 'bigint') {
+    throw new Error(`assertSerializable(${label}): BigInt is not JSON-safe`);
+  }
+  if (t === 'function' || t === 'symbol' || t === 'undefined') {
+    throw new Error(`assertSerializable(${label}): ${t} is not JSON-safe`);
+  }
+  if (data instanceof Date) {
+    throw new Error(`assertSerializable(${label}): Date is not allowed (use unix timestamp number)`);
+  }
+  if (typeof Map !== 'undefined' && data instanceof Map) {
+    throw new Error(`assertSerializable(${label}): Map is not JSON-safe`);
+  }
+  if (typeof Set !== 'undefined' && data instanceof Set) {
+    throw new Error(`assertSerializable(${label}): Set is not JSON-safe`);
+  }
+  if (typeof data === 'object') {
+    if (seen.has(data)) {
+      throw new Error(`assertSerializable(${label}): circular reference`);
+    }
+    seen.add(data);
+    if (Array.isArray(data)) {
+      data.forEach((item, i) => assertSerializable(item, `${label}[${i}]`, seen));
+    } else {
+      // Reject class instances that are not plain objects (optional: allow only Object prototype)
+      const proto = Object.getPrototypeOf(data);
+      if (proto !== Object.prototype && proto !== null) {
+        throw new Error(`assertSerializable(${label}): non-plain object (class instance?)`);
+      }
+      for (const key of Object.keys(data)) {
+        assertSerializable(data[key], `${label}.${key}`, seen);
+      }
+    }
+  }
+
+  let serialized;
+  try {
+    serialized = JSON.stringify(data);
+  } catch (err) {
+    throw new Error(`assertSerializable(${label}): JSON.stringify failed: ${err.message}`, { cause: err });
+  }
+  if (serialized === undefined) {
+    throw new Error(`assertSerializable(${label}): JSON.stringify returned undefined`);
+  }
+  return JSON.parse(serialized);
+}
 
 class CommandHandler {
-  constructor() {
-    // Engine is a singleton, imported once
-    this.engine = engine;
+  /**
+   * @param {object|null} engineImpl - Injectable engine for tests. Default: live game/engine.
+   */
+  constructor(engineImpl = null) {
+    this.engine = engineImpl || require('./engine');
+  }
+
+  /** @returns {readonly string[]} */
+  listCommands() {
+    return COMMAND_TYPES;
   }
 
   /**
-   * Route a command to the appropriate handler.
-   * @param {object} command - { type, ...payload }
-   * @param {object} context - { kingdom, db }
-   * @returns {object} { updates, events } or command-specific result
+   * @param {GameCommand} command
+   * @param {CommandContext} [context]
    */
   async handle(command, context) {
-    if (!command || !command.type) {
+    if (!command || typeof command !== 'object' || !command.type) {
       throw new Error('Command must have a type property');
     }
 
     const { type, ...payload } = command;
     const { kingdom, db } = context || {};
 
-    // Route to handler based on command type
     switch (type) {
-      // Core turn processing
       case 'turn':
         return this.handleTurn(kingdom, db);
 
-      // Expeditions
       case 'expeditions':
         return this.handleExpeditions(kingdom, db);
 
-      // Combat
       case 'combat':
-        return this.handleCombat(kingdom, db, payload);
+        return this.handleCombat(kingdom, payload);
 
-      // Spells
       case 'spell':
-        return this.handleSpell(kingdom, db, payload);
+        return this.handleSpell(kingdom, payload);
 
-      // Covert operations
       case 'covert-spy':
       case 'covert-loot':
       case 'covert-assassinate':
       case 'covert-sabotage':
-        return this.handleCovertOp(type, kingdom, db, payload);
+        return this.handleCovertOp(type, kingdom, payload);
 
-      // Unit hiring
       case 'hire-units':
-        return this.handleHireUnits(kingdom, db, payload);
+        return this.handleHireUnits(kingdom, payload);
 
       case 'hire-mercenaries':
-        return this.handleHireMercenaries(kingdom, db, payload);
+        return this.handleHireMercenaries(kingdom, payload);
 
       case 'recruit-hero':
         return this.handleRecruitHero(kingdom, db, payload);
 
-      // Construction
       case 'queue-buildings':
-        return this.handleQueueBuildings(kingdom, db, payload);
+        return this.handleQueueBuildings(kingdom, payload);
 
       case 'demolish-building':
-        return this.handleDemolishBuilding(kingdom, db, payload);
+        return this.handleDemolishBuilding(kingdom, payload);
 
       case 'process-build-queue':
-        return this.handleProcessBuildQueue(kingdom, db, payload);
+        return this.handleProcessBuildQueue(kingdom, db);
 
-      // Research
       case 'study-discipline':
-        return this.handleStudyDiscipline(kingdom, db, payload);
+        return this.handleStudyDiscipline(kingdom, payload);
 
       case 'select-school':
-        return this.handleSelectSchool(kingdom, db, payload);
+        return this.handleSelectSchool(kingdom, payload);
 
-      // Prestige
+      case 'purchase-upgrade':
+        return this.handlePurchaseUpgrade(kingdom, payload);
+
       case 'prestige':
-        return this.handlePrestige(kingdom, db, payload);
+        return this.handlePrestige(kingdom);
 
-      // Scoring and calculations (non-mutating)
       case 'calculate-score':
         return this.handleCalculateScore(kingdom);
+
+      case 'raid-trade-route':
+        return this.handleRaidTradeRoute(kingdom, payload);
+
+      case 'forge-tools':
+        return this.handleForgeTools(kingdom, payload);
+
+      case 'award-xp':
+        return this.handleAwardXp(kingdom, payload);
+
+      case 'award-troop-xp':
+        return this.handleAwardTroopXp(kingdom, payload);
 
       default:
         throw new Error(`Unknown command type: ${type}`);
     }
   }
 
-  // ── Turn Processing ──
+  // ── Turn ──────────────────────────────────────────────────────────────────
   handleTurn(kingdom, db) {
     return this.engine.processTurn(kingdom, db);
   }
 
-  // ── Expeditions ──
+  // ── Expeditions (turn-adjacent) ───────────────────────────────────────────
   async handleExpeditions(kingdom, db) {
     const expeditionEvents = await this.engine.resolveExpeditions(db, kingdom, this.engine);
     const harvestEvents = await this.engine.resolveResourceHarvests(db, kingdom);
     return expeditionEvents.concat(harvestEvents);
   }
 
-  // ── Combat ──
-  handleCombat(kingdom, db, payload) {
-    const { targetId, ...rest } = payload;
-    return this.engine.resolveMilitaryAttack(kingdom, targetId, db, rest);
+  // ── Combat — matches routes/kingdom-warfare.js ────────────────────────────
+  // engine.resolveMilitaryAttack(attacker, defender, sentUnits, attackerHeroes, defenderHeroes)
+  handleCombat(kingdom, payload) {
+    const {
+      target,
+      sentUnits = {},
+      attackerHeroes = [],
+      defenderHeroes = [],
+    } = payload;
+    if (!target) {
+      throw new Error('combat command requires payload.target (defender kingdom row)');
+    }
+    return this.engine.resolveMilitaryAttack(
+      kingdom,
+      target,
+      sentUnits,
+      attackerHeroes,
+      defenderHeroes,
+    );
   }
 
-  // ── Spells ──
-  handleSpell(kingdom, db, payload) {
-    const { spellId, targetId } = payload;
-    return this.engine.castSpell(kingdom, spellId, targetId, db);
+  // ── Spells — castSpell(caster, target, spellId, obscure) ──────────────────
+  handleSpell(kingdom, payload) {
+    const { target, spellId, obscure = false } = payload;
+    if (!spellId) {
+      throw new Error('spell command requires payload.spellId');
+    }
+    if (!target) {
+      throw new Error('spell command requires payload.target (kingdom row)');
+    }
+    return this.engine.castSpell(kingdom, target, spellId, !!obscure);
   }
 
-  // ── Covert Operations ──
-  handleCovertOp(type, kingdom, db, payload) {
-    const { targetId } = payload;
+  // ── Covert — real signatures from game/covert.js ──────────────────────────
+  handleCovertOp(type, kingdom, payload) {
+    const { target } = payload;
+    if (!target) {
+      throw new Error(`${type} requires payload.target`);
+    }
     const opType = type.replace('covert-', '');
 
     switch (opType) {
-      case 'spy':
-        return this.engine.covertSpy(kingdom, targetId, db);
-      case 'loot':
-        return this.engine.covertLoot(kingdom, targetId, db);
-      case 'assassinate':
-        return this.engine.covertAssassinate(kingdom, targetId, db);
-      case 'sabotage':
-        return this.engine.covertSabotage(kingdom, targetId, db);
+      case 'spy': {
+        const unitsSent = payload.unitsSent;
+        return this.engine.covertSpy(kingdom, target, unitsSent);
+      }
+      case 'loot': {
+        const { lootType, thievesSent } = payload;
+        return this.engine.covertLoot(kingdom, target, lootType, thievesSent);
+      }
+      case 'assassinate': {
+        const { ninjasSent, unitType } = payload;
+        return this.engine.covertAssassinate(kingdom, target, ninjasSent, unitType);
+      }
+      case 'sabotage': {
+        const { ninjasSent, bldType } = payload;
+        return this.engine.covertSabotage(kingdom, target, ninjasSent, bldType);
+      }
       default:
         throw new Error(`Unknown covert operation: ${opType}`);
     }
   }
 
-  // ── Unit Hiring ──
-  handleHireUnits(kingdom, db, payload) {
+  // ── Units ─────────────────────────────────────────────────────────────────
+  // hireUnits(k, unit, amount) — no db
+  handleHireUnits(kingdom, payload) {
     const { unitType, quantity } = payload;
-    return this.engine.hireUnits(kingdom, unitType, quantity, db);
+    return this.engine.hireUnits(kingdom, unitType, quantity);
   }
 
-  handleHireMercenaries(kingdom, db, payload) {
-    const { tier, quantity } = payload;
-    return this.engine.hireMercenaries(kingdom, tier, quantity, db);
+  // hireMercenaries(k, unitType, tier, count)
+  handleHireMercenaries(kingdom, payload) {
+    const { unitType, tier, quantity } = payload;
+    return this.engine.hireMercenaries(kingdom, unitType, tier, quantity);
   }
 
-  handleRecruitHero(kingdom, db, payload) {
-    const { heroClass } = payload;
-    return this.engine.recruitHero(kingdom, heroClass, db);
+  // recruitHero(k, heroName, heroClass) — no db
+  handleRecruitHero(kingdom, _db, payload) {
+    const { name, heroClass } = payload;
+    if (!heroClass) {
+      throw new Error('recruit-hero requires payload.heroClass');
+    }
+    return this.engine.recruitHero(kingdom, name, heroClass);
   }
 
-  // ── Construction ──
-  handleQueueBuildings(kingdom, db, payload) {
+  // forgeTools(k, toolType, quantity)
+  handleForgeTools(kingdom, payload) {
+    const { toolType, quantity } = payload;
+    return this.engine.forgeTools(kingdom, toolType, quantity);
+  }
+
+  // awardXp(k, activity, amount)
+  handleAwardXp(kingdom, payload) {
+    const { activity, amount } = payload;
+    return this.engine.awardXp(kingdom, activity, amount);
+  }
+
+  // awardTroopXp(k, unit, xpAmount)
+  handleAwardTroopXp(kingdom, payload) {
+    const { unitType, amount } = payload;
+    return this.engine.awardTroopXp(kingdom, unitType, amount);
+  }
+
+  // ── Construction ──────────────────────────────────────────────────────────
+  handleQueueBuildings(kingdom, payload) {
     const { orders } = payload;
     return this.engine.queueBuildings(kingdom, orders);
   }
 
-  handleDemolishBuilding(kingdom, db, _payload) {
-    const { buildingType } = _payload;
-    return this.engine.demolishBuilding(kingdom, buildingType, db);
+  // demolishBuilding(k, buildingKey, amount) — no db
+  handleDemolishBuilding(kingdom, payload) {
+    const { buildingType, amount } = payload;
+    return this.engine.demolishBuilding(kingdom, buildingType, amount);
   }
 
   handleProcessBuildQueue(kingdom, db) {
     return this.engine.processBuildQueue(kingdom, db);
   }
 
-  // ── Research ──
-  handleStudyDiscipline(kingdom, db, payload) {
+  // ── Research / upgrades ───────────────────────────────────────────────────
+  // studyDiscipline(k, discipline, researchersAssigned)
+  handleStudyDiscipline(kingdom, payload) {
     const { discipline, allocation } = payload;
-    return this.engine.studyDiscipline(kingdom, discipline, allocation, db);
+    return this.engine.studyDiscipline(kingdom, discipline, allocation);
   }
 
-  handleSelectSchool(kingdom, db, payload) {
+  handleSelectSchool(kingdom, payload) {
     const { school } = payload;
     return this.engine.selectSchool(kingdom, school);
   }
 
-  // ── Prestige ──
-  handlePrestige(kingdom, db) {
-    return this.engine.processPrestige(kingdom, db);
+  handlePurchaseUpgrade(kingdom, payload) {
+    const { category, upgradeKey } = payload;
+    return this.engine.purchaseUpgrade(kingdom, category, upgradeKey);
   }
 
-  // ── Non-Mutating Calculations ──
+  // processPrestige(k) — no db
+  handlePrestige(kingdom) {
+    return this.engine.processPrestige(kingdom);
+  }
+
   handleCalculateScore(kingdom) {
     return this.engine.calculateScore(kingdom);
   }
 
-  // ── Pass-through for Constants (used by routes for data, not commands) ──
+  handleRaidTradeRoute(kingdom, payload) {
+    const { target, thievesSent } = payload;
+    if (!target) {
+      throw new Error('raid-trade-route requires payload.target');
+    }
+    return this.engine.raidTradeRoute(kingdom, target, thievesSent);
+  }
+
+  // ── Constants surface (read-only) ─────────────────────────────────────────
   getConstants() {
     return {
       SPELL_DEFS: this.engine.SPELL_DEFS,
@@ -215,7 +391,7 @@ class CommandHandler {
     };
   }
 
-  // ── Helper methods for routes that use engine functions for calculations ──
+  // ── Read helpers used by routes for validation ────────────────────────────
   getAvailableUnits(kingdom, unitType) {
     return this.engine.getAvailableUnits(kingdom, unitType);
   }
@@ -224,8 +400,8 @@ class CommandHandler {
     return this.engine.calculateBuildCost(building, level);
   }
 
-  calculateBuildTime(building, level) {
-    return this.engine.calculateBuildTime(building, level);
+  calculateBuildTime(kingdomOrBuilding, tierOrLevel) {
+    return this.engine.calculateBuildTime(kingdomOrBuilding, tierOrLevel);
   }
 
   calculateHappiness(kingdom) {
@@ -252,8 +428,14 @@ class CommandHandler {
     return this.engine.raceBonus(kingdom);
   }
 
-  assignRegion(kingdom) {
-    return this.engine.assignRegion(kingdom);
+  /** Race string or kingdom-like object — matches engine.assignRegion */
+  assignRegion(raceOrKingdom) {
+    return this.engine.assignRegion(raceOrKingdom);
+  }
+
+  getBuildingLandCost(configKey) {
+    const table = this.engine.BUILDING_LAND_COST || {};
+    return table[configKey] || 0;
   }
 
   defenseRating(kingdom) {
@@ -276,14 +458,51 @@ class CommandHandler {
     return this.engine.unitLevelMult(kingdom, unitType);
   }
 
-  validateSpellTarget(kingdom, spellId, targetId) {
-    return this.engine.validateSpellTarget(kingdom, spellId, targetId);
+  // validateSpellTarget(caster, target, spellId)
+  validateSpellTarget(kingdom, target, spellId) {
+    return this.engine.validateSpellTarget(kingdom, target, spellId);
   }
 
   canPrestige(kingdom) {
     return this.engine.canPrestige(kingdom);
   }
+
+  totalHiredUnits(kingdom) {
+    return this.engine.totalHiredUnits(kingdom);
+  }
+
+  awardHeroXp(hero, amount) {
+    return this.engine.awardHeroXp(hero, amount);
+  }
+
+  applyHeroTurnBonuses(hero, kingdom, updates, events) {
+    return this.engine.applyHeroTurnBonuses(hero, kingdom, updates, events);
+  }
+
+  marketIncomeFull(kingdom) {
+    return this.engine.marketIncomeFull(kingdom);
+  }
+
+  tavernEntertainmentBonus(kingdom) {
+    return this.engine.tavernEntertainmentBonus(kingdom);
+  }
+
+  /** Convenience: FOOD_CONSUMPTION_MULT[race] with fallback */
+  foodConsumptionMult(race) {
+    const table = this.engine.FOOD_CONSUMPTION_MULT || {};
+    return table[race] || 1.0;
+  }
 }
 
-// Export singleton instance
-module.exports = new CommandHandler();
+function createCommandHandler(engineImpl) {
+  return new CommandHandler(engineImpl);
+}
+
+// Production singleton
+const defaultHandler = new CommandHandler();
+
+module.exports = defaultHandler;
+module.exports.CommandHandler = CommandHandler;
+module.exports.createCommandHandler = createCommandHandler;
+module.exports.COMMAND_TYPES = COMMAND_TYPES;
+module.exports.assertSerializable = assertSerializable;

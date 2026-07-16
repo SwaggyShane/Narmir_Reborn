@@ -1,7 +1,7 @@
 const express = require('express');
 const { requireAuth, requireCsrfToken } = require('./middleware');
 const { progressGoal, generateGoals, claimGoal } = require('../game/goals');
-const engine = require('../game/engine');
+const commandHandler = require('../game/command-handler');
 const config = require('../game/config');
 const { applyKingdomUpdates } = require('../db/schema');
 const { calculateHuntingReward } = require('../game/hunting-economy');
@@ -67,12 +67,12 @@ module.exports = function (db) {
           if (!k) throw new Error('Kingdom not found');
 
           // Validate unit availability
-          if (r > engine.getAvailableUnits(k, 'rangers')) {
+          if (r > commandHandler.getAvailableUnits(k, 'rangers')) {
             const error = new Error('Not enough available rangers (some may be in training)');
             error.statusCode = 400;
             throw error;
           }
-          if (f > engine.getAvailableUnits(k, 'fighters')) {
+          if (f > commandHandler.getAvailableUnits(k, 'fighters')) {
             const error = new Error('Not enough available fighters (some may be in training)');
             error.statusCode = 400;
             throw error;
@@ -158,12 +158,12 @@ module.exports = function (db) {
           error.statusCode = 429;
           throw error;
         }
-        if (r > engine.getAvailableUnits(k, 'rangers')) {
+        if (r > commandHandler.getAvailableUnits(k, 'rangers')) {
           const error = new Error('Not enough available rangers (some may be in training)');
           error.statusCode = 400;
           throw error;
         }
-        if (f > engine.getAvailableUnits(k, 'fighters')) {
+        if (f > commandHandler.getAvailableUnits(k, 'fighters')) {
           const error = new Error('Not enough available fighters (some may be in training)');
           error.statusCode = 400;
           throw error;
@@ -179,7 +179,7 @@ module.exports = function (db) {
           throw error;
         }
 
-        const foodMult = engine.FOOD_CONSUMPTION_MULT[k.race] || 1.0;
+        const foodMult = commandHandler.foodConsumptionMult(k.race);
         const foodPerTurn = (r * 0.5 + f * 1.0) * foodMult;
         const foodNeeded = Math.ceil(EXP_TURNS[type] * foodPerTurn * 0.75);
         if (k.food < foodNeeded) {
@@ -210,9 +210,10 @@ module.exports = function (db) {
       const updatedK = await db.get('SELECT * FROM kingdoms WHERE id = $1', [k.id]);
       let expeditionEvents = [];
       try {
-        expeditionEvents = await engine.resolveExpeditions(db, updatedK, engine);
-        expeditionEvents = expeditionEvents.concat(await engine.resolveResourceHarvests(db, updatedK));
-      } catch (expErr) {
+        expeditionEvents = await commandHandler.handle(
+          { type: 'expeditions' },
+          { kingdom: updatedK, db },
+        );      } catch (expErr) {
         console.error('[expedition/start] immediate resolution error:', expErr.message);
       }
 
@@ -265,7 +266,7 @@ module.exports = function (db) {
           const t = req.body.terrain || 'forest';
           if (r < 1) throw new Error('Send at least 1 ranger');
 
-          if (r > engine.getAvailableUnits(k, 'rangers')) {
+          if (r > commandHandler.getAvailableUnits(k, 'rangers')) {
             throw new Error('Not enough available rangers');
           }
 
@@ -333,7 +334,7 @@ module.exports = function (db) {
           throw error;
         }
 
-        if (r > engine.getAvailableUnits(k, 'rangers')) {
+        if (r > commandHandler.getAvailableUnits(k, 'rangers')) {
           const error = new Error('Not enough available rangers');
           error.statusCode = 400;
           throw error;
@@ -402,7 +403,7 @@ module.exports = function (db) {
           const t = req.body.terrain || 'mountain';
           if (e < 1) throw new Error('Send at least 1 engineer');
 
-          if (e > engine.getAvailableUnits(k, 'engineers')) {
+          if (e > commandHandler.getAvailableUnits(k, 'engineers')) {
             throw new Error('Not enough available engineers');
           }
 
@@ -471,7 +472,7 @@ module.exports = function (db) {
           throw error;
         }
 
-        if (e > engine.getAvailableUnits(k, 'engineers')) {
+        if (e > commandHandler.getAvailableUnits(k, 'engineers')) {
           const error = new Error('Not enough available engineers');
           error.statusCode = 400;
           throw error;
@@ -556,7 +557,7 @@ module.exports = function (db) {
           throw error;
         }
 
-        if (r > engine.getAvailableUnits(k, 'rangers')) {
+        if (r > commandHandler.getAvailableUnits(k, 'rangers')) {
           const error = new Error('Not enough available rangers');
           error.statusCode = 400;
           throw error;

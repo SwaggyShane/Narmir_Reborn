@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const engine = require("../game/engine");
+const commandHandler = require("../game/command-handler");
 const { generateCsrfToken } = require("./middleware");
 const { seedFirstRingNode } = require("../game/first-ring-node");
 
@@ -82,7 +83,7 @@ module.exports = function (db) {
         "INSERT INTO players (username, password, email, is_admin) VALUES ($1, $2, $3, $4)",
         [username, hash, email, 0],
       );
-      const region = engine.assignRegion(chosenRace);
+      const region = commandHandler.assignRegion(chosenRace);
 
       // Starting buildings based on race
       const buildings = {

@@ -1,7 +1,7 @@
 const express = require('express');
 const { requireAuth, requireCsrfToken } = require('./middleware');
 const { safeJsonParse } = require('../utils/helpers');
-const engine = require('../game/engine');
+const commandHandler = require('../game/command-handler');
 const config = require('../game/config');
 const { rankingsCache } = require('../cache.js');
 const { getKingdomVisibility } = require('../game/visibility');
@@ -46,9 +46,8 @@ module.exports = function (db) {
 
     parseKingdomJson(k);
 
-    k.score = engine.calculateScore(k);
-    k.defense_rating = engine.defenseRating(k);
-    k.fog_of_war_disabled = process.env.DISABLE_FOG_OF_WAR === 'true';
+    k.score = await commandHandler.handle({ type: 'calculate-score' }, { kingdom: k });
+    k.defense_rating = commandHandler.defenseRating(k);    k.fog_of_war_disabled = process.env.DISABLE_FOG_OF_WAR === 'true';
 
     let builtLand = 0;
     for (const [building, cost] of Object.entries(config.BUILDING_LAND_COST)) {
@@ -120,7 +119,7 @@ module.exports = function (db) {
         LIMIT 1000
       `);
       for (const r of rows) {
-        r.score = engine.calculateScore(r);
+        r.score = await commandHandler.handle({ type: 'calculate-score' }, { kingdom: r });
       }
       baseScored = rows;
       rankingsCache.set('base_scored_top1000', baseScored, 30 * 1000);
@@ -146,7 +145,7 @@ module.exports = function (db) {
             WHERE k.id IN (${placeholders})
           `, missingIds);
           for (let r of missingRows) {
-            r.score = engine.calculateScore(r);
+            r.score = await commandHandler.handle({ type: 'calculate-score' }, { kingdom: r });
             scoredRows.push(r);
           }
         }
@@ -223,7 +222,10 @@ module.exports = function (db) {
             allianceMap[k.alliance_id].member_count++;
             allianceMap[k.alliance_id].total_land += k.land || 0;
             allianceMap[k.alliance_id].total_pop += k.population || 0;
-            allianceMap[k.alliance_id].total_score += engine.calculateScore(k);
+            allianceMap[k.alliance_id].total_score += await commandHandler.handle(
+              { type: 'calculate-score' },
+              { kingdom: k },
+            );
           }
         }
       }
