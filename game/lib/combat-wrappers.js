@@ -34,9 +34,7 @@ const {
   WM_CREW_REQUIRED,
 } = config;
 
-// Default-on as of 2026-07-15 (elevation combat bonus only applies on this
-// path). Set USE_COMBAT_V2="0" to force the legacy V1 path.
-const USE_COMBAT_V2 = process.env.USE_COMBAT_V2 !== "0";
+// Combat V2 is the only military path (legacy aggregate combat removed 2026-07-16).
 const HAPPINESS_FLOOR = 0;
 
 function wmCrewRequired(race, engineerLevel) {
@@ -55,10 +53,7 @@ function resolveMilitaryAttackV2Adapter(
   attacker.heroes = attackerHeroes;
   defender.heroes = defenderHeroes;
 
-  // Phase 3A: attach elevation_level so combat-resolver's
-  // calculateElevationBonus can actually fire. Previously nothing set this
-  // anywhere, so its undefined-check always failed silently even with the
-  // feature flag on and USE_COMBAT_V2 set.
+  // Attach elevation_level so combat-resolver's calculateElevationBonus can fire.
   if (getFlag('FEATURE_ELEVATION_COMBAT') && hasElevationGrid()) {
     const grid = getElevationGrid();
     attacker.elevation_level = getKingdomElevationLevel(attacker, grid);
@@ -185,11 +180,7 @@ function resolveMilitaryAttackV2Adapter(
   defenderUpdates.xp = defXp.xp;
   defenderUpdates.level = defXp.level;
 
-  // Post-combat happiness change, ported from V1's resolveMilitaryAttack
-  // formula (below) so V2 doesn't silently drop this outcome when it
-  // becomes the default path — V2's combat-resolver reads happiness as a
-  // combat-power input but never wrote a post-combat change, a gap only
-  // caught by test/combat-comparative.test.js once V2 stopped being opt-in.
+  // Post-combat happiness (resolver reads happiness as power input but does not write outcomes).
   const powerRatio =
     (v2Result.report.diagnostics?.attacker?.totalDmg || 0) /
     Math.max(1, v2Result.report.diagnostics?.defender?.totalDmg || 0);
@@ -297,6 +288,15 @@ function resolveMilitaryAttackV2Adapter(
     ],
   };
 
+  // Kingdom discovery / location maps (must live on the V2 path — sole combat resolver)
+  applyPostCombatDiscovery({
+    win: v2Result.win,
+    attacker,
+    defender,
+    attackerUpdates,
+    defenderUpdates,
+  });
+
   const atkEvent = formatCombatV2NewsBlurb(attacker, defender, report, "attacker");
   const defEvent = formatCombatV2NewsBlurb(attacker, defender, report, "defender");
 
@@ -310,6 +310,94 @@ function resolveMilitaryAttackV2Adapter(
   };
 }
 
+/**
+ * Post-combat discovery:
+ * - Defender always maps the attacker (attackers "leave a map")
+ * - Chance to steal a third-party mapped kingdom from the loser's book
+ * - Chance for winner to learn the loser's existence (found, not mapped)
+ */
+function applyPostCombatDiscovery({ win, attacker, defender, attackerUpdates, defenderUpdates }) {
+  const defDisc = safeJsonParse(
+    defenderUpdates.discovered_kingdoms || defender.discovered_kingdoms,
+    {},
+    "combat-v2:defender_discovered_kingdoms",
+  ) || {};
+  defDisc[attacker.id] = {
+    found: true,
+    mapped: true,
+    name: attacker.name,
+  };
+  defenderUpdates.discovered_kingdoms = JSON.stringify(defDisc);
+
+  const baseChance = 0.08;
+  const winner = win ? attacker : defender;
+  const loser = win ? defender : attacker;
+  const winnerUpdates = win ? attackerUpdates : defenderUpdates;
+  const loserUpdates = win ? defenderUpdates : attackerUpdates;
+
+  const loserFragment = fragmentBonusManager.getFragmentForBuilding(loser, "libraries");
+  const canStealMaps =
+    !loserFragment ||
+    (loserFragment.fragment !== "Dwarven Star-Metal" &&
+      loserFragment.fragment !== "Dragon Scale");
+
+  const lootRaceBonus =
+    winner.race === "orc" || winner.race === "dire_wolf" ? 1.5 : 1.0;
+
+  if (canStealMaps && Math.random() < baseChance * lootRaceBonus) {
+    const winnerDisc =
+      safeJsonParse(
+        winnerUpdates.discovered_kingdoms || winner.discovered_kingdoms,
+        {},
+        "combat-v2:winner_disc",
+      ) || {};
+    const loserDisc =
+      safeJsonParse(
+        loserUpdates.discovered_kingdoms || loser.discovered_kingdoms,
+        {},
+        "combat-v2:loser_disc",
+      ) || {};
+
+    const mappedIds = Object.keys(loserDisc).filter(
+      (id) =>
+        loserDisc[id]?.mapped &&
+        !winnerDisc[id]?.mapped &&
+        String(id) !== String(winner.id),
+    );
+
+    if (mappedIds.length > 0) {
+      const stolenId = mappedIds[Math.floor(Math.random() * mappedIds.length)];
+      const entry = loserDisc[stolenId] || {};
+      winnerDisc[stolenId] = {
+        found: true,
+        mapped: true,
+        name: entry.name,
+      };
+      delete loserDisc[stolenId];
+      winnerUpdates.discovered_kingdoms = JSON.stringify(winnerDisc);
+      loserUpdates.discovered_kingdoms = JSON.stringify(loserDisc);
+    }
+  }
+
+  const discChance = calcDiscoveryChance(winner);
+  if (Math.random() < discChance) {
+    const discovererDisc =
+      safeJsonParse(
+        winnerUpdates.discovered_kingdoms || winner.discovered_kingdoms,
+        {},
+        "combat-v2:discoverer_disc",
+      ) || {};
+    if (!discovererDisc[loser.id]?.found) {
+      discovererDisc[loser.id] = {
+        found: true,
+        mapped: false,
+        name: loser.name,
+      };
+      winnerUpdates.discovered_kingdoms = JSON.stringify(discovererDisc);
+    }
+  }
+}
+
 function resolveMilitaryAttack(
   attacker,
   defender,
@@ -317,865 +405,13 @@ function resolveMilitaryAttack(
   attackerHeroes = [],
   defenderHeroes = [],
 ) {
-  attacker.heroes = attackerHeroes;
-  defender.heroes = defenderHeroes;
-  if (USE_COMBAT_V2) {
-    return resolveMilitaryAttackV2Adapter(
-      attacker,
-      defender,
-      sentUnits,
-      attackerHeroes,
-      defenderHeroes,
-    );
-  }
-  const steps = [];
-  const attackerUpdates = {};
-  const defenderUpdates = {
-    last_attack_turn: defender.turn || 0
-  };
-  const sent = {
-    fighters: Math.min(sentUnits.fighters || 0, attacker.fighters || 0),
-    rangers: Math.min(sentUnits.rangers || 0, attacker.rangers || 0),
-    mages: Math.min(sentUnits.mages || 0, attacker.mages || 0),
-    warMachines: Math.min(
-      sentUnits.warMachines || 0,
-      attacker.war_machines || 0,
-    ),
-    ninjas: Math.min(sentUnits.ninjas || 0, attacker.ninjas || 0),
-    thieves: Math.min(sentUnits.thieves || 0, attacker.thieves || 0),
-    clerics: Math.min(sentUnits.clerics || 0, attacker.clerics || 0),
-    engineers: Math.min(sentUnits.engineers || 0, attacker.engineers || 0),
-    ladders: Math.min(sentUnits.ladders || 0, attacker.ladders || 0),
-  };
-  const laddersActive = sent.ladders;
-  if (
-    sent.fighters <= 0 &&
-    sent.rangers <= 0 &&
-    sent.mages <= 0 &&
-    sent.ninjas <= 0
-  )
-    return { error: "Send at least some combat troops" };
-
-  const landRatio = (attacker.land || 1) / Math.max(1, defender.land || 1);
-  const fighterRatio =
-    (attacker.fighters || 1) / Math.max(1, defender.fighters || 1);
-  let bullyRatio = Math.max(landRatio, fighterRatio * 0.5);
-  let bullyPenalty = 1.0;
-  let bullyMsg = null;
-  let shameEvent = null;
-  if (bullyRatio >= 8) {
-    bullyPenalty = 0.4;
-    bullyMsg = "⚠️ Your kingdom is disgraced attacking such a weak foe.";
-    shameEvent = `👑 ${attacker.name} has attacked the much weaker ${defender.name}. The world watches in disgust.`;
-  } else if (bullyRatio >= 4) {
-    bullyPenalty = 0.6;
-    bullyMsg = "⚠️ Happiness suffers — this is slaughter, not war.";
-  } else if (bullyRatio >= 2) {
-    bullyPenalty = 0.8;
-    bullyMsg = "⚠️ Your troops lack motivation fighting a weaker foe.";
-  }
-
-  const atkHappinessMult = happinessCombatMult(attacker.happiness !== undefined && attacker.happiness !== null ? attacker.happiness : 50);
-  const defHappinessMult = happinessCombatMult(defender.happiness !== undefined && defender.happiness !== null ? defender.happiness : 50);
-
-  const atkFighterLvl = effectiveTroopLevel(attacker, "fighters") / 50;
-  const atkRangerLvl = effectiveTroopLevel(attacker, "rangers") / 50;
-  const atkMageLvl = effectiveTroopLevel(attacker, "mages") / 50;
-  const atkNinjaLvl = effectiveTroopLevel(attacker, "ninjas") / 50;
-  let atkThiefLvl = effectiveTroopLevel(attacker, "thieves") / 50;
-  const defFighterLvl = effectiveTroopLevel(defender, "fighters") / 50;
-  const defRangerLvl = effectiveTroopLevel(defender, "rangers") / 50;
-  const defMageLvl = effectiveTroopLevel(defender, "mages") / 50;
-  const defNinjaLvl = effectiveTroopLevel(defender, "ninjas") / 50;
-
-  const night = isNight();
-  if (attacker.race === "vampire" && night) atkThiefLvl *= 1.5;
-
-  const defAvail = {
-    fighters: getAvailableUnits(defender, "fighters"),
-    rangers: getAvailableUnits(defender, "rangers"),
-    mages: getAvailableUnits(defender, "mages"),
-    ninjas: getAvailableUnits(defender, "ninjas"),
-    thieves: getAvailableUnits(defender, "thieves"),
-    clerics: getAvailableUnits(defender, "clerics"),
-    engineers: getAvailableUnits(defender, "engineers"),
-  };
-
-  let daylightPenaltyMsg = null;
-  if (defender.race === "vampire" && !night) {
-    defAvail.fighters = 0;
-    defAvail.rangers = 0;
-    defAvail.mages = 0;
-    defAvail.ninjas = 0;
-    defAvail.thieves = 0;
-
-    let thrallMult = 5.0;
-    const defMausUpg = safeJsonParse(defender.mausoleum_upgrades, {}, "auto:mausoleum_upgrades");
-    if (defMausUpg.night_watch) {
-      thrallMult += 0.5;
-    }
-    defAvail.clerics = Math.floor(defAvail.clerics * thrallMult);
-
-    daylightPenaltyMsg =
-      "☀️ Daylight penalty: Only Thralls defend the Vampire stronghold during the day, but with massive fervor!";
-  }
-
-  let defWmActive = defender.war_machines || 0;
-  let thiefSabotage = 0;
-  if (sent.thieves > 0) {
-    const sabotageChance = Math.min(
-      0.4,
-      sent.thieves * 0.001 * atkThiefLvl * raceBonus(attacker, "stealth"),
-    );
-    const disabledWm = Math.floor(defWmActive * sabotageChance);
-    defWmActive = Math.max(0, defWmActive - disabledWm);
-    thiefSabotage = disabledWm;
-    steps.push({
-      phase: "Sabotage",
-      title: "Thief Sabotage",
-      msg: `Thieves disabled ${disabledWm} defending war machines.`,
-      icon: "🥷",
-    });
-  }
-
-  let ninjaKills = 0;
-  let ninjaIntercepted = 0;
-  if (sent.ninjas > 0) {
-    const strikeRate =
-      0.01 +
-      Math.min(
-        0.03,
-        sent.ninjas * 0.0001 * atkNinjaLvl * raceBonus(attacker, "stealth"),
-      );
-    const rawKills = Math.floor(defAvail.fighters * strikeRate);
-    const interceptRate = Math.min(0.5, defAvail.ninjas * 0.001 * defNinjaLvl);
-    ninjaIntercepted = Math.floor(rawKills * interceptRate);
-    ninjaKills = Math.max(0, rawKills - ninjaIntercepted);
-    steps.push({
-      phase: "Stealth",
-      title: "Ninja Strike",
-      msg: `Ninjas struck the defense line causing ${ninjaKills} casualties (${ninjaIntercepted} intercepted).`,
-      icon: "🗡️",
-    });
-  }
-  const defFightersAfterNinja = Math.max(0, defAvail.fighters - ninjaKills);
-
-  let flankKills = 0;
-  const flankPower = (sent.ninjas * 2 + sent.rangers * 0.5) * atkNinjaLvl;
-  if (flankPower > 50) {
-    const flankChance = 0.15 + sent.ninjas * 0.001;
-    if (Math.random() < flankChance) {
-      flankKills = Math.floor(flankPower * (0.5 + Math.random() * 0.5));
-      steps.push({
-        phase: "Tactical",
-        title: "Flank Maneuver",
-        msg: `Your swift units flanked the enemy, causing ${flankKills} casualties behind the main line!`,
-        icon: "↪️",
-      });
-    }
-  }
-
-  const rangerVolleyRate =
-    (0.02 + Math.min(0.05, sent.rangers * 0.00005)) *
-    atkRangerLvl *
-    raceBonus(attacker, "military");
-  const rangerKills = Math.floor(defFightersAfterNinja * rangerVolleyRate);
-  if (rangerKills > 0)
-    steps.push({
-      phase: "Ranged",
-      title: "Opening Volley",
-      msg: `Rangers fired a volley causing ${rangerKills} casualties.`,
-      icon: "🏹",
-    });
-  const defFightersAfterVolley = Math.max(
-    0,
-    defFightersAfterNinja - rangerKills - flankKills,
+  return resolveMilitaryAttackV2Adapter(
+    attacker,
+    defender,
+    sentUnits,
+    attackerHeroes,
+    defenderHeroes,
   );
-
-  const weaponsEquipped = Math.min(
-    sent.fighters,
-    attacker.weapons_stockpile || 0,
-  );
-  const weaponBonus = 1 + (weaponsEquipped / Math.max(sent.fighters, 1)) * 0.25;
-  const weaponsResearchMult = fragmentBonusManager.getBonusMultiplier(attacker, 'weapons', 'damage');
-  const atkWeapon = ((attacker.res_weapons || 100) / 100) * weaponBonus * weaponsResearchMult;
-  const atkTactics = (attacker.res_military || 100) / 100;
-  const atkRaceMil = raceBonus(attacker, "military");
-  const atkRaceMag = raceBonus(attacker, "magic");
-  const atkRangerRace = raceBonus(attacker, "military");
-
-  const atkFighterPower =
-    sent.fighters * atkWeapon * atkTactics * atkRaceMil * atkFighterLvl;
-  const atkRangerPower =
-    sent.rangers * 0.7 * atkTactics * atkRangerRace * atkRangerLvl;
-  const atkMagePower =
-    sent.mages *
-    2.5 *
-    ((attacker.res_attack_magic || 100) / 100) *
-    atkRaceMag *
-    atkMageLvl;
-  const engLvl = effectiveTroopLevel(attacker, "engineers");
-  const atkEngMult = unitLevelMult(attacker, "engineers");
-  const crewNeeded = wmCrewRequired(attacker.race, engLvl);
-  const engAvail = Math.max(0, attacker.engineers || 0);
-  const wmCrewable = Math.min(
-    sent.warMachines,
-    Math.floor(engAvail / crewNeeded),
-  );
-  const warMachinesDamageMult = fragmentBonusManager.getBonusMultiplier(attacker, 'war_machines', 'damage');
-  const warMachinesPowerMult = fragmentBonusManager.getBonusMultiplier(attacker, 'war_machines', 'power');
-  const wmPower =
-    wmCrewable *
-    500 *
-    ((attacker.res_war_machines || 100) / 100) *
-    raceBonus(attacker, "war_machines") *
-    atkEngMult *
-    warMachinesDamageMult *
-    warMachinesPowerMult;
-
-  let atkHeroPower = 0;
-  let atkWmMult = 1.0;
-  let atkMageMult = 1.0;
-  let atkWarlordMult = 1.0;
-  let atkBloodShamanMult = 1.0;
-  let atkPackLeaderMult = 1.0;
-
-  attackerHeroes.forEach((h) => {
-    atkHeroPower += getHeroPower(h);
-    if (h.class === "siegebreaker") atkWmMult *= 1.35;
-    if (h.class === "archmage") atkMageMult *= 1.25;
-    if (h.class === "warlord") atkWarlordMult *= 1.25;
-    if (h.class === "blood_shaman") atkBloodShamanMult *= 1.1;
-    if (h.class === "alpha") atkPackLeaderMult *= 1.5;
-  });
-
-  const atkPowerRaw =
-    (atkFighterPower +
-      atkRangerPower * atkPackLeaderMult +
-      atkMagePower * atkMageMult +
-      wmPower * atkWmMult +
-      atkHeroPower) *
-    atkHappinessMult *
-    bullyPenalty *
-    atkWarlordMult *
-    atkBloodShamanMult;
-  const atkPrestigeMult = (attacker.prestige_level > 0)
-    ? (PRESTIGE_MODIFIERS[Math.min(attacker.prestige_level, 5)]?.combat || 1.0)
-    : 1.0;
-
-  const atkMb = safeJsonParse(attacker.milestone_bonuses, {}, "combat:atkMb");
-  let atkPower = atkPowerRaw * (1 + (atkMb.attack_pct || 0) / 100) * atkPrestigeMult * 1.0 * 1.0;
-
-  if (attacker.race === "vampire" && !night) {
-    const atkMausUpg = safeJsonParse(attacker.mausoleum_upgrades, {}, "auto:mausoleum_upgrades");
-    const atkPenaltyMult = atkMausUpg.night_watch ? 0.2 : 0.1;
-    atkPower = Math.floor(atkPowerRaw * atkPenaltyMult * 1.0 * 1.0);
-    if (!daylightPenaltyMsg) daylightPenaltyMsg = "";
-    daylightPenaltyMsg +=
-      " ☀️ Daylight penalty: Your troops are lethargic and ineffective during the day!";
-  }
-
-  const armorEquipped = Math.min(
-    defFightersAfterVolley,
-    defender.armor_stockpile || 0,
-  );
-  const armorBonus =
-    1 + (armorEquipped / Math.max(defFightersAfterVolley, 1)) * 0.25;
-  const armorResearchMult = fragmentBonusManager.getBonusMultiplier(defender, 'armor', 'defense');
-  const defArmor = ((defender.res_armor || 100) / 100) * armorBonus * armorResearchMult;
-  const defTactics = (defender.res_military || 100) / 100;
-  const defRaceMil = raceBonus(defender, "military");
-  const defRaceMag = raceBonus(defender, "magic");
-
-  const defFighterPower =
-    defFightersAfterVolley * defArmor * defTactics * defRaceMil * defFighterLvl;
-  const outpostBonus =
-    (defender.bld_outposts || 0) * 0.1 +
-    (defender.bld_guard_towers || 0) * 0.05;
-  const defRangerPower =
-    defAvail.rangers *
-    0.8 *
-    defTactics *
-    raceBonus(defender, "military") *
-    defRangerLvl *
-    Math.max(1, outpostBonus);
-  const defMagePower =
-    defAvail.mages *
-    1.5 *
-    ((defender.res_defense_magic || 100) / 100) *
-    defRaceMag *
-    defMageLvl;
-  const defEngLvl = effectiveTroopLevel(defender, "engineers");
-  const defEngMult = unitLevelMult(defender, "engineers");
-  const defCrewNeeded = wmCrewRequired(defender.race, defEngLvl);
-  const defWmCrewable = Math.min(
-    defWmActive,
-    Math.floor(defAvail.engineers / defCrewNeeded),
-  );
-  const defWarMachinesDamageMult = fragmentBonusManager.getBonusMultiplier(defender, 'war_machines', 'damage');
-  const defWarMachinesPowerMult = fragmentBonusManager.getBonusMultiplier(defender, 'war_machines', 'power');
-  const defWmPower =
-    defWmCrewable *
-    500 *
-    ((defender.res_war_machines || 100) / 100) *
-    raceBonus(defender, "war_machines") *
-    defEngMult *
-    defWarMachinesDamageMult *
-    defWarMachinesPowerMult;
-  const defEngBonus =
-    Math.floor(defAvail.engineers / 10) *
-    50 *
-    defEngMult *
-    raceBonus(defender, "construction");
-  const defWallPowerRaw = wallDefensePower(defender);
-  const defWalls = defender.bld_walls || 0;
-  const ladderBypass =
-    defWalls > 0 ? Math.min(0.2, laddersActive / defWalls) : 0;
-  const defWallPower = Math.floor(defWallPowerRaw * (1 - ladderBypass));
-  if (laddersActive > 0 && defWalls > 0) {
-    const bypassPct = Math.round(ladderBypass * 100);
-    steps.push({
-      phase: "Siege",
-      title: "🪜 Ladder Assault",
-      msg: `${laddersActive} 🪜 ladders scaled the walls (crewed by engineers), bypassing ${bypassPct}% of wall defenses!`,
-      icon: "🪜",
-    });
-  } else if (laddersActive > 0) {
-    steps.push({
-      phase: "Siege",
-      title: "🪜 Ladder Party",
-      msg: `🪜 Ladders were raised but the enemy has no walls to scale.`,
-      icon: "🪜",
-    });
-  }
-
-  const defOutpostPower = outpostRangerPower(defender);
-  const defTowerPower = towerDetectionPower(defender);
-  const castleDefenseMult = fragmentBonusManager.getBonusMultiplier(defender, 'castles', 'defense');
-  const defStructures = Math.floor((defender.bld_castles || 0) * 500 * castleDefenseMult);
-  const defUpgrades = safeJsonParse(
-    defender.defense_upgrades,
-    {},
-    "resolveMilitaryAttack:defense_upgrades",
-  );
-  let defTierMult = 1.0;
-  if (defUpgrades.fortified) defTierMult += 0.05;
-  if (defUpgrades.keep) defTierMult += 0.1;
-  if (defUpgrades.citadel) defTierMult += 0.15;
-
-  let defHeroPower = 0;
-  let defWmMult = 1.0;
-  let defMageMult = 1.0;
-  let defWarlordMult = 1.0;
-  let defBloodShamanMult = 1.0;
-  let defPackLeaderMult = 1.0;
-  let defLunarSentinelMult = 1.0;
-  let defSiegebreakerStructureMult = 1.0;
-
-  defenderHeroes.forEach((h) => {
-    defHeroPower += getHeroPower(h);
-    if (h.class === "siegebreaker") {
-      defWmMult *= 1.35;
-      defSiegebreakerStructureMult *= 2.0;
-    }
-    if (h.class === "archmage") defMageMult *= 1.25;
-    if (h.class === "warlord") defWarlordMult *= 1.25;
-    if (h.class === "blood_shaman") defBloodShamanMult *= 1.1;
-    if (h.class === "alpha") defPackLeaderMult *= 1.5;
-    if (h.class === "lunar_sentinel") defLunarSentinelMult *= 1.5;
-  });
-
-  const defPower =
-    (defFighterPower +
-      defRangerPower * defPackLeaderMult +
-      defMagePower * defMageMult * defLunarSentinelMult +
-      defWmPower * defWmMult +
-      defEngBonus +
-      (defWallPower + defOutpostPower + defTowerPower + defStructures) *
-        defSiegebreakerStructureMult +
-      defHeroPower) *
-    defHappinessMult *
-    defTierMult *
-    defWarlordMult *
-    defBloodShamanMult *
-    raceBonus(defender, "defense");
-
-  const defMb = safeJsonParse(defender.milestone_bonuses, {}, "combat:defMb");
-  const defMilestoneMult = 1 + (defMb.defense_pct || 0) / 100;
-
-  const defPrestigeMult = (defender.prestige_level > 0)
-    ? (PRESTIGE_MODIFIERS[Math.min(defender.prestige_level, 5)]?.combat || 1.0)
-    : 1.0;
-
-  const defPowerFinal = defPower * defMilestoneMult * defPrestigeMult * 1.0 * 1.0;
-
-  const variance = 0.8 + Math.random() * 0.4;
-  const win = atkPower * variance > defPowerFinal;
-  const powerRatio = atkPower / Math.max(1, defPowerFinal);
-  steps.push({
-    phase: "Clash",
-    title: "Main Assault",
-    msg: `Attacker Power (${Math.round(atkPower)}) vs Defender Power (${Math.round(defPowerFinal)}).`,
-    icon: "⚔️",
-  });
-
-  let atkClericHeal = Math.min(
-    0.35,
-    ((attacker.clerics || 0) / Math.max(sent.fighters + sent.rangers, 1)) *
-      0.08 *
-      raceBonus(attacker, "magic"),
-  );
-
-  const atkShrineUpgrades = safeJsonParse(attacker.shrine_upgrades, {}, "auto:shrine_upgrades");
-  if (atkShrineUpgrades.healing_aura) atkClericHeal = Math.min(0.7, atkClericHeal + 0.1);
-  if (atkShrineUpgrades.sanctuary) atkClericHeal = Math.min(0.7, atkClericHeal + 0.15);
-  let defClericHeal = Math.min(
-    0.35,
-    (defAvail.clerics / Math.max(defAvail.fighters || 1, 1)) *
-      0.08 *
-      raceBonus(defender, "magic"),
-  );
-
-  const defShrineUpgrades = safeJsonParse(defender.shrine_upgrades, {}, "auto:shrine_upgrades");
-  if (defShrineUpgrades.healing_aura) defClericHeal = Math.min(0.7, defClericHeal + 0.1);
-  if (defShrineUpgrades.sanctuary) defClericHeal = Math.min(0.7, defClericHeal + 0.15);
-
-  attackerHeroes.forEach((h) => {
-    if (h.class === "paladin")
-      atkClericHeal = Math.min(0.7, atkClericHeal + 0.1);
-    if (h.class === "warlord")
-      atkClericHeal = Math.min(0.7, atkClericHeal + 0.15);
-  });
-
-  defenderHeroes.forEach((h) => {
-    if (h.class === "paladin")
-      defClericHeal = Math.min(0.7, defClericHeal + 0.1);
-    if (h.class === "warlord")
-      defClericHeal = Math.min(0.7, defClericHeal + 0.15);
-  });
-
-  if (atkClericHeal > 0 || defClericHeal > 0) {
-    let healMsg = "";
-    if (atkClericHeal > 0)
-      healMsg += `Attacker clerics reduced casualties by ${Math.round(atkClericHeal * 100)}%. `;
-    if (defClericHeal > 0)
-      healMsg += `Defender clerics reduced casualties by ${Math.round(defClericHeal * 100)}%.`;
-    steps.push({
-      phase: "Healing",
-      title: "Divine Intervention",
-      msg: healMsg.trim(),
-      icon: "✨",
-    });
-  }
-
-  const atkStealthBonus = raceBonus(attacker, "stealth") > 1 ? 0.85 : 1.0;
-
-  const atkFighterLossPct = win
-    ? 0.04 + Math.random() * 0.08
-    : 0.2 + Math.random() * 0.25;
-  const atkRangerLossPct = win
-    ? 0.02 + Math.random() * 0.04
-    : 0.1 + Math.random() * 0.12;
-  const atkMageLossPct = win
-    ? 0.01 + Math.random() * 0.03
-    : 0.05 + Math.random() * 0.08;
-
-  const defFighterLossPct = win
-    ? 0.15 + Math.random() * 0.2
-    : 0.05 + Math.random() * 0.08;
-  const defRangerLossPct = win
-    ? 0.08 + Math.random() * 0.12
-    : 0.02 + Math.random() * 0.04;
-  const defMageLossPct = win
-    ? 0.06 + Math.random() * 0.1
-    : 0.01 + Math.random() * 0.03;
-
-  const atkFigLost = Math.floor(
-    sent.fighters * atkFighterLossPct * atkStealthBonus * (1 - atkClericHeal),
-  );
-  const atkRanLost = Math.floor(
-    sent.rangers * atkRangerLossPct * atkStealthBonus * (1 - atkClericHeal),
-  );
-  const atkMagLost = Math.floor(sent.mages * atkMageLossPct * atkStealthBonus);
-  const atkCleLost = Math.floor(sent.clerics * (win ? 0.01 : 0.08));
-  const atkNinLost = Math.floor(sent.ninjas * (win ? 0.05 : 0.15));
-  const atkThiLost = Math.floor(sent.thieves * (win ? 0.02 : 0.1));
-  const atkEngLost = Math.floor(sent.engineers * (win ? 0.01 : 0.05));
-  const atkWmLost = win
-    ? 0
-    : Math.floor(sent.warMachines * (0.02 + Math.random() * 0.06));
-
-  const defFigLost = Math.floor(
-    defAvail.fighters * defFighterLossPct * (1 - defClericHeal),
-  );
-  const defRanLost = Math.floor(
-    defAvail.rangers * defRangerLossPct * (1 - defClericHeal),
-  );
-  const defMagLost = Math.floor(defAvail.mages * defMageLossPct);
-  const defCleLost = Math.floor(defAvail.clerics * (win ? 0.1 : 0.02));
-  const defNinLost = Math.floor(defAvail.ninjas * (win ? 0.15 : 0.05));
-  const defThiLost = Math.floor(defAvail.thieves * (win ? 0.08 : 0.03));
-  const defEngLost = Math.floor(defAvail.engineers * (win ? 0.08 : 0.02));
-  const defWmLost = win
-    ? Math.floor(defWmActive * (0.03 + Math.random() * 0.07))
-    : 0;
-
-  const defFightersLost = defFigLost + ninjaKills + rangerKills;
-  const defRangersLost = defRanLost;
-  const defMagesLost = defMagLost;
-  const defClericsLost = defCleLost;
-  const defNinjasLost = defNinLost;
-  const defThievesLost = defThiLost;
-  const defEngineersLost = defEngLost;
-
-  const atkFightersLost = atkFigLost;
-  const atkRangersLost = atkRanLost;
-  const atkMagesLost = atkMagLost;
-  const atkClericsLost = atkCleLost;
-  const atkNinjasLost = atkNinLost;
-  const atkThievesLost = atkThiLost;
-  const atkEngineersLost = atkEngLost;
-
-  let defLandLossMult = 1.0;
-  if (defUpgrades.fortified) defLandLossMult -= 0.05;
-  if (defUpgrades.keep) defLandLossMult -= 0.1;
-  if (defUpgrades.citadel) defLandLossMult -= 0.15;
-
-  const wallUpgrades = safeJsonParse(
-    defender.wall_upgrades,
-    {},
-    "resolveMilitaryAttack:wall_upgrades",
-  );
-  if (wallUpgrades.reinforced) defLandLossMult -= 0.1;
-
-  const landTransferred = win
-    ? Math.floor(defender.land * 0.1 * Math.max(0.1, defLandLossMult))
-    : 0;
-
-  const warmachineUpdates = applyWarmachineDamage(attacker, defender, win);
-  Object.assign(defenderUpdates, warmachineUpdates);
-  if (win) {
-    if (warmachineUpdates.bld_walls !== undefined) {
-      const wallsLost = (defender.bld_walls || 0) - warmachineUpdates.bld_walls;
-      if (wallsLost > 0) {
-        steps.push({
-          phase: "Siege",
-          title: "Wall Breach",
-          msg: `Your war machines battered the fortifications, destroying ${wallsLost} walls!`,
-          icon: "🧱",
-        });
-      }
-    } else {
-      const dmgCol = Object.keys(warmachineUpdates).find(
-        (k) =>
-          k.startsWith("bld_") && warmachineUpdates[k] < (defender[k] || 0),
-      );
-      if (dmgCol) {
-        const buildingName = dmgCol.replace("bld_", "").replace(/_/g, " ");
-        const amt = (defender[dmgCol] || 0) - warmachineUpdates[dmgCol];
-        steps.push({
-          phase: "Siege",
-          title: "Building Damage",
-          msg: `With the walls down, your troops razed ${amt} ${buildingName}!`,
-          icon: "🔥",
-        });
-      }
-    }
-  }
-
-  const atkTotalKills =
-    ninjaKills + rangerKills + defFightersLost + defClericsLost;
-  const defTotalKills =
-    atkFightersLost +
-    atkRangersLost +
-    atkMagesLost +
-    atkNinjasLost +
-    atkClericsLost;
-
-  const atkClericKills = defClericsLost;
-  const defClericKills = atkClericsLost;
-
-  const atkSoldierKills = atkTotalKills - atkClericKills;
-  const defSoldierKills = defTotalKills - defClericKills;
-
-  let atkConversionAdded = 0;
-  let defConversionAdded = 0;
-  let necroMsg = "";
-  if (win) {
-    const convRate = attacker.race === "vampire" ? 0.3 : 0.05;
-    const isVampire = attacker.race === "vampire";
-
-    if (isVampire) {
-      atkConversionAdded = Math.floor(atkSoldierKills * convRate);
-      if (atkConversionAdded > 0) {
-        attackerUpdates.fighters =
-          (attacker.fighters || 0) + atkConversionAdded;
-      }
-
-      const thrallsFromClerics = Math.floor(
-        (atkClericKills + atkClericsLost) * convRate,
-      );
-      if (thrallsFromClerics > 0) {
-        const current = attacker.thralls || 0;
-        let mauUpg = {};
-        try {
-          mauUpg = safeJsonParse(attacker.mausoleum_upgrades, {}, "auto:mausoleum_upgrades");
-        } catch {}
-        const perMau = 100 + (mauUpg.soul_vault ? 50 : 0);
-        const cap = (attacker.bld_mausoleums || 0) * perMau;
-
-        const added = Math.min(thrallsFromClerics, Math.max(0, cap - current));
-        if (added > 0) {
-          attackerUpdates.thralls = current + added;
-        }
-      }
-
-      if (
-        atkConversionAdded > 0 ||
-        Math.floor((atkClericKills + atkClericsLost) * convRate) > 0
-      ) {
-        necroMsg = `🧛 Blood Magic raised ${atkConversionAdded} soldiers as new troops and some Thralls from the fallen.`;
-      }
-    } else {
-      atkConversionAdded = Math.floor(atkTotalKills * convRate);
-      if (atkConversionAdded > 0) {
-        attackerUpdates.fighters =
-          (attackerUpdates.fighters || attacker.fighters || 0) +
-          atkConversionAdded;
-        necroMsg = `🏳️ ${atkConversionAdded} enemy troops surrendered and joined your ranks.`;
-      }
-    }
-  } else {
-    const convRate = defender.race === "vampire" ? 0.3 : 0.05;
-    const isVampire = defender.race === "vampire";
-
-    if (isVampire) {
-      defConversionAdded = Math.floor(defSoldierKills * convRate);
-      if (defConversionAdded > 0) {
-        defenderUpdates.fighters =
-          (defender.fighters || 0) + defConversionAdded;
-      }
-
-      const thrallsFromClerics = Math.floor(
-        (defClericKills + defClericsLost) * convRate,
-      );
-      if (thrallsFromClerics > 0) {
-        const current = defender.thralls || 0;
-        let mauUpg = {};
-        try {
-          mauUpg = safeJsonParse(defender.mausoleum_upgrades, {}, "auto:mausoleum_upgrades");
-        } catch {}
-        const perMau = 100 + (mauUpg.soul_vault ? 50 : 0);
-        const cap = (defender.bld_mausoleums || 0) * perMau;
-
-        const added = Math.min(thrallsFromClerics, Math.max(0, cap - current));
-        if (added > 0) {
-          defenderUpdates.thralls = current + added;
-        }
-      }
-
-      if (
-        defConversionAdded > 0 ||
-        Math.floor((defClericKills + defClericsLost) * convRate) > 0
-      ) {
-        necroMsg = `🧛 Blood Magic raised ${defConversionAdded} soldiers as new troops and some Thralls from the fallen.`;
-      }
-    } else {
-      defConversionAdded = Math.floor(defTotalKills * convRate);
-      if (defConversionAdded > 0) {
-        defenderUpdates.fighters =
-          (defenderUpdates.fighters || defender.fighters || 0) +
-          defConversionAdded;
-        necroMsg = `🏳️ ${defConversionAdded} enemy troops surrendered and joined your ranks.`;
-      }
-    }
-  }
-
-  const victoryMargin = Math.min(2.0, Math.max(0.1, powerRatio));
-  let atkHappinessChange, defHappinessChange;
-  if (win) {
-    atkHappinessChange = Math.floor(5 + Math.min(10, victoryMargin * 5));
-    defHappinessChange = -Math.max(
-      5,
-      Math.floor(Math.min(20, victoryMargin * 10)),
-    );
-    if (bullyRatio >= 8) atkHappinessChange -= 15;
-    if (bullyRatio >= 4) atkHappinessChange -= 5;
-  } else {
-    atkHappinessChange = -Math.floor(
-      5 + Math.min(15, (1 / Math.max(0.1, powerRatio)) * 8),
-    );
-    defHappinessChange = Math.floor(
-      5 + Math.min(10, (1 / Math.max(0.1, powerRatio)) * 5),
-    );
-  }
-  const newAtkHappiness = Math.max(
-    HAPPINESS_FLOOR,
-    Math.min(
-      200,
-      (attacker.happiness !== undefined && attacker.happiness !== null
-        ? attacker.happiness
-        : 100) + atkHappinessChange,
-    ),
-  );
-  const newDefHappiness = Math.max(
-    HAPPINESS_FLOOR,
-    Math.min(
-      200,
-      (defender.happiness !== undefined && defender.happiness !== null
-        ? defender.happiness
-        : 100) + defHappinessChange,
-    ),
-  );
-
-  const defDisc = safeJsonParse(
-    defender.discovered_kingdoms,
-    {},
-    "resolveMilitaryAttack:defender_discovered_kingdoms",
-  );
-  defDisc[attacker.id] = { found: true, mapped: true };
-  defenderUpdates.discovered_kingdoms = JSON.stringify(defDisc);
-
-  const atkLines = [];
-  const defLines = [];
-
-  const baseChance = 0.08;
-  const winnerUpdates = win ? attackerUpdates : defenderUpdates;
-
-  const loser = win ? defender : attacker;
-  const loserFragment = fragmentBonusManager.getFragmentForBuilding(loser, 'libraries');
-  const canStealMaps = !loserFragment || (loserFragment.fragment !== 'Dwarven Star-Metal' && loserFragment.fragment !== 'Dragon Scale');
-
-  const lootRaceBonus =
-    (win ? attacker.race : defender.race) === "orc" || (win ? attacker.race : defender.race) === "dire_wolf" ? 1.5 : 1.0;
-  if (canStealMaps && Math.random() < baseChance * lootRaceBonus) {
-    const winner = win ? attacker : defender;
-    const winnerDisc = safeJsonParse(
-      winnerUpdates.discovered_kingdoms || winner.discovered_kingdoms,
-      {},
-      "resolveMilitaryAttack:winner_discovered_kingdoms",
-    );
-    winnerDisc[loser.id] = { found: true, mapped: true };
-    winnerUpdates.discovered_kingdoms = JSON.stringify(winnerDisc);
-    atkLines.push("📜 A location map was recovered from the fallen!");
-    defLines.push("📜 A location map was stolen from the battlefield!");
-  }
-
-  const discChance = calcDiscoveryChance(
-    win ? attacker : defender,
-    win ? defender : attacker,
-  );
-  if (Math.random() < discChance) {
-    const discoverer = win ? attacker : defender;
-    const discovered = win ? defender : attacker;
-    const discovererDisc = safeJsonParse(
-      winnerUpdates.discovered_kingdoms || discoverer.discovered_kingdoms,
-      {},
-      "resolveMilitaryAttack:discoverer_discovered_kingdoms",
-    );
-    discovererDisc[discovered.id] = { found: true, mapped: false };
-    winnerUpdates.discovered_kingdoms = JSON.stringify(discovererDisc);
-    atkLines.push("🔭 You discovered a new kingdom!");
-  }
-
-  const report = {
-    win,
-    sent,
-    defenderEngaged: defAvail,
-    landTransferred,
-    combatSystem: "v1",
-    atkPower: Math.round(atkPower),
-    defPower: Math.round(defPowerFinal),
-    powerRatio: Math.round((atkPower / Math.max(1, defPowerFinal)) * 100) / 100,
-    atkFightersLost,
-    atkThrallsLost: 0,
-    atkRangersLost,
-    atkMagesLost,
-    atkNinjasLost,
-    atkClericsLost,
-    atkThievesLost,
-    atkEngineersLost,
-    atkWmLost,
-    defFightersLost,
-    defThrallsLost: 0,
-    defRangersLost,
-    defMagesLost,
-    defNinjasLost,
-    defClericsLost,
-    defThievesLost,
-    defEngineersLost,
-    defWmLost,
-    ninjaKills,
-    rangerKills,
-    flankKills,
-    thiefSabotage,
-    criticalHits: 0,
-    criticalKills: 0,
-    wallsDestroyed: 0,
-    wallHpBefore: defender.wall_hp || 0,
-    wallHpAfter: defenderUpdates.wall_hp ?? (defender.wall_hp || 0),
-    wallDamage: 0,
-    steps,
-  };
-
-  attackerUpdates.fighters = Math.max(0, (attacker.fighters || 0) - atkFightersLost + (atkConversionAdded || 0));
-  attackerUpdates.rangers = Math.max(0, (attacker.rangers || 0) - atkRangersLost);
-  attackerUpdates.mages = Math.max(0, (attacker.mages || 0) - atkMagesLost);
-  attackerUpdates.ninjas = Math.max(0, (attacker.ninjas || 0) - atkNinjasLost);
-  attackerUpdates.clerics = Math.max(0, (attacker.clerics || 0) - atkCleLost);
-  attackerUpdates.thieves = Math.max(0, (attacker.thieves || 0) - atkThiLost);
-  attackerUpdates.engineers = Math.max(0, (attacker.engineers || 0) - atkEngLost);
-  attackerUpdates.war_machines = Math.max(0, (attacker.war_machines || 0) - atkWmLost);
-  attackerUpdates.happiness = newAtkHappiness;
-  attackerUpdates.xp = awardXp(attacker, win ? "combat_win" : "combat_loss", 1).xp;
-  attackerUpdates.level = awardXp(attacker, win ? "combat_win" : "combat_loss", 1).level;
-
-  if (landTransferred > 0) {
-    attackerUpdates.land = (attacker.land || 0) + landTransferred;
-    defenderUpdates.land = Math.max(0, (defender.land || 0) - landTransferred);
-  }
-
-  defenderUpdates.fighters = Math.max(0, (defender.fighters || 0) - defFightersLost + (defConversionAdded || 0));
-  defenderUpdates.rangers = Math.max(0, (defender.rangers || 0) - defRangersLost);
-  defenderUpdates.mages = Math.max(0, (defender.mages || 0) - defMagesLost);
-  defenderUpdates.ninjas = Math.max(0, (defender.ninjas || 0) - defNinjasLost);
-  defenderUpdates.clerics = Math.max(0, (defender.clerics || 0) - defCleLost);
-  defenderUpdates.thieves = Math.max(0, (defender.thieves || 0) - defThiLost);
-  defenderUpdates.engineers = Math.max(0, (defender.engineers || 0) - defEngLost);
-  defenderUpdates.war_machines = Math.max(0, (defender.war_machines || 0) - defWmLost);
-  defenderUpdates.happiness = newDefHappiness;
-  defenderUpdates.xp = awardXp(defender, win ? "combat_loss" : "combat_win", 1).xp;
-  defenderUpdates.level = awardXp(defender, win ? "combat_loss" : "combat_win", 1).level;
-
-  const atkEvent = [
-    win ? "✅ VICTORY!" : "❌ DEFEAT!",
-    `Power: ${Math.round(atkPower)} vs ${Math.round(defPowerFinal)}`,
-    `Casualties: ${atkFightersLost + atkRangersLost + atkMagesLost} troops lost.`,
-    landTransferred > 0 ? `📍 Conquered ${landTransferred} land!` : null,
-    bullyMsg,
-    necroMsg,
-    ...atkLines,
-  ].filter(Boolean).join(" ");
-
-  const defEvent = [
-    win ? "❌ DEFEAT!" : "✅ VICTORY!",
-    `Power: ${Math.round(atkPower)} vs ${Math.round(defPowerFinal)}`,
-    `Casualties: ${defFightersLost + defRangersLost + defMagesLost} troops lost.`,
-    landTransferred > 0 ? `📍 Lost ${landTransferred} land!` : null,
-    shameEvent || null,
-    daylightPenaltyMsg,
-    necroMsg,
-    ...defLines,
-  ].filter(Boolean).join(" ");
-
-  return {
-    win,
-    report,
-    attackerUpdates,
-    defenderUpdates,
-    atkEvent,
-    defEvent,
-  };
 }
 
 module.exports = {

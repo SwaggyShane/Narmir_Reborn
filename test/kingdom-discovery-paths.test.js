@@ -12,7 +12,7 @@
  *  4. Epic trek hex-matched kingdom discoveries
  *  5. Search-type "targets" style random discovers (pure loop)
  *  6. Scout-area hex match (pure geometry of discovery rule)
- *  7. Combat V1: defender always learns attacker (mapped)
+ *  7. Combat V2: defender always learns attacker (mapped)
  *  8. Offensive spell: target learns caster when not obscure (logic mirror)
  *  9. Steal-map merge (pure transfer of mapped entry)
  * 10. Scribe location_map: found → mapped (pure)
@@ -45,12 +45,7 @@ const {
 } = require('../game/epic-trek-discovery');
 const { pixelToHex } = require('../game/hex-utils');
 
-// Force legacy combat path for deterministic discovery assertions
-process.env.USE_COMBAT_V2 = '0';
-// Clear combat module if preloaded with V2
-const combatPath = require.resolve('../game/combat');
-delete require.cache[combatPath];
-const { resolveMilitaryAttack } = require('../game/combat');
+const { resolveMilitaryAttack } = require('../game/lib/combat-wrappers');
 
 function parseDisc(raw) {
   if (!raw) return {};
@@ -279,7 +274,7 @@ console.log('path 5: search targets random-exclude merge shape');
 }
 console.log('path 6: scout-area hex match only for newly revealed homes');
 
-// ── 7. Combat V1: defender discovers attacker ───────────────────────────────
+// ── 7. Combat V2: defender discovers attacker ───────────────────────────────
 {
   const base = {
     race: 'human',
@@ -341,12 +336,13 @@ console.log('path 6: scout-area hex match only for newly revealed homes');
     [],
   );
   assert.ok(result && result.defenderUpdates, 'combat returns defenderUpdates');
+  assert.strictEqual(result.report.combatSystem, 'v2', 'must use Combat V2');
   const defDisc = parseDisc(result.defenderUpdates.discovered_kingdoms);
   assert.strictEqual(defDisc[1].found, true, 'defender learns attacker');
   assert.strictEqual(defDisc[1].mapped, true, 'attacker leaves a map');
   assert.strictEqual(defDisc[1].name, 'Aggressor');
 }
-console.log('path 7: combat V1 defender always maps attacker');
+console.log('path 7: combat V2 defender always maps attacker');
 
 // ── 8. Spell: target discovers caster when not obscure ──────────────────────
 {
@@ -436,5 +432,4 @@ console.log('helpers: pixelToHex + seededUnit usable for hex-true paths');
 
 console.log('\n✅ All kingdom-discovery path tests passed!');
 console.log(`   Covered pure/unit paths 1–10. Live HTTP: scout-area write, expedition finish, steal-map route.`);
-console.log(`   Known gap: Combat V2 adapter omits discovered_kingdoms on updates (warfare route pre-writes defender).`);
 console.log(`   Known gap: location_maps_wip has no enqueue writer in routes.`);

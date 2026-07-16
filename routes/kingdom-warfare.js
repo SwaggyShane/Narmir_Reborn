@@ -157,14 +157,7 @@ module.exports = function (db) {
         const attackerHeroes = await db.all('SELECT * FROM heroes WHERE kingdom_id = $1 AND status = $2', [k.id, 'idle']);
         const defenderHeroes = await db.all('SELECT * FROM heroes WHERE kingdom_id = $1 AND status = $2', [target.id, 'idle']);
 
-        let defDisc = {};
-        try {
-          defDisc = safeJsonParse(target.discovered_kingdoms, {}, 'auto:discovered_kingdoms');
-        } catch {}
-        if (!defDisc[k.id]?.mapped) {
-          defDisc[k.id] = { found: true, mapped: true };
-          await db.run('UPDATE kingdoms SET discovered_kingdoms = $1 WHERE id = $2', [JSON.stringify(defDisc), target.id]);
-        }
+        // Defender learns attacker via combat V2 post-combat discovery (defenderUpdates.discovered_kingdoms)
 
         const result = await commandHandler.handle(
           {

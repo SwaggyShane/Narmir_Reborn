@@ -41,7 +41,7 @@ npm install
 | `ADMIN_SECRET` | Password for admin panel access |
 | `PORT` | Server port (default: 3000) |
 | `DISCORD_BOT_TOKEN` | Discord bot token (optional) |
-| `USE_COMBAT_V2` | Set to `1` to enable the advanced combat HP/DMG system (default off) |
+| ~~`USE_COMBAT_V2`~~ | Removed — Combat V2 is the only military path |
 
 **Run:**
 

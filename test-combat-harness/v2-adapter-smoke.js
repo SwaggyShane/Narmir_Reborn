@@ -15,7 +15,6 @@ const base = {
   xp: 0,
   xp_sources: '{}',
   troop_levels: levels,
-  happiness: 70,
   happiness: 100,
   injured_troops: '{}',
   training_allocation: '{}',
@@ -70,8 +69,9 @@ const result = engine.resolveMilitaryAttack(attacker, defender, {
   warMachines: 20,
   ladders: 5
 });
+const defDisc = JSON.parse(result.defenderUpdates.discovered_kingdoms || '{}');
 console.log(JSON.stringify({
-  combatSystem: result.report.combatSystem || 'v1',
+  combatSystem: result.report.combatSystem,
   hasContract: Boolean(
     typeof result.win === 'boolean' &&
     result.report &&
@@ -82,8 +82,7 @@ console.log(JSON.stringify({
   ),
   attackerCrew: result.report.diagnostics?.attacker?.warMachines || null,
   hasDiagnostics: Boolean(result.report.diagnostics?.attacker?.hpByType && result.report.diagnostics?.defender?.dmgByType),
-  disabledWarMachines: result.report.disabledWarMachines || 0,
-  hasV1ReportAliases: Boolean(
+  hasReportAliases: Boolean(
     typeof result.report.atkFightersLost === 'number' &&
     typeof result.report.defFightersLost === 'number' &&
     typeof result.report.atkPower === 'number' &&
@@ -94,11 +93,13 @@ console.log(JSON.stringify({
   hasWallDiagnostics: Boolean(
     typeof result.report.wallHpBefore === 'number' &&
     typeof result.report.wallHpAfter === 'number'
-  )
+  ),
+  defenderMappedAttacker: Boolean(defDisc[1] && defDisc[1].found && defDisc[1].mapped),
+  disabledWarMachines: result.report.disabledWarMachines || 0
 }));
 `;
 
-function runSmoke(env) {
+function runSmoke(env = {}) {
   const result = spawnSync(process.execPath, ['-e', smokeProgram], {
     cwd: process.cwd(),
     env: { ...process.env, ...env },
@@ -118,25 +119,20 @@ function assert(condition, message) {
   }
 }
 
-// V2 became the default combat path 2026-07-15 (elevation combat bonus only
-// applies on this path) — USE_COMBAT_V2 is now opt-OUT ("0"), not opt-in.
-const defaultResult = runSmoke({ USE_COMBAT_V2: '' });
-assert(defaultResult.combatSystem === 'v2', 'V2 should be the default combat path as of 2026-07-15');
-assert(defaultResult.hasContract, 'Default combat path must preserve the attack result contract');
-assert(defaultResult.hasDiagnostics, 'Default (V2) combat path must include diagnostics');
+// Combat V2 is the only military path (USE_COMBAT_V2 ignored / removed).
+const result = runSmoke();
+assert(result.combatSystem === 'v2', 'Combat must resolve as V2');
+assert(result.hasContract, 'Combat path must preserve the attack result contract');
+assert(result.hasDiagnostics, 'Combat path must include diagnostics');
+assert(result.hasReportAliases, 'Combat path must expose report aliases for routes/UI');
+assert(result.hasWallDiagnostics, 'Combat path must expose wall HP diagnostics');
+assert(result.defenderMappedAttacker, 'Defender must map attacker after combat (discovery)');
+assert(result.attackerCrew?.crewRequired === 1, 'Dwarf level-25 engineers should solo-crew war machines');
+assert(result.attackerCrew?.crewed === 20, 'Dwarf level-25 engineers should crew all 20 test machines');
+assert(result.disabledWarMachines > 0, 'Thief sabotage should disable defender war machines in the smoke setup');
 
-const v1Result = runSmoke({ USE_COMBAT_V2: '0' });
-assert(v1Result.combatSystem === 'v1', 'USE_COMBAT_V2=0 should force the legacy V1 path');
-assert(v1Result.hasContract, 'V1 opt-out path must preserve the attack result contract');
-
-const v2Result = runSmoke({ USE_COMBAT_V2: '1' });
-assert(v2Result.combatSystem === 'v2', 'USE_COMBAT_V2=1 should activate the V2 adapter');
-assert(v2Result.hasContract, 'V2 adapter must preserve the attack result contract');
-assert(v2Result.hasDiagnostics, 'V2 adapter must include diagnostics');
-assert(v2Result.hasV1ReportAliases, 'V2 adapter must expose V1-compatible report aliases');
-assert(v2Result.hasWallDiagnostics, 'V2 adapter must expose wall HP diagnostics');
-assert(v2Result.attackerCrew?.crewRequired === 1, 'Dwarf level-25 engineers should solo-crew war machines');
-assert(v2Result.attackerCrew?.crewed === 20, 'Dwarf level-25 engineers should crew all 20 test machines');
-assert(v2Result.disabledWarMachines > 0, 'V2 thief sabotage should disable defender war machines in the smoke setup');
+// Env opt-out must no longer switch systems
+const forcedOff = runSmoke({ USE_COMBAT_V2: '0' });
+assert(forcedOff.combatSystem === 'v2', 'USE_COMBAT_V2=0 must not re-enable legacy combat');
 
 console.log('Combat V2 adapter smoke passed');
