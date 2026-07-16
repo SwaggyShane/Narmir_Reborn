@@ -1,12 +1,36 @@
 # Game Architecture Roadmap
 
-**Note:** This roadmap is AI-assisted. Execution will be much faster than timelines suggest (likely 1-3 days vs. 11 weeks). Phases and acceptance criteria remain valid; timeline is conservative.
+**Note:** Historical / aspirational plan. **Authoritative “what is done” is the Verified status section below**, not the multi-week Phase 3–5 JSON pack narrative.
 
-## Executive Summary
+---
 
-The project is at an inflection point. We're moving from **"a game with lots of code"** to **"a game engine."** This requires a deliberate architectural shift to prevent coupling explosion and enable scalable content creation.
+## Verified status (2026-07-16) — Narmir-shaped complete
 
-**Key principle:** Systems should communicate through explicit data flows, not through mutual references. Content should be data-driven, not behavior-driven. Managers should fade away as systems become independent.
+Definition of done: player mutators via **CommandHandler**, game sockets via **safeEmit**, honest reward tables + **`validate:game-tables`**, docs match live path. **Not** required: DB outbox/event-bus rewrite or fictional RPG JSON content packs.
+
+| Phase (roadmap label) | Verdict | Evidence / notes |
+|----------------------|---------|------------------|
+| **Phase 1** Foundation & as-is docs | **COMPLETE** | `game/ARCHITECTURE.md` updated to CommandHandler path; DB adapter / transactions exist |
+| **Phase 2** Decoupling (Command + Events) | **COMPLETE (Narmir form)** | `game/command-handler.js` + route boundary; `npm run check:command-boundary`. Events remain turn result arrays + Socket.io — **no outbox table**. Full Command→Event bus = **DEFERRED debt**, not a gate. |
+| **Phase 3–5** JSON items/monsters/locations loaders | **CUT** | Wrong model for Narmir. Live modules + `npm run validate:game-tables` replace fictional content packs. |
+| **P0 honesty** (passive scout, trek loot, terrain scout, safeEmit) | **COMPLETE in code** | Integrated on `feature/webgl-worldmap` (local). Not production until explicitly pushed/merged. |
+| **Post-complete debt** | Open | `engine.js` still large; client hex/`terrainUtils` copies diverge; balance tuning optional |
+
+**Acceptance commands:**
+
+```bash
+npm run check:command-boundary
+npm run validate:game-tables
+npm test
+```
+
+---
+
+## Executive Summary (historical vision)
+
+The project was framed as moving from **"a game with lots of code"** to **"a game engine."** Narmir completed the **command boundary + serializable sockets + honest live tables** form of that vision. The remainder of this file describes an earlier **full outbox + JSON content-pack** vision that is **not** the production target unless reopened deliberately.
+
+**Key principle (still valid):** Systems should communicate through explicit data flows, not through mutual references.
 
 ---
 

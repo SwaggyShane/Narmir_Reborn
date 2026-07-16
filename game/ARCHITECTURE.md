@@ -1,9 +1,17 @@
-# Game Architecture: Current State (Phase 1 Documentation)
+# Game Architecture: Current State (Narmir-shaped)
 
-**Purpose:** This document describes how the game currently works, the data flows, and system interactions. It is the baseline for architectural improvements.
+**Purpose:** Describes how the game works **today** on the live runtime path.  
+**Date:** 2026-07-16  
+**Status:** As-is after CommandHandler boundary + safeEmit closeout (local `feature/webgl-worldmap`)
 
-**Date:** 2026-07-08  
-**Status:** As-is, pre-refactoring
+Narmir’s architecture is **not** a generic RPG JSON content engine. It is a
+PostgreSQL multiplayer kingdom sim with:
+
+- **Routes** for HTTP validation and transactions  
+- **`game/command-handler.js`** as the player mutator boundary  
+- **`game/engine.js`** (and focused modules) as simulation  
+- **`safeEmit`** for Socket.io payloads  
+- **Live game tables** validated by `npm run validate:game-tables`
 
 ---
 
@@ -12,63 +20,60 @@
 ```
 1. HTTP Request (Routes)
    ↓
-2. Route Handler (routes/kingdom-*.js)
+2. Route Handler (routes/kingdom-*.js, auth, hero, admin)
+   validates input, opens transactions as needed
    ↓
-3. Game Logic (game/engine.js - processTurn)
+3. CommandHandler.handle({ type }, { kingdom, db, ... })
+   (npm run check:command-boundary enforces no direct engine mutators
+    on kingdom/auth/hero/admin routes)
    ↓
-4. Database Write (db/schema.js - PgDbAdapter)
+4. Simulation (game/engine.js + focused modules)
+   e.g. processTurn, combat, expeditions, passive scout finds, epic trek
+   Returns: { updates, events } (or domain-specific results)
    ↓
-5. Socket.io Broadcast (game/sockets.js)
+5. Database Write (db/schema.js - PgDbAdapter / withTransaction)
    ↓
-6. Client Receives (client/src/socket-client.js)
+6. Socket.io via safeEmit (game/sockets.js, admin, messages, engine/world)
    ↓
-7. Zustand Store Update (client/src/stores/*.js)
+7. Client Receives (client/src/socket-client.js)
    ↓
-8. React Re-render (client/src/components/)
+8. Zustand Store Update (client/src/stores/*.js)
+   ↓
+9. React Re-render (client/src/components/)
 ```
 
 ### Step-by-Step Breakdown
 
-**Step 1: HTTP Request**
-- User action triggers route handler in `/routes/kingdom-*.js`
-- Examples: `/turn`, `/build`, `/train`, `/expedition/start`
-- Request carries user ID, intent, and parameters
+**Step 1: HTTP Request**  
+User action hits `/routes/kingdom-*.js` (or auth/hero/admin). Examples: `/turn`, build, train, expedition start.
 
-**Step 2: Route Handler**
-- Route validates input (user exists, has resources, action is legal)
-- Route calls game logic directly: `engine.processTurn(kingdom, db)`
-- Multiple routes call into same game functions (tight coupling point)
+**Step 2: Route Handler**  
+Validates auth, CSRF, resources, legality. Does **not** call `engine.processTurn` / combat mutators directly. Mutators go through CommandHandler.
 
-**Step 3: Game Logic (engine.js)**
-- `processTurn()` is the main engine function (~2500 lines)
-- Processes entire turn: regen, combat, expeditions, construction, etc.
-- Returns: `{ updates: {...}, events: [...] }`
-- Updates = state changes (gold, troops, etc.)
-- Events = what happened (combat result, resource gained, etc.)
+**Step 3: CommandHandler**  
+`COMMAND_TYPES` registry + `handle()` switch. Thin façade over engine signatures so routes stay stable if simulation internals move. Read helpers: `getConstants()`, `assignRegion()`, `defenseRating()`, etc.
 
-**Step 4: Database Write**
-- Updates are written to PostgreSQL via `db.run(sql, params)`
-- Uses new PgDbAdapter with transaction support
-- Synchronous: turns must complete before response sent
+**Step 4: Simulation**  
+`processTurn()` remains the large turn pipeline inside engine, but is reached via `commandHandler.handle({ type: 'turn' }, …)`. Focused modules own rewards honesty (e.g. `passive-scout-finds`, `epic-trek-discovery`, `terrain-scout`).
 
-**Step 5: Socket.io Broadcast**
-- Game events broadcast to client: `io.emit('game:turn', { updates, events })`
-- Broadcasting happens inside the HTTP response handler
-- Clients listening on socket receive the broadcast
+**Step 5: Database Write**  
+Parameterized queries / transactions. Synchronous request path for turns.
 
-**Step 6: Client Receives Event**
-- Client socket listener in `socket-client.js` receives game state
-- Example: `socket.on('game:turn', (data) => handleTurn(data))`
+**Step 6: Socket.io**  
+Production game/admin paths use `safeEmit` (`game/safe-socket-emit.js`) so payloads stay JSON-safe. Dev-only `routes/test-results.js` may still use raw emit (documented exception).
 
-**Step 7: Zustand Store Update**
-- State update triggers Zustand store: `store.setState({ ...newState })`
-- Store is source of truth for client-side UI state
-- No direct DOM manipulation; React reconciliation only
+**Steps 7–9: Client**  
+Socket → Zustand → React. UI does not mutate server truth.
 
-**Step 8: React Re-render**
-- Component subscribed to store detects state change
-- React re-renders component tree
-- Only changed elements update in DOM
+---
+
+## Architecture gates (run locally)
+
+```bash
+npm run check:command-boundary
+npm run validate:game-tables
+npm test
+```
 
 ---
 

@@ -2,11 +2,28 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-16 (elevation system finished end-to-end with live DB/HTTP/browser verification across all 9 races, incl. a real kingdom-placement gap found and fixed via lake-hex avoidance; Combat V2 promoted to default; architecture roadmap full audit: Phase 2+ not production-complete; expedition rewards unblocked as P0 incomplete work; TODO rewritten so half-connected systems cannot be “finished on paper” again)
+**Last updated:** 2026-07-16 (Narmir-shaped architecture complete on local `feature/webgl-worldmap`; elevation + Combat V2 earlier same day)
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-16 — Narmir-shaped architecture complete (local; not production)
+
+**Scope:** Close architecture for Narmir’s real shape (CommandHandler boundary + safeEmit + honest live tables + docs truth). Explicitly **CUT** roadmap Phase 3–5 JSON content packs and **DEFER** full outbox/event bus.
+
+**Evidence (commands):**
+- `npm run check:command-boundary` — kingdom/auth/hero/admin routes do not call forbidden `engine.*` mutators
+- `npm run validate:game-tables` — command types, passive finds, trek loot, terrain scout, node types, discovery merge
+- `npm test` / focused unit tests for command-handler, passive-scout, epic-trek, terrain-scout, safe-socket-emit
+
+**Code (integrated on `feature/webgl-worldmap` tip):**
+- P0 honesty stack: CommandHandler, passive scout finds + kingdom resolve + resource node spawn, epic trek loot/artifacts/regional unlocks, terrain scout difficulty, safeEmit (sockets + admin + world), `scripts/validate-game-tables.js`
+- Arch closeout: admin/auth/hero via CommandHandler; `scripts/check-command-boundary.js`; docs Verified status in `ARCHITECTURE_ROADMAP.md`; `game/ARCHITECTURE.md` rewritten to live path
+
+**Not done / not claimed:** production push/merge; outbox pipeline; engine.js modularization; client hex terrain unification.
+
+---
 
 ### 2026-07-16 — Elevation system finished end-to-end; Combat V2 promoted to default
 
