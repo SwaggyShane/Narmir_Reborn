@@ -8,6 +8,7 @@ const fs = require("fs");
 const _config = require("../game/config");
 const { _GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
 const commandHandler = require("../game/command-handler");
+const { safeEmit } = require("../game/safe-socket-emit");
 const { FRAGMENT_METADATA } = require("../game/fragment-attunements");
 const { PRESETS, PRESET_IDS, buildPresetFields } = require("../game/ai-presets");
 const { computeNextRunAt } = require("../lib/audit-scheduler");
@@ -890,12 +891,12 @@ module.exports = function (db, io) {
         );
         for (const k of batch) {
           incrementUnread(k.id);
-          io.to(`kingdom:${k.id}`).emit("event:news_refresh");
+          safeEmit(io.to(`kingdom:${k.id}`), "event:news_refresh", {});
         }
         offset += BATCH_SIZE;
       }
 
-      io.to("global").emit("chat:message", {
+      safeEmit(io.to("global"), "chat:message", {
         id: chatId,
         room: "global",
         from: "[ADMIN]",
