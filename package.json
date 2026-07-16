@@ -13,6 +13,7 @@
     "test:components:ui": "vitest --ui",
     "check:encoding": "node scripts/check-text-encoding.js",
     "validate:game-tables": "node scripts/validate-game-tables.js",
+    "check:command-boundary": "node scripts/check-command-boundary.js",
     "repair:json": "node scripts/repair-json-rows.js",
     "smoke:combat-v2": "node test-combat-harness/v2-adapter-smoke.js",
     "scenario:combat-v2": "node test-combat-harness/v2-scenario-runner.js",

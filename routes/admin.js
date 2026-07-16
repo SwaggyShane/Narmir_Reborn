@@ -7,7 +7,7 @@ const path = require("path");
 const fs = require("fs");
 const _config = require("../game/config");
 const { _GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
-const engine = require("../game/engine");
+const commandHandler = require("../game/command-handler");
 const { FRAGMENT_METADATA } = require("../game/fragment-attunements");
 const { PRESETS, PRESET_IDS, buildPresetFields } = require("../game/ai-presets");
 const { computeNextRunAt } = require("../lib/audit-scheduler");
@@ -207,9 +207,10 @@ module.exports = function (db, io) {
     };
 
     let land = 1000;
+    const landCosts = commandHandler.getConstants().BUILDING_LAND_COST || {};
     for (const [dbCol, configKey] of Object.entries(buildingKeys)) {
       const count = buildings[dbCol] || 0;
-      const cost = engine.BUILDING_LAND_COST[configKey] || 0;
+      const cost = landCosts[configKey] || 0;
       land += count * cost;
     }
 
@@ -481,7 +482,7 @@ module.exports = function (db, io) {
 
       if (!kingdom) {
         const profile = buildStartingProfile(race);
-        const region = engine.assignRegion(race);
+        const region = commandHandler.assignRegion(race);
         const gender = "male";
         const insertResult = await db.run(
           `INSERT INTO kingdoms (
@@ -523,7 +524,7 @@ module.exports = function (db, io) {
       } else {
         await db.run(
           "UPDATE kingdoms SET name = $1, race = $2, gender = $3, region = $4 WHERE id = $5",
-          [kingdomName, race, "male", engine.assignRegion(race), kingdom.id],
+          [kingdomName, race, "male", commandHandler.assignRegion(race), kingdom.id],
         );
         if (resetExisting) {
           await resetKingdomLogic(db, kingdom.id, race);
@@ -1017,7 +1018,7 @@ module.exports = function (db, io) {
 
         if (!kingdom) {
           const profile = buildStartingProfile(race);
-          const region = engine.assignRegion(race);
+          const region = commandHandler.assignRegion(race);
           const insertResult = await db.run(
             `INSERT INTO kingdoms (
               player_id, name, race, gender, region, gold, land, population, food,

@@ -540,12 +540,12 @@ module.exports = function (db) {
         _trade_routes: k._trade_routes,
       });
 
-      console.time(`[turn-${k.id}] engine.processTurn`);
+      console.time(`[turn-${k.id}] commandHandler.turn`);
       const { updates, events } = await commandHandler.handle(
         { type: 'turn' },
         { kingdom: lockedK, db },
       );
-      console.timeEnd(`[turn-${k.id}] engine.processTurn`);
+      console.timeEnd(`[turn-${k.id}] commandHandler.turn`);
 
       // Don't deduct a turn (it was already deducted by the action that called this)
       updates.turns_stored = lockedK.turns_stored;
@@ -592,12 +592,12 @@ module.exports = function (db) {
     console.time(`[turn-${k.id}] total`);
     await loadTurnContext(db, k);
 
-    console.time(`[turn-${k.id}] engine.processTurn`);
+    console.time(`[turn-${k.id}] commandHandler.turn`);
     const { updates, events } = await commandHandler.handle(
       { type: 'turn' },
       { kingdom: k, db },
     );
-    console.timeEnd(`[turn-${k.id}] engine.processTurn`);
+    console.timeEnd(`[turn-${k.id}] commandHandler.turn`);
 
     const { updates: finalUpdates, events: finalEvents } = await commitTurnResults(db, k, updates, events);
 
@@ -683,7 +683,7 @@ module.exports = function (db) {
 
             // Run processTurn on the *locked* snapshot (prevents stale absolute updates
             // and lost concurrent modifications from non-turn actions).
-            console.time(`[turn-${lockedK.id}] engine.processTurn`);
+            console.time(`[turn-${lockedK.id}] commandHandler.turn`);
             let turnResult;
             if (process.env.NODE_ENV !== 'production') {
               const p = initProfiler();
@@ -703,7 +703,7 @@ module.exports = function (db) {
                 console.log(`[profiling] Slow attunements detected (budget ${b.slowAttunementMs}ms)`);
               }
             }
-            console.timeEnd(`[turn-${lockedK.id}] engine.processTurn`);
+            console.timeEnd(`[turn-${lockedK.id}] commandHandler.turn`);
 
             // Apply writes inside the same txn (applyUpdates, hero batch, news, expeditions, resources)
             const { updates: committedUpdates, events: committedEvents } = await commitTurnResults(db, lockedK, updates, events);

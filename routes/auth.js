@@ -1,7 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const engine = require("../game/engine");
 const commandHandler = require("../game/command-handler");
 const { generateCsrfToken } = require("./middleware");
 const { seedFirstRingNode } = require("../game/first-ring-node");
@@ -131,7 +130,7 @@ module.exports = function (db) {
       }
 
       // Calculate starting land: building costs + 1000 buffer
-      // Use engine's BUILDING_LAND_COST to stay in sync with game balance
+      // Use CommandHandler constants so register stays on the architecture boundary
       let startingLand = 1000; // Base buffer
       const buildingKeys = {
         bld_farms: 'farms',
@@ -147,9 +146,10 @@ module.exports = function (db) {
         bld_training: 'training',
         bld_mausoleums: 'mausoleums'
       };
+      const landCosts = commandHandler.getConstants().BUILDING_LAND_COST || {};
       for (const [dbCol, configKey] of Object.entries(buildingKeys)) {
         const count = buildings[dbCol] || 0;
-        const cost = engine.BUILDING_LAND_COST[configKey] || 0;
+        const cost = landCosts[configKey] || 0;
         startingLand += count * cost;
       }
 

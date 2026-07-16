@@ -4,7 +4,6 @@ const { safeJsonParse, devLog } = require('../utils/helpers');
 const { validateResearchAmount, validateAllocationObject } = require('../utils/numeric-validation');
 const { applyKingdomUpdates } = require('../db/schema');
 const commandHandler = require('../game/command-handler');
-const { loadTradeRoutes } = require('../game/engine');
 const config = require('../game/config');
 const { decorateNewsMessage } = require('../game/news-emoji');
 const { pgValueTuples } = require('../lib/pg-placeholders');
@@ -135,8 +134,7 @@ module.exports = function (db) {
           throw err;
         }
 
-      // Run full turn first
-      await loadTradeRoutes(k);
+      // Run full turn first (CommandHandler → engine.processTurn)
       const { updates: turnUpdates, events } = await commandHandler.handle(
         { type: 'turn' },
         { kingdom: k },

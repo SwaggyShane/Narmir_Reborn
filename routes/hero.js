@@ -1,6 +1,5 @@
 const express = require("express");
 const { requireAuth, requireCsrfToken } = require("./middleware");
-const engine = require("../game/engine");
 const commandHandler = require("../game/command-handler");
 
 module.exports = function (db) {
@@ -35,7 +34,7 @@ module.exports = function (db) {
     const ownedClasses = existing.map((h) => h.class);
 
     const allowed = {};
-    for (const [id, cls] of Object.entries(commandHandler.getConstants().HERO_CLASSES || engine.HERO_CLASSES)) {
+    for (const [id, cls] of Object.entries(commandHandler.getConstants().HERO_CLASSES || {})) {
       if (
         (!cls.races || cls.races.includes(k.race)) &&
         !ownedClasses.includes(id)
@@ -48,7 +47,7 @@ module.exports = function (db) {
 
   // Get ALL hero classes for lore documentation
   router.get("/all-classes", async (req, res) => {
-    res.json(commandHandler.getConstants().HERO_CLASSES || engine.HERO_CLASSES);
+    res.json(commandHandler.getConstants().HERO_CLASSES || {});
   });
 
   // Recruit a new hero
