@@ -1,9 +1,8 @@
 # Narmir Reborn: New Player Tutorial
 ## From Zero to Hero - Validated Against a 5,000-Turn Run
 
-**Tutorial Status:** Drafted from real gameplay data and validated against the completed `codex_local` 5,000-turn run  
-**Primary evidence:** [TUTORIAL_SESSION_SUMMARY.md](C:\Users\king_\Narmir_Reborn\TUTORIAL_SESSION_SUMMARY.md)  
-**Last Updated:** 2026-06-30
+**Tutorial Status:** Drafted from real gameplay data and validated against a completed `codex_local` 5,000-turn run (report artifact retired from repo; re-generate via `scripts/run-local-5000-turns.js` if needed)  
+**Last Updated:** 2026-07-16
 
 **Validation note:** The older 32-turn observation is superseded. Use the 5,000-turn run as the source of truth for pacing, building order, and school choice timing.
 

@@ -240,9 +240,10 @@ See `/game/ARCHITECTURE.md` for detailed patterns and import rules.
 ## Important Files & References
 
 ### Documentation
-- **TODO.md** — Development roadmap (source of truth for tasks)
+- **TODO.md** — Live active work (empty when idle)
 - **ARCHIVAL.md** — Completed features (historical record)
-- **game/ARCHITECTURE.md** — Module organization & canonical locations
+- **game/ARCHITECTURE.md** — Live architecture + verified status
+- **ADMIN_WISHLIST_PLAN.md** — Low-priority optional backlog
 - **RAILWAY_SECRETS.md** — Production secrets management
 
 ### Setup & Deployment

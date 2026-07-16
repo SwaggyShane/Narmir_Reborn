@@ -13,6 +13,24 @@ PostgreSQL multiplayer kingdom sim with:
 - **`safeEmit`** for Socket.io payloads  
 - **Live game tables** validated by `npm run validate:game-tables`
 
+## Verified status (replaces retired `ARCHITECTURE_ROADMAP.md`)
+
+Definition of done: player mutators via **CommandHandler**, game sockets via **safeEmit**, honest reward tables + **`validate:game-tables`**, docs match live path. **Not** required: DB outbox/event-bus rewrite or fictional JSON content packs.
+
+| Area | Verdict | Evidence |
+|------|---------|----------|
+| Foundation & as-is docs | **COMPLETE** | This file + turn/persistence notes |
+| Decoupling (Command boundary) | **COMPLETE (Narmir form)** | `game/command-handler.js`; `npm run check:command-boundary`. Events = turn result arrays + Socket.io — **no outbox** |
+| JSON content-pack “engine” vision | **CUT** | Wrong model for Narmir |
+| P0 honesty (passive scout, trek loot, terrain scout, safeEmit) | **COMPLETE in code** | Live modules on `feature/webgl-worldmap` (local; not production until ship) |
+| Post-complete debt | Open / deferred | Large `engine.js`; optional balance tuning |
+
+```bash
+npm run check:command-boundary
+npm run validate:game-tables
+npm test
+```
+
 ---
 
 ## Current Data Flow: From Input to Render

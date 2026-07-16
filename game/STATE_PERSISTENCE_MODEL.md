@@ -2,8 +2,8 @@
 
 **Purpose:** Document how state flows from user intent through database writes and back to all connected clients.
 
-**Date:** 2026-07-08  
-**Status:** Current implementation baseline
+**Date:** 2026-07-08 (baseline)  
+**Status:** Living reference. Player mutators should go **Route → CommandHandler → engine** (not raw engine from routes). Outbox pattern sections are aspirational / deferred debt, not required.
 
 ---
 

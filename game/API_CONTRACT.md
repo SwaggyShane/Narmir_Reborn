@@ -1,6 +1,7 @@
-# API Response Contract (GameStateManager → Zustand Migration)
+# API Response Contract (Zustand normalizer)
 
-**Purpose:** Define the standardized response shape for ALL API endpoints to ensure consistent routing through the future Zustand normalizer.
+**Purpose:** Living reference for API `updates` domain shapes used by the client normalizer.  
+**Status:** Migration complete; keep this doc only as the shape contract (not an open task list).
 
 **Principle:** Every endpoint response has an `updates` object with selective domain sub-objects. Missing keys = no update for that domain.
 
@@ -364,6 +365,9 @@
 
 ## Audit Checklist (Pre-Phase 1A)
 
+> **Status (2026-07-16):** Historical pre-Phase-1A checklist. **Not** an active work queue.  
+> Response-shape work continued via Zustand normalizer / route patterns; do not treat unchecked boxes as current debt without a fresh audit.
+
 - [ ] Hunt endpoint verified
 - [ ] Prospect endpoint verified
 - [ ] Search endpoint verified
@@ -381,7 +385,7 @@
 - [ ] Prestige endpoint verified
 - [ ] All other endpoints checked for standard format
 
-**Status:** ⏳ IN PROGRESS — Phase 1A audit ongoing
+**Status:** ⏳ Historical — not current active work
 
 ---
 

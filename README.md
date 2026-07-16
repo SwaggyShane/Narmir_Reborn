@@ -86,25 +86,23 @@ npm run sweep:combat-v2-broad  # Advanced combat broad balance sweep
 
 ### For Technical Reference
 - **[docs/API_ENDPOINTS.md](docs/API_ENDPOINTS.md)** — Complete API reference (900+ lines with examples)
-- **[QUERY_PERFORMANCE_ANALYSIS.md](QUERY_PERFORMANCE_ANALYSIS.md)** — Database query optimization guide
 - **[HTTPS_ENFORCEMENT.md](HTTPS_ENFORCEMENT.md)** — HTTPS and TLS configuration
-- **[docs/API_RATE_LIMITING.md](docs/API_RATE_LIMITING.md)** — Rate limiter setup and config
 - **[MONITORING_ALERTING_GUIDE.md](MONITORING_ALERTING_GUIDE.md)** — Error tracking and alerting setup
+- **[RATE_LIMITING_GUIDE.md](RATE_LIMITING_GUIDE.md)** — Rate limiter setup and config
+- **[game/ARCHITECTURE.md](game/ARCHITECTURE.md)** — Live architecture / verified status
 
 ### For Security & Compliance
-- **[SQL_INJECTION_AUDIT_REPORT.md](SQL_INJECTION_AUDIT_REPORT.md)** — Query injection audit (0 vulnerabilities)
-- **[SECURITY_AUDIT.md](SECURITY_AUDIT.md)** — General security audit report
-- **[docs/PRODUCTION_VERIFICATION.md](docs/PRODUCTION_VERIFICATION.md)** — Pre-launch security checklist
+- Security findings: re-run `tools/security-auditor` (generates `AUDIT_REPORT.md`); historical write-ups live in [ARCHIVAL.md](ARCHIVAL.md)
+- Parameterized queries + middleware are the live controls (see `routes/middleware.js`, `utils/numeric-validation.js`)
 
 ### For Performance & Testing
 - **[LOAD_TEST_EXECUTION_GUIDE.md](LOAD_TEST_EXECUTION_GUIDE.md)** — Run load tests (5,000+ concurrent)
-- **[LOAD_TEST_REPORT.md](LOAD_TEST_REPORT.md)** — Load test results and baseline
-- **[docs/LOAD_TESTING.md](docs/LOAD_TESTING.md)** — Load testing infrastructure
+- **[TESTING_CHECKLISTS.md](TESTING_CHECKLISTS.md)** — QA test plans by system
 
 ### For Players
 - **[GAMEPLAY_GUIDE.md](GAMEPLAY_GUIDE.md)** — Complete game mechanics reference
-- **[ACCOUNT_MANAGEMENT.md](ACCOUNT_MANAGEMENT.md)** — Account creation, security, recovery
 - **[FAQ.md](FAQ.md)** — Frequently asked questions
+- **[NEW_PLAYER_TUTORIAL.md](NEW_PLAYER_TUTORIAL.md)** — Turn-by-turn tutorial notes
 
 ### Reference & Standards
 - **[CHANGELOG.md](CHANGELOG.md)** — Feature history and release notes
@@ -258,7 +256,7 @@ Core production docs:
 - [BACKUP_RESTORE_RUNBOOK.md](BACKUP_RESTORE_RUNBOOK.md) — backup and restore procedures
 - [RATE_LIMITING_GUIDE.md](RATE_LIMITING_GUIDE.md) — rate-limit configuration notes
 - [MONITORING_ALERTING_GUIDE.md](MONITORING_ALERTING_GUIDE.md) — monitoring and alerting setup
-- [LOAD_TEST_REPORT.md](LOAD_TEST_REPORT.md) — current load-test findings and rerun gap
+- [LOAD_TEST_EXECUTION_GUIDE.md](LOAD_TEST_EXECUTION_GUIDE.md) — how to re-run load tests
 
 ---
 

@@ -215,9 +215,10 @@ Training fields award passive XP with equipment bonuses.
 
 ### Wishlist — Future Additions
 
+Canonical tracker: `ADMIN_WISHLIST_PLAN.md` (audited 2026-07-16). Done/nixed items removed from this list.
+
 **Gameplay**
 - Alliance bank / vault — pool gold for alliance-wide projects
-- Spell casting target history — remember last target per spell
 - Diplomacy — formal non-aggression pacts and tribute
 - Custom hero generation — create your own hero classes
 - Resource loans — player-run debt and interest mechanics
@@ -228,17 +229,15 @@ Training fields award passive XP with equipment bonuses.
 - Naval combat — build ships to contest ocean territories
 
 **World**
-- Auction house — bid on unique gear and captured heroes 
+- Auction house — bid on unique gear and captured heroes
 - Mini-games — Tavern games like dice or cards for gold
 - World map enhancements — dynamic fog and contested borders
 - More races — Gnome (inventor), Troll (regenerating), Halfling (stealth)
 - Dungeons & Raids — PvE multi-kingdom boss battles
-- Resource biomes — specific lands granting unique materials
 
 **Polish & Management**
 - Custom kingdom banner/sigil generator
 - Full iOS / Android PWA wrapping
-- Dark/light/high-contrast theme toggles
 - Email/Push notifications — optional alerts for attacks, expedition return
 - Step-by-step interactive new player tutorial
 

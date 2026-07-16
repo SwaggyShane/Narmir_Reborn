@@ -1,8 +1,8 @@
 # Narmir Reborn — TODO
 
-**Purpose:** Live source of truth for active work. Completed work lives in [ARCHIVAL.md](ARCHIVAL.md). Architecture status: [ARCHITECTURE_ROADMAP.md](ARCHITECTURE_ROADMAP.md) **Verified status**.
+**Purpose:** Live source of truth for active work. Completed work lives in [ARCHIVAL.md](ARCHIVAL.md). Architecture status: [game/ARCHITECTURE.md](game/ARCHITECTURE.md) **Verified status**.
 
-**Last updated:** 2026-07-16 — **Active TODO queue empty** on local `feature/webgl-worldmap` (not pushed to production).
+**Last updated:** 2026-07-16 — **Active TODO queue empty** on local `feature/webgl-worldmap` (not pushed to production). Completed-only plan/report MDs removed (see ARCHIVAL).
 
 **Verification rule:** Nothing is “done” until traced on the live runtime path. Docs alone do not count.
 

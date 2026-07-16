@@ -2,8 +2,8 @@
 
 **Purpose:** Document the exact sequence of operations during a single turn, including timing, bottlenecks, and state mutation points.
 
-**Date:** 2026-07-08  
-**Status:** Current implementation baseline
+**Date:** 2026-07-08 (baseline)  
+**Status:** Living reference — line counts/latencies may drift; confirm against `game/engine.js` / `processTurn` before trusting exact numbers. Architecture boundary: routes → CommandHandler → engine (see `ARCHITECTURE.md`).
 
 ---
 

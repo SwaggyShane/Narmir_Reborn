@@ -1,103 +1,79 @@
 # Admin Wishlist Plan
 
-This is a cleaned-up pass over the admin wishlist. Treat it as a backlog, not a promise that every item is still missing. I checked the repo for direct implementation evidence; most items still read as backlog, so only clearly adjacent or partially supported items are marked as such here.
+Backlog for optional/low-priority feature ideas. **Not** the active product TODO (`TODO.md`).
 
-Deeper audit note: I did not find enough code-backed evidence to promote any partial item to fully done, so the archive stays unchanged for now.
+**Verification rule:** Nothing is done until traced on a live code path. Docs alone do not count.
+
+**Last audited:** 2026-07-16 — wishlist items rechecked; themes nixed by product decision; resource biomes reclassified complete.
+
+---
 
 ## Done / Archived
 
-None confirmed from the current code scan.
+Evidence also in [ARCHIVAL.md](ARCHIVAL.md) (*Admin wishlist validity audit*).
 
-## Partial
+| Item | Disposition | Evidence |
+|------|-------------|----------|
+| **Spell casting target history** | Complete | `client/src/utils/spellTargetHistory.js`; UI in `SpellCastingModal.jsx` + `WarfarePanel.jsx`; cast write in `useGameActions.js`; `spellTargetHistory.test.js` |
+| **Terrain advantages** | Complete | `game/combat-resolver.js` applies `combatAtk`/`combatDef` from `game/terrain.js`; expeditions use `expSpeed`/`resourceYield` |
+| **Resource biomes** | Complete | World hex biomes (`game/world-hex-grid.js` / `world-initialization.js` mixed biomes); terrain on resource nodes (`passive-resource-node-spawn.js`); hunting/prospecting/land economy terrain modifiers; expedition `resourceYield` by terrain |
+| **Dark / light / high-contrast theme toggles** | **Nixed** | Product decision 2026-07-16: app already ships dark UI + accent color themes (`client/src/utils/colorTheme.js`). Not a backlog item. |
 
-- Terrain advantages
-  - Terrain and world-map infrastructure exists, but the combat modifier layer is not yet a fully defined system.
-- Resource biomes
-  - World-map and resource placement logic exist, but biome-to-material gameplay is still not a clean first-class system.
-- Full iOS / Android PWA wrapping
-  - The app has web delivery pieces, but I did not find a dedicated PWA wrapper implementation in the current code scan.
-- Step-by-step interactive new player tutorial
-  - There are onboarding/docs references, but I did not find a dedicated tutorial flow in code.
+---
+
+## Partial (adjacent systems exist; wishlist intent not fully shipped)
+
+- **Mercenary guilds** — basic merc hire/upkeep/contracts exist (`game/mercenaries.js`); not distinct hireable **factions**.
+- **Prestige economy** — prestige reset + level modifiers exist; not explicit permanent **market** bonuses as a designed economy layer.
+- **Artifact hunting** — epic-trek artifacts + dungeon/mountain expeditions exist; not a dedicated high-risk hunt loop.
+- **Dungeons and raids** — regional dungeon/mountain PvE expeditions exist; not multi-kingdom cooperative raids.
+- **Caravans / trade risk** — trade routes + Orc `raid_trade_route` exist; not general physical caravan entities.
+- **Espionage network** — covert ops / spy surfaces exist; not permanent passive intel on nearby kingdoms.
+- **Dynamic world events** — seasonal/race event seeds + random flavor exist; not global comet/earthquake-style modifiers.
+- **Full iOS / Android PWA wrapping** — web app only; no manifest/service worker/store wrap.
+- **Step-by-step interactive new player tutorial** — `NEW_PLAYER_TUTORIAL.md` docs only; no in-client flow.
+
+---
 
 ## Still Missing
 
 ### Gameplay
 
-- Spell casting target history
-  - Track the last valid target per spell and prefill it in the UI.
-- Diplomacy
-  - Add formal non-aggression pacts, tribute, and treaty state with server validation.
-- Resource loans
-  - Add player-to-player lending with repayment terms and delinquency handling.
-- Espionage network
-  - Build persistent intel accumulation for nearby kingdoms with server-side resolution.
-- Religion / pantheon
-  - Add deity selection, domain bonuses, and long-term allegiance effects.
-- Laws & edicts
-  - Let kingdoms enact policies with clear tradeoffs and a cooldown or upkeep cost.
-- Prisoners of war
-  - Support ransom, release, or execution flows with explicit combat outcomes.
+- **Diplomacy** — formal non-aggression pacts, tribute, treaty state with server validation.
+- **Resource loans** — player-to-player lending with repayment and delinquency.
+- **Religion / pantheon** — deity selection, domain bonuses, long-term allegiance.
+- **Laws & edicts** — kingdom policies with tradeoffs and cooldown/upkeep.
+- **Prisoners of war** — ransom / release / execution flows tied to combat outcomes.
 
 ### Combat
 
-- Alliance war
-  - Add alliance-level war declarations and shared hostility state.
-- Artifact hunting
-  - Build high-risk expedition content with rare combat rewards.
-- Naval combat
-  - Add ship-based conflict rules and ocean-zone engagement logic.
-- Generals
-  - Create commander units that provide morale or tactical bonuses during battle.
-- Mercenary guilds
-  - Add hireable factions with distinct unit mixes, upkeep, and contract limits.
-- Terrain advantages
-  - Apply biome-aware combat modifiers in the authoritative combat resolver.
-- Naval trade routes
-  - Extend route systems so sea lanes can be profitable but vulnerable.
+- **Alliance war** — alliance-level war declarations and shared hostility state.
+- **Naval combat** — ships and ocean-zone engagement rules.
+- **Generals** — commander units with morale/tactical battle bonuses.
+- **Naval trade routes** — sea lanes that are profitable but vulnerable.
 
 ### Economy
 
-- Auction house
-  - Add a marketboard for unique gear and captured heroes with listing controls.
-- Prestige economy
-  - Make prestige grant persistent market or economic bonuses with clear caps.
-- Caravans
-  - Represent physical trade routes that can be intercepted or protected.
-- Smuggling rings
-  - Add hidden trade paths that bypass some taxes but increase risk.
-- Global market history
-  - Add price history charts and trend views for key commodities.
+- **Auction house** — marketboard for unique gear / captured heroes.
+- **Smuggling rings** — hidden trade that bypasses taxes at higher risk.
+- **Global market history** — price history charts for commodities.
 
 ### World
 
-- More races
-  - Add new race packages only after the core region and balance model is stable.
-- Dungeons and raids
-  - Introduce cooperative PvE content with shared objectives and rewards.
-- Resource biomes
-  - Tie land regions to specific materials and terrain identity.
-- Weather systems
-  - Add weather-driven modifiers for crops, travel, and battle visibility.
-- Dynamic world events
-  - Add global events with meaningful but bounded modifiers.
-- Wandering beasts
-  - Add roaming threats that pressure random kingdoms until defeated.
-- Terrain advantages
-  - Make terrain matter in both combat and travel, not just visually.
+- **More races** — e.g. Gnome / Troll / Halfling (live: human, dwarf, high_elf, dark_elf, orc).
+- **Weather systems** — crop/travel/battle visibility weather modifiers.
+- **Wandering beasts** — roaming threats that pressure kingdoms until defeated.
 
 ### Polish and Management
 
-- Custom kingdom banner / sigil generator
-  - Add a simple banner composer with saved presets and preview.
-- Dark / light / high-contrast themes
-  - Ship accessible theme toggles that work across the whole UI.
-- Email / push notifications
-  - Add opt-in alerts for attacks, expeditions, and other state changes.
-- Customizable palace UI
-  - Let the player dashboard evolve visually as the kingdom levels up.
+- **Custom kingdom banner / sigil generator**
+- **Email / push notifications** — opt-in player alerts (not security-auditor email helpers).
+- **Customizable palace UI** — dashboard that evolves visually with kingdom level.
+
+---
 
 ## Notes
 
-- Anything already present in the codebase should be treated as partial completion, not duplicated work.
-- When a wishlist item overlaps with an existing system, the next step is to tighten or finish that system instead of rebuilding it.
-- If a future scan finds a direct implementation for one of the missing items, move it into the archive with a date and remove it from this list.
+- Admin UI **Evolution → Wishlist** seeds from `db/init-data.js` only when the table is empty. Completing/nixing items here does not auto-edit an existing DB.
+- Prefer finishing partial systems over rebuilding them.
+- Parallel wishlist copy in `CHANGELOG.md` “Wishlist — Future Additions” should stay aligned with this file.

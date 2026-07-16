@@ -2,11 +2,96 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-16 (TODO queue emptied on local `feature/webgl-worldmap`; architecture + polish closeouts)
+**Last updated:** 2026-07-16 (deep MD pass: delete completed-only plans/reports; TODO queue empty on local `feature/webgl-worldmap`)
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-16 — Deep markdown pass: verify complete claims, delete finished-only docs
+
+**Rule:** If a `.md` only documents completed work (plan, handshake log, one-shot report, obsolete analysis) and evidence is already in code / this archive, **delete the file**. Keep living runbooks, player guides, and as-is architecture notes.
+
+**Code re-checks (spot):**
+- `client/src/utils/hexMap/*` + tests → HexRender plan shipped
+- `game/combat-resolver.js` + `game/terrain.js` → terrain combat modifiers live
+- `game/command-handler.js` + routes use CommandHandler; `scripts/check-command-boundary.js` → Narmir-form Phase 2 shipped (COUPLING_ANALYSIS “routes→engine” baseline **obsolete**)
+- `game/passive-scout-finds.js`, `epic-trek-discovery.js` → expedition rewards unblocked
+- `db/schema.js` calls `ensureWorldElevation` → elevation boot path present
+- Query indexes from 2026-07-01 analysis present / work done → analysis MD not needed as open doc
+
+**Deleted (completed-only or superseded):**
+| File | Why removed |
+|------|-------------|
+| `ARCHITECTURE_ROADMAP.md` | Verified status folded into `game/ARCHITECTURE.md`; body was CUT/historical engine vision |
+| `MAP_TERRAIN.md` | Terrain phases done; multi-agent handshake log only |
+| `LANE_DIRECTIONS.md` | Historical lane paste instructions |
+| `HexRender.md` | Implementation checklist fully present under `client/src/utils/hexMap/` |
+| `game/COUPLING_ANALYSIS.md` | Pre-CommandHandler baseline; decoupling done in Narmir form |
+| `AUDIT_REPORT.md` | Stale scanner dump; tool regenerates on demand |
+| `LOAD_TEST_REPORT.md` | One-shot completed rerun narrative; re-run via execution guide |
+| `QUERY_PERFORMANCE_ANALYSIS.md` | Completed baseline + indexes; not an open task list |
+| `docs/CODEX_LOCAL_5000_TURN_REPORT.md` | Completed run artifact (script can rewrite) |
+| `docs/CODEX_LOCAL_500_TURN_BASELINE_REPORT.md` | Terrain-lane validation artifact |
+| `docs/CODEX_LOCAL_500_TURN_TERRAIN_REPORT.md` | Terrain-lane validation artifact |
+
+**Kept (living or incomplete backlog):** `TODO.md`, `ARCHIVAL.md`, `ADMIN_WISHLIST_PLAN.md`, `CLAUDE.md`, `README.md`, `CHANGELOG.md`, runbooks (backup/deploy/https/monitoring/rate-limit/alert/railway/windows), player docs (FAQ/gameplay/tutorial/terminology), `TESTING_CHECKLISTS.md`, `docs/API_ENDPOINTS.md`, `game/ARCHITECTURE.md`, `TURN_PIPELINE.md`, `STATE_PERSISTENCE_MODEL.md`, `API_CONTRACT.md` (response-shape reference), `LOAD_TEST_EXECUTION_GUIDE.md`, `deep_audit_guidelines.md` (agent prompt, not a finished feature doc).
+
+**Pointer updates:** `TODO.md`, `README.md`, `LOAD_TEST_EXECUTION_GUIDE.md`, `NEW_PLAYER_TUTORIAL.md`, `game/ARCHITECTURE.md` verified status.
+
+---
+
+### 2026-07-16 — Admin wishlist validity audit
+
+**Scope:** Verify `ADMIN_WISHLIST_PLAN.md` items against live code (not docs-only claims). Archive only items with traced runtime paths.
+
+**Archived as complete (evidence):**
+
+1. **Spell casting target history**
+   - `client/src/utils/spellTargetHistory.js` — per-spell last target in `localStorage`
+   - Prefill/save: `SpellCastingModal.jsx`, `WarfarePanel.jsx`
+   - Persist on cast: `useGameActions.js` → `setLastSpellTarget`
+   - Tests: `client/src/utils/__tests__/spellTargetHistory.test.js`
+
+2. **Terrain advantages (combat + expedition travel)**
+   - Combat V2 resolver: `game/combat-resolver.js` applies `getTerrainModifiers` `combatAtk` / `combatDef` from `game/terrain.js` `TERRAIN_DATA`
+   - Expeditions already use terrain `expSpeed` / `resourceYield` on launch/process paths
+   - Matches wishlist seed wording: defending terrain affects combat stats
+
+3. **Resource biomes** (confirmed 2026-07-16 — initial pass under-called this)
+   - Mixed biomes / region diversity: `game/world-hex-grid.js`, `game/world-initialization.js`, `generateMixedBiomes` in `terrain.js`
+   - Resource nodes store `terrain` and material types wood/stone/iron/gold (`passive-resource-node-spawn.js`)
+   - Gathering: hunting/prospecting/land terrain modifiers; expedition `resourceYield`
+
+4. **Dark / light / high-contrast themes** — **NIXED** (product decision 2026-07-16)
+   - Already have dark UI + accent themes (`colorTheme.js`). Dropped from wishlist; not incomplete work.
+
+**Still partial:** mercenary *guilds*, prestige *economy*, artifact hunting, multi-kingdom dungeons/raids, caravans, espionage *network*, dynamic world events, PWA wrap, interactive tutorial (docs only).
+
+**Still missing:** diplomacy, loans, religion, laws/edicts, POW, alliance war, naval combat/routes, generals, auction house, smuggling, market history, more races, weather, wandering beasts, banner generator, email/push player alerts, customizable palace UI.
+
+**Repo-wide MD scan note (2026-07-16):** First wishlist pass only read `ADMIN_WISHLIST_PLAN.md`. A later pass listed all repo `*.md` (excl. node_modules) for active/complete claims — see chronology entry “Repo markdown status scan”.
+
+**Docs:** `ADMIN_WISHLIST_PLAN.md` + `CHANGELOG.md` wishlist section aligned. Live `wishlist` DB rows are seed-once; existing DBs may still list archived ideas until manually cleaned.
+
+### 2026-07-16 — Repo markdown status scan (not a full re-verification of ARCHIVAL history)
+
+**Honest scope:** Every tracked `*.md` outside `node_modules` was **listed and grepped** for Status/COMPLETE/Active/TODO/checklist markers. Only **actionable** docs were spot-validated against code. Historical narrative in `ARCHIVAL.md` itself was not re-proven line-by-line.
+
+| Doc | Claims | Spot-check | Action |
+|-----|--------|------------|--------|
+| `TODO.md` | Active work **None**; closed items COMPLETE | Matches branch intent (local complete, not production) | Leave |
+| `ADMIN_WISHLIST_PLAN.md` | Backlog + done | Revalidated this session | Updated |
+| `ARCHITECTURE_ROADMAP.md` | Header COMPLETE; body still has “Blocked… Waiting for Phase 1-2” | P0 rewards shipped on branch; body section **stale** | Banner/stale note on blocked section |
+| `HexRender.md` | Phase 1–4 checklists all `[ ]` | `client/src/utils/hexMap/*` **exists** + tests | Mark implemented |
+| `LANE_DIRECTIONS.md` / `MAP_TERRAIN.md` “Active Lane” | Terrain Phase 2 active on old branch | Historical (PR #751 era) | Status banner historical |
+| `AUDIT_REPORT.md` | Action Required, Critical findings | Auto scanner dump (undefined titles, `index.js` lines) — **not** live TODO | Status: historical artifact |
+| `game/API_CONTRACT.md` | Audit checklist IN PROGRESS | Pre-Phase-1A checklist; not live queue | Status: historical |
+| Checklists (DEPLOYMENT, HTTPS, MONITORING, RAILWAY, BACKUP, TESTING) | `[ ]` ops checklists | Intentional runbooks, not open feature work | Leave |
+| Guides (FAQ, GAMEPLAY, NEW_PLAYER_TUTORIAL, RATE_LIMITING, etc.) | Reference | Not task trackers | Leave |
+| `CHANGELOG.md` Wishlist | Still lists done/nixed items | Stale vs plan | Align wishlist section |
+
+---
 
 ### 2026-07-16 — TODO queue finished (local; not production)
 
@@ -22,7 +107,7 @@
 - Balance tuning: CUT until play data; tables validated via `validate:game-tables`
 - Outbox event bus + engine.js split: CUT/deferred multi-week debt, not product gates
 - Component tests: ongoing hygiene, not a finite item
-- Admin wishlist: stays in `ADMIN_WISHLIST_PLAN.md` only
+- Admin wishlist: backlog in `ADMIN_WISHLIST_PLAN.md`; validity audit 2026-07-16 archived spell target history + terrain advantages (see chronology above)
 
 **TODO.md:** Active work section empty.
 
