@@ -2128,15 +2128,15 @@ module.exports = function (db) {
         return res.status(400).json({ error: `Requires ${foodNeeded.toLocaleString()} food for the journey (you have ${Math.floor(k.food).toLocaleString()}).` });
       }
 
-      await db.run('BEGIN TRANSACTION');
-      try {
+      await db.withTransaction(async () => {
         const deduct = await db.run(
           'UPDATE kingdoms SET food = GREATEST(0, food - $1), population = GREATEST(0, population - $2) WHERE id = $3 AND food >= $4 AND population >= $5',
           [foodNeeded, pop, k.id, foodNeeded, pop],
         );
         if (deduct.changes === 0) {
-          await db.run('ROLLBACK');
-          return res.status(400).json({ error: 'Insufficient food or population (concurrent change).' });
+          const err = new Error('Insufficient food or population (concurrent change).');
+          err.statusCode = 400;
+          throw err;
         }
         await db.run(
           `INSERT INTO resource_harvests
@@ -2144,14 +2144,11 @@ module.exports = function (db) {
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [k.id, nodeId, pop, travelTurns, hTurns, totalTurns, foodNeeded, node.type, node.richness],
         );
-        await db.run('COMMIT');
-      } catch (txErr) {
-        await db.run('ROLLBACK');
-        throw txErr;
-      }
+      });
 
       res.json({ ok: true, travelTurns, totalTurns, foodTaken: foodNeeded });
     } catch (e) {
+      if (e.statusCode) return res.status(e.statusCode).json({ error: e.message });
       console.error('[resource-harvest/launch] POST:', e.message);
       res.status(500).json({ error: 'Failed to launch harvest' });
     }
@@ -2564,14 +2561,14 @@ module.exports = function (db) {
         return res.status(400).json({ error: 'buildingType required' });
       }
 
-      await db.run("BEGIN TRANSACTION");
-      try {
+      const result = await db.withTransaction(async () => {
         const kingdom = await db.get("SELECT id, fragment_bonuses FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
           req.player.playerId,
         ]);
         if (!kingdom) {
-          await db.run("ROLLBACK");
-          return res.status(404).json({ error: "Kingdom not found" });
+          const err = new Error("Kingdom not found");
+          err.statusCode = 404;
+          throw err;
         }
 
         // Check if any synergy cooldown is active — if so, block removal to prevent synergy-hopping
@@ -2581,17 +2578,19 @@ module.exports = function (db) {
           [kingdom.id, now]
         );
         if (activeCooldown) {
-          await db.run("ROLLBACK");
-          return res.status(429).json({
-            error: "Cannot remove attunements while a synergy cooldown is active. Wait for the cooldown to expire.",
-          });
+          const err = new Error(
+            "Cannot remove attunements while a synergy cooldown is active. Wait for the cooldown to expire.",
+          );
+          err.statusCode = 429;
+          throw err;
         }
 
         const currentAttunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
 
         if (!Object.prototype.hasOwnProperty.call(currentAttunements, buildingType)) {
-          await db.run("ROLLBACK");
-          return res.status(400).json({ error: `${buildingType} has no attunement` });
+          const err = new Error(`${buildingType} has no attunement`);
+          err.statusCode = 400;
+          throw err;
         }
 
         delete currentAttunements[buildingType];
@@ -2613,19 +2612,17 @@ module.exports = function (db) {
           ]
         );
 
-        await db.run("COMMIT");
+        return { kingdomId: kingdom.id, buildingType };
+      });
 
-        res.json({
-          ok: true,
-          message: `Attunement removed from ${buildingType}`,
-        });
+      res.json({
+        ok: true,
+        message: `Attunement removed from ${result.buildingType}`,
+      });
 
-        devLog(`[attunement] Kingdom ${kingdom.id}: Removed from ${buildingType}`);
-      } catch (txErr) {
-        await db.run("ROLLBACK").catch(() => {});
-        throw txErr;
-      }
+      devLog(`[attunement] Kingdom ${result.kingdomId}: Removed from ${result.buildingType}`);
     } catch (err) {
+      if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
       console.error('[attunement] remove failed:', err.message);
       res.status(500).json({ error: 'Failed to remove attunement' });
     }
@@ -2775,30 +2772,30 @@ module.exports = function (db) {
       }
 
       // Use transaction to prevent race conditions where multiple requests could activate simultaneously
-      await db.run('BEGIN TRANSACTION');
-      try {
+      const payload = await db.withTransaction(async () => {
         const kingdom = await db.get(
           "SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE",
           [req.player.playerId]
         );
         if (!kingdom) {
-          await db.run('ROLLBACK');
-          return res.status(404).json({ error: 'Kingdom not found' });
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
         }
 
-        // Get active synergy to verify it's the current active one
         const activeSynergy = attunementManager.getActiveSynergy(kingdom);
         if (!activeSynergy) {
-          await db.run('ROLLBACK');
-          return res.status(400).json({ error: 'No synergy currently active' });
+          const err = new Error('No synergy currently active');
+          err.statusCode = 400;
+          throw err;
         }
 
         if (activeSynergy.id !== synergy_id) {
-          await db.run('ROLLBACK');
-          return res.status(400).json({ error: 'This synergy is not currently active' });
+          const err = new Error('This synergy is not currently active');
+          err.statusCode = 400;
+          throw err;
         }
 
-        // Check cooldown with lock to prevent race condition
         const cooldown = await db.get(
           "SELECT cooldown_until FROM synergy_cooldowns WHERE kingdom_id = $1 AND synergy_id = $2 FOR UPDATE",
           [kingdom.id, synergy_id]
@@ -2806,72 +2803,71 @@ module.exports = function (db) {
 
         const now = Math.floor(Date.now() / 1000);
         if (cooldown && cooldown.cooldown_until > now) {
-          await db.run('ROLLBACK');
           const remaining = cooldown.cooldown_until - now;
-          return res.status(429).json({
-            error: `Ability still on cooldown. ${Math.ceil(remaining / 86400)} day(s) remaining`,
-          });
+          const err = new Error(
+            `Ability still on cooldown. ${Math.ceil(remaining / 86400)} day(s) remaining`,
+          );
+          err.statusCode = 429;
+          throw err;
         }
 
-        // Get synergy definition to apply effects
         const synergy = synergiesModule.getSynergy(synergy_id);
         if (!synergy) {
-          await db.run('ROLLBACK');
-          return res.status(400).json({ error: 'Invalid synergy ID' });
+          const err = new Error('Invalid synergy ID');
+          err.statusCode = 400;
+          throw err;
         }
 
-        // Use ability manager to trigger the ability (applies costs/benefits/penalties)
         const abilityResult = abilityManager.triggerAbility(kingdom, synergy_id);
         if (!abilityResult.ok) {
-          await db.run('ROLLBACK');
-          return res.status(400).json({ error: abilityResult.error });
+          const err = new Error(abilityResult.error);
+          err.statusCode = 400;
+          throw err;
         }
 
-        // Get the updated kingdom with effects applied
         const cooldownUntil = new Date(abilityResult.cooldownExpires).getTime() / 1000;
 
-        // Apply all kingdom updates to database using the helper function
-        // This ensures validation of column names and prevents SQL injection
         const updates = {
           ...abilityResult.kingdom,
         };
-        delete updates.id; // Don't update the ID field
+        delete updates.id;
 
         await applyKingdomUpdates(kingdom.id, updates);
 
-        // Upsert cooldown record within transaction
         await db.run(
           "INSERT INTO synergy_cooldowns (kingdom_id, synergy_id, cooldown_until) VALUES ($1, $2, $3) ON CONFLICT(kingdom_id, synergy_id) DO UPDATE SET cooldown_until = $4",
           [kingdom.id, synergy_id, Math.floor(cooldownUntil), Math.floor(cooldownUntil)]
         );
 
-        // Write a news entry so the player sees the activation in their feed (inside transaction for atomicity)
         const newsMessage = synergy.emoji + " " + synergy.name + ": " + (synergy.active?.name || "") + " activated! " + (synergy.active?.desc || "");
         await db.run(
           "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1, $2, $3, $4)",
           [kingdom.id, 'synergy', newsMessage, kingdom.turn || 0]
         );
 
-        await db.run('COMMIT');
-
-        // Log the ability activation
-        devLog(`[synergy] Kingdom ${kingdom.id}: ${synergy_id} ability activated by ${synergy.active?.name}`);
-
-        res.json({
-          ok: true,
-          message: `${synergy.active?.name} activated!`,
+        return {
+          kingdomId: kingdom.id,
+          synergy_id,
+          activeName: synergy.active?.name,
           cooldown_until: Math.floor(cooldownUntil),
           synergy: {
             id: synergy.id,
             name: synergy.name,
             active_name: synergy.active?.name,
           },
-        });
-      } catch (txErr) {
-        await db.run('ROLLBACK');
-        throw txErr;
-      }
+        };
+      });
+
+      devLog(`[synergy] Kingdom ${payload.kingdomId}: ${payload.synergy_id} ability activated by ${payload.activeName}`);
+
+      res.json({
+        ok: true,
+        message: `${payload.activeName} activated!`,
+        cooldown_until: payload.cooldown_until,
+        synergy: payload.synergy,
+      });
     } catch (err) {
+      if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
       console.error('[synergy] activate ability failed:', err.message);
       res.status(500).json({ error: 'Failed to activate synergy ability' });
     }

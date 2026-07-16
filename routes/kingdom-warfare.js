@@ -408,16 +408,14 @@ module.exports = function (db) {
     const { op, targetId, units, lootType, unitType, bldType } = req.body;
 
     try {
-      // Begin transaction first - all locking happens inside
-      await db.run("BEGIN TRANSACTION");
+      const response = await db.withTransaction(async () => {
         // Lock kingdoms in ascending ID order to prevent deadlock
         // First fetch attacker without lock to get its ID
         const k = await db.get("SELECT id FROM kingdoms WHERE player_id = $1", [
           req.player.playerId,
         ]);
         if (!k) {
-          await db.run("ROLLBACK");
-          return res.status(404).json({ error: "Kingdom not found" });
+          throw httpError(404, "Kingdom not found");
         }
 
         // Lock both kingdoms in ascending ID order (prevents deadlock)
@@ -428,8 +426,7 @@ module.exports = function (db) {
         );
 
         if (lockedKingdoms.length < 2) {
-          await db.run("ROLLBACK");
-          return res.status(404).json({ error: "One or both kingdoms not found" });
+          throw httpError(404, "One or both kingdoms not found");
         }
 
         // Find attacker and target in locked kingdoms
@@ -437,17 +434,14 @@ module.exports = function (db) {
         const target = lockedKingdoms.find(kd => kd.id === targetId);
 
         if (!attackerK || !target) {
-          await db.run("ROLLBACK");
-          return res.status(404).json({ error: "Kingdom lookup failed" });
+          throw httpError(404, "Kingdom lookup failed");
         }
 
         if (!attackerK.turns_stored || attackerK.turns_stored < 1) {
-          await db.run("ROLLBACK");
-          return res.status(429).json({ error: "No turns available" });
+          throw httpError(429, "No turns available");
         }
         if (target.id === attackerK.id) {
-          await db.run("ROLLBACK");
-          return res.status(400).json({ error: "Cannot target your own kingdom" });
+          throw httpError(400, "Cannot target your own kingdom");
         }
 
         // AI vs AI only - no cross-faction covert ops
@@ -456,24 +450,15 @@ module.exports = function (db) {
         const targetCoords = getKingdomMapCoords({ id: targetId, race: target.race });
         const targetHex = pixelToHex(targetCoords.map_x, targetCoords.map_y);
         if (!safeBitmapHasCell(vis.seenCells, targetHex.col, targetHex.row)) {
-          await db.run("ROLLBACK");
-          return res.status(400).json({
-            error: "You need a location map for this target.",
-          });
+          throw httpError(400, "You need a location map for this target.",);
         }
 
         // Newbie protection
         if (attackerK.turn < 400) {
-          await db.run("ROLLBACK");
-          return res.status(400).json({
-            error: `You are under newbie protection until Turn 400. You cannot perform covert actions yet.`,
-          });
+          throw httpError(400, `You are under newbie protection until Turn 400. You cannot perform covert actions yet.`,);
         }
         if ((target.turn || 0) < 400) {
-          await db.run("ROLLBACK");
-          return res.status(400).json({
-            error: `${target.name} is under newbie protection until Turn 400 (currently Turn ${target.turn})`,
-          });
+          throw httpError(400, `${target.name} is under newbie protection until Turn 400 (currently Turn ${target.turn})`);
         }
 
         // All validations passed - execute covert operation
@@ -481,16 +466,14 @@ module.exports = function (db) {
     if (op === "spy") {
       const unitsSent = Math.max(1, parseInt(units) || 0);
       if (unitsSent > commandHandler.getAvailableUnits(k, "thieves")) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "Not enough available thieves" });
+        throw httpError(400, "Not enough available thieves");
       }
       result = await commandHandler.handle(
         { type: 'covert-spy', target, unitsSent },
         { kingdom: attackerK },
       );
       if (result.error) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: result.error });
+        throw httpError(400, result.error);
       }
       const spyAttackerUpdates = { ...(result.spyUpdates || {}) };
       spyAttackerUpdates.turns_stored = (attackerK.turns_stored || 0) - 1;
@@ -534,8 +517,7 @@ module.exports = function (db) {
           result.success ? 1 : 0,
         ],
       );
-      await db.run("COMMIT");
-      return res.json({
+      return ({
         ok: true,
         success: result.success,
         report: result.report || null,
@@ -546,8 +528,7 @@ module.exports = function (db) {
     } else if (op === "loot") {
       const thievesSent = Math.max(1, parseInt(units) || 0);
       if (thievesSent > commandHandler.getAvailableUnits(attackerK, "thieves")) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "Not enough available thieves" });
+        throw httpError(400, "Not enough available thieves");
       }
       const loot = lootType === "wm" ? "war_machines" : lootType;
       result = await commandHandler.handle(
@@ -555,8 +536,7 @@ module.exports = function (db) {
         { kingdom: attackerK },
       );
       if (result.error) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: result.error });
+        throw httpError(400, result.error);
       }
       const lootAttackerUpdates = { ...(result.thiefUpdates || {}) };
       lootAttackerUpdates.turns_stored = (attackerK.turns_stored || 0) - 1;
@@ -592,8 +572,7 @@ module.exports = function (db) {
           "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES ($1,$2,$3,$4,$5)",
           [target.id, "covert", result.targetEvent, target.turn, reportId],
         );
-      await db.run("COMMIT");
-      return res.json({
+      return ({
         ok: true,
         success: result.success,
         stolen: result.stolen,
@@ -604,8 +583,7 @@ module.exports = function (db) {
     } else if (op === "assassinate") {
       const ninjasSent = Math.max(1, parseInt(units) || 0);
       if (ninjasSent > commandHandler.getAvailableUnits(attackerK, "ninjas")) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "Not enough available ninjas" });
+        throw httpError(400, "Not enough available ninjas");
       }
       const validTargets = [
         "fighters",
@@ -619,16 +597,14 @@ module.exports = function (db) {
         "scribes",
       ];
       if (!validTargets.includes(unitType)) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "Invalid target unit type" });
+        throw httpError(400, "Invalid target unit type");
       }
       result = await commandHandler.handle(
         { type: 'covert-assassinate', target, ninjasSent, unitType },
         { kingdom: attackerK },
       );
       if (result.error) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: result.error });
+        throw httpError(400, result.error);
       }
       const assassinAttackerUpdates = { ...(result.assassinUpdates || {}) };
       assassinAttackerUpdates.turns_stored = (attackerK.turns_stored || 0) - 1;
@@ -664,8 +640,7 @@ module.exports = function (db) {
           "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES ($1,$2,$3,$4,$5)",
           [target.id, "covert", result.targetEvent, target.turn, reportId],
         );
-      await db.run("COMMIT");
-      return res.json({
+      return ({
         ok: true,
         success: result.success,
         killed: result.killed,
@@ -675,8 +650,7 @@ module.exports = function (db) {
     } else if (op === "sabotage") {
       const ninjasSent = Math.max(1, parseInt(units) || 0);
       if (ninjasSent > commandHandler.getAvailableUnits(attackerK, "ninjas")) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "Not enough available ninjas" });
+        throw httpError(400, "Not enough available ninjas");
       }
 
       result = await commandHandler.handle(
@@ -684,8 +658,7 @@ module.exports = function (db) {
         { kingdom: attackerK },
       );
       if (result.error) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: result.error });
+        throw httpError(400, result.error);
       }
 
       const sabotageAttackerUpdates = { ...(result.assassinUpdates || {}) };
@@ -727,8 +700,7 @@ module.exports = function (db) {
           [target.id, "covert", result.targetEvent, target.turn, reportId],
         );
 
-      await db.run("COMMIT");
-      return res.json({
+      return ({
         ok: true,
         success: result.success,
         destroyed: result.destroyed,
@@ -739,16 +711,14 @@ module.exports = function (db) {
     } else if (op === "raid_trade_route") {
       const thievesSent = Math.max(1, parseInt(units) || 0);
       if (thievesSent > attackerK.thieves) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: "Not enough thieves" });
+        throw httpError(400, "Not enough thieves");
       }
       result = await commandHandler.handle(
         { type: 'raid-trade-route', target, thievesSent },
         { kingdom: attackerK },
       );
       if (result.error) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: result.error });
+        throw httpError(400, result.error);
       }
       const raidAttackerUpdates = { ...(result.attackerUpdates || {}) };
       raidAttackerUpdates.turns_stored = (attackerK.turns_stored || 0) - 1;
@@ -783,8 +753,7 @@ module.exports = function (db) {
           0, // Raiding is public
         ],
       );
-      await db.run("COMMIT");
-      return res.json({
+      return ({
         ok: true,
         success: result.success,
         looted: result.looted,
@@ -792,15 +761,12 @@ module.exports = function (db) {
         updates: raidAttackerUpdates,
       });
     } else {
-      await db.run("ROLLBACK");
-      return res.status(400).json({ error: "Unknown covert operation" });
+      throw httpError(400, "Unknown covert operation");
     }
+      });
+      return res.json(response);
   } catch (err) {
-    try {
-      await db.run("ROLLBACK");
-    } catch (rollbackErr) {
-      console.error("[covert] rollback error:", rollbackErr.message);
-    }
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
     console.error("[covert] operation failed:", err.message);
     return res.status(500).json({ error: "Covert operation failed - please try again" });
   }
