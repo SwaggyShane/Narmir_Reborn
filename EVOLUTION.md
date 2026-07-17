@@ -1,7 +1,7 @@
 # Narmir Reborn - Prestige and Evolution
 
 **Document version:** v1.4 - 2026-07-17  
-**Status:** **Roadmap A complete** on `feature/prestige-rebirth`. **Roadmap B (dragon) in progress** — module, trek egg, schema, turn hook, stacking, HTTP start/abort/status; UI + full B checklist still open.  
+**Status:** **Roadmap A complete** on `feature/prestige-rebirth`. **Roadmap B (dragon) complete on this branch** — module, trek egg, schema, turn hook, stacking, HTTP, Settings UI, live+HTTP tests.  
 **Operator:** Sole implementer.  
 **Ship model:** All or nothing - one wipe contract, one bonus table, one dragon definition. No dual V1/V2 paths.
 
@@ -467,9 +467,8 @@ Safe prestige; no land/building snowball; contract 3.3; UI true; one path; TX-sa
 [x] Schema evolution_form / evolution_ritual
 [x] Turn hook processEvolutionTurn in processTurn
 [x] POST /evolution/start | abort | GET /evolution
-[ ] Client UI for start/abort/status
-[ ] Live DB / HTTP e2e for ritual start + turn complete
-[ ] B ship / merge
+[x] Client UI for start/abort/status (Options → Dragon Evolution panel)
+[x] Live DB + HTTP e2e for ritual start/abort + turn complete/fail
 ```
 
 ---

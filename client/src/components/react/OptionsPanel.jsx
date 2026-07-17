@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
@@ -23,6 +23,11 @@ import {
   goldSeed,
   getPrestigeModifiers,
 } from '../../utils/prestigeBalance.js';
+import {
+  EVOLUTION_PRESTIGE_GATE,
+  RITUAL_TURNS,
+  DRAGON_FORM,
+} from '../../utils/evolutionBalance.js';
 
 const API = (path, opts = {}) => {
   const token = localStorage.getItem('narmir_token');
@@ -318,6 +323,151 @@ const PortraitUploadCard = () => {
   );
 };
 
+const DragonEvolutionSection = () => {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiCall('/api/kingdom/evolution');
+      if (data?.error) {
+        setStatus(null);
+        return;
+      }
+      setStatus(data);
+    } catch {
+      setStatus(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const startRitual = async () => {
+    const ok = window.confirm(
+      `Begin dragon evolution ritual?\n\n` +
+        `Requires Prestige ${EVOLUTION_PRESTIGE_GATE}+, a Dragon Egg (epic trek), and at least 1 castle.\n` +
+        `Channel for ${RITUAL_TURNS} turns. If castles hit 0, the ritual fails and the egg is lost.\n` +
+        `On success: defense ×${DRAGON_FORM.defenseMult}, upkeep ×${DRAGON_FORM.upkeepMult}, ` +
+        `terror vs lower prestige ×${DRAGON_FORM.terrorVsLowerPrestige}, hoard econ ×${DRAGON_FORM.hoardEconMult}.\n` +
+        `No free global combat bonus (prestige combat still max ×1.05).`,
+    );
+    if (!ok) return;
+    setBusy(true);
+    try {
+      const result = await apiCall('/api/kingdom/evolution/start', { method: 'POST', body: {} });
+      if (result.error) return toast(result.error, 'error');
+      toast(`Dragon ritual started — ${RITUAL_TURNS} turns of channeling.`, 'success');
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const abortRitual = async () => {
+    const ok = window.confirm(
+      'Abort dragon ritual? The egg was already consumed and will not return.',
+    );
+    if (!ok) return;
+    setBusy(true);
+    try {
+      const result = await apiCall('/api/kingdom/evolution/abort', { method: 'POST', body: {} });
+      if (result.error) return toast(result.error, 'error');
+      toast('Ritual aborted. Egg remains spent.', 'warn');
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const ritual = status?.ritual;
+  const remaining = ritual?.state === 'CHANNELING' ? ritual.turns_remaining : null;
+
+  return (
+    <section
+      className="rounded-2xl border-2 border-[var(--gold)] bg-[var(--bg2)] p-5"
+      data-testid="dragon-evolution-panel"
+    >
+      <div className="card-title !mb-3 text-[var(--gold)]">Dragon Evolution</div>
+      <div className="mb-4 text-[14px] leading-7 text-[var(--text2)]">
+        Optional endgame form (Roadmap B). Tradeoffs — not prestige-plus-combat.
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          <li>Prestige {EVOLUTION_PRESTIGE_GATE}+, Dragon Egg from epic trek, hold a castle</li>
+          <li>{RITUAL_TURNS}-turn channel (defense ×0.85 while channeling)</li>
+          <li>
+            Form: defense ×{DRAGON_FORM.defenseMult}, upkeep ×{DRAGON_FORM.upkeepMult}, terror vs weaker realms,
+            small hoard
+          </li>
+        </ul>
+      </div>
+      {loading && (
+        <div className="mb-3 text-[12px] text-[var(--text3)]" data-testid="dragon-evo-loading">
+          Loading evolution status…
+        </div>
+      )}
+      {!loading && status && (
+        <div className="mb-3 space-y-1 text-[13px] text-[var(--text2)]" data-testid="dragon-evo-status">
+          <div>
+            Form:{' '}
+            <strong data-testid="dragon-evo-form">{status.isDragon ? 'Dragon' : status.form || 'None'}</strong>
+          </div>
+          <div>
+            Egg:{' '}
+            <strong data-testid="dragon-evo-egg">{status.hasEgg ? 'Yes' : 'No'}</strong>
+          </div>
+          <div>
+            Ritual:{' '}
+            <strong data-testid="dragon-evo-ritual">
+              {status.isChanneling
+                ? `Channeling (${remaining ?? '?'} turns left)`
+                : ritual?.state || 'Idle'}
+            </strong>
+          </div>
+          {!status.canStart && !status.isDragon && !status.isChanneling && status.canStartError && (
+            <div className="text-[12px] text-[var(--red)]" data-testid="dragon-evo-block">
+              {status.canStartError}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="base-btn variant-accent bg-[var(--gold)] px-5 py-2 font-bold text-black disabled:opacity-50"
+          data-testid="dragon-evo-start-btn"
+          onClick={startRitual}
+          disabled={busy || loading || !status?.canStart}
+        >
+          BEGIN RITUAL
+        </button>
+        <button
+          type="button"
+          className="base-btn variant-red px-5 py-2 font-bold disabled:opacity-50"
+          data-testid="dragon-evo-abort-btn"
+          onClick={abortRitual}
+          disabled={busy || loading || !status?.isChanneling}
+        >
+          ABORT RITUAL
+        </button>
+        <button
+          type="button"
+          className="base-btn px-4 py-2 text-[12px]"
+          data-testid="dragon-evo-refresh-btn"
+          onClick={refresh}
+          disabled={busy || loading}
+        >
+          Refresh
+        </button>
+      </div>
+    </section>
+  );
+};
+
 const OptionsPanel = () => {
   const storedDescription = useDescription();
   const prestige = usePrestige();
@@ -586,6 +736,8 @@ const OptionsPanel = () => {
             ASCEND EMPIRE
           </button>
         </section>
+
+        <DragonEvolutionSection />
 
         <DiscordSection />
       </div>
