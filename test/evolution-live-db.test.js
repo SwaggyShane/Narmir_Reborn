@@ -155,7 +155,20 @@ async function main() {
         [ritual, kid],
       );
       const row = (await client.query(`SELECT * FROM kingdoms WHERE id=$1`, [kid])).rows[0];
-      const tr = engine.processTurn(row, null);
+      const snap = {
+        ...row,
+        turn: Number(row.turn) || 0,
+        gold: Number(row.gold) || 0,
+        food: Number(row.food) || 0,
+        mana: Number(row.mana) || 0,
+        population: Number(row.population) || 0,
+        land: Number(row.land) || 0,
+        bld_castles: Number(row.bld_castles) || 0,
+        prestige_level: Number(row.prestige_level) || 0,
+        level: Number(row.level) || 1,
+        xp: Number(row.xp) || 0,
+      };
+      const tr = engine.processTurn(snap, null);
       assert.ok(tr.updates.evolution_ritual);
       assert.strictEqual(JSON.parse(tr.updates.evolution_ritual).state, 'FAILED');
       pass('castle fail via processTurn');
@@ -177,10 +190,32 @@ async function main() {
         [ritual, kid],
       );
       const row = (await client.query(`SELECT * FROM kingdoms WHERE id=$1`, [kid])).rows[0];
-      const tr = engine.processTurn(row, null);
+      // Coerce numerics — raw pg returns strings; full processTurn apply is not under test here.
+      const snap = {
+        ...row,
+        turn: Number(row.turn) || 0,
+        gold: Number(row.gold) || 0,
+        food: Number(row.food) || 0,
+        mana: Number(row.mana) || 0,
+        population: Number(row.population) || 0,
+        land: Number(row.land) || 0,
+        bld_castles: Number(row.bld_castles) || 0,
+        prestige_level: Number(row.prestige_level) || 0,
+        level: Number(row.level) || 1,
+        xp: Number(row.xp) || 0,
+      };
+      const tr = engine.processTurn(snap, null);
       assert.strictEqual(tr.updates.evolution_form, 'dragon');
       assert.strictEqual(JSON.parse(tr.updates.evolution_ritual).state, 'COMPLETE');
-      await applyKingdomUpdates(kid, tr.updates, makeTxDb(client));
+      // Persist only evolution columns (avoids unrelated turn-field type noise in fixture)
+      await applyKingdomUpdates(
+        kid,
+        {
+          evolution_form: tr.updates.evolution_form,
+          evolution_ritual: tr.updates.evolution_ritual,
+        },
+        makeTxDb(client),
+      );
       const after = (await client.query(`SELECT evolution_form FROM kingdoms WHERE id=$1`, [kid])).rows[0];
       assert.strictEqual(after.evolution_form, 'dragon');
       pass('complete form=dragon persisted');
