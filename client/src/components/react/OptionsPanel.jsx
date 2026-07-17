@@ -6,7 +6,15 @@ import { useNavLayout } from '../../hooks/useNavLayout.js';
 import { useColorTheme } from '../../hooks/useColorTheme.js';
 import { COLOR_THEMES } from '../../utils/colorTheme.js';
 import { showBugReportModal } from './BugReportModal.jsx';
-import { useProfileStore, useDescription, useCustomPortrait, usePrestige, useLevel } from '../../stores';
+import {
+  useProfileStore,
+  useDescription,
+  useCustomPortrait,
+  usePrestige,
+  useLevel,
+  useTurn,
+  usePrestigeCooldownRemaining,
+} from '../../stores';
 
 const API = (path, opts = {}) => {
   const token = localStorage.getItem('narmir_token');
@@ -306,8 +314,12 @@ const OptionsPanel = () => {
   const storedDescription = useDescription();
   const prestige = usePrestige();
   const level = useLevel();
+  const turn = useTurn();
+  const cooldownRemaining = usePrestigeCooldownRemaining();
   const { layout: navLayout, setLayout: setNavLayout } = useNavLayout();
-  const canRebirth = (level || 0) >= 500;
+  const levelOk = (level || 0) >= 500;
+  const cooldownOk = (cooldownRemaining || 0) <= 0;
+  const canRebirth = levelOk && cooldownOk;
   const nextPrestige = (prestige || 0) + 1;
   const previewLand = 500 + 50 * nextPrestige;
   const previewGold = 25000 + 10000 * nextPrestige;
@@ -379,6 +391,15 @@ const OptionsPanel = () => {
     if (!ok) return;
     const result = await apiCall('/api/kingdom/rebirth', { method: 'POST', body: {} });
     if (result.error) return toast(result.error, 'error');
+    const seeds = result.seeds || {};
+    useProfileStore.getState().applyPrestigeSnapshot({
+      prestige_level: result.prestige_level,
+      last_prestige_turn: result.updates?.profile?.last_prestige_turn
+        ?? result.updates?.last_prestige_turn
+        ?? turn,
+      level: 1,
+      turn,
+    });
     if (result.prestige_level !== undefined) {
       useProfileStore.getState().updatePrestigeLevel(result.prestige_level);
     }
@@ -389,8 +410,10 @@ const OptionsPanel = () => {
       m.combat && m.combat !== 1 ? `combat ×${m.combat}` : null,
       m.pop && m.pop !== 1 ? `pop ×${m.pop}` : null,
     ].filter(Boolean);
+    const landMsg = seeds.land != null ? ` Land ${Number(seeds.land).toLocaleString()}.` : '';
+    const goldMsg = seeds.gold != null ? ` Gold ${Number(seeds.gold).toLocaleString()}.` : '';
     toast(
-      `Transcended${result.title ? ` (${result.title})` : ''}. Permanent: ${bonusBits.join(', ') || 'see prestige tier'}. Reloading...`,
+      `Transcended${result.title ? ` (${result.title})` : ''}.${landMsg}${goldMsg} Permanent: ${bonusBits.join(', ') || 'see prestige tier'}. Reloading...`,
       'success',
     );
     window.location.reload();
@@ -499,20 +522,26 @@ const OptionsPanel = () => {
           </section>
         </div>
 
-        <section className="rounded-2xl border-2 border-[var(--accent1)] bg-[var(--bg2)] p-5">
+        <section className="rounded-2xl border-2 border-[var(--accent1)] bg-[var(--bg2)] p-5" data-testid="prestige-rebirth-panel">
           <div className="card-title !mb-3 text-[var(--accent1)]">Empire Rebirth (Kingdom Prestige)</div>
           <div className="mb-4 text-[14px] leading-7 text-[var(--text2)]">
             At <strong className="text-[var(--gold)]">Level 500</strong> (max) you may rebirth. Current prestige:{' '}
-            <strong className="text-[var(--accent1)]">{prestige || 0}</strong>
-            {' '}(kingdom level {level || 0}).
+            <strong className="text-[var(--accent1)]" data-testid="prestige-current">{prestige || 0}</strong>
+            {' '}(kingdom level <span data-testid="prestige-kingdom-level">{level || 0}</span>).
             <br />
             <br />
             <strong className="text-[var(--gold)]">If you rebirth now (to Prestige {nextPrestige}):</strong>
             <ul className="mt-2 list-disc space-y-1 pl-5">
-              <li>New land: <strong>{previewLand.toLocaleString()}</strong></li>
-              <li>New gold: <strong>{previewGold.toLocaleString()}</strong></li>
+              <li>
+                New land:{' '}
+                <strong data-testid="prestige-preview-land">{previewLand.toLocaleString()}</strong>
+              </li>
+              <li>
+                New gold:{' '}
+                <strong data-testid="prestige-preview-gold">{previewGold.toLocaleString()}</strong>
+              </li>
               <li>Starter buildings only (5 farms, 2 barracks, 1 school, 100 housing)</li>
-              <li>Army, castles, markets, walls, fragments, research progress wiped</li>
+              <li>Army, castles, markets, walls, fragments, research progress wiped; kingdom returns to level 1</li>
               <li>Keep: race, maps, discovery, achievements, lore, top 3 heroes</li>
               <li>Then 200 turns (~3.5 days) cooldown before next rebirth</li>
             </ul>
@@ -523,15 +552,22 @@ const OptionsPanel = () => {
               <li>XP to level costs +20% per prestige rank</li>
             </ul>
           </div>
-          {!canRebirth && (
-            <div className="mb-3 text-[12px] text-[var(--red)]">
+          {!levelOk && (
+            <div className="mb-3 text-[12px] text-[var(--red)]" data-testid="prestige-block-level">
               Require Kingdom Level 500 to Rebirth (you are level {level || 0}).
+            </div>
+          )}
+          {levelOk && !cooldownOk && (
+            <div className="mb-3 text-[12px] text-[var(--red)]" data-testid="prestige-block-cooldown">
+              Prestige cooldown: {cooldownRemaining} turn{cooldownRemaining === 1 ? '' : 's'} remaining
+              (~{Math.max(1, Math.ceil((cooldownRemaining * 25) / 60))} hours wall clock at 25 min/turn).
             </div>
           )}
           <button
             type="button"
             className="base-btn variant-accent bg-[var(--accent1)] px-6 py-3 font-bold disabled:opacity-50"
             id="rebirth-btn"
+            data-testid="prestige-ascend-btn"
             onClick={initiateRebirth}
             disabled={!canRebirth}
           >

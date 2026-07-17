@@ -23,6 +23,7 @@ export const useProfileStore = create(
       level: 1,
       xp: 0,
       prestige_level: 0,
+      last_prestige_turn: 0,
       turn: 0,
       score: 0,
       local_time: null,
@@ -80,6 +81,7 @@ export const useProfileStore = create(
         if (data?.level !== undefined) state.level = data.level;
         if (data?.xp !== undefined) state.xp = data.xp;
         if (data?.prestige_level !== undefined) state.prestige_level = data.prestige_level;
+        if (data?.last_prestige_turn !== undefined) state.last_prestige_turn = data.last_prestige_turn;
         if (data?.turn !== undefined) state.turn = data.turn;
         if (data?.score !== undefined) state.score = data.score;
         if (data?.local_time !== undefined) state.local_time = data.local_time;
@@ -141,6 +143,16 @@ export const useProfileStore = create(
       updatePrestigeLevel: (level) => set((state) => {
         state.prestige_level = level;
       }),
+
+      /**
+       * Apply prestige fields after rebirth response (before reload)
+       */
+      applyPrestigeSnapshot: (data) => set((state) => {
+        if (data?.prestige_level !== undefined) state.prestige_level = data.prestige_level;
+        if (data?.last_prestige_turn !== undefined) state.last_prestige_turn = data.last_prestige_turn;
+        if (data?.level !== undefined) state.level = data.level;
+        if (data?.turn !== undefined) state.turn = data.turn;
+      }),
     })),
     { name: 'profile' }
   )
@@ -161,6 +173,18 @@ export const useLevel = () => useProfileStore((state) => state.level);
 export const useXp = () => useProfileStore((state) => state.xp);
 
 export const usePrestige = () => useProfileStore((state) => state.prestige_level);
+
+export const useLastPrestigeTurn = () => useProfileStore((state) => state.last_prestige_turn);
+
+/** Turns remaining before next rebirth is allowed (0 = ready). Cooldown = 200 turns. */
+export const usePrestigeCooldownRemaining = () =>
+  useProfileStore((state) => {
+    const last = Number(state.last_prestige_turn) || 0;
+    if (last <= 0) return 0;
+    const turn = Number(state.turn) || 0;
+    const COOLDOWN = 200;
+    return Math.max(0, COOLDOWN - (turn - last));
+  });
 
 export const useTurn = () => useProfileStore((state) => state.turn);
 

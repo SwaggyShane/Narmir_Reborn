@@ -143,6 +143,8 @@ export {
   useLevel,
   useXp,
   usePrestige,
+  useLastPrestigeTurn,
+  usePrestigeCooldownRemaining,
   useTurn,
   useScore,
   useRank,

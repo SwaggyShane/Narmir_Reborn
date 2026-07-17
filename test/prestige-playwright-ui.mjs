@@ -239,19 +239,35 @@ async function main() {
       fail('DB after UI', e);
     }
 
-    console.log('\n[6] After rebirth — button disabled (level 1)');
+    console.log('\n[6] After rebirth — reload UI shows level 1 + seeds + disabled');
     await page.goto(GAME, { waitUntil: 'domcontentloaded' });
     if (loginBody.token) {
       await page.evaluate((t) => localStorage.setItem('narmir_token', t), loginBody.token);
       await page.reload({ waitUntil: 'networkidle' });
     }
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(2500);
     await openSettings(page);
+    // On-screen kingdom level after /me load
+    const levelEl = page.locator('[data-testid="prestige-kingdom-level"]');
+    const levelText = await levelEl.innerText().catch(() => '');
+    if (String(levelText).trim() === '1') pass('on-screen kingdom level 1 after reload');
+    else fail('on-screen kingdom level 1', new Error(`got "${levelText}"`));
+    const prestigeEl = page.locator('[data-testid="prestige-current"]');
+    const prestigeText = await prestigeEl.innerText().catch(() => '');
+    if (String(prestigeText).trim() === '1') pass('on-screen prestige 1 after reload');
+    else fail('on-screen prestige 1', new Error(`got "${prestigeText}"`));
+    // Preview for next rebirth still shows seeds for P2
+    const previewLand = await page.locator('[data-testid="prestige-preview-land"]').innerText().catch(() => '');
+    if (previewLand.includes(String(landSeed(2)))) pass(`preview land for P2 = ${landSeed(2)}`);
+    else console.warn('  ? preview land after P1:', previewLand);
     if (await page.locator('#rebirth-btn').isDisabled()) pass('disabled at level 1');
     else fail('disabled at level 1', new Error('still enabled'));
+    // Cooldown message while L1 (level block may show first)
+    const blockLevel = await page.locator('[data-testid="prestige-block-level"]').isVisible().catch(() => false);
+    if (blockLevel) pass('level block message visible at L1');
 
     console.log('\n[7] Level 499 — still disabled');
-    await pool.query(`UPDATE kingdoms SET level=499, prestige_level=1, last_prestige_turn=0 WHERE id=$1`, [
+    await pool.query(`UPDATE kingdoms SET level=499, prestige_level=1, last_prestige_turn=0, turn=7000 WHERE id=$1`, [
       kingdomId,
     ]);
     await page.reload({ waitUntil: 'networkidle' });
@@ -260,16 +276,34 @@ async function main() {
     if (await page.locator('#rebirth-btn').isDisabled()) pass('disabled at level 499');
     else fail('disabled at 499', new Error('enabled'));
 
-    console.log('\n[8] Level 500 again — enabled (cooldown 0)');
+    console.log('\n[8] Level 500 + active cooldown — disabled + cooldown copy');
+    // last_prestige_turn = 7000, turn = 7100 => 100 turns into 200 cooldown => 100 remaining
     await pool.query(
-      `UPDATE kingdoms SET level=500, prestige_level=1, last_prestige_turn=0, turn=7000 WHERE id=$1`,
+      `UPDATE kingdoms SET level=500, prestige_level=1, last_prestige_turn=7000, turn=7100 WHERE id=$1`,
+      [kingdomId],
+    );
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForTimeout(2500);
+    await openSettings(page);
+    if (await page.locator('#rebirth-btn').isDisabled()) pass('disabled during cooldown at L500');
+    else fail('disabled during cooldown', new Error('enabled'));
+    const cdVisible = await page.locator('[data-testid="prestige-block-cooldown"]').isVisible().catch(() => false);
+    const cdText = cdVisible
+      ? await page.locator('[data-testid="prestige-block-cooldown"]').innerText()
+      : '';
+    if (cdVisible && /cooldown|turn/i.test(cdText)) pass(`cooldown message: ${cdText.slice(0, 80)}`);
+    else fail('cooldown message visible', new Error(cdText || 'missing'));
+
+    console.log('\n[9] Level 500 + cooldown cleared — enabled');
+    await pool.query(
+      `UPDATE kingdoms SET level=500, prestige_level=1, last_prestige_turn=0, turn=8000 WHERE id=$1`,
       [kingdomId],
     );
     await page.reload({ waitUntil: 'networkidle' });
     await page.waitForTimeout(2000);
     await openSettings(page);
-    if (!(await page.locator('#rebirth-btn').isDisabled())) pass('enabled at level 500 again');
-    else fail('enabled at 500 again', new Error('disabled'));
+    if (!(await page.locator('#rebirth-btn').isDisabled())) pass('enabled at level 500 with no cooldown');
+    else fail('enabled at 500 no cooldown', new Error('disabled'));
 
     await browser.close();
     browser = null;

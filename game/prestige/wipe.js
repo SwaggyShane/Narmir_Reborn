@@ -76,6 +76,15 @@ const EMPTY_JSON_STRING = Object.freeze({
   defense_upgrades: '{}',
   outpost_upgrades: '{}',
   alliance_buffs: '{}',
+  xp_sources: '{}',
+  wall_upgrades: '{}',
+  tower_def_upgrades: '{}',
+  tower_upgrades: '{}',
+  research_focus: '{}',
+  ledger: '{}',
+  active_event: '{}',
+  location_maps_wip: '[]',
+  wounded_troops: '{}',
 });
 
 /** Explicit keep list for schema-coverage tests (not written in updates). */
@@ -86,6 +95,10 @@ const KEEP_COLUMNS = Object.freeze([
   'evolution_form', 'evolution_ritual', 'custom_portrait',
   'last_lore_id', 'last_event_id', 'happiness', 'tax',
   'turns_stored', 'created_at', 'updated_at',
+  // Map / fog / identity extras
+  'gender', 'x', 'y', 'visibility',
+  'first_dungeon_found_turn', 'first_mountain_found_turn',
+  'last_turn_at', 'last_event_at', 'goals',
 ]);
 
 const ZERO_FIELDS = Object.freeze([
@@ -95,6 +108,16 @@ const ZERO_FIELDS = Object.freeze([
   ...ZERO_RESEARCH,
   'scout_allocation', 'scout_progress', 'hammer_turns_used',
   'wall_hp', 'school_of_magic',
+  // Extra numeric columns found via live schema reflection
+  'last_attack_turn', 'rebellion_cooldown',
+  'engineer_level', 'engineer_xp',
+  'scrolls', 'hybrid_blueprints', 'fortified_blueprints', 'fortified_buildings',
+  'certified_blueprints_stored',
+  'food_shortage_turns', 'food_surplus_turns',
+  'divine_sanctuary_used',
+  'library_allocation', 'mausoleum_allocation',
+  'library_progress', 'tower_progress',
+  'resource_sequence',
 ]);
 
 /**
