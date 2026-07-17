@@ -4,11 +4,12 @@
 
 const config = require('../config');
 const { safeJsonParse, roll, rand } = require('../../utils/helpers');
-const { unitLevelMult, effectiveTroopLevel, diluteTroopXp } = require('./troops');
+const { unitLevelMult, effectiveTroopLevel, diluteTroopXp, awardTroopXp } = require('./troops');
 const { getCap, calcDiscoveryChance, repairMojibake, cleanNewsEvent } = require('./data-transformations');
 const fragmentBonusManager = require('../fragment-bonus-manager');
 const { checkAchievements } = require('./achievements');
 const { addItemToInventory } = require('./items');
+const { awardXp } = require('../xp');
 
 const {
   MERC_TIERS,
@@ -30,6 +31,8 @@ const {
   JUNK_PRIZES,
   EXPEDITION_TURNS,
   ULTRA_RARE_PRIZES,
+  THRONE_OF_NAZDREG,
+  WORLD_FRAGMENTS,
 } = config;
 
 function processMercenaries(k, events) {
@@ -394,16 +397,22 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
   const events = [];
   const updates = {};
 
-  // Attrition — skilled explorer races lose fewer rangers
-  const attritionPct = type === "dungeon" ? rand(0, 3) : rand(0, 2);
-  const lost = Math.floor(((rangers * attritionPct) / 100) * attritionMult);
-  const returned = rangers - lost;
-  if (lost > 0)
-    rewards.push({
-      text: `${lost} ranger${lost > 1 ? "s" : ""} did not return from the expedition`,
-    });
-  // Rangers returned stored separately so resolveExpeditions can use SQL increment
-  updates._rangers_returned = returned;
+  // Attrition — skilled explorer races lose fewer rangers. Mountain runs its
+  // own full multi-turn attrition simulation further down and overwrites
+  // _rangers_returned unconditionally, so this generic calc is skipped for
+  // it entirely rather than pushing a reward line whose number never
+  // actually applies.
+  if (type !== "mountain") {
+    const attritionPct = type === "dungeon" ? rand(0, 3) : rand(0, 2);
+    const lost = Math.floor(((rangers * attritionPct) / 100) * attritionMult);
+    const returned = rangers - lost;
+    if (lost > 0)
+      rewards.push({
+        text: `${lost} ranger${lost > 1 ? "s" : ""} did not return from the expedition`,
+      });
+    // Rangers returned stored separately so resolveExpeditions can use SQL increment
+    updates._rangers_returned = returned;
+  }
 
   const expTurns = EXPEDITION_TURNS[type] || 10;
 
@@ -957,6 +966,115 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
   };
 }
 
+/**
+ * Resolve a dungeon/mountain expedition that completes instantly (Phase 4:
+ * paid for with turns_stored rather than a real-time turns_left countdown).
+ * Wraps expeditionRewards() with the same post-processing
+ * game/engine.js's resolveExpeditions() applies for the async expedition
+ * types (throne-of-Nazdreg atomic claim, world-fragment discovery, troop/
+ * kingdom exploration XP) so dungeon/mountain get the same reward pipeline
+ * instead of the bare "location discovered" message Phase 4 originally
+ * shipped with.
+ *
+ * @param {object} db - Database connection (used for the throne atomic claim)
+ * @param {object} k - Kingdom row, already reflecting the rangers/fighters/
+ *   food/turns_stored deducted for this expedition
+ * @param {'dungeon'|'mountain'} type
+ * @param {number} rangers - Rangers sent
+ * @param {number} fighters - Fighters sent (dungeon only; 0 for mountain)
+ * @returns {Promise<{rewards: object[], events: object[], updates: object,
+ *   rangersReturned: number, fightersReturned: number}>} `updates` excludes
+ *   rangers/fighters — those come back as rangersReturned/fightersReturned
+ *   for the caller to add back via a SQL increment (they were already fully
+ *   deducted at launch, matching how the async flow partially refunds
+ *   survivors on completion).
+ */
+async function resolveInstantExpedition(db, k, type, rangers, fighters) {
+  const { rewards, updates, events } = expeditionRewards(type, rangers, fighters, k, db, null);
+
+  // Throne of Nazdreg (dungeon only, 0.1% chance) — atomic claim: a single
+  // conditional insert decides the winner across concurrent completions.
+  if (updates._check_throne) {
+    delete updates._check_throne;
+    const claim = await db.run(
+      "INSERT INTO server_state (key, value) VALUES ('throne_found', '1') ON CONFLICT (key) DO NOTHING",
+    );
+    if (claim && claim.changes === 1) {
+      THRONE_OF_NAZDREG.effect(k, updates);
+      rewards.unshift({ text: THRONE_OF_NAZDREG.text });
+      events.push({
+        type: "system",
+        message: `${k.name} has found the Throne of Nazdreg Grishnak. May his memory endure forever.`,
+      });
+    }
+  }
+
+  // World Fragment (dungeon only, 10% chance)
+  if (updates._find_world_fragment) {
+    delete updates._find_world_fragment;
+    let frags = [];
+    try {
+      frags = safeJsonParse(k.world_fragments, [], "auto:world_fragments");
+    } catch {}
+    const frag = WORLD_FRAGMENTS[Math.floor(Math.random() * WORLD_FRAGMENTS.length)];
+    frags.push(frag);
+    updates.world_fragments = JSON.stringify(frags);
+    rewards.push({ text: `Your rangers recovered a World Fragment: ${frag}` });
+    events.push({
+      type: "system",
+      message: `A World Fragment (${frag}) was discovered during the expedition.`,
+    });
+  }
+
+  // Troop XP + kingdom exploration XP — matches engine.js resolveExpeditions'
+  // award amounts for these two types exactly.
+  const expXpAmount = { dungeon: 40, mountain: 100 }[type] || 0;
+  if (expXpAmount > 0) {
+    const rXp = awardTroopXp(k, "rangers", expXpAmount * rangers);
+    updates.troop_levels = rXp.troop_levels;
+    if (type === "dungeon" && fighters > 0) {
+      const fXp = awardTroopXp({ ...k, troop_levels: updates.troop_levels }, "fighters", 40 * fighters);
+      updates.troop_levels = fXp.troop_levels;
+    }
+  }
+  const kingdomXpBase = { dungeon: 8, mountain: 20 }[type] || 0;
+  if (kingdomXpBase > 0) {
+    const kingdomXp = awardXp(k, "exploration", kingdomXpBase * (rangers + (fighters || 0)));
+    updates.xp = kingdomXp.xp;
+    updates.level = kingdomXp.level;
+    updates.xp_sources = JSON.stringify(kingdomXp.xp_sources);
+    if (kingdomXp.events.length > 0) events.push(...kingdomXp.events);
+  }
+
+  // expeditionRewards()'s mountain branch also sets an absolute `updates.rangers`
+  // (= k.rangers - totalLost) alongside _rangers_returned. Applying both would
+  // subtract the lost rangers twice for any kingdom with more total rangers
+  // than it sent (k.rangers here already excludes the sent troops, deducted at
+  // launch) — the async engine.js path this was written for currently can
+  // never receive a dungeon/mountain row (Phase 4 always intercepts them
+  // first), so this has no live effect there today, but reconnecting it here
+  // would make the bug real again. Drop the absolute value; the increment
+  // below is the correct one.
+  delete updates.rangers;
+  delete updates.fighters;
+  const rangersReturned = updates._rangers_returned !== undefined ? updates._rangers_returned : 0;
+  const fightersReturned = updates._fighters_returned !== undefined ? updates._fighters_returned : 0;
+  delete updates._rangers_returned;
+  delete updates._fighters_returned;
+
+  return {
+    rewards: rewards.map((reward) =>
+      reward && typeof reward === "object" && typeof reward.text === "string"
+        ? { ...reward, text: repairMojibake(reward.text) }
+        : reward,
+    ),
+    events: events.map(cleanNewsEvent),
+    updates,
+    rangersReturned,
+    fightersReturned,
+  };
+}
+
 function processActiveEffects(k, events) {
   let effects = {};
   try {
@@ -1063,5 +1181,6 @@ module.exports = {
   hireUnits,
   junkPrize,
   expeditionRewards,
+  resolveInstantExpedition,
   processActiveEffects,
 };

@@ -23,7 +23,7 @@ const { migrateVisibility, DEFAULT_VISIBILITY } = require('./visibility-migratio
 const { encodeCellSet, cellIndex } = require('./visibility-cells');
 const { pixelToHex } = require('./hex-utils');
 const { getKingdomMapCoords } = require('./world-map-coords');
-const { getLocationByRegionAndType, markLocationDiscovered, isPubliclyDiscovered } = require('./world-locations');
+const { getAllLocations, markLocationDiscovered, isPubliclyDiscovered } = require('./world-locations');
 const config = require('./config');
 
 /**
@@ -244,26 +244,27 @@ async function revealRingHexes(db, kingdomId, kingdom, ring) {
       return null;
     }
 
-    // Dungeon/Mountain discovery: exploring the specific hex a region's
+    // Dungeon/Mountain discovery: exploring the specific hex any region's
     // seeded location sits on is what unlocks its expedition — not
     // launching the expedition itself (that would be circular, since the
     // launch button was previously gated on having already launched once).
     // Checked independently of the visibility update below so a failure
     // here can never block the actual fog-of-war reveal.
     //
+    // Every region's locations are checked, not just the scouting kingdom's
+    // own race — dungeons/mountains carry region-specific rewards, so a
+    // kingdom needs to be able to discover any of them, not only its own.
     // Locations aren't owned by whichever kingdom scouts them first — it's
-    // public domain knowledge for the whole region once anyone finds it, so
-    // discovering it unlocks the expedition for every kingdom of that race,
-    // not just the one that did the scouting.
-    if (db && kingdom.race) {
+    // public domain knowledge once anyone finds it, so discovering it
+    // unlocks the expedition for every kingdom of the location's own
+    // region/race, not just the one that did the scouting.
+    if (db) {
       try {
         const revealedKeys = new Set(ringHexes.map((hexKey) =>
           typeof hexKey === 'string' ? hexKey : `${hexKey.col},${hexKey.row}`
         ));
 
-        for (const locType of ['dungeon', 'mountain']) {
-          const location = getLocationByRegionAndType(kingdom.race, locType);
-          if (!location) continue;
+        for (const location of getAllLocations()) {
           if (isPubliclyDiscovered(location)) continue;
 
           const locHex = pixelToHex(location.x, location.y);
@@ -271,10 +272,10 @@ async function revealRingHexes(db, kingdomId, kingdom, ring) {
 
           await markLocationDiscovered(db, location.id, kingdomId);
 
-          const turnColumn = locType === 'dungeon' ? 'first_dungeon_found_turn' : 'first_mountain_found_turn';
+          const turnColumn = location.type === 'dungeon' ? 'first_dungeon_found_turn' : 'first_mountain_found_turn';
           await db.run(
             `UPDATE kingdoms SET ${turnColumn} = $1 WHERE race = $2 AND ${turnColumn} IS NULL`,
-            [kingdom.turn || 0, kingdom.race],
+            [kingdom.turn || 0, location.region_name],
           );
         }
       } catch (discErr) {

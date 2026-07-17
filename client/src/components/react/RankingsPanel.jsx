@@ -146,13 +146,13 @@ const RankingsPanel = () => {
       : 'text-text font-semibold';
     const meTag = isMe ? <span className="text-[10px] font-normal text-[var(--accent1)]"> (you)</span> : null;
     const aiTag = row.is_ai ? <span className="text-[10px] text-text3"> 🤖</span> : null;
-    const protTag = !isMe && (row.turn || 0) < 400
+    const protTag = !isMe && row.protected
       ? <span className="text-[10px] text-green" title="Newbie protection — cannot be attacked until Turn 400"> 🛡️</span>
       : null;
 
     const actionBtns = isMe
       ? <button className="btn btn-accent text-[11px] px-2 py-0.5" onClick={() => handleDirectMessage(row)}>✉️ Message</button>
-      : (row.turn || 0) < 400
+      : row.protected
         ? (
           <div className="flex gap-1 justify-center">
             <button className="btn text-[11px] px-2 py-0.5" title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>

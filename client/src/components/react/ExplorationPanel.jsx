@@ -11,6 +11,7 @@ import { useEconomyStore, useProfileStore, useMilitaryStore, useResearchStore, u
 import EmptyState from './EmptyState.jsx';
 import HexSelectionModal from './HexSelectionModal.jsx';
 import { AllocationButtons } from './AllocationButtons.jsx';
+import { REGION_META } from '../../utils/raceData.js';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 const EXPEDITION_TURNS = {
@@ -89,8 +90,6 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const turns_stored = useProfileStore((state) => state.turns_stored);
   const scout_allocation = useProfileStore((state) => state.scout_allocation);
   const scout_progress = useProfileStore((state) => state.scout_progress);
-  const first_dungeon_found_turn = useProfileStore((state) => state.first_dungeon_found_turn);
-  const first_mountain_found_turn = useProfileStore((state) => state.first_mountain_found_turn);
   const fog_of_war_disabled = useProfileStore((state) => state.fog_of_war_disabled);
   const population = usePopulationStore((state) => state.population);
   useGameMutationEvents();
@@ -108,6 +107,9 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const [dungeonRangers, setDungeonRangers] = useState(0);
   const [dungeonFighters, setDungeonFighters] = useState(0);
   const [mountainRangers, setMountainRangers] = useState(0);
+  const [worldLocations, setWorldLocations] = useState([]);
+  const [dungeonLocationId, setDungeonLocationId] = useState('');
+  const [mountainLocationId, setMountainLocationId] = useState('');
   // Fog of War Phase 3: area hex scout (separate from old expedition scout types)
   const [activeExpeditions, setActiveExpeditions] = useState([]);
   const [completedExpeditions, setCompletedExpeditions] = useState([]);
@@ -152,6 +154,15 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     }
   }, []);
 
+  const refreshWorldLocations = useCallback(async () => {
+    try {
+      const data = await apiCall('/api/kingdom/world-locations');
+      setWorldLocations(Array.isArray(data?.locations) ? data.locations : []);
+    } catch (err) {
+      console.error('Failed to load world locations:', err);
+    }
+  }, []);
+
   const refreshProfile = useCallback(async () => {
     try {
       const data = await apiCall('/api/kingdom/me');
@@ -164,8 +175,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   }, []);
 
   const refreshAll = useCallback(async () => {
-    await Promise.all([refreshInventory(), refreshExpeditions(), refreshProfile()]);
-  }, [refreshExpeditions, refreshInventory, refreshProfile]);
+    await Promise.all([refreshInventory(), refreshExpeditions(), refreshProfile(), refreshWorldLocations()]);
+  }, [refreshExpeditions, refreshInventory, refreshProfile, refreshWorldLocations]);
 
   useEffect(() => {
     void refreshAll();
@@ -221,6 +232,21 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const expeditionTurns = useMemo(() => EXPEDITION_TURNS, []);
   const mountainFoodCost = Math.ceil(mountainRangers * 0.5 * 100 * 0.75);
 
+  const dungeonOptions = useMemo(() => worldLocations.filter((l) => l.type === 'dungeon'), [worldLocations]);
+  const mountainOptions = useMemo(() => worldLocations.filter((l) => l.type === 'mountain'), [worldLocations]);
+
+  // Default-select the nearest discovered location of each type once options load.
+  useEffect(() => {
+    if (!dungeonLocationId && dungeonOptions.length > 0) {
+      setDungeonLocationId(String([...dungeonOptions].sort((a, b) => a.distance - b.distance)[0].id));
+    }
+  }, [dungeonOptions, dungeonLocationId]);
+  useEffect(() => {
+    if (!mountainLocationId && mountainOptions.length > 0) {
+      setMountainLocationId(String([...mountainOptions].sort((a, b) => a.distance - b.distance)[0].id));
+    }
+  }, [mountainOptions, mountainLocationId]);
+
   const applyResult = useCallback((result, reason) => {
     if (result?.updates) {
       normalizeAndRouteResponse(result, { reason });
@@ -253,7 +279,12 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
         : mountainRangers,
     ) || 0;
     const fighters = type === 'dungeon' ? Number(dungeonFighters || 0) : 0;
+    const locationId = type === 'dungeon' ? dungeonLocationId : mountainLocationId;
 
+    if (!locationId) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Select a region to target first', 'error');
+      return;
+    }
     if (rangers < 1) {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Send at least 1 ranger', 'error');
       return;
@@ -281,7 +312,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     try {
       const result = await apiCall('/api/kingdom/expedition/start', {
         method: 'POST',
-        body: { type, rangers, fighters },
+        body: { type, rangers, fighters, locationId },
       });
 
       if (result.error) {
@@ -291,17 +322,26 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
 
       applyResult(result, 'expedition-start');
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || `${TYPE_META[type].label} launched!`, 'success');
+      // Dungeon/mountain resolve instantly, so unlike scout/deep/hunting the
+      // reward breakdown (gold, mana, artifacts, air fragment, attrition...)
+      // is already in this response — show it instead of the generic
+      // "sent N rangers" line, or the player never sees what they actually got.
+      const rewardTexts = Array.isArray(result.rewards)
+        ? result.rewards.map((r) => repairText(r?.text || '')).filter(Boolean)
+        : [];
       logInstantEntry(
         TYPE_META[type].icon,
         repairText(result.message || `${TYPE_META[type].label} launched!`),
-        `Sent ${formatNum(rangers)} rangers${fighters > 0 ? ` | ${formatNum(fighters)} fighters` : ''} | ${formatNum(foodNeeded)} food`,
+        rewardTexts.length > 0
+          ? rewardTexts.join(' • ')
+          : `Sent ${formatNum(rangers)} rangers${fighters > 0 ? ` | ${formatNum(fighters)} fighters` : ''} | ${formatNum(foodNeeded)} food`,
       );
       await refreshAll();
     } catch (err) {
       console.error('[expedition/start] failed:', err);
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Expedition failed — please try again', 'error');
     }
-  }, [applyResult, availableFighters, availableFood, availableRangers, dungeonFighters, dungeonRangers, expeditionTurns, logInstantEntry, mountainRangers, refreshAll]);
+  }, [applyResult, availableFighters, availableFood, availableRangers, dungeonFighters, dungeonLocationId, dungeonRangers, expeditionTurns, logInstantEntry, mountainLocationId, mountainRangers, refreshAll]);
 
   const clearExpeditionLog = useCallback(async () => {
     try {
@@ -1030,9 +1070,15 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               </div>
             )}
 
-            {/* Dungeon/Mountain expeditions - visible once discovered, or unconditionally when fog of war is disabled (test/debug mode). */}
-            {fog_of_war_disabled || (first_dungeon_found_turn !== null && first_dungeon_found_turn !== undefined) || (first_mountain_found_turn !== null && first_mountain_found_turn !== undefined) ? (
+            {/* Dungeon/Mountain expeditions - each card visible once at least one
+                region's location of that type has been discovered, or
+                unconditionally when fog of war is disabled (test/debug mode).
+                Every region has its own dungeon/mountain with its own reward,
+                so a discovered-locations picker lets the player target any of
+                them, not just their own region's. */}
+            {(fog_of_war_disabled || dungeonOptions.length > 0 || mountainOptions.length > 0) ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
+              {(fog_of_war_disabled || dungeonOptions.length > 0) && (
               <div className="card border-l-[3px] border-l-[var(--red)]">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div className="card-title !mb-0">⚔️ Dungeon Raid</div>
@@ -1043,6 +1089,21 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                 <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
                   Fighters and rangers assault an ancient dungeon. High risk - failure costs fighters.
                   Success yields legendary artifacts, war machines, permanent research boosts, and massive gold hoards.
+                </div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="name text-[12px]">Target region</span>
+                  <select
+                    className="input flex-1"
+                    value={dungeonLocationId}
+                    onChange={(e) => setDungeonLocationId(e.target.value)}
+                  >
+                    {dungeonOptions.length === 0 && <option value="">No dungeons discovered yet</option>}
+                    {[...dungeonOptions].sort((a, b) => a.distance - b.distance).map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {REGION_META[loc.region]?.name || loc.region} — {loc.distance} hexes ({loc.turnCost} turns)
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <span className="name text-[12px]">Rangers</span>
@@ -1082,17 +1143,39 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                     </button>
                   </div>
                 </div>
-                <button className="base-btn variant-red w-full bg-[var(--red)]" id="btn-exp-dungeon" onClick={() => handleLaunchExpedition('dungeon')}>
+                <button
+                  className="base-btn variant-red w-full bg-[var(--red)]"
+                  id="btn-exp-dungeon"
+                  disabled={!dungeonLocationId}
+                  onClick={() => handleLaunchExpedition('dungeon')}
+                >
                   {TYPE_META.dungeon.button}
                 </button>
               </div>
+              )}
 
+              {(fog_of_war_disabled || mountainOptions.length > 0) && (
               <div className="card border-l-[3px] border-l-[#6b9bd1]">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div className="card-title !mb-0">🏔️ Mountain's Heart</div>
                   <span className="rounded-full bg-[rgba(107,155,209,0.15)] px-2 py-1 text-[11px] font-semibold text-[#6b9bd1]">
                     100 turns
                   </span>
+                </div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="name text-[12px]">Target region</span>
+                  <select
+                    className="input flex-1"
+                    value={mountainLocationId}
+                    onChange={(e) => setMountainLocationId(e.target.value)}
+                  >
+                    {mountainOptions.length === 0 && <option value="">No mountains discovered yet</option>}
+                    {[...mountainOptions].sort((a, b) => a.distance - b.distance).map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {REGION_META[loc.region]?.name || loc.region} — {loc.distance} hexes ({loc.turnCost} turns)
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="mb-2 text-[12px] leading-6 text-[var(--text3)]">
                   Rangers navigate treacherous mountain peaks facing avalanches and extreme attrition.
@@ -1126,10 +1209,16 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                     🍖 <strong>Food required:</strong> {formatNum(mountainFoodCost)} (100 turns at {Math.round(mountainRangers * 0.5)}/turn)
                   </div>
                 )}
-                <button className="base-btn variant-blue w-full bg-[#6b9bd1]" id="btn-exp-mountain" onClick={() => handleLaunchExpedition('mountain')}>
+                <button
+                  className="base-btn variant-blue w-full bg-[#6b9bd1]"
+                  id="btn-exp-mountain"
+                  disabled={!mountainLocationId}
+                  onClick={() => handleLaunchExpedition('mountain')}
+                >
                   {TYPE_META.mountain.button}
                 </button>
               </div>
+              )}
             </div>
             ) : null}
 

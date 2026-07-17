@@ -471,7 +471,7 @@ function RankingsTable() {
         <table className="portal-rankings-table">
           <thead>
             <tr>
-              <th>#</th><th>Kingdom</th><th>Race</th><th>Land</th><th>Lvl</th>
+              <th>#</th><th>Kingdom</th><th>Race</th><th>Population</th>
             </tr>
           </thead>
           <tbody>
@@ -487,8 +487,7 @@ function RankingsTable() {
                 <td className="race-cell">
                   {r.race ? r.race.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Unknown'}
                 </td>
-                <td>{r.land?.toLocaleString()}</td>
-                <td>{r.level}</td>
+                <td>{r.population?.toLocaleString()}</td>
               </tr>
             ))}
           </tbody>

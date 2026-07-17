@@ -159,6 +159,33 @@ function getLocationByRegionAndType(regionName, type) {
 }
 
 /**
+ * Get every seeded location across every region (18 total: one dungeon +
+ * one mountain per region). Used for cross-region discovery checks and the
+ * world-map/exploration picker — locations are public domain for the whole
+ * game once discovered, not scoped to a single race.
+ * @returns {object[]} Flat array of location rows from the cache.
+ */
+function getAllLocations() {
+  const all = [];
+  for (const region of Object.values(locationCache)) {
+    for (const loc of Object.values(region)) {
+      all.push(loc);
+    }
+  }
+  return all;
+}
+
+/**
+ * Look up a single location by its DB id, regardless of region.
+ * @param {number} id - Location id
+ * @returns {object|null} Location object or null
+ */
+function getLocationById(id) {
+  const numericId = Number(id);
+  return getAllLocations().find((loc) => loc.id === numericId) || null;
+}
+
+/**
  * Mark a location as discovered by a kingdom.
  * Atomically adds kingdom_id to discovered_by_kingdom_ids array.
  * @param {object} db - Database connection
@@ -207,6 +234,8 @@ module.exports = {
   seedRegionLocations,
   getRegionLocations,
   getLocationByRegionAndType,
+  getAllLocations,
+  getLocationById,
   markLocationDiscovered,
   hasDiscovered,
   isPubliclyDiscovered,

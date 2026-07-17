@@ -62,8 +62,12 @@ module.exports = (db, engine, config, rankingsCache, pkg) => {
         ORDER BY k.land DESC, k.level DESC, k.population DESC, k.id ASC
         LIMIT 20
       `);
-      rankingsCache.set(cacheKey, rows, 30 * 1000); // 30 sec TTL
-      res.json({ rankings: rows });
+      // land/level are used for sort order only — not sent to the (unauthenticated)
+      // client, per the same "no stats without a covert op" rule as the in-game
+      // rankings/profile/world-map endpoints.
+      const stripped = rows.map(({ land: _land, level: _level, ...rest }) => rest);
+      rankingsCache.set(cacheKey, stripped, 30 * 1000); // 30 sec TTL
+      res.json({ rankings: stripped });
     } catch (e) {
       console.error('[rankings] Database error:', e);
       res.status(500).json({ error: 'Failed to load rankings' });

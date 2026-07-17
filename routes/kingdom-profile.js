@@ -160,17 +160,17 @@ module.exports = function (db) {
         id: r.id,
         name: r.name,
         race: r.race,
-        land: r.land,
-        turn: r.turn,
         population: r.population,
         fighters: r.fighters,
         mages: r.mages,
-        level: r.level,
         player_id: r.player_id,
         username: r.username,
         score: r.score,
         rank: i + 1,
         last_combat_at: r.last_combat_at,
+        // turn itself is hidden (see rule below); only the derived newbie-protection
+        // boolean is exposed, since the client needs it to gate attack/bounty actions.
+        protected: (r.turn || 0) < 400,
       }));
 
     res.json({ rankings });

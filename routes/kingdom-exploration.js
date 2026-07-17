@@ -8,8 +8,9 @@ const { calculateHuntingReward } = require('../game/hunting-economy');
 const { calculateProspectingReward } = require('../game/prospecting-economy');
 const { calculateLandExpansionReward } = require('../game/land-expansion');
 const { validateAllocation, getAllocationStatus } = require('../game/scout-allocation');
-const { getLocationByRegionAndType, markLocationDiscovered } = require('../game/world-locations');
+const { getAllLocations, getLocationById, isPubliclyDiscovered, markLocationDiscovered } = require('../game/world-locations');
 const { getDistanceToLocation, getLocationTurnCost } = require('../game/location-distance');
+const { resolveInstantExpedition } = require('../game/lib/gameplay');
 const { structureUpdates } = require('./response-structurer');
 
 const MOJIBAKE_SIGNATURE = /[ÃÂâïðÅ�]/;
@@ -43,8 +44,40 @@ module.exports = function (db) {
   const router = express.Router();
   const EXP_TURNS = config.EXPEDITION_TURNS;
 
+  // Discovered dungeon/mountain locations across every region, with
+  // distance/turn-cost computed from the caller's own kingdom — powers the
+  // Exploration panel's region picker. Undiscovered locations are omitted;
+  // they're public domain only once someone's scouted them into view.
+  router.get('/world-locations', requireAuth, async (req, res) => {
+    try {
+      const k = await db.get('SELECT id, race, turn FROM kingdoms WHERE player_id = $1', [
+        req.player.playerId,
+      ]);
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+
+      const fogDisabled = process.env.DISABLE_FOG_OF_WAR === 'true';
+      const locations = getAllLocations()
+        .filter((loc) => fogDisabled || isPubliclyDiscovered(loc))
+        .map((loc) => {
+          const distance = getDistanceToLocation(k, loc);
+          return {
+            id: loc.id,
+            type: loc.type,
+            region: loc.region_name,
+            distance: Math.round(distance * 10) / 10,
+            turnCost: getLocationTurnCost(loc.type, distance),
+          };
+        });
+
+      res.json({ locations });
+    } catch (err) {
+      console.error('[world-locations]', err.message);
+      res.status(500).json({ error: 'Failed to load world locations' });
+    }
+  });
+
   router.post('/expedition/start', requireAuth, requireCsrfToken, async (req, res) => {
-    const { type, rangers, fighters } = req.body;
+    const { type, rangers, fighters, locationId } = req.body;
     if (!EXP_TURNS[type])
       return res.status(400).json({ error: 'Invalid expedition type' });
 
@@ -78,9 +111,19 @@ module.exports = function (db) {
             throw error;
           }
 
-          // Get the location for this kingdom's region
-          const location = getLocationByRegionAndType(k.race, type);
-          if (!location) throw new Error(`No ${type} found in your region`);
+          // Region-specific rewards mean a kingdom can target any region's
+          // location, not just its own — the client's picker sends which one.
+          const location = getLocationById(locationId);
+          if (!location || location.type !== type) {
+            const error = new Error('Location not found');
+            error.statusCode = 400;
+            throw error;
+          }
+          if (process.env.DISABLE_FOG_OF_WAR !== 'true' && !isPubliclyDiscovered(location)) {
+            const error = new Error('You have not discovered this location yet');
+            error.statusCode = 400;
+            throw error;
+          }
 
           // Calculate distance and turn cost
           const distance = getDistanceToLocation(k, location);
@@ -92,39 +135,86 @@ module.exports = function (db) {
             throw error;
           }
 
-          const newTurnsStored = Math.max(0, k.turns_stored - turnCost);
+          // Food cost mirrors the async scout/deep/hunting/prospecting formula
+          // below — a fixed EXP_TURNS[type] duration, not the distance-based
+          // turnCost (that's what turns_stored pays for; food pays for
+          // supplying the troops for the raid itself).
+          const foodMult = commandHandler.foodConsumptionMult(k.race);
+          const foodPerTurn = (r * 0.5 + f * 1.0) * foodMult;
+          const foodNeeded = Math.ceil((EXP_TURNS[type] || 0) * foodPerTurn * 0.75);
+          if (k.food < foodNeeded) {
+            const error = new Error(`${type.charAt(0).toUpperCase() + type.slice(1)} expedition requires ${foodNeeded.toLocaleString()} food (you have ${k.food.toLocaleString()}).`);
+            error.statusCode = 400;
+            throw error;
+          }
 
-          // Deduct turns and mark location discovered
+          const newTurnsStored = Math.max(0, k.turns_stored - turnCost);
+          const newRangers = Math.max(0, k.rangers - r);
+          const newFighters = Math.max(0, k.fighters - f);
+          const newFood = Math.max(0, k.food - foodNeeded);
+
+          // Deduct turns/rangers/fighters/food, mark location discovered
           await db.run(
-            'UPDATE kingdoms SET turns_stored = $1 WHERE id = $2',
-            [newTurnsStored, k.id]
+            'UPDATE kingdoms SET turns_stored = $1, rangers = $2, fighters = $3, food = $4 WHERE id = $5',
+            [newTurnsStored, newRangers, newFighters, newFood, k.id]
           );
 
           await markLocationDiscovered(db, location.id, k.id);
 
           // Track first discovery region-wide (use IS NULL to properly handle turn
-          // 0, and to leave any kingdom that already has it set alone). Locations
-          // aren't owned by whichever kingdom finds them first -- it's public
-          // domain knowledge for the whole region once anyone's discovered it.
+          // 0, and to leave any kingdom that already has it set alone). Keyed to
+          // the location's own region, not the exploring kingdom's race, since
+          // a kingdom can now explore a location outside its own region.
           if (type === 'dungeon') {
-            await db.run('UPDATE kingdoms SET first_dungeon_found_turn = $1 WHERE race = $2 AND first_dungeon_found_turn IS NULL', [k.turn || 0, k.race]);
+            await db.run('UPDATE kingdoms SET first_dungeon_found_turn = $1 WHERE race = $2 AND first_dungeon_found_turn IS NULL', [k.turn || 0, location.region_name]);
           } else if (type === 'mountain') {
-            await db.run('UPDATE kingdoms SET first_mountain_found_turn = $1 WHERE race = $2 AND first_mountain_found_turn IS NULL', [k.turn || 0, k.race]);
+            await db.run('UPDATE kingdoms SET first_mountain_found_turn = $1 WHERE race = $2 AND first_mountain_found_turn IS NULL', [k.turn || 0, location.region_name]);
           }
 
-          return { turnCost, distance, newTurnsStored };
+          // Resolve the actual raid/journey outcome (attrition, gold, mana,
+          // artifacts, air fragment, ultra rares, etc.) -- restores the reward
+          // pipeline that scout/deep/hunting/prospecting already get via
+          // expeditionRewards(), which Phase 4's location-discovery refactor
+          // never wired up for dungeon/mountain.
+          const kAfterDeductions = {
+            ...k,
+            turns_stored: newTurnsStored,
+            rangers: newRangers,
+            fighters: newFighters,
+            food: newFood,
+          };
+          const resolved = await resolveInstantExpedition(db, kAfterDeductions, type, r, f);
+
+          if (Object.keys(resolved.updates).length > 0) {
+            await applyKingdomUpdates(k.id, resolved.updates, db);
+          }
+          if (resolved.rangersReturned > 0) {
+            await db.run('UPDATE kingdoms SET rangers = rangers + $1 WHERE id = $2', [resolved.rangersReturned, k.id]);
+          }
+          if (resolved.fightersReturned > 0) {
+            await db.run('UPDATE kingdoms SET fighters = fighters + $1 WHERE id = $2', [resolved.fightersReturned, k.id]);
+          }
+
+          const goalUpdates = {};
+          progressGoal(k, goalUpdates, 'expedition_started', 1);
+          if (goalUpdates.goals) {
+            await db.run('UPDATE kingdoms SET goals = $1 WHERE id = $2', [goalUpdates.goals, k.id]);
+          }
+
+          return { turnCost, distance, newTurnsStored, ...resolved };
         });
 
         const label = type === 'dungeon' ? 'Dungeon' : 'Mountain';
-        const message = `${label} expedition launched -- Location found at distance ${result.distance.toFixed(1)} hexes. ${result.turnCost} turns spent exploring.`;
+        const message = `${label} expedition complete -- Location found at distance ${result.distance.toFixed(1)} hexes. ${result.turnCost} turns spent exploring.`;
 
         res.json({
           ok: true,
           turns_left: 0,
           turns_stored: result.newTurnsStored,
           distance: result.distance.toFixed(1),
-          updates: { turns_stored: result.newTurnsStored },
-          events: [],
+          updates: { turns_stored: result.newTurnsStored, ...result.updates },
+          rewards: result.rewards,
+          events: result.events,
           message: repairMojibake(message),
         });
         return;

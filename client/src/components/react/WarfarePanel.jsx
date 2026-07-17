@@ -139,12 +139,12 @@ function KingdomTargetCard({ target, isSelected, onSelect }) {
         <div className="text-[10px] text-[var(--text3)]">
           {target.is_location
             ? 'Discovered Site'
-            : `Lv ${target.level} - ${(target.race || '').replace(/_/g, ' ')}`}
+            : `${(target.race || '').replace(/_/g, ' ')}`}
         </div>
       </div>
       <div className="text-right">
         <div className="text-[12px] text-[var(--gold)] font-semibold">
-          {target.is_location ? '???' : fmt(target.land)} ac
+          {target.is_location || target.land == null ? '???' : fmt(target.land)} ac
         </div>
         <div className="text-[10px] text-[var(--text3)]">#{target.rank || '?'}</div>
       </div>
@@ -169,7 +169,7 @@ function TargetListSection({ targets, selected, onSelect, searchQ, onSearchChang
           <span className="text-[var(--text3)] mr-1.5">Target:</span>
           <span className="font-bold text-[var(--text)]">{selected.name}</span>
           <span className="text-[var(--text3)] ml-2 text-[11px]">
-            {selected.is_location ? 'Site' : `${fmt(selected.land)} ac - #${selected.rank || '?'}`}
+            {selected.is_location ? 'Site' : `${selected.land == null ? '???' : fmt(selected.land)} ac - #${selected.rank || '?'}`}
           </span>
           <button
             className="base-btn float-right text-[10px] px-1.5 py-0.5"
@@ -308,11 +308,14 @@ const WarfarePanel = () => {
           name: row.name || 'Unknown',
           race: row.race || 'human',
           rank: row.rank || '?',
-          land: row.land || 0,
+          // land/level are hidden server-side until revealed by a covert op —
+          // left undefined here rather than defaulted, so the UI can tell
+          // "unknown" apart from a real 0/1.
+          land: row.land,
           population: row.population || 0,
           fighters: row.fighters || 0,
           mages: row.mages || 0,
-          level: row.level || 1,
+          level: row.level,
           is_ai: row.is_ai || 0,
         }));
 
@@ -482,7 +485,7 @@ const WarfarePanel = () => {
     const target = attackTarget;
     let bullyRatio = target
       ? Math.max(
-          (myLand || 1) / Math.max(1, target.land || 1),
+          target.land != null ? (myLand || 1) / Math.max(1, target.land) : 0,
           (fighters / Math.max(1, target.fighters || 1)) * 0.5,
         )
       : 0;
@@ -503,7 +506,7 @@ const WarfarePanel = () => {
       ? Math.min(95, Math.max(5, Math.round((atkPower / (atkPower + defPower)) * 100)))
       : 90;
     const winColorClass = winPct >= 60 ? 'text-[var(--green)]' : winPct >= 40 ? 'text-[var(--amber)]' : 'text-[var(--red)]';
-    const land = target ? Math.floor((target.land || 0) * 0.1) : 0;
+    const land = target && target.land != null ? Math.floor(target.land * 0.1) : null;
     return { atkPower, defPower, winPct, winColorClass, land, bullyMsg };
   }, [atkQty, troopLevels, race, engineers, weaponsStockpile, resWeapons, resMilitary, resAttackMagic, resWarMachines, happiness, fighters, myLand, attackTarget]);
 
@@ -969,7 +972,9 @@ const WarfarePanel = () => {
                 </div>
                 <div className="flex justify-between mb-1">
                   <span className="text-[var(--text3)]">Est. Land Gain</span>
-                  <span className="text-[var(--green)]">{atkEstimate.land > 0 ? `+${fmt(atkEstimate.land)} ac` : '—'}</span>
+                  <span className="text-[var(--green)]">
+                    {atkEstimate.land == null ? 'Unknown (scout required)' : atkEstimate.land > 0 ? `+${fmt(atkEstimate.land)} ac` : '—'}
+                  </span>
                 </div>
                 {atkEstimate.bullyMsg && (
                   <div className="mt-1 text-[var(--red)] text-[12px]">{atkEstimate.bullyMsg}</div>

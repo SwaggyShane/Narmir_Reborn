@@ -22,7 +22,7 @@ const { decorateNewsMessage } = require("../game/news-emoji");
 const { EPOCH_NOW } = require("../lib/db-sql");
 const { pgInList, pgValueTuples } = require("../lib/pg-placeholders");
 const { getKingdomMapCoords } = require("../game/world-map-coords");
-const { getRegionLocations, isPubliclyDiscovered } = require("../game/world-locations");
+const { getAllLocations, isPubliclyDiscovered } = require("../game/world-locations");
 const { getTerrainForRace } = require("../game/terrain");
 const { getWorldSeed } = require("../game/world-seed");
 const { getKingdomVisibility, updateKingdomVisibility } = require('../game/visibility');
@@ -1628,8 +1628,17 @@ module.exports = function (db) {
         "SELECT COUNT(*)+1 as rank FROM kingdoms WHERE land > $1 AND id != $2",
         [k.land, k.id],
       );
+
+      // land/level/turn are only shown for the caller's own kingdom — for
+      // anyone else they're hidden unless revealed by a covert operation
+      // (not yet wired up; see covert-intel plan).
+      const isSelf = k.id === caller.id;
+      const { land, level, turn, ...publicFields } = k;
+      const stats = isSelf ? { land, level, turn } : {};
+
       res.json({
-        ...k,
+        ...publicFields,
+        ...stats,
         alliance: alliance?.name || null,
         news,
         rank: rankRow?.rank || 1,
@@ -1679,12 +1688,18 @@ module.exports = function (db) {
       });
 
       const kingdomsWithCoords = filtered.map((row) => {
+        // land/level/turn are only shown for the caller's own kingdom — for
+        // anyone else they're hidden unless revealed by a covert operation
+        // (not yet wired up; see covert-intel plan).
+        const isSelf = row.id === k.id;
+        const { land, level, turn, ...publicRow } = row;
+        const stats = isSelf ? { land, level, turn } : {};
         try {
           const coords = getKingdomMapCoords(row);
-          return { ...row, map_x: coords.map_x, map_y: coords.map_y, terrain: getTerrainForRace(row.race) };
+          return { ...publicRow, ...stats, map_x: coords.map_x, map_y: coords.map_y, terrain: getTerrainForRace(row.race) };
         } catch (err) {
           console.error(`[world-map] ERROR computing coords for K${row.id} ${row.name}:`, err.message);
-          return { ...row, map_x: 0, map_y: 0, terrain: getTerrainForRace(row.race) };
+          return { ...publicRow, ...stats, map_x: 0, map_y: 0, terrain: getTerrainForRace(row.race) };
         }
       });
 
@@ -1723,19 +1738,17 @@ module.exports = function (db) {
         return safeBitmapHasCell(seenCells, h.col, h.row);
       });
 
-      // Dungeon/mountain heart: only the player's own region's locations, and
-      // only once discovered — by ANY kingdom, not specifically this one.
-      // Locations aren't owned by whichever kingdom scouts them first; once
-      // revealed they're public domain for the whole region. Also bypassed
-      // entirely when fog of war is disabled (DISABLE_FOG_OF_WAR=true), which
-      // now genuinely bypasses seenCells/discovered_kingdoms gating
-      // everywhere else in this response too (kingdoms/nodes/expeditions
-      // above, via fogDisabledForMap).
+      // Dungeon/mountain hearts: every region's locations are included, not
+      // just the player's own — each carries a region-specific reward, so a
+      // kingdom needs to be able to see and target any of them, once
+      // discovered by ANY kingdom (not specifically this one). Locations
+      // aren't owned by whichever kingdom scouts them first; once revealed
+      // they're public domain. Also bypassed entirely when fog of war is
+      // disabled (DISABLE_FOG_OF_WAR=true), which now genuinely bypasses
+      // seenCells/discovered_kingdoms gating everywhere else in this
+      // response too (kingdoms/nodes/expeditions above, via fogDisabledForMap).
       const fogDisabled = fogDisabledForMap;
-      const regionLocations = getRegionLocations(k.race);
-      const worldLocations = regionLocations
-        ? Object.values(regionLocations).filter((loc) => fogDisabled || isPubliclyDiscovered(loc))
-        : [];
+      const worldLocations = getAllLocations().filter((loc) => fogDisabled || isPubliclyDiscovered(loc));
 
       // Fog of War Phase 1.5: BigInt can't be JSON-serialized directly, so
       // the seed goes over the wire as a string; the client parses it back
@@ -1834,9 +1847,8 @@ module.exports = function (db) {
         });
 
         const fogDisabled = fogDisabledForMap;
-        const regionLocations = k ? getRegionLocations(k.race) : null;
-        const worldLocations = regionLocations
-          ? Object.values(regionLocations).filter((loc) => fogDisabled || isPubliclyDiscovered(loc))
+        const worldLocations = k
+          ? getAllLocations().filter((loc) => fogDisabled || isPubliclyDiscovered(loc))
           : [];
 
         // Fog of War Phase 1.5: BigInt can't be JSON-serialized directly, so
