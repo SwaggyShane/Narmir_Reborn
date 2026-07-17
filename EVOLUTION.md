@@ -1,11 +1,9 @@
 # Narmir Reborn - Prestige and Evolution
 
-**Document version:** v1.3 - 2026-07-17  
-**Status:** **Roadmap A complete on branch `feature/prestige-rebirth`** (worktree: `Narmir_Reborn_prestige`). Mults single-source; combat once; UI enabled with L500 + cooldown gates. **Not merged to production until you ship.**  
+**Document version:** v1.4 - 2026-07-17  
+**Status:** **Roadmap A complete** on `feature/prestige-rebirth`. **Roadmap B (dragon) in progress** — module, trek egg, schema, turn hook, stacking, HTTP start/abort/status; UI + full B checklist still open.  
 **Operator:** Sole implementer.  
 **Ship model:** All or nothing - one wipe contract, one bonus table, one dragon definition. No dual V1/V2 paths.
-
-**Roadmap B (dragon)** not started.
 
 ---
 
@@ -460,12 +458,18 @@ Safe prestige; no land/building snowball; contract 3.3; UI true; one path; TX-sa
 ### B checklist
 
 ```
-[ ] Egg without admin (trek primary)
-[ ] No egg => cannot start
-[ ] castles 0 mid-channel => fail next tick
-[ ] Success => evolution_form=dragon
-[ ] Prestige mult once; no second global combat % from dragon
-[ ] Fixed-army ratio recorded
+[x] Egg without admin (trek primary) — dragon_egg in epic-trek artifact rolls
+[x] No egg => cannot start (unit + API)
+[x] castles 0 mid-channel => fail next tick (processEvolutionTurn)
+[x] Success => evolution_form=dragon
+[x] Prestige mult once; no second global combat % from dragon (terror/defense/upkeep/hoard only)
+[x] Fixed-army ratio recorded (FIXED_ARMY_BUDGET + evolution.test.js)
+[x] Schema evolution_form / evolution_ritual
+[x] Turn hook processEvolutionTurn in processTurn
+[x] POST /evolution/start | abort | GET /evolution
+[ ] Client UI for start/abort/status
+[ ] Live DB / HTTP e2e for ritual start + turn complete
+[ ] B ship / merge
 ```
 
 ---

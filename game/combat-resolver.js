@@ -19,6 +19,10 @@ const combatCalc = require('./combat-new');
 const { getTerrainModifiers, getTerrainDisplayName } = require('./terrain');
 const { applyPrestigeCombatMultiplier } = require('./prestige/combat');
 const { getPrestigeModifiers } = require('./prestige/balance');
+const {
+  getDragonDefenseMult,
+  applyDragonTerror,
+} = require('./evolution');
 const { getFlag } = require('./feature-flags');
 const { calculateElevationBonus } = require('./world-elevation');
 
@@ -421,6 +425,18 @@ function calculateCombatPower(kingdom, opponent, combatType) {
   defenderPower = applyPrestigeCombatMultiplier(defenderPower, opponent.prestige_level || 0);
   diagnostics.attacker.prestigeMod = getPrestigeModifiers(kingdom.prestige_level || 0).combat || 1;
   diagnostics.defender.prestigeMod = getPrestigeModifiers(opponent.prestige_level || 0).combat || 1;
+
+  // Roadmap B dragon: NO second global combat %. Defense mult on defender; terror on attacker only.
+  const defDragonMult = getDragonDefenseMult(opponent);
+  if (defDragonMult !== 1) {
+    defenderPower = Math.round(defenderPower * defDragonMult);
+    diagnostics.defender.dragonDefenseMult = defDragonMult;
+  }
+  const atkBeforeTerror = attackerPower;
+  attackerPower = applyDragonTerror(attackerPower, kingdom, opponent);
+  if (attackerPower !== atkBeforeTerror) {
+    diagnostics.attacker.dragonTerror = attackerPower / Math.max(1, atkBeforeTerror);
+  }
 
   // Phase 3A: Apply elevation bonus if defender is on higher ground
   if (getFlag('FEATURE_ELEVATION_COMBAT') && kingdom.elevation_level !== undefined && opponent.elevation_level !== undefined) {

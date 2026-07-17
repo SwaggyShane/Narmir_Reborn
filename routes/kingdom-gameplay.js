@@ -1953,6 +1953,99 @@ module.exports = function (db) {
     }
   });
 
+  // Roadmap B: dragon evolution ritual (EVOLUTION.md) — egg consumed on start; TX + FOR UPDATE
+  router.post("/evolution/start", requireAuth, requireCsrfToken, async (req, res) => {
+    try {
+      const evolution = require('../game/evolution');
+      const payload = await db.withTransaction(async () => {
+        const k = await db.get(
+          'SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE',
+          [req.player.playerId],
+        );
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
+        const result = evolution.startDragonRitual(k);
+        if (result.error) {
+          const err = new Error(result.error);
+          err.statusCode = 400;
+          throw err;
+        }
+        await applyUpdates(db, k.id, result.updates);
+        return { ritual: result.ritual, updates: result.updates };
+      });
+      res.json({
+        ok: true,
+        ritual: payload.ritual,
+        updates: structureUpdates(payload.updates),
+      });
+    } catch (err) {
+      const code = err.statusCode || 500;
+      if (code >= 500) console.error('[evolution/start]', err);
+      res.status(code).json({ error: err.message || 'Evolution start failed' });
+    }
+  });
+
+  router.post("/evolution/abort", requireAuth, requireCsrfToken, async (req, res) => {
+    try {
+      const evolution = require('../game/evolution');
+      const payload = await db.withTransaction(async () => {
+        const k = await db.get(
+          'SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE',
+          [req.player.playerId],
+        );
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
+        const result = evolution.abortDragonRitual(k);
+        if (result.error) {
+          const err = new Error(result.error);
+          err.statusCode = 400;
+          throw err;
+        }
+        await applyUpdates(db, k.id, result.updates);
+        return { updates: result.updates };
+      });
+      res.json({ ok: true, updates: structureUpdates(payload.updates) });
+    } catch (err) {
+      const code = err.statusCode || 500;
+      if (code >= 500) console.error('[evolution/abort]', err);
+      res.status(code).json({ error: err.message || 'Evolution abort failed' });
+    }
+  });
+
+  router.get("/evolution", requireAuth, async (req, res) => {
+    try {
+      const evolution = require('../game/evolution');
+      const k = await db.get(
+        `SELECT prestige_level, bld_castles, evolution_form, evolution_ritual, items
+         FROM kingdoms WHERE player_id = $1`,
+        [req.player.playerId],
+      );
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+      const gate = evolution.canStartDragonRitual(k);
+      res.json({
+        form: k.evolution_form || '',
+        ritual: evolution.parseRitual(k.evolution_ritual),
+        hasEgg: evolution.hasDragonEgg(k),
+        isDragon: evolution.isDragon(k),
+        isChanneling: evolution.isChanneling(k),
+        canStart: gate.ok,
+        canStartError: gate.ok ? null : gate.error,
+        prestigeGate: evolution.EVOLUTION_PRESTIGE_GATE,
+        ritualTurns: evolution.RITUAL_TURNS,
+        modifiers: evolution.isDragon(k) ? evolution.DRAGON_FORM : null,
+      });
+    } catch (err) {
+      console.error('[evolution]', err);
+      res.status(500).json({ error: err.message || 'Evolution status failed' });
+    }
+  });
+
   router.get("/lore-and-achievements", requireAuth, async (req, res) => {
     try {
       const k = await db.get(
