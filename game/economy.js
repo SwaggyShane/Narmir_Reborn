@@ -316,6 +316,10 @@ function processFoodEconomy(k, events) {
   const prod = farmProduction(k);
   const cons = foodConsumption(k);
   const balance = prod - cons;
+  // Net production - consumption for the client's per-turn resource strip
+  // (see routes/response-structurer.js's economyFields whitelist and
+  // client/src/stores/economyStore.js's receiveServerSnapshot).
+  updates.food_balance = balance;
   let food = k.food;
 
   const upgrades = safeJsonParse(

@@ -52,12 +52,15 @@ import LoreEntryController from './components/react/LoreEntryController.jsx';
 import GenericModalController from './components/react/GenericModalController.jsx';
 import SpyReportModalController from './components/react/SpyReportModalController.jsx';
 import ForumPanel from './components/react/ForumPanel.jsx';
-import { FULL_BLEED_SHELL_PANELS } from './utils/panelMeta.js';
+import { FULL_BLEED_SHELL_PANELS, FIXED_HEIGHT_PANELS } from './utils/panelMeta.js';
 
 const GameShell = () => {
   const { activePanel } = useActivePanel();
   const { isNight } = useNightCycle();
   const isFullBleedPanel = FULL_BLEED_SHELL_PANELS.has(activePanel);
+  // Fixed-height layout (fills viewport, no page scroll) without hiding the
+  // resource strip the way full-bleed panels do — see FIXED_HEIGHT_PANELS.
+  const isFixedHeightPanel = isFullBleedPanel || FIXED_HEIGHT_PANELS.has(activePanel);
   const [selectedHex, setSelectedHex] = useState(null);
 
   useEffect(() => {
@@ -151,7 +154,7 @@ const GameShell = () => {
               : 'max-lg:pb-[calc(6.75rem+env(safe-area-inset-bottom,0px))]',
             'lg:row-start-2',
             isFullBleedPanel ? 'lg:col-start-2' : 'lg:col-start-3',
-            isFullBleedPanel && 'overflow-hidden',
+            isFixedHeightPanel && 'overflow-hidden',
           )}
         >
           <KingdomBodyHeader />
@@ -159,14 +162,14 @@ const GameShell = () => {
           <div
             className={clsx(
               'relative z-10 min-h-0 flex-1',
-              isFullBleedPanel ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden',
+              isFixedHeightPanel ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden',
             )}
           >
             <div
               key={activePanel}
               className={clsx(
                 'panel-enter min-w-0 max-w-full',
-                isFullBleedPanel ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'min-h-full overflow-x-hidden',
+                isFixedHeightPanel ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'min-h-full overflow-x-hidden',
               )}
             >
               {renderPanel()}

@@ -180,10 +180,7 @@ export default function KingdomProfileModal() {
 
             <div className="mb-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
               {statBox('Global Rank', `#${data.rank || '???'}`, '#ffd700')}
-              {statBox('Level', data.level || 1, 'var(--accent1)')}
-              {statBox('Turns Used', fmt(data.turn || 0), 'var(--text2)')}
               {statBox('Total Score', fmt(data.score || 0), '#ffd700')}
-              {statBox('Domain Size', `${fmtShort(data.land || 0)} ac`, 'var(--text2)')}
               {statBox('Population', fmtShort(data.population || 0), 'var(--text2)')}
               {statBox('Happiness', `${effHappiness}%`, effHappiness >= 100 ? 'var(--green)' : 'var(--amber)')}
               {statBox('Recent Combat', topNews.length ? 'ACTIVE' : 'NONE', topNews.length ? 'var(--red)' : 'var(--text3)')}

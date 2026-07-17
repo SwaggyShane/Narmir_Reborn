@@ -5,7 +5,7 @@ import { normalizeAndRouteResponse } from '../utils/responseNormalizer.js';
 import { playGameSound } from '../utils/audio.js';
 import { getRegenCountdownLabel } from './useRegenCountdown.js';
 import { AppEvent, emitAppEvent } from '../utils/appEvents.js';
-import { useProfileStore } from '../stores/index.js';
+import { useProfileStore, useEconomyStore } from '../stores/index.js';
 import { setLastSpellTarget } from '../utils/spellTargetHistory.js';
 
 function applyResult(data, reason) {
@@ -86,6 +86,7 @@ export function useGameActions() {
       }
 
       const state = useProfileStore.getState();
+      const economyState = useEconomyStore.getState();
       const turnsLeft = state?.turns_stored ?? data.updates?.turns_stored ?? 0;
       const currentTurn = state?.turn ?? data.updates?.turn;
       const turnStatus = `Turn ${currentTurn || '?'} - ${turnsLeft} turns left`;
@@ -93,9 +94,9 @@ export function useGameActions() {
         ? `Completed: ${completedBuildingsMsg}!`
         : '';
 
-      if ((state?.food || 0) < 1000) {
+      if ((economyState?.food ?? 0) < 1000) {
         toast(`Warning: Food levels are dangerously low!\n${buildStatus ? `${buildStatus}\n` : ''}${turnStatus}`, 'warning');
-      } else if ((state?.gold || 0) < 1000) {
+      } else if ((economyState?.gold ?? 0) < 1000) {
         toast(`Warning: Gold reserves are almost empty!\n${buildStatus ? `${buildStatus}\n` : ''}${turnStatus}`, 'warning');
       } else {
         toast(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, 'success');

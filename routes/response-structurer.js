@@ -15,7 +15,8 @@ const economyFields = new Set([
   'gold', 'food', 'mana', 'wood', 'stone', 'iron', 'steel', 'coal',
   'maps', 'scrolls', 'blueprints_stored', 'land', 'food_surplus_turns',
   'food_shortage_turns', '_spoilage', 'wall_upgrades', 'tower_def_upgrades',
-  'outpost_upgrades', 'mausoleum_upgrades', 'school_upgrades'
+  'outpost_upgrades', 'mausoleum_upgrades', 'school_upgrades',
+  'food_balance', 'gold_income', 'mana_regen'
 ]);
 
 const researchFields = new Set([

@@ -128,6 +128,7 @@ export const useEconomyStore = create(
           if (data?.mana_regen !== undefined) state.mana_regen = data.mana_regen;
           if (data?.tax !== undefined) state.tax = data.tax;
           if (data?.gold_income !== undefined) state.gold_income = data.gold_income;
+          if (data?.food_balance !== undefined) state.food_balance = data.food_balance;
           if (data?.wood !== undefined) state.wood = data.wood;
           if (data?.stone !== undefined) state.stone = data.stone;
           if (data?.iron !== undefined) state.iron = data.iron;

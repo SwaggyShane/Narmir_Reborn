@@ -22,7 +22,8 @@ const { processScoutProgress } = require("./scout-progress");
 const { getProgressMetrics } = require("./scout-rings");
 const { processPassiveScoutFinds } = require("./passive-scout-finds");
 const { revealRingHexes } = require("./visibility");
-const { safeJsonParse, safeJsonStringify, clearParseCache, roll, rand } = require('../utils/helpers');
+const { checkFogDiscoveries } = require("./kingdom-fog-discovery");
+const { safeJsonParse, safeJsonStringify, clearParseCache } = require('../utils/helpers');
 const { EPOCH_NOW } = require('../lib/db-sql');
 const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
 const { getProfiler, resetDevProfiler } = require('./profiling');
@@ -432,6 +433,10 @@ function processTurn(k, db = null) {
   // recomputing from the pre-turn k.gold snapshot and discarding it.
   const goldBase = updates.gold !== undefined ? updates.gold : k.gold;
   updates.gold = goldBase + income + tradeIncome;
+  // Net per-turn rate for the client's resource strip (see
+  // routes/response-structurer.js's economyFields whitelist and
+  // client/src/stores/economyStore.js's receiveServerSnapshot).
+  updates.gold_income = income + tradeIncome;
 
   let incomeMsg = `🪙 Turn ${updates.turn}: +${income.toLocaleString()} gold earned.`;
   if (tradeIncome > 0) {
@@ -442,6 +447,10 @@ function processTurn(k, db = null) {
   // ── 2. Mana regeneration ─────────────────────────────────────────────────────
   const manaGain = manaPerTurn(k);
   updates.mana = k.mana + manaGain;
+  // Net per-turn rate for the client's resource strip (see
+  // routes/response-structurer.js's economyFields whitelist and
+  // client/src/stores/economyStore.js's receiveServerSnapshot).
+  updates.mana_regen = manaGain;
   events.push({
     type: "system",
     message: `✨ Mana: +${manaGain.toLocaleString()} restored. Total: ${updates.mana.toLocaleString()}.`,
@@ -657,6 +666,18 @@ function processTurn(k, db = null) {
               console.error(`[engine] Failed to reveal scout ring ${r}: ${err.message}`)
             );
           }
+        }
+
+        // Deterministic kingdom discovery: no dice roll — whatever hex has
+        // its fog removed (this turn or previously) is checked against every
+        // other kingdom's home hex, every turn scouts are allocated. Not
+        // gated on ring_completed since a kingdom with fog already fully
+        // uncovered (DISABLE_FOG_OF_WAR test bypass) needs this to keep
+        // firing rather than only at the moment a new ring is first reached.
+        if (db && k.id) {
+          checkFogDiscoveries(db, k.id).catch(err =>
+            console.error(`[engine] Fog discovery check failed for kingdom ${k.id}: ${err.message}`)
+          );
         }
 
         // Passive scouting continuous finds (P0 §3a): allocation-scaled

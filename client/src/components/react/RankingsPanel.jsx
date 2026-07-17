@@ -189,9 +189,7 @@ const RankingsPanel = () => {
             </div>
           </div>
         </td>
-        <td className="px-1.5 py-2.5 text-right text-gold font-semibold">{fmt(row.score !== undefined ? row.score : row.land)}</td>
-        <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{row.level || 1}</td>
-        <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{fmt(row.turn || 0)}</td>
+        <td className="px-1.5 py-2.5 text-right text-gold font-semibold">{fmt(row.score || 0)}</td>
         <td className="px-1.5 py-2.5 text-center text-text3 text-[11px]">{row.last_combat_at ? timeAgo(row.last_combat_at) : '—'}</td>
         <td className="px-2 py-2.5 text-center">{actionBtns}</td>
       </tr>
@@ -234,8 +232,6 @@ const RankingsPanel = () => {
                 <th className="px-[6px] py-2 text-left">Player</th>
                 <th className="px-[6px] py-2 text-left">Kingdom</th>
                 <th className="px-[6px] py-2 text-right">Score</th>
-                <th className="px-[6px] py-2 text-right">Level</th>
-                <th className="px-[6px] py-2 text-right">Turns Taken</th>
                 <th className="px-1.5 py-2 text-center">Combat</th>
                 <th className="px-1.5 py-2 text-center">Action</th>
               </tr>

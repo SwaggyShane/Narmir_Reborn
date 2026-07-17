@@ -753,7 +753,7 @@ module.exports = function (db) {
 
         // Separate fields into proper domains for contract compliance
         const profileFields = new Set(['turn', 'turns_stored', 'level', 'xp', 'xp_sources', 'scout_progress', 'score', 'unread_news', 'last_turn_at', 'updated_at']);
-        const economyFields = new Set(['gold', 'food', 'mana', 'wood', 'stone', 'iron', 'steel', 'coal', 'maps', 'scrolls', 'blueprints_stored', 'land', 'food_surplus_turns', 'food_shortage_turns', '_spoilage']);
+        const economyFields = new Set(['gold', 'food', 'mana', 'wood', 'stone', 'iron', 'steel', 'coal', 'maps', 'scrolls', 'blueprints_stored', 'land', 'food_surplus_turns', 'food_shortage_turns', '_spoilage', 'food_balance', 'gold_income', 'mana_regen']);
         const researchFields = new Set(['research_focus', 'research_progress']);
         const populationFields = new Set(['population', 'happiness', 'goals']);
         const militaryFields = new Set(['rangers', 'fighters', 'troop_levels', 'tower_progress']);

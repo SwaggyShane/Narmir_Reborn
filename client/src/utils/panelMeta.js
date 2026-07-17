@@ -42,6 +42,17 @@ export const HIDE_KINGDOM_HEADER_PANELS = new Set([
 /** Full-width shell: sidebar + topbar + footer only (no resource strip, no panel chrome). */
 export const FULL_BLEED_SHELL_PANELS = new Set(['globalchat', 'forum']);
 
+/** Panels that render their own title card and don't need PanelContextHeader's icon+label bar. */
+export const SUPPRESS_CONTEXT_HEADER_PANELS = new Set(['worldmap']);
+
+/**
+ * Panels whose content area should be a fixed-height flex column (fills the
+ * viewport, no page scroll) instead of the default natural-height/scrolling
+ * behavior — without also hiding the resource strip the way
+ * FULL_BLEED_SHELL_PANELS does. Desktop-only for now (see WorldmapPanel.jsx).
+ */
+export const FIXED_HEIGHT_PANELS = new Set(['worldmap']);
+
 export const NAV_SECTIONS = Object.freeze([
   {
     id: 'kingdom',
