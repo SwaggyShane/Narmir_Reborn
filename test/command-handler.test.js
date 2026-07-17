@@ -235,15 +235,18 @@ async function run() {
     assert.deepStrictEqual(eng._calls[0].args, [kingdom, 'farm', 'iron_plow']);
 
     eng._calls.length = 0;
-    await h.handle({ type: 'prestige' }, { kingdom });
-    assert.deepStrictEqual(eng._calls[0].args, [kingdom]);
+    await assert.rejects(
+      () => h.handle({ type: 'prestige' }, { kingdom }),
+      /POST \/api\/kingdom\/rebirth/,
+    );
+    assert.strictEqual(eng._calls.length, 0, 'prestige must not call processPrestige via CommandHandler');
 
     eng._calls.length = 0;
     const score = await h.handle({ type: 'calculate-score' }, { kingdom });
     assert.strictEqual(score, 999);
     assert.deepStrictEqual(eng._calls[0].args, [kingdom]);
   }
-  console.log('study / school / upgrade / prestige / score signatures');
+  console.log('study / school / upgrade / prestige fence / score signatures');
 
   // ── raid trade route / forge / xp ─────────────────────────────────────────
   {
@@ -311,6 +314,11 @@ async function run() {
         defenderHeroes: [],
         obscure: false,
       };
+      if (type === 'prestige') {
+        // Fenced: known type but refuses partial wipe (EVOLUTION.md atomic rebirth)
+        await assert.rejects(() => h.handle(payload, { kingdom, db }), /POST \/api\/kingdom\/rebirth/);
+        continue;
+      }
       await h.handle(payload, { kingdom, db });
     }
   }

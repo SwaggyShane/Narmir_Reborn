@@ -17,6 +17,12 @@
 const config = require('./config');
 const combatCalc = require('./combat-new');
 const { getTerrainModifiers, getTerrainDisplayName } = require('./terrain');
+const { applyPrestigeCombatMultiplier } = require('./prestige/combat');
+const { getPrestigeModifiers } = require('./prestige/balance');
+const {
+  getDragonDefenseMult,
+  applyDragonTerror,
+} = require('./evolution');
 const { getFlag } = require('./feature-flags');
 const { calculateElevationBonus } = require('./world-elevation');
 
@@ -413,6 +419,24 @@ function calculateCombatPower(kingdom, opponent, combatType) {
   diagnostics.attacker.terrainMod = attackerTerrain.combatAtk || 1;
   diagnostics.defender.terrain = getTerrainDisplayName(opponent.terrain || 'plains');
   diagnostics.defender.terrainMod = defenderTerrain.combatDef || 1;
+
+  // Prestige combat mult once per side (EVOLUTION.md — game/prestige/combat.js only)
+  attackerPower = applyPrestigeCombatMultiplier(attackerPower, kingdom.prestige_level || 0);
+  defenderPower = applyPrestigeCombatMultiplier(defenderPower, opponent.prestige_level || 0);
+  diagnostics.attacker.prestigeMod = getPrestigeModifiers(kingdom.prestige_level || 0).combat || 1;
+  diagnostics.defender.prestigeMod = getPrestigeModifiers(opponent.prestige_level || 0).combat || 1;
+
+  // Roadmap B dragon: NO second global combat %. Defense mult on defender; terror on attacker only.
+  const defDragonMult = getDragonDefenseMult(opponent);
+  if (defDragonMult !== 1) {
+    defenderPower = Math.round(defenderPower * defDragonMult);
+    diagnostics.defender.dragonDefenseMult = defDragonMult;
+  }
+  const atkBeforeTerror = attackerPower;
+  attackerPower = applyDragonTerror(attackerPower, kingdom, opponent);
+  if (attackerPower !== atkBeforeTerror) {
+    diagnostics.attacker.dragonTerror = attackerPower / Math.max(1, atkBeforeTerror);
+  }
 
   // Phase 3A: Apply elevation bonus if defender is on higher ground
   if (getFlag('FEATURE_ELEVATION_COMBAT') && kingdom.elevation_level !== undefined && opponent.elevation_level !== undefined) {

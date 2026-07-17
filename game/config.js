@@ -8,6 +8,10 @@
 // Research keys: Short names e.g., 'economy', 'weapons'
 //   → Maps to database columns: kingdoms.res_economy via RESEARCH_MAP
 
+// Prestige mults: single source game/prestige/balance.js (EVOLUTION.md).
+// config re-exports so economy/recruitment/attunements keep `const { PRESTIGE_MODIFIERS } = config`.
+const { PRESTIGE_MODIFIERS: PRESTIGE_MODIFIERS_CANONICAL } = require('./prestige/balance');
+
 // ── NAMING CONVENTIONS ────────────────────────────────────────────────────────
 // See TERMINOLOGY.md for complete reference.
 //
@@ -2991,16 +2995,8 @@ const config = {
     PRESTIGE_BUTTON_TITLE: "You've reached max level! Click to explore prestige.",
   },
 
-  // Multipliers applied when a kingdom has prestiged. Used by economy
-  // (market income, trade income), construction (building caps), and
-  // happiness (population bonus). Levels 1-5 only; higher levels clamp to 5.
-  PRESTIGE_MODIFIERS: {
-    1: { bldCap: 1.25, econ: 1.05, combat: 1.00, pop: 1.00 },
-    2: { bldCap: 1.50, econ: 1.10, combat: 1.00, pop: 1.00 },
-    3: { bldCap: 1.75, econ: 1.15, combat: 1.05, pop: 1.00 },
-    4: { bldCap: 2.00, econ: 1.20, combat: 1.05, pop: 1.00 },
-    5: { bldCap: 2.50, econ: 1.30, combat: 1.10, pop: 1.25 },
-  },
+  // Re-export only — never duplicate numbers here (EVOLUTION.md Roadmap A).
+  PRESTIGE_MODIFIERS: PRESTIGE_MODIFIERS_CANONICAL,
 };
 
 const fs = require("fs");

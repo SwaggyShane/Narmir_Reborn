@@ -243,6 +243,7 @@ See `/game/ARCHITECTURE.md` for detailed patterns and import rules.
 - **TODO.md** — Live active work (empty when idle)
 - **ARCHIVAL.md** — Completed features (historical record)
 - **game/ARCHITECTURE.md** — Live architecture + verified status
+- **EVOLUTION.md** — Prestige & dragon evolution (decisions locked; Roadmap A then B)
 - **ADMIN_WISHLIST_PLAN.md** — Low-priority optional backlog
 - **RAILWAY_SECRETS.md** — Production secrets management
 

@@ -29,10 +29,7 @@ const xpMod = require('../xp');
 const { awardXp } = xpMod;
 
 const config = require('../config');
-const {
-  PRESTIGE_MODIFIERS,
-  WM_CREW_REQUIRED,
-} = config;
+const { WM_CREW_REQUIRED } = config;
 
 // Combat V2 is the only military path (legacy aggregate combat removed 2026-07-16).
 const HAPPINESS_FLOOR = 0;

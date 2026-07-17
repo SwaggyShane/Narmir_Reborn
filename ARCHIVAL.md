@@ -2,11 +2,23 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-16 (deep MD pass: delete completed-only plans/reports; TODO queue empty on local `feature/webgl-worldmap`)
+**Last updated:** 2026-07-16 (EVOLUTION.md decisions locked; TODO queue empty on local `feature/webgl-worldmap`)
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-16 — Prestige & evolution design locked (`EVOLUTION.md`)
+
+**Scope:** Spec only (no prestige/evolution gameplay code). Sole-implementer, all-or-nothing roadmap.
+
+**Locked:** One wipe contract (no V1/V2); atomic rebirth TX; 200-turn cooldown (~3.5d); starter kit + full `bld_*` zero list; castles wipe to 0; fragment wipe + QoL escape hatch policy; mults hard-cap P5; XP tax already in `game/xp.js`; news path exists on `/rebirth`; dragon = Roadmap B after A with egg + ritual (`bld_castles < 1` fail); stacking = prestige global combat ≤1.05, dragon defense/upkeep/terror only.
+
+**Ship order:** Roadmap A (prestige complete) → Roadmap B (dragon complete; blocked until `dragon_egg` non-admin path).
+
+**Doc:** [EVOLUTION.md](EVOLUTION.md). Pointers in TODO, CLAUDE, ADMIN_WISHLIST.
+
+---
 
 ### 2026-07-16 — Deep markdown pass: verify complete claims, delete finished-only docs
 

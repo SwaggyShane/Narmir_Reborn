@@ -36,6 +36,23 @@ const TREK_ARTIFACTS = Object.freeze([
   { id: 'trek_ranger_badge', name: 'Lost Ranger Badge' },
 ]);
 
+// Roadmap B: dragon_egg is trek-primary only (EVOLUTION.md). Separate from config ancient_dragon_egg.
+let _eggBalance = null;
+function getEggBalance() {
+  if (!_eggBalance) {
+    try {
+      _eggBalance = require('./evolution/balance');
+    } catch {
+      _eggBalance = {
+        DRAGON_EGG_ITEM_ID: 'dragon_egg',
+        DRAGON_EGG_ITEM_NAME: 'Dragon Egg',
+        EGG_TREK_ARTIFACT_WEIGHT: 1,
+      };
+    }
+  }
+  return _eggBalance;
+}
+
 /**
  * Deterministic pseudo-random in [0, 1) from integer seed material.
  * @param {number} a
@@ -95,8 +112,25 @@ function rollLootDiscovery(hexCol, hexRow, kingdom) {
   }
 
   if (chosen.type === 'artifact') {
-    const idx = Math.floor(seededUnit(hexCol + 5, hexRow + 9, kingdom.id * 17) * TREK_ARTIFACTS.length);
-    const art = TREK_ARTIFACTS[Math.min(idx, TREK_ARTIFACTS.length - 1)];
+    const eggBal = getEggBalance();
+    // Endgame egg: small fraction of artifact rolls (not equal-weight catalog entry)
+    const eggChance =
+      Number(eggBal.EGG_ARTIFACT_ROLL_CHANCE) ||
+      Number(eggBal.EGG_TREK_ARTIFACT_WEIGHT) ||
+      0.05;
+    const eggRoll = seededUnit(hexCol + 5, hexRow + 9, kingdom.id * 17);
+    let art;
+    if (eggChance > 0 && eggRoll < eggChance) {
+      art = { id: eggBal.DRAGON_EGG_ITEM_ID, name: eggBal.DRAGON_EGG_ITEM_NAME };
+      console.log(
+        `[evolution] dragon_egg trek drop (endgame) kingdom=${kingdom.id} hex=${hexCol},${hexRow} turn=${kingdom.turn || 0}`,
+      );
+    } else {
+      const idx = Math.floor(
+        seededUnit(hexCol + 6, hexRow + 10, kingdom.id * 19) * TREK_ARTIFACTS.length,
+      );
+      art = TREK_ARTIFACTS[Math.min(Math.max(0, idx), TREK_ARTIFACTS.length - 1)];
+    }
     return {
       type: 'loot',
       lootType: 'artifact',

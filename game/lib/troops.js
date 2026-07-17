@@ -94,19 +94,18 @@ function awardTroopXp(k, unit, xpAmount) {
   return { troop_levels: JSON.stringify(troopLevels), levelUps };
 }
 
-// Effectiveness multiplier: +0.5% per level above 1, caps at +50% at level 100,
-// stacked with prestige (+5% per level) and a flat +15% for legendary races.
+// Effectiveness multiplier: +0.5% per unit level above 1, caps at +50% at level 100.
+// Prestige global combat is applyPrestigeCombatMultiplier only (max 1.05) — do not
+// stack +5%/prestige rank here (EVOLUTION.md Roadmap A single combat path).
+// Legendary race unit names: flat +15% when prestige_level > 0 (identity, not mult table).
 // prestige_level || 0 guards against NaN if the field is missing — the DB
 // column is NOT NULL but unit tests sometimes pass partial kingdom shapes.
 function unitLevelMult(k, unit) {
   const level = effectiveTroopLevel(k, unit);
   const prestigeLevel = k?.prestige_level || 0;
-  const prestigeBonus = prestigeLevel * 0.05;
   const isLegendary =
     prestigeLevel > 0 && LEGENDARY_NAMES[k?.race]?.[unit] ? 1.15 : 1.0;
-  return (
-    (1 + Math.min(0.5, (level - 1) * 0.005)) * (1 + prestigeBonus) * isLegendary
-  );
+  return (1 + Math.min(0.5, (level - 1) * 0.005)) * isLegendary;
 }
 
 // Racial unique bonuses unlock at unit level 25+

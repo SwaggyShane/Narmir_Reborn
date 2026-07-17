@@ -8,7 +8,9 @@
 
 const profileFields = new Set([
   'turn', 'turns_stored', 'level', 'xp', 'xp_sources', 'scout_progress',
-  'score', 'unread_news', 'last_turn_at', 'updated_at'
+  'score', 'unread_news', 'last_turn_at', 'updated_at',
+  'prestige_level', 'last_prestige_turn',
+  'evolution_form', 'evolution_ritual',
 ]);
 
 const economyFields = new Set([

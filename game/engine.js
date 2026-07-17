@@ -81,11 +81,12 @@ const { processLocationMapsWip, computeExpeditionTransitions } = require('./lib/
 const {
   rebellionCheck,
   rebellionEvent,
-  canPrestige,
-  processPrestige,
   raidTradeRoute,
   resolveAllianceDefense,
 } = require('./lib/special-events');
+const { canPrestige, processPrestige } = require('./prestige');
+const { getPrestigeModifiers } = require('./prestige/balance');
+const { processEvolutionTurn } = require('./evolution');
 const {
   resolveMilitaryAttack,
   wmCrewRequired,
@@ -364,6 +365,19 @@ function processTurn(k, db = null) {
     turn: k.turn + 1,
     updated_at: Math.floor(Date.now() / 1000),
   };
+
+  // Roadmap B: dragon ritual tick (castle fail / complete / decrement) — EVOLUTION.md
+  {
+    const evoSnap = { ...k, turn: updates.turn, bld_castles: updates.bld_castles ?? k.bld_castles };
+    const evoResult = processEvolutionTurn(evoSnap);
+    if (evoResult) {
+      Object.assign(updates, evoResult.updates);
+      if (evoResult.events?.length) events.push(...evoResult.events);
+      // Keep in-memory k in sync so later turn steps see form/ritual
+      if (evoResult.updates.evolution_form !== undefined) k.evolution_form = evoResult.updates.evolution_form;
+      if (evoResult.updates.evolution_ritual !== undefined) k.evolution_ritual = evoResult.updates.evolution_ritual;
+    }
+  }
 
   progressGoal(k, updates, 'turn_taken', 1);
 
@@ -1498,10 +1512,11 @@ function processTurn(k, db = null) {
   const libUpdates = processLibrary({ ...k, ...updates }, events);
   Object.assign(updates, libUpdates);
 
-  // ── 8d. Trade & Prestige ─────────────────────────────────────────────────────
-  const prestigeLevel = k.prestige_level;
-  const legacyTradeRoutes = k.trade_routes;
-  const legacyTradeIncome = legacyTradeRoutes * 100 * (1 + prestigeLevel * 0.1);
+  // ── 8d. Legacy trade_routes INT income (uses prestige econ mult only) ───────
+  // Not a second prestige formula: same table as economy.js (getPrestigeModifiers.econ).
+  const legacyTradeRoutes = k.trade_routes || 0;
+  const tradeEconMult = getPrestigeModifiers(k.prestige_level || 0).econ || 1.0;
+  const legacyTradeIncome = Math.floor(legacyTradeRoutes * 100 * tradeEconMult);
   if (legacyTradeIncome > 0) {
     updates.gold = (updates.gold || k.gold) + legacyTradeIncome;
     events.push({

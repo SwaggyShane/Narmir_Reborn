@@ -13,6 +13,10 @@ const { awardUnitXp } = require("./lib/troops");
 const { getSynergyPassiveBonusMultiplier } = require("./lib/synergy-cache");
 const { addItemToInventory, initItemsArray } = require("./lib/items");
 const { naturalHappinessCap } = require("./lib/happiness-cap");
+const {
+  getDragonUpkeepMult,
+  getDragonHoardEconMult,
+} = require("./evolution");
 
 const {
   FARM_WORKERS_PER,
@@ -158,6 +162,8 @@ function foodConsumption(k) {
 
   const consumptionMult = fragmentBonusManager.getBonusMultiplier(k, 'farms', 'consumption');
   consumption *= consumptionMult;
+  // Dragon form upkeep (EVOLUTION.md) — tradeoff, not free power
+  consumption = Math.floor(consumption * getDragonUpkeepMult(k));
 
   return consumption;
 }
@@ -177,6 +183,7 @@ function marketIncomeFull(k) {
     const tierMod = PRESTIGE_MODIFIERS[Math.min(k.prestige_level, 5)]?.econ || 1.0;
     mult *= tierMod;
   }
+  mult *= getDragonHoardEconMult(k);
 
   const freePop = Math.max(0, (k.population || 0) - totalHiredUnits(k));
   const workedMarkets = Math.min(markets, Math.floor(freePop / 5));
@@ -567,6 +574,7 @@ function calculateTradeIncome(k) {
     const tierMod = PRESTIGE_MODIFIERS[Math.min(k.prestige_level, 5)]?.econ || 1.0;
     raceMult *= tierMod;
   }
+  raceMult *= getDragonHoardEconMult(k);
 
   const econRes = (k.res_economy || 100) / 100;
   const marketBonus = 1 + (k.bld_markets || 0) * 0.002;

@@ -12,7 +12,7 @@ const NUMERIC_FIELDS = [
   // Forum Moderation
   'expires_at', 'reviewed_at',
   // XP / levels
-  'xp', 'level', 'prestige_level', 'progress',
+  'xp', 'level', 'prestige_level', 'last_prestige_turn', 'progress',
   // Units
   'fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas',
   'researchers', 'engineers', 'engineer_level', 'engineer_xp', 'scribes', 'thralls',
