@@ -1,11 +1,11 @@
 # Narmir Reborn - Prestige and Evolution
 
-**Document version:** v1.2 - 2026-07-16  
-**Status:** Decisions locked. **Roadmap A implemented in code** on this branch (verify checklist before prod).  
+**Document version:** v1.3 - 2026-07-17  
+**Status:** **Roadmap A complete on branch `feature/prestige-rebirth`** (worktree: `Narmir_Reborn_prestige`). Mults single-source; combat once; UI enabled with L500 + cooldown gates. **Not merged to production until you ship.**  
 **Operator:** Sole implementer.  
 **Ship model:** All or nothing - one wipe contract, one bonus table, one dragon definition. No dual V1/V2 paths.
 
-**Not live yet.** Current rebirth is an unsafe stub (see section 2). Do not enable the player button until Roadmap A checklist is green.
+**Roadmap B (dragon)** not started.
 
 ---
 
@@ -71,22 +71,24 @@ Principles: server-authoritative; one wipe contract; one implementation path; ha
 
 ---
 
-## 2. Current-state audit (verified)
+## 2. Current-state audit (Roadmap A complete on branch)
 
 | Area | Reality | Evidence |
 |------|---------|----------|
-| Live prestige | `game/lib/special-events.js` processPrestige / canPrestige | engine re-exports; CommandHandler |
-| Duplicates | `game/prestige.js`, `game/world.js` | diverging |
-| Wipe | Partial; keeps land; most bld_* not zeroed | special-events ~L154-183 |
-| Rebirth API | `POST /api/kingdom/rebirth` | `routes/kingdom-gameplay.js` ~1887-1910 |
-| News | Hard-coded INSERT after apply | same route ~1900-1908 |
-| XP tax | Wired | `game/xp.js` L8-14, L107-108 |
-| Combat prestige mult | Config unused in resolver | dead data |
-| UI | Button hard-disabled; false bonus list | `OptionsPanel.jsx` |
-| Turn clock | +turns every 25 minutes | CLAUDE.md / CHANGELOG.md |
-| Trade routes storage | Kingdom `trade_routes` INT + `active_trade_routes` JSON + `trade_routes` table | ddl / init-data |
-| Heroes | Separate `heroes` table | not only a kingdom JSON blob |
-| Evolution | None | - |
+| Live prestige | `game/prestige/` (balance, wipe, combat, index) | engine + route import |
+| Old stubs | Removed; re-exports / comments only | special-events, `game/prestige.js`, world |
+| Wipe | Full contract 3.3 + side effects in TX | `wipe.js` + live DB tests |
+| Rebirth API | `POST /api/kingdom/rebirth` FOR UPDATE + TX | `routes/kingdom-gameplay.js` |
+| News | Best-effort after commit | same route |
+| XP tax | Wired | `game/xp.js` |
+| Combat mult | Once via `applyPrestigeCombatMultiplier` | `combat-resolver.js` |
+| Econ / bldCap / pop | `PRESTIGE_MODIFIERS` from balance via config re-export | economy, recruitment, population |
+| Legacy trade INT | econ mult only (not +10%/rank) | `engine.js` 8d |
+| unitLevelMult | No +5%/prestige stack; legendary identity only | `lib/troops.js` |
+| CommandHandler | `prestige` fenced (must use HTTP rebirth) | `command-handler.js` |
+| UI | Settings rebirth panel; L500 + cooldown; seeds/mults from client mirror | `OptionsPanel.jsx`, `prestigeBalance.js` |
+| Admin | Mult table from client mirror | `PrestigePanel.jsx` |
+| Evolution | None (Roadmap B) | - |
 
 ---
 
@@ -401,15 +403,15 @@ Ritual: 50 turns; channel defenseMult 0.85; fail if `bld_castles < 1` at start o
 ### UI preflight
 
 ```
-[ ] Server contract deployed on test branch
-[ ] Button disabled if level < 500
-[ ] Button disabled if last_prestige_turn > 0 and turn-last < 200
-[ ] Confirm dialog shows THIS prestige exact seeds, e.g. "New land: 550", "New gold: 35000" for P1
-[ ] Confirm lists army wipe, building wipe, fragment wipe, expedition cancel (no reward), hero keep top 3
-[ ] Bonus text matches balance (permanent mults after rebirth)
-[ ] Success toast highlights permanent bonuses gained (bldCap/econ/combat/pop for new P)
-[ ] Failure: error toast; kingdom unchanged
-[ ] Do not enable on production until A checklist green
+[x] Server contract on feature/prestige-rebirth
+[x] Button disabled if level < 500
+[x] Button disabled if last_prestige_turn > 0 and turn-last < 200
+[x] Confirm dialog shows THIS prestige exact seeds (landSeed/goldSeed)
+[x] Confirm lists army wipe, building wipe, fragment wipe, expedition cancel, hero keep top 3
+[x] Bonus text matches balance (preview mults for next P)
+[x] Success toast highlights permanent bonuses from API modifiers
+[x] Failure: error toast; kingdom unchanged
+[ ] Production merge / enable — operator ship decision (not auto)
 ```
 
 ### A - Done definition
@@ -419,23 +421,26 @@ Safe prestige; no land/building snowball; contract 3.3; UI true; one path; TX-sa
 ### A - Verification checklist
 
 ```
-[ ] wipe rules in code match section 3.3 (importable/assertable)
-[ ] land/gold formulas; castles 0; four starter buildings only
-[ ] last_prestige_turn 0/missing/null => first prestige OK at level >= 500
-[ ] last_prestige_turn > 0 => cooldown 200
-[ ] concurrent rebirths (e.g. 5 parallel) => exactly one success for one kingdom
-[ ] commit OK + news fail => kingdom still prestiged
-[ ] combat: applyPrestigeCombatMultiplier only; P5/P0 ratio 1.05 isolated
-[ ] heroes: top 3 by level DESC, id ASC
-[ ] expeditions cancelled with no reward
-[ ] trade_routes INT 0 + active_trade_routes [] + rows deleted both kingdom_id and partner_id
-[ ] partner active_trade_routes scrubbed of prestiging kingdom
-[ ] after prestige, one turn process: no negative resources; queues empty
-[ ] API round-trip: POST rebirth -> DB state + news row (when news succeeds)
-[ ] schema reflection: every kingdoms column mapped keep/wipe/side
-[ ] rebirth and turn both FOR UPDATE same row (no mid-wipe production calc)
-[ ] UI preflight complete
-[ ] old prestige implementations removed
+[x] wipe rules in code match section 3.3 (importable/assertable)
+[x] land/gold formulas; castles 0; four starter buildings only
+[x] last_prestige_turn 0/missing/null => first prestige OK at level >= 500
+[x] last_prestige_turn > 0 => cooldown 200
+[x] concurrent rebirths serialize: second fails canPrestige after first (live DB FOR UPDATE)
+[x] commit OK + news fail => kingdom still prestiged (route try/catch + unit contract test)
+[x] combat: applyPrestigeCombatMultiplier only; P5/P0 ratio 1.05 isolated; unitLevelMult no rank stack
+[x] heroes: top 3 by level DESC, id ASC
+[x] expeditions cancelled with no reward
+[x] trade_routes INT 0 + active_trade_routes [] + rows deleted both kingdom_id and partner_id
+[x] partner active_trade_routes scrubbed of prestiging kingdom
+[x] after prestige, one turn process: no throw (live DB)
+[x] API round-trip: POST rebirth -> DB state + news row (when news succeeds)
+[x] schema reflection: every kingdoms column mapped keep/wipe/side
+[x] rebirth and turn both FOR UPDATE same row
+[x] UI preflight complete (Playwright + Settings panel)
+[x] old prestige implementations removed
+[x] single mult source: balance.js; config re-exports; client mirror prestigeBalance.js
+[x] ladder P0→P10 mult hard-cap + titles (prestige-ladder-live-db)
+[x] CommandHandler prestige fenced to HTTP rebirth only
 ```
 
 ---

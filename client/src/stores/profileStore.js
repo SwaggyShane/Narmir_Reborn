@@ -176,13 +176,15 @@ export const usePrestige = () => useProfileStore((state) => state.prestige_level
 
 export const useLastPrestigeTurn = () => useProfileStore((state) => state.last_prestige_turn);
 
-/** Turns remaining before next rebirth is allowed (0 = ready). Cooldown = 200 turns. */
+/** Turns remaining before next rebirth is allowed (0 = ready). Cooldown from prestigeBalance. */
 export const usePrestigeCooldownRemaining = () =>
   useProfileStore((state) => {
+    // Inline 200 matches game/prestige/balance PRESTIGE_COOLDOWN_TURNS (client/utils/prestigeBalance.js).
+    // Avoid circular store↔util import churn; keep in sync with prestigeBalance.js.
+    const COOLDOWN = 200;
     const last = Number(state.last_prestige_turn) || 0;
     if (last <= 0) return 0;
     const turn = Number(state.turn) || 0;
-    const COOLDOWN = 200;
     return Math.max(0, COOLDOWN - (turn - last));
   });
 

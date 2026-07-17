@@ -79,14 +79,17 @@ console.log('Test 1: XP table boundaries ✓');
   console.log('Test 5: level 100 cap respected ✓');
 }
 
-// Test 6: unitLevelMult baseline at level 1 = 1.0, scales with prestige.
-// rangers is non-legendary for humans → isolates the prestige effect.
+// Test 6: unitLevelMult baseline at level 1 = 1.0; prestige rank does NOT stack
+// (EVOLUTION.md: combat mult only via applyPrestigeCombatMultiplier).
+// rangers is non-legendary for humans — isolates the rank effect.
 {
   const k = { race: 'human', prestige_level: 0, troop_levels: null };
   assert.equal(unitLevelMult(k, 'rangers'), 1.0);
   const kPrestige = { ...k, prestige_level: 1 };
-  assert.equal(unitLevelMult(kPrestige, 'rangers'), 1.0 * 1.05);
-  console.log('Test 6: unitLevelMult baseline + prestige scaling ✓');
+  assert.equal(unitLevelMult(kPrestige, 'rangers'), 1.0);
+  const kP5 = { ...k, prestige_level: 5 };
+  assert.equal(unitLevelMult(kP5, 'rangers'), 1.0);
+  console.log('Test 6: unitLevelMult baseline; no prestige rank scaling ✓');
 }
 
 // Test 7: Legendary multiplier applies at prestige > 0 for race-specific units
@@ -96,11 +99,12 @@ console.log('Test 1: XP table boundaries ✓');
     prestige_level: 1,
     troop_levels: JSON.stringify({ fighters: { level: 1, xp: 0, count: 50 } }),
   };
-  // Human + fighters is legendary at prestige > 0
+  // Human + fighters is legendary at prestige > 0: base 1.0 * 1.15
   const m = unitLevelMult(k, 'fighters');
-  // Base 1.0 × (1 + 0.05) × 1.15 = 1.2075
-  assert.ok(Math.abs(m - 1.2075) < 1e-6, `expected ~1.2075, got ${m}`);
-  console.log('Test 7: legendary multiplier (+15%) ✓');
+  assert.ok(Math.abs(m - 1.15) < 1e-6, `expected ~1.15, got ${m}`);
+  const mP5 = unitLevelMult({ ...k, prestige_level: 5 }, 'fighters');
+  assert.ok(Math.abs(mP5 - 1.15) < 1e-6, `legendary must not scale with rank, got ${mP5}`);
+  console.log('Test 7: legendary multiplier (+15% identity only) ✓');
 }
 
 // Test 8: racialUnitBonus gates on level 25

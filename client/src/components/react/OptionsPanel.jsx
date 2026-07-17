@@ -15,6 +15,14 @@ import {
   useTurn,
   usePrestigeCooldownRemaining,
 } from '../../stores';
+import {
+  PRESTIGE_LEVEL_GATE,
+  PRESTIGE_COOLDOWN_TURNS,
+  STARTER_BUILDINGS,
+  landSeed,
+  goldSeed,
+  getPrestigeModifiers,
+} from '../../utils/prestigeBalance.js';
 
 const API = (path, opts = {}) => {
   const token = localStorage.getItem('narmir_token');
@@ -317,12 +325,13 @@ const OptionsPanel = () => {
   const turn = useTurn();
   const cooldownRemaining = usePrestigeCooldownRemaining();
   const { layout: navLayout, setLayout: setNavLayout } = useNavLayout();
-  const levelOk = (level || 0) >= 500;
+  const levelOk = (level || 0) >= PRESTIGE_LEVEL_GATE;
   const cooldownOk = (cooldownRemaining || 0) <= 0;
   const canRebirth = levelOk && cooldownOk;
   const nextPrestige = (prestige || 0) + 1;
-  const previewLand = 500 + 50 * nextPrestige;
-  const previewGold = 25000 + 10000 * nextPrestige;
+  const previewLand = landSeed(nextPrestige);
+  const previewGold = goldSeed(nextPrestige);
+  const previewMods = getPrestigeModifiers(nextPrestige);
   const { theme: colorTheme, setTheme: setColorTheme } = useColorTheme();
   const [skipIntro, setSkipIntro] = useState(() => {
     try { return localStorage.getItem('narmir_skip_intro') === '1'; } catch { return false; }
@@ -379,14 +388,14 @@ const OptionsPanel = () => {
 
   const initiateRebirth = async () => {
     const nextP = (prestige || 0) + 1;
-    const landSeed = 500 + 50 * nextP;
-    const goldSeed = 25000 + 10000 * nextP;
+    const nextLand = landSeed(nextP);
+    const nextGold = goldSeed(nextP);
     const ok = window.confirm(
       `Rebirth to Prestige ${nextP}?\n\n` +
-        `You will receive: land ${landSeed.toLocaleString()}, gold ${goldSeed.toLocaleString()}, starter buildings only.\n` +
+        `You will receive: land ${nextLand.toLocaleString()}, gold ${nextGold.toLocaleString()}, starter buildings only.\n` +
         `You lose: army, castles/markets/walls (and most buildings), fragments/attunements, items, research progress, trade routes, active expeditions (no payout).\n` +
         `You keep: race, maps, discovery, achievements, lore, top 3 heroes.\n` +
-        `Then 200 turns (~3.5 days) before you can rebirth again.`,
+        `Then ${PRESTIGE_COOLDOWN_TURNS} turns (~3.5 days) before you can rebirth again.`,
     );
     if (!ok) return;
     const result = await apiCall('/api/kingdom/rebirth', { method: 'POST', body: {} });
@@ -525,7 +534,7 @@ const OptionsPanel = () => {
         <section className="rounded-2xl border-2 border-[var(--accent1)] bg-[var(--bg2)] p-5" data-testid="prestige-rebirth-panel">
           <div className="card-title !mb-3 text-[var(--accent1)]">Empire Rebirth (Kingdom Prestige)</div>
           <div className="mb-4 text-[14px] leading-7 text-[var(--text2)]">
-            At <strong className="text-[var(--gold)]">Level 500</strong> (max) you may rebirth. Current prestige:{' '}
+            At <strong className="text-[var(--gold)]">Level {PRESTIGE_LEVEL_GATE}</strong> (max) you may rebirth. Current prestige:{' '}
             <strong className="text-[var(--accent1)]" data-testid="prestige-current">{prestige || 0}</strong>
             {' '}(kingdom level <span data-testid="prestige-kingdom-level">{level || 0}</span>).
             <br />
@@ -540,21 +549,24 @@ const OptionsPanel = () => {
                 New gold:{' '}
                 <strong data-testid="prestige-preview-gold">{previewGold.toLocaleString()}</strong>
               </li>
-              <li>Starter buildings only (5 farms, 2 barracks, 1 school, 100 housing)</li>
+              <li>
+                Starter buildings only ({STARTER_BUILDINGS.bld_farms} farms, {STARTER_BUILDINGS.bld_barracks} barracks,{' '}
+                {STARTER_BUILDINGS.bld_schools} school, {STARTER_BUILDINGS.bld_housing} housing)
+              </li>
               <li>Army, castles, markets, walls, fragments, research progress wiped; kingdom returns to level 1</li>
               <li>Keep: race, maps, discovery, achievements, lore, top 3 heroes</li>
-              <li>Then 200 turns (~3.5 days) cooldown before next rebirth</li>
+              <li>Then {PRESTIGE_COOLDOWN_TURNS} turns (~3.5 days) cooldown before next rebirth</li>
             </ul>
             <br />
-            <strong className="text-[var(--gold)]">Permanent mults (capped at Prestige 5):</strong>
-            <ul className="mt-2 list-disc space-y-1 pl-5">
-              <li>Building caps up to +50%, economy up to +15%, combat up to +5%, housing pop up to +10%</li>
+            <strong className="text-[var(--gold)]">Permanent mults after this rebirth (hard-cap Prestige 5):</strong>
+            <ul className="mt-2 list-disc space-y-1 pl-5" data-testid="prestige-preview-mults">
+              <li>Building caps ×{previewMods.bldCap}, economy ×{previewMods.econ}, combat ×{previewMods.combat}, pop ×{previewMods.pop}</li>
               <li>XP to level costs +20% per prestige rank</li>
             </ul>
           </div>
           {!levelOk && (
             <div className="mb-3 text-[12px] text-[var(--red)]" data-testid="prestige-block-level">
-              Require Kingdom Level 500 to Rebirth (you are level {level || 0}).
+              Require Kingdom Level {PRESTIGE_LEVEL_GATE} to Rebirth (you are level {level || 0}).
             </div>
           )}
           {levelOk && !cooldownOk && (

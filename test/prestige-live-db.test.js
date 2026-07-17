@@ -24,6 +24,10 @@ const prestige = require('../game/prestige');
 const { applyPrestigeCombatMultiplier } = require('../game/prestige/combat');
 const { STARTER_BUILDINGS, ZERO_BUILDINGS } = require('../game/prestige/wipe');
 const {
+  applyKingdomUpdates,
+  clearKingdomColsCache,
+} = require('../db/kingdom-updates');
+const {
   PRESTIGE_LEVEL_GATE,
   PRESTIGE_COOLDOWN_TURNS,
   landSeed,
@@ -487,6 +491,40 @@ async function main() {
       pass('level gate 500');
     } catch (e) {
       fail('level gate', e);
+    }
+
+    // Production applyKingdomUpdates path (HTTP rebirth uses this — must not no-op)
+    console.log('\n[11] applyKingdomUpdates applies full wipe (HTTP path)');
+    try {
+      clearKingdomColsCache();
+      await client.query(
+        `UPDATE kingdoms SET level=500, prestige_level=0, last_prestige_turn=0, turn=7777,
+          fighters=12, bld_castles=4, land=9999, gold=3 WHERE id=$1`,
+        [kid],
+      );
+      const locked = (await client.query(`SELECT * FROM kingdoms WHERE id=$1`, [kid])).rows[0];
+      const result = prestige.processPrestige(locked);
+      assert.ok(!result.error);
+      const txDb = makeTxDb(client);
+      const applied = await applyKingdomUpdates(kid, result.updates, txDb);
+      assert.ok(applied.length > 50, `expected many cols applied, got ${applied.length}`);
+      assert.ok(applied.includes('land'));
+      assert.ok(applied.includes('bld_castles'));
+      assert.ok(applied.includes('last_prestige_turn'));
+      const after = (await client.query(
+        `SELECT level, prestige_level, land, gold, fighters, bld_castles, last_prestige_turn FROM kingdoms WHERE id=$1`,
+        [kid],
+      )).rows[0];
+      assert.strictEqual(Number(after.level), 1);
+      assert.strictEqual(Number(after.prestige_level), 1);
+      assert.strictEqual(Number(after.land), landSeed(1));
+      assert.strictEqual(Number(after.gold), goldSeed(1));
+      assert.strictEqual(Number(after.fighters), 0);
+      assert.strictEqual(Number(after.bld_castles), 0);
+      assert.strictEqual(Number(after.last_prestige_turn), 7777);
+      pass(`applyKingdomUpdates applied ${applied.length} cols`);
+    } catch (e) {
+      fail('applyKingdomUpdates path', e);
     }
 
     console.log('\n=== Summary ===');
