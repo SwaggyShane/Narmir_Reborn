@@ -154,6 +154,26 @@ function buildWipeUpdates(k) {
   // Keep turn explicitly (timeline continuity) — also safe if apply merges
   updates.turn = k.turn;
 
+  // Endgame dragon form: KEEP evolution_form (not written = unchanged).
+  // Mid-channel ritual cannot survive castle wipe — abort so next turn does not
+  // auto-FAIL with castles=0 (egg already spent; EVOLUTION.md endgame identity).
+  try {
+    const raw = k.evolution_ritual;
+    if (raw && raw !== '{}' && raw !== '') {
+      const ritual = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (ritual && ritual.state === 'CHANNELING') {
+        updates.evolution_ritual = JSON.stringify({
+          state: 'ABORTED',
+          form: 'dragon',
+          reason: 'prestige_rebirth',
+          aborted_turn: Number(k.turn) || 0,
+        });
+      }
+    }
+  } catch {
+    /* corrupt ritual left alone / ignored */
+  }
+
   return { updates, newPrestigeLevel: newP };
 }
 

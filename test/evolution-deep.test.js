@@ -9,7 +9,7 @@ const {
   RITUAL_TURNS,
   DRAGON_EGG_ITEM_ID,
   DRAGON_EGG_ITEM_NAME,
-  EGG_TREK_ARTIFACT_WEIGHT,
+  EGG_ARTIFACT_ROLL_CHANCE,
   DRAGON_FORM,
   EVOLUTION_PRESTIGE_GATE,
 } = require('../game/evolution/balance');
@@ -80,24 +80,56 @@ console.log('trek artifact catalog can yield dragon_egg (brute force seeds)');
   let eggHits = 0;
   let artHits = 0;
   // Sweep kingdom ids / hexes until we observe both egg and non-egg artifacts or cap
-  for (let id = 1; id <= 400 && (eggHits < 1 || artHits < 1); id++) {
-    for (let col = 0; col < 40; col++) {
-      for (let row = 0; row < 40; row++) {
+  for (let id = 1; id <= 800 && eggHits < 1; id++) {
+    for (let col = 0; col < 60; col++) {
+      for (let row = 0; row < 60; row++) {
         const loot = rollLootDiscovery(col, row, { id, turn: 1 });
         if (!loot || loot.lootType !== 'artifact') continue;
         artHits += 1;
         if (loot.artifactId === DRAGON_EGG_ITEM_ID) eggHits += 1;
-        if (eggHits >= 1 && artHits >= 20) break;
+        if (eggHits >= 1 && artHits >= 5) break;
       }
-      if (eggHits >= 1 && artHits >= 20) break;
+      if (eggHits >= 1) break;
     }
   }
   assert.ok(artHits > 0, 'should find some artifacts in seed space');
-  assert.ok(eggHits > 0, 'dragon_egg must appear in trek artifact rolls');
-  assert.ok(EGG_TREK_ARTIFACT_WEIGHT >= 1);
+  assert.ok(eggHits > 0, 'dragon_egg must still appear (rare) in trek artifact rolls');
+  assert.ok(EGG_ARTIFACT_ROLL_CHANCE > 0 && EGG_ARTIFACT_ROLL_CHANCE <= 0.15);
   assert.ok(TREK_ARTIFACTS.length >= 1);
   assert.ok(EPIC_TREK_DISCOVERY.LOOT_OUTCOMES.some((o) => o.type === 'artifact'));
-  console.log(`  ✓ egg hits=${eggHits} artifact hits sampled=${artHits}`);
+  console.log(`  ✓ egg hits=${eggHits} artifact hits sampled=${artHits} (chance=${EGG_ARTIFACT_ROLL_CHANCE})`);
+}
+
+console.log('prestige wipe: keep dragon form; abort channeling');
+{
+  const { buildWipeUpdates } = require('../game/prestige/wipe');
+  const dragonK = {
+    level: 500,
+    prestige_level: 8,
+    turn: 900,
+    land: 999,
+    gold: 1,
+    evolution_form: 'dragon',
+    evolution_ritual: JSON.stringify({ state: 'COMPLETE', form: 'dragon' }),
+  };
+  const wipedDragon = buildWipeUpdates(dragonK);
+  assert.strictEqual(wipedDragon.updates.evolution_form, undefined, 'form not rewritten — DB KEEP');
+  assert.strictEqual(wipedDragon.updates.evolution_ritual, undefined, 'COMPLETE ritual not rewritten');
+
+  const channelingK = {
+    ...dragonK,
+    evolution_form: '',
+    evolution_ritual: JSON.stringify({
+      state: 'CHANNELING',
+      form: 'dragon',
+      turns_remaining: 30,
+    }),
+  };
+  const wipedCh = buildWipeUpdates(channelingK);
+  assert.ok(wipedCh.updates.evolution_ritual);
+  assert.strictEqual(JSON.parse(wipedCh.updates.evolution_ritual).state, 'ABORTED');
+  assert.strictEqual(JSON.parse(wipedCh.updates.evolution_ritual).reason, 'prestige_rebirth');
+  console.log('  ✓ endgame form kept; channeling aborted on prestige');
 }
 
 console.log('food upkeep mult for dragon form');

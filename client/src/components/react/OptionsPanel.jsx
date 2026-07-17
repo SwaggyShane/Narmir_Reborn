@@ -350,12 +350,14 @@ const DragonEvolutionSection = () => {
 
   const startRitual = async () => {
     const ok = window.confirm(
-      `Begin dragon evolution ritual?\n\n` +
-        `Requires Prestige ${EVOLUTION_PRESTIGE_GATE}+, a Dragon Egg (epic trek), and at least 1 castle.\n` +
-        `Channel for ${RITUAL_TURNS} turns. If castles hit 0, the ritual fails and the egg is lost.\n` +
+      `Begin ENDGAME dragon evolution?\n\n` +
+        `This is an optional endgame identity — tradeoffs, not free power.\n` +
+        `Requires Prestige ${EVOLUTION_PRESTIGE_GATE}+, a rare Dragon Egg (epic trek), and at least 1 castle.\n` +
+        `Channel for ${RITUAL_TURNS} turns (defense ×0.85 while channeling). Castles to 0 → ritual fails, egg lost.\n` +
         `On success: defense ×${DRAGON_FORM.defenseMult}, upkeep ×${DRAGON_FORM.upkeepMult}, ` +
         `terror vs lower prestige ×${DRAGON_FORM.terrorVsLowerPrestige}, hoard econ ×${DRAGON_FORM.hoardEconMult}.\n` +
-        `No free global combat bonus (prestige combat still max ×1.05).`,
+        `No free global combat bonus (prestige combat still max ×1.05).\n` +
+        `Dragon form is kept across future prestige rebirths.`,
     );
     if (!ok) return;
     setBusy(true);
@@ -393,15 +395,16 @@ const DragonEvolutionSection = () => {
       className="rounded-2xl border-2 border-[var(--gold)] bg-[var(--bg2)] p-5"
       data-testid="dragon-evolution-panel"
     >
-      <div className="card-title !mb-3 text-[var(--gold)]">Dragon Evolution</div>
+      <div className="card-title !mb-3 text-[var(--gold)]">Dragon Evolution (Endgame)</div>
       <div className="mb-4 text-[14px] leading-7 text-[var(--text2)]">
-        Optional endgame form (Roadmap B). Tradeoffs — not prestige-plus-combat.
+        <strong className="text-[var(--gold)]">Optional endgame identity</strong> — not a midgame power spike.
+        Tradeoffs only; prestige combat still hard-caps at ×1.05. Form is permanent once complete (survives rebirth).
         <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>Prestige {EVOLUTION_PRESTIGE_GATE}+, Dragon Egg from epic trek, hold a castle</li>
-          <li>{RITUAL_TURNS}-turn channel (defense ×0.85 while channeling)</li>
+          <li>Prestige {EVOLUTION_PRESTIGE_GATE}+ (late ladder), rare Dragon Egg (epic trek), hold a castle</li>
+          <li>{RITUAL_TURNS}-turn vulnerable channel (defense ×0.85); egg spent on start</li>
           <li>
             Form: defense ×{DRAGON_FORM.defenseMult}, upkeep ×{DRAGON_FORM.upkeepMult}, terror vs weaker realms,
-            small hoard
+            small hoard — not free combat
           </li>
         </ul>
       </div>
@@ -543,8 +546,9 @@ const OptionsPanel = () => {
     const ok = window.confirm(
       `Rebirth to Prestige ${nextP}?\n\n` +
         `You will receive: land ${nextLand.toLocaleString()}, gold ${nextGold.toLocaleString()}, starter buildings only.\n` +
-        `You lose: army, castles/markets/walls (and most buildings), fragments/attunements, items, research progress, trade routes, active expeditions (no payout).\n` +
-        `You keep: race, maps, discovery, achievements, lore, top 3 heroes.\n` +
+        `You lose: army, castles/markets/walls (and most buildings), fragments/attunements, items (incl. uneaten dragon eggs), research progress, trade routes, active expeditions (no payout).\n` +
+        `You keep: race, maps, discovery, achievements, lore, top 3 heroes, and endgame dragon form if already evolved.\n` +
+        `If a dragon ritual is still channeling, it is aborted (egg already spent).\n` +
         `Then ${PRESTIGE_COOLDOWN_TURNS} turns (~3.5 days) before you can rebirth again.`,
     );
     if (!ok) return;

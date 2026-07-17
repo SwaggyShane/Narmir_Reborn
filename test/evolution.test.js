@@ -10,7 +10,6 @@ const {
   DRAGON_EGG_ITEM_ID,
   DRAGON_FORM,
   FIXED_ARMY_BUDGET,
-  EGG_TREK_ARTIFACT_WEIGHT,
 } = require('../game/evolution/balance');
 const { applyPrestigeCombatMultiplier } = require('../game/prestige/combat');
 const { rollLootDiscovery, TREK_ARTIFACTS } = require('../game/epic-trek-discovery');
@@ -118,8 +117,9 @@ assert.strictEqual(
 assert.strictEqual(evo.getDragonUpkeepMult({ evolution_form: 'dragon' }), DRAGON_FORM.upkeepMult);
 assert.strictEqual(evo.getDragonHoardEconMult({ evolution_form: 'dragon' }), DRAGON_FORM.hoardEconMult);
 
-console.log('trek egg weight configured');
-assert.ok(EGG_TREK_ARTIFACT_WEIGHT >= 1);
+console.log('trek egg rarity configured (endgame)');
+const { EGG_ARTIFACT_ROLL_CHANCE } = require('../game/evolution/balance');
+assert.ok(EGG_ARTIFACT_ROLL_CHANCE > 0 && EGG_ARTIFACT_ROLL_CHANCE <= 0.15, 'egg must be rare fraction of artifacts');
 assert.ok(TREK_ARTIFACTS.length >= 1);
 // Smoke: rollLootDiscovery is callable (seeded may or may not hit artifact)
 const sample = rollLootDiscovery(1, 2, { id: 99, turn: 1 });

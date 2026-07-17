@@ -361,6 +361,8 @@ Assertions:
 
 ### 3.6 Evolution - dragon (Roadmap B)
 
+**Role:** Optional **endgame identity**, not midgame progression. Prestige ladder first; dragon is a late optional form with tradeoffs.
+
 **Intended power curve:** A well-played **P8 dragon** should be roughly competitive with a highly optimized **P5-P7 non-dragon** of similar land and investment - not a free win over the server.
 
 Stacking:

@@ -72,9 +72,10 @@ export default function PrestigePanel() {
       </div>
 
       <div style={{ color: 'var(--text3)', fontSize: 13, lineHeight: 1.6, margin: '28px 0 12px', maxWidth: 700 }}>
-        <strong style={{ color: 'var(--gold)' }}>Dragon evolution (Roadmap B)</strong> — optional form, not free combat.
-        Requires Prestige {EVOLUTION_PRESTIGE_GATE}+, <code>dragon_egg</code> (epic trek artifact), and a castle for{' '}
-        {RITUAL_TURNS} turns of channeling (channel defense ×{RITUAL_CHANNEL_DEFENSE_MULT}). Egg is spent on start.
+        <strong style={{ color: 'var(--gold)' }}>Dragon evolution — endgame</strong> (Roadmap B). Optional permanent
+        identity with tradeoffs, not a midgame combat spike. Requires Prestige {EVOLUTION_PRESTIGE_GATE}+, rare{' '}
+        <code>dragon_egg</code> (≈5% of trek artifact rolls), and a castle for {RITUAL_TURNS} turns of channeling
+        (channel defense ×{RITUAL_CHANNEL_DEFENSE_MULT}). Egg spent on start; form kept across prestige rebirth.
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={TABLE}>

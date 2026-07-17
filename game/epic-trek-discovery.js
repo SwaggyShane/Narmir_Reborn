@@ -113,19 +113,22 @@ function rollLootDiscovery(hexCol, hexRow, kingdom) {
 
   if (chosen.type === 'artifact') {
     const eggBal = getEggBalance();
-    const eggW = Number(eggBal.EGG_TREK_ARTIFACT_WEIGHT) || 0;
-    const otherW = TREK_ARTIFACTS.length; // each catalog entry weight 1
-    const totalArtW = otherW + eggW;
-    const artRoll = seededUnit(hexCol + 5, hexRow + 9, kingdom.id * 17) * totalArtW;
+    // Endgame egg: small fraction of artifact rolls (not equal-weight catalog entry)
+    const eggChance =
+      Number(eggBal.EGG_ARTIFACT_ROLL_CHANCE) ||
+      Number(eggBal.EGG_TREK_ARTIFACT_WEIGHT) ||
+      0.05;
+    const eggRoll = seededUnit(hexCol + 5, hexRow + 9, kingdom.id * 17);
     let art;
-    if (eggW > 0 && artRoll < eggW) {
+    if (eggChance > 0 && eggRoll < eggChance) {
       art = { id: eggBal.DRAGON_EGG_ITEM_ID, name: eggBal.DRAGON_EGG_ITEM_NAME };
-      // Tuning log — egg is intentional rare; keep console for operator metrics
       console.log(
-        `[evolution] dragon_egg trek drop kingdom=${kingdom.id} hex=${hexCol},${hexRow} turn=${kingdom.turn || 0}`,
+        `[evolution] dragon_egg trek drop (endgame) kingdom=${kingdom.id} hex=${hexCol},${hexRow} turn=${kingdom.turn || 0}`,
       );
     } else {
-      const idx = Math.floor(((artRoll - eggW) / Math.max(1, otherW)) * TREK_ARTIFACTS.length);
+      const idx = Math.floor(
+        seededUnit(hexCol + 6, hexRow + 10, kingdom.id * 19) * TREK_ARTIFACTS.length,
+      );
       art = TREK_ARTIFACTS[Math.min(Math.max(0, idx), TREK_ARTIFACTS.length - 1)];
     }
     return {

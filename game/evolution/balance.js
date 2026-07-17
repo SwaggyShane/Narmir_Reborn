@@ -1,14 +1,15 @@
 'use strict';
 // Dragon evolution balance — sole source (EVOLUTION.md Roadmap B).
-// Tradeoff form: not prestige-plus-combat.
+// ENDGAME optional identity: tradeoff form, not prestige-plus-combat.
+// Gates: high prestige + rare trek egg + long vulnerable ritual.
 
-/** Minimum prestige_level to start dragon ritual. */
+/** Minimum prestige_level to start dragon ritual (endgame band). */
 const EVOLUTION_PRESTIGE_GATE = 8;
 
-/** Turns of channeling before form completes. Flat. */
+/** Turns of channeling before form completes. Flat. Long commitment. */
 const RITUAL_TURNS = 50;
 
-/** Defense mult while CHANNELING (vulnerable). */
+/** Defense mult while CHANNELING (vulnerable — endgame cost). */
 const RITUAL_CHANNEL_DEFENSE_MULT = 0.85;
 
 /** Inventory item id (trek primary). Distinct from config ancient_dragon_egg flavor loot. */
@@ -16,11 +17,13 @@ const DRAGON_EGG_ITEM_ID = 'dragon_egg';
 const DRAGON_EGG_ITEM_NAME = 'Dragon Egg';
 
 /**
- * Epic trek: when artifact loot fires, chance this artifact is the dragon egg
- * (else normal TREK_ARTIFACTS catalog). Logged on drop for tuning.
- * Weight among artifact rolls, not among all loot.
+ * Epic trek: when artifact loot fires, probability this roll is the dragon egg
+ * (else normal TREK_ARTIFACTS catalog). Endgame-rare — not ~1/6 of artifacts.
+ * Logged on drop for tuning.
  */
-const EGG_TREK_ARTIFACT_WEIGHT = 1; // vs sum of other artifact weights (~5 entries at 1 each → ~1/6 of artifacts)
+const EGG_ARTIFACT_ROLL_CHANCE = 0.05; // 5% of artifact outcomes
+/** @deprecated use EGG_ARTIFACT_ROLL_CHANCE — kept for older test imports */
+const EGG_TREK_ARTIFACT_WEIGHT = EGG_ARTIFACT_ROLL_CHANCE;
 
 /** Permanent dragon form modifiers (no global combat %). */
 const DRAGON_FORM = Object.freeze({
@@ -61,6 +64,7 @@ module.exports = {
   RITUAL_CHANNEL_DEFENSE_MULT,
   DRAGON_EGG_ITEM_ID,
   DRAGON_EGG_ITEM_NAME,
+  EGG_ARTIFACT_ROLL_CHANCE,
   EGG_TREK_ARTIFACT_WEIGHT,
   DRAGON_FORM,
   FIXED_ARMY_BUDGET,
