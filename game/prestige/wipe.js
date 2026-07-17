@@ -155,7 +155,7 @@ async function applyPrestigeSideEffects(db, kingdomId) {
   // Expeditions: cancel — rewards lost (delete active rows)
   try {
     await db.run('DELETE FROM expeditions WHERE kingdom_id = $1 AND turns_left > 0', [kingdomId]);
-  } catch (e) {
+  } catch (_e) {
     /* table may vary */
   }
   try {
@@ -163,13 +163,13 @@ async function applyPrestigeSideEffects(db, kingdomId) {
       `DELETE FROM resource_expeditions WHERE kingdom_id = $1 AND status IN ('active','outbound','returning','in_progress')`,
       [kingdomId],
     );
-  } catch (e) {
+  } catch (_e) {
     try {
       await db.run('DELETE FROM resource_expeditions WHERE kingdom_id = $1 AND status = $2', [
         kingdomId,
         'active',
       ]);
-    } catch (e2) {
+    } catch (_e2) {
       /* ignore */
     }
   }
