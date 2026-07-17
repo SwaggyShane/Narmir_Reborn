@@ -6,7 +6,7 @@ import { useNavLayout } from '../../hooks/useNavLayout.js';
 import { useColorTheme } from '../../hooks/useColorTheme.js';
 import { COLOR_THEMES } from '../../utils/colorTheme.js';
 import { showBugReportModal } from './BugReportModal.jsx';
-import { useProfileStore, useDescription, useCustomPortrait, usePrestige } from '../../stores';
+import { useProfileStore, useDescription, useCustomPortrait, usePrestige, useLevel } from '../../stores';
 
 const API = (path, opts = {}) => {
   const token = localStorage.getItem('narmir_token');
@@ -305,7 +305,12 @@ const PortraitUploadCard = () => {
 const OptionsPanel = () => {
   const storedDescription = useDescription();
   const prestige = usePrestige();
+  const level = useLevel();
   const { layout: navLayout, setLayout: setNavLayout } = useNavLayout();
+  const canRebirth = (level || 0) >= 500;
+  const nextPrestige = (prestige || 0) + 1;
+  const previewLand = 500 + 50 * nextPrestige;
+  const previewGold = 25000 + 10000 * nextPrestige;
   const { theme: colorTheme, setTheme: setColorTheme } = useColorTheme();
   const [skipIntro, setSkipIntro] = useState(() => {
     try { return localStorage.getItem('narmir_skip_intro') === '1'; } catch { return false; }
@@ -361,12 +366,33 @@ const OptionsPanel = () => {
   };
 
   const initiateRebirth = async () => {
+    const nextP = (prestige || 0) + 1;
+    const landSeed = 500 + 50 * nextP;
+    const goldSeed = 25000 + 10000 * nextP;
+    const ok = window.confirm(
+      `Rebirth to Prestige ${nextP}?\n\n` +
+        `You will receive: land ${landSeed.toLocaleString()}, gold ${goldSeed.toLocaleString()}, starter buildings only.\n` +
+        `You lose: army, castles/markets/walls (and most buildings), fragments/attunements, items, research progress, trade routes, active expeditions (no payout).\n` +
+        `You keep: race, maps, discovery, achievements, lore, top 3 heroes.\n` +
+        `Then 200 turns (~3.5 days) before you can rebirth again.`,
+    );
+    if (!ok) return;
     const result = await apiCall('/api/kingdom/rebirth', { method: 'POST', body: {} });
     if (result.error) return toast(result.error, 'error');
     if (result.prestige_level !== undefined) {
       useProfileStore.getState().updatePrestigeLevel(result.prestige_level);
     }
-    toast('The kingdom has transcended. Reloading...', 'success');
+    const m = result.modifiers || {};
+    const bonusBits = [
+      m.bldCap && m.bldCap !== 1 ? `building caps ×${m.bldCap}` : null,
+      m.econ && m.econ !== 1 ? `economy ×${m.econ}` : null,
+      m.combat && m.combat !== 1 ? `combat ×${m.combat}` : null,
+      m.pop && m.pop !== 1 ? `pop ×${m.pop}` : null,
+    ].filter(Boolean);
+    toast(
+      `Transcended${result.title ? ` (${result.title})` : ''}. Permanent: ${bonusBits.join(', ') || 'see prestige tier'}. Reloading...`,
+      'success',
+    );
     window.location.reload();
   };
 
@@ -474,25 +500,41 @@ const OptionsPanel = () => {
         </div>
 
         <section className="rounded-2xl border-2 border-[var(--accent1)] bg-[var(--bg2)] p-5">
-          <div className="card-title !mb-3 text-[var(--accent1)]">🌌 Empire Rebirth (Kingdom Prestige)</div>
+          <div className="card-title !mb-3 text-[var(--accent1)]">Empire Rebirth (Kingdom Prestige)</div>
           <div className="mb-4 text-[14px] leading-7 text-[var(--text2)]">
-            When your kingdom reaches <strong className="text-[var(--gold)]">Level 50</strong>, you can choose to transcend. Your buildings, research, and army will be reset, but you will retain your <strong className="text-[var(--accent1)]">Prestige Level</strong> (currently: <span id="cur-prestige-lvl">0</span>).
+            At <strong className="text-[var(--gold)]">Level 500</strong> (max) you may rebirth. Current prestige:{' '}
+            <strong className="text-[var(--accent1)]">{prestige || 0}</strong>
+            {' '}(kingdom level {level || 0}).
             <br />
             <br />
-            <strong className="text-[var(--gold)]">Permanent Bonuses:</strong>
+            <strong className="text-[var(--gold)]">If you rebirth now (to Prestige {nextPrestige}):</strong>
             <ul className="mt-2 list-disc space-y-1 pl-5">
-              <li>+10% starting Gold per prestige level</li>
-              <li>+5% effectiveness for ALL units per prestige level</li>
-              <li>
-                Unlock <strong className="text-[var(--accent1)]">Legendary Unit Archetypes</strong> for your race
-              </li>
-              <li>Economic efficiency multiplier for trade routes</li>
+              <li>New land: <strong>{previewLand.toLocaleString()}</strong></li>
+              <li>New gold: <strong>{previewGold.toLocaleString()}</strong></li>
+              <li>Starter buildings only (5 farms, 2 barracks, 1 school, 100 housing)</li>
+              <li>Army, castles, markets, walls, fragments, research progress wiped</li>
+              <li>Keep: race, maps, discovery, achievements, lore, top 3 heroes</li>
+              <li>Then 200 turns (~3.5 days) cooldown before next rebirth</li>
+            </ul>
+            <br />
+            <strong className="text-[var(--gold)]">Permanent mults (capped at Prestige 5):</strong>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>Building caps up to +50%, economy up to +15%, combat up to +5%, housing pop up to +10%</li>
+              <li>XP to level costs +20% per prestige rank</li>
             </ul>
           </div>
-          <div id="rebirth-req-msg" className="mb-3 text-[12px] text-[var(--red)]">
-            Require Kingdom Level 50 to Rebirth.
-          </div>
-          <button className="base-btn variant-accent bg-[var(--accent1)] px-6 py-3 font-bold" id="rebirth-btn" onClick={initiateRebirth} disabled>
+          {!canRebirth && (
+            <div className="mb-3 text-[12px] text-[var(--red)]">
+              Require Kingdom Level 500 to Rebirth (you are level {level || 0}).
+            </div>
+          )}
+          <button
+            type="button"
+            className="base-btn variant-accent bg-[var(--accent1)] px-6 py-3 font-bold disabled:opacity-50"
+            id="rebirth-btn"
+            onClick={initiateRebirth}
+            disabled={!canRebirth}
+          >
             ASCEND EMPIRE
           </button>
         </section>

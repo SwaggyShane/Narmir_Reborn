@@ -2991,15 +2991,15 @@ const config = {
     PRESTIGE_BUTTON_TITLE: "You've reached max level! Click to explore prestige.",
   },
 
-  // Multipliers applied when a kingdom has prestiged. Used by economy
-  // (market income, trade income), construction (building caps), and
-  // happiness (population bonus). Levels 1-5 only; higher levels clamp to 5.
+  // Canonical mults live in game/prestige/balance.js (EVOLUTION.md).
+  // Keep config export in sync for economy/attunements that still import config.
   PRESTIGE_MODIFIERS: {
-    1: { bldCap: 1.25, econ: 1.05, combat: 1.00, pop: 1.00 },
-    2: { bldCap: 1.50, econ: 1.10, combat: 1.00, pop: 1.00 },
-    3: { bldCap: 1.75, econ: 1.15, combat: 1.05, pop: 1.00 },
-    4: { bldCap: 2.00, econ: 1.20, combat: 1.05, pop: 1.00 },
-    5: { bldCap: 2.50, econ: 1.30, combat: 1.10, pop: 1.25 },
+    0: { bldCap: 1.0, econ: 1.0, combat: 1.0, pop: 1.0 },
+    1: { bldCap: 1.1, econ: 1.03, combat: 1.0, pop: 1.0 },
+    2: { bldCap: 1.2, econ: 1.06, combat: 1.0, pop: 1.0 },
+    3: { bldCap: 1.3, econ: 1.09, combat: 1.02, pop: 1.0 },
+    4: { bldCap: 1.4, econ: 1.12, combat: 1.03, pop: 1.05 },
+    5: { bldCap: 1.5, econ: 1.15, combat: 1.05, pop: 1.1 },
   },
 };
 

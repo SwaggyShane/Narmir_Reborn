@@ -1883,31 +1883,74 @@ module.exports = function (db) {
     }
   });
 
+  // FOR UPDATE serializes rebirth vs concurrent /turn on the same kingdom (EVOLUTION.md 3.1 / 3.1.1).
   router.post("/rebirth", requireAuth, requireCsrfToken, async (req, res) => {
-    const k = await db.get("SELECT id, level, prestige_level, land, turn FROM kingdoms WHERE player_id = $1", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
+    try {
+      const prestigeApi = require('../game/prestige');
+      let kingdomId;
+      const payload = await db.withTransaction(async () => {
+        const k = await db.get(
+          'SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE',
+          [req.player.playerId],
+        );
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
+        if (!prestigeApi.canPrestige(k)) {
+          const err = new Error(
+            `Require Kingdom Level ${prestigeApi.PRESTIGE_LEVEL_GATE} to Rebirth (or cooldown / ritual active).`,
+          );
+          err.statusCode = 400;
+          throw err;
+        }
+        const result = prestigeApi.processPrestige(k);
+        if (result.error) {
+          const err = new Error(result.error);
+          err.statusCode = 400;
+          throw err;
+        }
+        await applyUpdates(db, k.id, result.updates);
+        await prestigeApi.applyPrestigeSideEffects(db, k.id);
+        kingdomId = k.id;
+        return {
+          prestige_level: result.updates.prestige_level,
+          updates: result.updates,
+          seeds: result.seeds,
+          newPrestigeLevel: result.newPrestigeLevel,
+        };
+      });
 
-    if (!commandHandler.canPrestige(k))
-      return res
-        .status(400)
-        .json({ error: "Require Kingdom Level 50 to Rebirth." });
+      // News best-effort after commit — prestige stands if this fails
+      try {
+        const title = prestigeApi.getPrestigeTitle(payload.prestige_level);
+        await db.run(
+          'INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)',
+          [
+            kingdomId,
+            'system',
+            `You have transcended (${title}, Prestige ${payload.prestige_level}). A new era begins.`,
+            payload.updates.turn || 0,
+          ],
+        );
+      } catch (newsErr) {
+        console.error('[rebirth] news insert failed (prestige stands):', newsErr.message);
+      }
 
-    const result = await commandHandler.handle({ type: 'prestige' }, { kingdom: k });
-    await applyUpdates(db, k.id, result.updates);
-
-    await db.run(
-      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
-      [
-        k.id,
-        "system",
-        "ðŸŒŒ YOU HAVE TRANSCENDED. A new era begins for your empire!",
-        result.updates.turn,
-      ],
-    );
-
-    res.json({ ok: true, prestige_level: result.updates.prestige_level, updates: structureUpdates(result.updates) });
+      res.json({
+        ok: true,
+        prestige_level: payload.prestige_level,
+        seeds: payload.seeds,
+        title: prestigeApi.getPrestigeTitle(payload.prestige_level),
+        modifiers: prestigeApi.getPrestigeModifiers(payload.prestige_level),
+        updates: structureUpdates(payload.updates),
+      });
+    } catch (err) {
+      const code = err.statusCode || 500;
+      if (code >= 500) console.error('[rebirth]', err);
+      res.status(code).json({ error: err.message || 'Rebirth failed' });
+    }
   });
 
   router.get("/lore-and-achievements", requireAuth, async (req, res) => {

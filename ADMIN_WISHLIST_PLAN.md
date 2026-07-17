@@ -24,7 +24,7 @@ Evidence also in [ARCHIVAL.md](ARCHIVAL.md) (*Admin wishlist validity audit*).
 ## Partial (adjacent systems exist; wishlist intent not fully shipped)
 
 - **Mercenary guilds** — basic merc hire/upkeep/contracts exist (`game/mercenaries.js`); not distinct hireable **factions**.
-- **Prestige economy** — prestige reset + level modifiers exist; not explicit permanent **market** bonuses as a designed economy layer.
+- **Prestige economy** — stub only in code. **Canonical locked design:** [EVOLUTION.md](EVOLUTION.md) (Roadmap A wipe/caps/TX; Roadmap B dragon evolution).
 - **Artifact hunting** — epic-trek artifacts + dungeon/mountain expeditions exist; not a dedicated high-risk hunt loop.
 - **Dungeons and raids** — regional dungeon/mountain PvE expeditions exist; not multi-kingdom cooperative raids.
 - **Caravans / trade risk** — trade routes + Orc `raid_trade_route` exist; not general physical caravan entities.

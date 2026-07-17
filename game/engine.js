@@ -80,11 +80,10 @@ const { processLocationMapsWip, computeExpeditionTransitions } = require('./lib/
 const {
   rebellionCheck,
   rebellionEvent,
-  canPrestige,
-  processPrestige,
   raidTradeRoute,
   resolveAllianceDefense,
 } = require('./lib/special-events');
+const { canPrestige, processPrestige } = require('./prestige');
 const {
   resolveMilitaryAttack,
   wmCrewRequired,

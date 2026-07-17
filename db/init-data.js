@@ -389,6 +389,7 @@ async function initializeKingdomColumns(db, getTableColumns, getColumnType, addC
     ['build_allocation', "TEXT NOT NULL DEFAULT '{}'"],
     ['resource_build_allocation', "TEXT NOT NULL DEFAULT '{}'"],
     ['prestige_level', 'INTEGER NOT NULL DEFAULT 0'],
+    ['last_prestige_turn', 'INTEGER NOT NULL DEFAULT 0'],
     ['trade_routes', 'INTEGER NOT NULL DEFAULT 0'],
     ['tools_hammers', 'INTEGER NOT NULL DEFAULT 0'],
     ['tools_scaffolding', 'INTEGER NOT NULL DEFAULT 0'],

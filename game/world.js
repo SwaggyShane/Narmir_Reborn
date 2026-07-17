@@ -1,78 +1,14 @@
 // game/world.js
-// World / meta-game functions: region assignment, prestige, alliance defense,
+// World / meta-game functions: region assignment, alliance defense,
 // region control resolution, and kingdom score calculation.
+// Prestige: use game/prestige/ (EVOLUTION.md) — do not re-add stubs here.
 
 const { safeJsonParse } = require('../utils/helpers');
 const { safeEmit } = require('./safe-socket-emit');
+const { canPrestige, processPrestige } = require('./prestige');
 
 function assignRegion(race) {
   return race; // simple mapping for now: race name = region id
-}
-
-function canPrestige(k) {
-  return k.level >= 50; // Prestige at Level 50
-}
-
-function processPrestige(k) {
-  if (!canPrestige(k))
-    return { error: "Kingdom level 50 required for Prestige" };
-
-  const currentLevel = k.prestige_level || 0;
-  const nextLevel = currentLevel + 1;
-
-  // New Kingdom defaults
-  return {
-    updates: {
-      prestige_level: nextLevel,
-      level: 1,
-      xp: 0,
-      gold: 50000 * nextLevel, // Bonus starting gold
-      land: k.land, // Keeping land as requested
-      population: 5000,
-      food: 25000,
-      mana: 1000,
-      fighters: 0,
-      rangers: 0,
-      clerics: 0,
-      mages: 0,
-      thieves: 0,
-      war_machines: 0,
-      ninjas: 0,
-      scribes: 0,
-      engineers: 0,
-      researchers: 0,
-      wood: 0,
-      stone: 0,
-      iron: 0,
-      bld_farms: 5,
-      bld_barracks: 2,
-      bld_schools: 1,
-      bld_housing: 100,
-      bld_granaries: 0,
-      bld_taverns: 0,
-      bld_markets: 0,
-      bld_guard_towers: 0,
-      bld_outposts: 0,
-      bld_smithies: 0,
-      bld_armories: 0,
-      bld_vaults: 0,
-      bld_mage_towers: 0,
-      bld_shrines: 0,
-      bld_training: 0,
-      bld_castles: 0,
-      bld_libraries: 0,
-      bld_walls: 0,
-      bld_mausoleums: 0,
-      build_queue: "{}",
-      build_progress: "{}",
-      research_progress: "{}",
-      training_allocation: "{}",
-      smithy_allocation: "{}",
-      mage_tower_allocation: "{}",
-      shrine_allocation: "{}",
-      turn: k.turn,
-    }
-  };
 }
 
 function resolveAllianceDefense(attackResult, allies) {
