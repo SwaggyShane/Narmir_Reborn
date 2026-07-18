@@ -38,8 +38,7 @@ async function spawnPassiveScoutResourceNode(db, kingdom, nodeType) {
     // Place in rings 2–4 so it's discoverable but not under the home hex
     const candidates = getHexesInRadius(homeHex.col, homeHex.row, 4).filter((h) => {
       const d = Math.max(Math.abs(h.col - homeHex.col), Math.abs(h.row - homeHex.row));
-      // ring distance approx — keep non-home
-      return !(h.col === homeHex.col && h.row === homeHex.row);
+      return d >= 2;
     });
     const shuffled = [...candidates].sort(() => Math.random() - 0.5);
     let coords = null;

@@ -5,24 +5,13 @@
 
 const { safeJsonParse } = require('../../utils/helpers');
 const { isNight, calcDiscoveryChance } = require('./data-transformations');
-const { happinessCombatMult, formatCombatV2NewsBlurb } = require('./combat-helpers');
-const {
-  effectiveTroopLevel,
-  getAvailableUnits,
-  unitLevelMult,
-} = require('./troops');
-const { raceBonus } = require('./race-bonus');
+const { formatCombatV2NewsBlurb } = require('./combat-helpers');
+const { getAvailableUnits } = require('./troops');
 const fragmentBonusManager = require('../fragment-bonus-manager');
-const { applyWarmachineDamage } = require('./defense');
-const heroesMod = require('../heroes');
-const defenseMod = require('../defense');
 const combatResolverV2 = require('../combat-resolver');
 const { getFlag } = require('../feature-flags');
 const { hasElevationGrid, getElevationGrid } = require('../world-elevation-cache');
 const { getKingdomElevationLevel } = require('../world-elevation');
-
-const { getHeroPower } = heroesMod;
-const { wallDefensePower, towerDetectionPower, outpostRangerPower } = defenseMod;
 
 // Import constants from config
 const xpMod = require('../xp');
