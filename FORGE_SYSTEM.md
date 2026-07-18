@@ -464,27 +464,20 @@ Lane A's chain was re-verified after each `main` landing — lint clean, live `i
 | `forge/a4-flux-barge` | `0e055668` |
 | `forge/a5-vent-dormancy` | `37e2ce58` |
 | `forge/a6-lava-expedition` | `700b9c74` — **done**, see H |
-| `forge/b1-footer-upgrade-chain` | `de41aeb2` (rebased onto `main` as of `c2064a32`; **not yet rebased onto `2abe45ae`** — see D) |
-| `forge/b2-forge-tab-shell` | `78c667fd` (same caveat) |
-| `forge/b3-fuel-steel-sections` | `595285d4` (same caveat) |
-| `forge/b4-barges-section` | `329a4e3d` (same caveat) |
-| `forge/b5-crucible-lava-launch` | `3e8e5483` (same caveat) |
-| `forge/b6-volcanic-hex-card` | `738a1dc1` (same caveat) — **done**, see G |
+| `forge/b1-footer-upgrade-chain` | `bbcebcf3` (rebased onto `main` @ `4ff60532`) |
+| `forge/b2-forge-tab-shell` | `fef53a16` (rebased onto `main` @ `4ff60532`) |
+| `forge/b3-fuel-steel-sections` | `470e6bb2` (rebased onto `main` @ `4ff60532`) |
+| `forge/b4-barges-section` | `513fc4ce` (rebased onto `main` @ `4ff60532`) |
+| `forge/b5-crucible-lava-launch` | `24395e42` (rebased onto `main` @ `4ff60532` + alias cleanup) |
+| `forge/b6-volcanic-hex-card` | `35726a83` (rebased onto `main` @ `4ff60532`) — **done**, see G |
 
 ### D. What Lane B must do right now
 
-**Already done (2026-07-18, Lane B worker), before A6 landed:**
-1. Rebased onto `main` at `c2064a32`, moved b1–b4 HEADs to match.
-2. Confirmed no `coal_stored`/`steel_stored` in `client/src/`.
-3. Removed legacy `*_stored` response-alias fallbacks (`3e8e5483`).
-4. Full quality gate passed on B5.
-5. Built B6 (`738a1dc1`) — done, see G.
-
-**New, as of A6 landing (`700b9c74`) — do this now:**
-1. `git rebase main` on `forge/b6-volcanic-hex-card` (your current tip) — `main` has moved twice since your last rebase (`c2064a32` → `a499dfc6`-family already absorbed → now `2abe45ae`, the `parseTroopLevel` fix). Move b1–b5 refs the same way you did last time.
-2. **`GET /api/kingdom/lava-vent?hex_col=&hex_row=` now exists** (added in A6, commit `700b9c74`) — the thing you flagged as missing in your G note. Returns exactly `getVentState`'s shape: `{ hex_col, hex_row, active, occupying_kingdom_id, occupying_kingdom_name, dormant_until }`. Wire B6 to it if it was still using the "no endpoint, assume ACTIVE + Free" fallback.
-3. Re-run your full quality gate after the rebase.
-4. After that: **Lane B is done.** Nothing else is scoped for B.
+**Done (2026-07-18, Lane B worker) — Appendix B + D completed:**
+1. `git rebase main` on `forge/b6-volcanic-hex-card` onto current `main` (`4ff60532`, which includes `2abe45ae` parseTroopLevel + A6 docs/endpoint). Moved b1–b5 worktree HEADs to rebased commits (see table).
+2. `VolcanicHexCard` already calls `GET /api/kingdom/lava-vent?hex_col=&hex_row=`; on error defaults ACTIVE+Free (same as empty `getVentState`).
+3. Quality gate after rebase: `npx vitest run` 172 passed; `npm run build` ok; `npm run lint` 0 errors (pre-existing warnings only).
+4. **Lane B is done.** Nothing else is scoped for B until §15.5 Integration.
 
 ### E. Contract matrix (who implements what)
 
@@ -506,8 +499,8 @@ Lane A's chain was re-verified after each `main` landing — lint clean, live `i
 ### F. Next up
 
 - **Lane A: done.** A1–A6 all committed, rebased onto current `main`, and verified. Nothing further scoped for Lane A unless Integration (§15.5) surfaces a gap.
-- **Lane B:** rebase onto `main` (`2abe45ae`) and wire the new vent-read endpoint — see D. Otherwise done.
-- **Nobody yet:** the integration slice (§15.5, `forge/z-integration`) — both A6 and B6 are functionally done, but Lane B needs to complete D above first. Once that's confirmed, Integration can start.
+- **Lane B: done.** B1–B6 rebased onto `main` (`4ff60532`); quality gate passed. Nothing further scoped for B until Integration.
+- **Nobody yet / ready when both confirm:** the integration slice (§15.5, `forge/z-integration`) — A6 and B6 are both done and on current `main` ancestry.
 
 ### G. B6 notes (Lane B)
 
@@ -523,4 +516,20 @@ Lane A's chain was re-verified after each `main` landing — lint clean, live `i
 - XP on resolve: `awardTroopXp` for both `engineers` and `mages` troop levels, **and** `awardEngineerXp` for the separate construction-skill column, Lodge ×1.15 on the engineer grant only — matches §6.4 exactly. Verified with direct functional tests against live Postgres for both outcomes (win: correct race-multiplied yield + XP; lose: correct occupant name surfaced, correct empty-handed XP) — see the A6 commit message for exact numbers checked.
 - `GET /api/kingdom/lava-vent` added on top of the original A6 scope once Lane B's G note flagged it was missing — small, directly related addition, folded into the same commit rather than a separate slice.
 
-*Last updated 2026-07-18, after A6 landed and the parseTroopLevel shared-foundation fix.*
+### I. Integration-branch bugs found and fixed during the live §15.5 walkthrough (2026-07-18)
+
+Three bugs surfaced only once win/lose were tested against the real DB and route stack on `forge/z-integration` — none were caught by functional tests against a mock DB, because none of them exercised the real allowlist/route/process-lifetime paths involved. Fixed directly on the integration branch (not a separate main commit — nothing here is shared-foundation; each bug is scoped to Forge-only code Lane A/B already own):
+
+1. **`VALID_KINGDOM_COLS` in `game/engine.js`** — the allowlist gating which `updates` fields `resolveExpeditions` actually persists to `kingdoms` was missing `lava_stored`, `engineer_level`, `engineer_xp`, `flux_barges`. Rewards computed correctly but silently failed to write. Fixed by adding the four fields to the Set.
+2. **Engineer-level gate in `game/lava-expedition.js`** — `kingdomEngineerLevel(k)` took `Math.max(troopLevel, engineer_level)`, an OR-gate I invented that isn't in the spec. It let the construction-skill `engineer_level` column alone satisfy "Eng ≥ 50" regardless of actual troop-level engineers (a kingdom with troop-level-1 engineers could launch). Per §6.4's own note that `engineer_level` is what gates Forge, dropped the troop-level fallback — gate now reads `engineer_level` only.
+3. **Racial tempered-steel name not shown in the persistent Crucible stock line** — `config.TEMPERED_STEEL_NAMES` (§3.6) was already wired into the temper-action toast, but `ForgeCrucibleSection.jsx`'s always-visible "Tempered: N" label used a generic string. Added a client-side mirror of the name table (`useRace` + `TEMPERED_STEEL_NAMES`) so the persistent label shows the race name too.
+
+**Process note:** this worktree's dev server is `node index.js` with no watch/reload configured. A retest after editing `game/engine.js` returned a stale (pre-fix) result because the running process was never restarted — cost real time chasing a phantom regression. Any future live-verification pass on this branch must restart the server after every server-side edit, not assume file changes are picked up live.
+
+**Verified after fixes, live against real Postgres + the running route stack (not mocks):**
+- **Win:** `lava_stored` 48→58 (dwarf race mult applied), crew round-tripped 200/50→175/45→200/50, barge hull 100→80→`idle`, `engineer_xp` +11,500 (10,000 × Lodge 1.15) — matches §6.4's calibration note exactly.
+- **Lose (occupied vent):** reward text correctly names the occupying kingdom, `lava_stored` unchanged, crew round-tripped, barge hull -5 (→75) and `idle`, `engineer_xp` grant applied at the empty-handed rate.
+
+Both outcomes of the §15.5 integration walkthrough (win + lose) are now confirmed end-to-end.
+
+*Last updated 2026-07-18, after the live win/lose integration walkthrough and the three fixes above.*
