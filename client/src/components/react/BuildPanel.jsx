@@ -5,6 +5,7 @@ import { toast } from '../../utils/toast.js';
 import ProgressBar from './ProgressBar';
 import HybridBlueprintModal from './HybridBlueprintModal';
 import { AllocationButtons } from './AllocationButtons.jsx';
+import ForgeTab from './ForgeTab.jsx';
 import {
   useEconomyStore,
   useRace,
@@ -205,6 +206,8 @@ const BuildPanel = () => {
   const [activatingAbility, setActivatingAbility] = useState(false);
   const [loading, setLoading] = useState(false);
   const [forgeInstallBusy, setForgeInstallBusy] = useState(false);
+  /** 'build' | 'forge' — Forge tab only when forge flag (B2) */
+  const [buildPanelTab, setBuildPanelTab] = useState('build');
   const [buildUiTick, setBuildUiTick] = useState(0);
   const [engineerAllocations, setEngineerAllocations] = useState({});
   const [smithyDisplay, setSmithyDisplay] = useState({
@@ -708,6 +711,41 @@ const BuildPanel = () => {
 
   return (
     <div id="build" className="panel" data-ui-tick={buildUiTick}>
+      {forgeFlags.forge && (
+        <div className="flex gap-2 px-4 pt-3">
+          <button
+            type="button"
+            onClick={() => setBuildPanelTab('build')}
+            className={
+              'rounded-full border px-3 py-1 text-[12px] font-semibold ' +
+              (buildPanelTab === 'build'
+                ? 'border-white/40 bg-white/10 text-text'
+                : 'border-white/15 text-text3 hover:bg-white/5')
+            }
+          >
+            Build
+          </button>
+          <button
+            type="button"
+            onClick={() => setBuildPanelTab('forge')}
+            className={
+              'rounded-full border px-3 py-1 text-[12px] font-semibold ' +
+              (buildPanelTab === 'forge'
+                ? 'border-amber-400 bg-amber-500/15 text-amber-200'
+                : 'border-white/15 text-text3 hover:bg-white/5')
+            }
+          >
+            ⚒️ Forge
+          </button>
+        </div>
+      )}
+
+      {forgeFlags.forge && buildPanelTab === 'forge' ? (
+        <div className="px-4 pb-5 pt-3">
+          <ForgeTab />
+        </div>
+      ) : (
+      <>
       <div className="build-sticky-header px-4 pt-4">
         <div className="card rounded-2xl border border-white/10 bg-zinc-950/80 shadow-[0_12px_32px_rgba(0,0,0,0.35)]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -1206,6 +1244,8 @@ const BuildPanel = () => {
           />
         )}
       </div>
+      </>
+      )}
     </div>
   );
 };
