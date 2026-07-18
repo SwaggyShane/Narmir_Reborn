@@ -394,5 +394,5 @@
 - **Building Upgrades (7 types):** All route through `/api/kingdom/economy/upgrade` except mausoleum (`/api/kingdom/buy-mausoleum-upgrade`). This is the CRITICAL migration point — all 7 must route correctly.
 - **Multi-Domain Updates:** Some endpoints update 3+ stores (e.g., hire updates economy, military, population). Normalizer handles this with selective routing.
 - **Events Field:** Optional `events` array for cosmetic logging; not routed to stores (could add eventsStore later).
-- **War Log Cache:** Currently stored in GameStateManager; decision deferred to Phase 6.9 (store placement TBD).
+- **War Log Cache:** GameStateManager (where this was originally deferred to live) is gone — no war log cache exists client-side currently; store placement is still undecided.
 
