@@ -2,11 +2,36 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-16 (EVOLUTION.md decisions locked; TODO queue empty on local `feature/webgl-worldmap`)
+**Last updated:** 2026-07-18 (Forge & Lava Industry system complete; happiness momentum-cap fix; repo doc/branch hygiene cleanup)
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-18 — Forge & Lava Industry system complete (`FORGE_SYSTEM.md` deleted — design spec + roadmap doc, now fully shipped)
+
+**Scope:** 2-lane parallel build (Lane A server, Lane B client) per the design-freeze roadmap this doc used to hold. Toolwright's Yard → Engineers' Lodge → Forge upgrade chain; charcoal → coal → steel → tempered-steel → gear production chain; Flux-Barge logistics (build queue, hull wear, max 3); volcanic lava-vent state (wall-clock dormancy, arrival-race occupation); full lava-draw expedition (crew reservation, path fog-reveal, all-or-nothing resolution).
+
+**Server (Lane A), all committed to local `main`:** A1 schema (upgrade flags; stocks reusing pre-existing `coal`/`steel` columns rather than adding duplicates; `flux_barges` JSON; `lava_vents` table) → A2 upgrade chain/effects → A3 charcoal/smelt/temper/gear production → A4 Flux-Barge entity/queue/wear → A5 vent dormancy/occupation → A6 full lava-draw resolver.
+
+**Client (Lane B), all committed to local `main`:** B1 Build-tab upgrade footer → B2 Forge tab shell → B3 Fuel/Steel sections → B4 Barges section → B5 Crucible section + shared lava-draw launch flow → B6 volcanic hex card.
+
+**Shared-foundation bugs found and fixed on `main` during the build (not left inside a lane's private branch):**
+- A1 schema originally introduced duplicate `coal_stored`/`steel_stored` columns instead of reusing the pre-existing `coal`/`steel` columns already wired through the rest of the app — fixed, then the whole Lane A chain rebased onto the fix.
+- `parseTroopLevel` existed only as a private, unexported function inside `game/combat-resolver.js`; every other call site — including A3's and A4's own route handlers — was destructuring `undefined`. **A3's and A4's actual HTTP routes were broken the entire time** despite their pure-function tests passing, because those tests never exercised the routes themselves. Moved the canonical implementation to `game/lib/troops.js`, exported it, fixed all call sites.
+
+**Integration bugs found during the live walkthrough (win/lose tested against real Postgres + the running route stack, not mocks):**
+1. `VALID_KINGDOM_COLS` in `game/engine.js` (the allowlist gating which `resolveExpeditions` updates actually get persisted) was missing `lava_stored`, `engineer_level`, `engineer_xp`, `flux_barges` — rewards computed correctly but silently failed to write to the DB.
+2. `kingdomEngineerLevel` in `game/lava-expedition.js` had an unintended `Math.max(troopLevel, engineer_level)` OR-fallback, letting a kingdom with troop-level-1 engineers launch a lava draw regardless of their actual construction-skill `engineer_level`. Fixed to read `engineer_level` only — now locked by `test/forge.test.js` Test 12 so it can't silently regress again.
+3. The racial tempered-steel display name (`TEMPERED_STEEL_NAMES`) wasn't mirrored into the Crucible section's always-visible persistent stock label, only into the temper-action toast.
+
+**Verified live, same day:** win outcome (`lava_stored` 48→58, dwarf race-multiplier applied; crew round-tripped 200/50→175/45→200/50; barge hull 100→80→idle; `engineer_xp` +11,500, Lodge ×1.15 applied) and lose outcome (occupying kingdom named correctly in the reward text; crew round-tripped; hull -5→75→idle; empty-handed XP rate applied) both confirmed end-to-end against real Postgres and the live route stack.
+
+**Post-completion hardening (same day):** added `test/forge.test.js` — 19 synchronous regression tests covering the upgrade chain, production recipes, barge lifecycle, and the full lava-draw launch gate chain, including a test that specifically locks the engineer-level-gate fix (bug #2 above). Auto-discovered by `npm test` (84 test files total). Verified independently against the actual running code (files present on `main`, routes wired, modules load with expected exports, all three integration fixes genuinely present) rather than trusting the doc's own self-reported status.
+
+**Doc removed:** `FORGE_SYSTEM.md` (the design spec + roadmap + live handshake log) deleted from the repo root along with ~40 now-dangling `FORGE_SYSTEM.md §X.Y` citations across 26 files' comments. This archive entry is the historical record going forward; `game/forge-upgrades.js`, `game/forge-production.js`, `game/flux-barge.js`, `game/lava-vents.js`, `game/lava-expedition.js`, and `test/forge.test.js` are the living reference for exact mechanics, formulas, and contracts.
+
+---
 
 ### 2026-07-16 — Prestige & evolution design locked (`EVOLUTION.md`)
 
@@ -213,7 +238,13 @@
 
 - **Fog of War Phase 5 — correction (2026-07-15):** An older entry below claimed the Fog of War system had “All 5 phases complete.” That overstated Phase 5. **Phases 1–4** (hex foundation, visibility persistence, scout loop + server gating, fog rendering + debuff wiring) are complete and integrated with exploration. **Phase 5 (“Expansion Hooks”)** was always deferred in `FOG_OF_WAR_PLAN.md` (special locations / map items / terrain-scoped scouting difficulty as later content, not v1 fog). Viability review 2026-07-15: not one shippable PR; special locations largely already live via exploration + `revealRingHexes`; map-item Epic Trek rolls are non-persisting flavor text; terrain scout difficulty needs shared server hex→terrain first. Accurate status and recommended split live in `TODO.md` Active Work — not archived as complete.
 
+### 2026-07-10
+
+- **Upgrade UX Fixes:** Fixed two issues reported during gameplay testing. Issue 1: added a validation toast explaining insufficient resources when the user clicks a disabled upgrade button (e.g., "Need: 20k gold"). Issue 2: refactored `DefensePanel` to read upgrade state from Zustand hooks instead of local state, enabling immediate dynamic refresh when an upgrade is purchased (no API delay) — the button is now clickable with validation on click rather than staying disabled.
+
 ### 2026-07-09
+
+- **GameStateManager → Zustand Migration** (`MIGRATION_GAMESTATE.md`, completed this date): Full migration completed in a single sprint. All 6 phases implemented: Phase 1 (UIStore), Phase 1.5 (Normalizer), Phase 2 (Sync Points — 20+ `applyGameMutation` calls replaced with `normalizeAndRouteResponse`), Phase 3A (Dual Sources), Phase 3B (Smoke Gate), Phase 4-6 (Cleanup & Audit). Zero legacy `GameStateManager` references remained in active code; `MIGRATION_GAMESTATE.md` itself was deleted once verified complete (see `f9ee7853`).
 
 - **Phase 1: Architecture Documentation Foundation** (PR #851, merged 2026-07-09): Completed comprehensive architectural baseline analysis before Phase 2 refactoring.
   - **Deliverables:**
@@ -2169,21 +2200,5 @@ Completed work that was previously tracked in `ROADMAP.md` has been consolidated
 - Completed engine, combat, admin, and migration checkpoints remain recorded above for reference
 - Beta Launch Prerequisites (11 items): All Tier 1 Critical and Tier 2 Important items complete as of 2026-06-30
 
-### 2026-07-10
-
-- **GameStateManager → Zustand Migration** (MIGRATION_GAMESTATE.md, completed 2026-07-09): Full migration complete in single sprint. All 6 phases implemented: Phase 1 (UIStore), Phase 1.5 (Normalizer), Phase 2 (Sync Points), Phase 3A (Dual Sources), Phase 3B (Smoke Gate), Phase 4-6 (Cleanup & Audit). Zero legacy references in active code.
-
-- **Elevation System — correction (2026-07-15):** the entry previously here claimed "all 5 phases complete... wired into world boot," citing a `ELEVATION_SYSTEM_IMPLEMENTATION.md` that does not exist in this repo. That claim was false and has been removed. Verified ground truth as of 2026-07-15: `game/elevation.js`'s `generateElevationGrid` (Simplex-noise FBM + biome-band correlation) is real and correct, but its orchestrator `ensureWorldElevation` is never called from anywhere, and the `db/migrations/001-add-elevation-grid.js` migration that would add the storage column is never run — the column does not exist in the live database. `game/world-elevation.js`'s river-flow DAG (`buildDownhillDAG`, `computeFlowAccumulation`) has zero callers anywhere. Of the three Phase 3 gameplay hooks: combat (`calculateElevationBonus`) is correctly wired into `combat-resolver.js` but only reachable if `USE_COMBAT_V2=1` (unset locally); movement (`calculateMovementCost`) is correctly implemented inside `getEpicTrekTurns` but the live call site in `routes/kingdom-gameplay.js` never passes the elevation data it needs; spells (`canCastSpell`) has zero callers. No tectonic-plate or erosion-simulation code exists anywhere in the codebase. See the current `TODO.md` for the accurate status and what remains to actually finish this.
-
-- **Phase 2 Architectural Refactoring** (sandbox claim, 2026-07-09): Previously summarized as “Command → Simulation → Events complete in sandbox” via `PHASE_2_COMPLETION.md`. **Correction 2026-07-15:** that is **not** production architecture. `PHASE_2_COMPLETION.md` is not in the tree; event-bus scaffolding was removed as dead code; live path remains routes → engine. Treat as incomplete experiment, not archived completion. Active decision in `TODO.md` P0 §1.
-
-- **Exploration System Redesign** (EXPLORATION_SYSTEM_LOCKED.md, completed 2026-07-04): All 4 phases complete. Scout (allocation-based ring reveal), Epic Trek (targeted exploration, Ring 2 gated), Hunting/Prospecting/Land (turn-based resource gathering), Dungeon/Mountain (regional combat expeditions). Fully integrated and deployed.
-
-- **Fog of War System** (FOG_OF_WAR_PLAN.md, Phases 1–4 completed ~2026-07-03; Phase 5 was never v1): Scoped visibility, server-side gating, own territory rules, fog_of_war spell mechanics, REGION_SEEDS/RACE_HOMES alignment, integrated with exploration. **Correction 2026-07-15:** “All 5 phases complete” was wrong for Phase 5 (deferred expansion hooks). See 2026-07-15 chronology entry and current `TODO.md`.
-
-- **Connection Pool Exhaustion Fix** (TURN_PROCESSING_FIX_PLAN.md, merged PR #847 2026-07-07): Root cause identified and fixed. Moved init-queries and refresh-queries outside transaction, reducing per-turn from 1,641ms to ~900ms. Improves concurrent turn throughput from 12 to ~22 turns/sec.
-
-- **Upgrade UX Fixes** (2026-07-10): Fixed two issues reported during gameplay testing. Issue 1: Added validation toast explaining insufficient resources when user clicks disabled upgrade button (e.g., "Need: 20k gold"). Issue 2: Refactored DefensePanel to read upgrade state from Zustand hooks instead of local state, enabling immediate dynamic refresh when upgrade purchased (no API delay). Button now clickable with validation on click rather than disabled state.
-
-- **Security Audit Complete** (SECURITY_AUDIT.md, 2026-07-05): All 7 categories reviewed and passing. SQL Injection (100% parameterized), XSS (sanitizeHtml hardened), Input Validation (PASS), Authentication (JWT+CSRF+rate limits), Race Conditions (PASS on critical paths), Sensitive Data (bcrypt+SecretsManager), Resource Management (pool sizing+limits).
+*(A `### 2026-07-10` grab-bag previously sat here, out of chronological order, mixing entries dated 07-03 through 07-15. The two genuinely unique items in it — GameStateManager→Zustand Migration and Upgrade UX Fixes — were moved up into Recent Chronology at their correct dates on 2026-07-18. The other six entries (Elevation System, Phase 2 Architectural Refactoring, Exploration System Redesign, Fog of War System, Connection Pool Exhaustion Fix, Security Audit Complete) were removed as exact duplicates of more detailed, correctly-dated entries already present earlier in Recent Chronology.)*
 

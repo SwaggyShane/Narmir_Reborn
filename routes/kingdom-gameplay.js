@@ -2492,7 +2492,7 @@ module.exports = function (db) {
     }
   });
 
-  // POST /forge/install-upgrade — Yard → Lodge → Forge chain (FORGE_SYSTEM.md §15.4)
+  // POST /forge/install-upgrade — Yard → Lodge → Forge chain
   router.post('/forge/install-upgrade', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const forgeUpgrades = require('../game/forge-upgrades');
@@ -2551,7 +2551,7 @@ module.exports = function (db) {
     }
   });
 
-  // ── Forge production (FORGE_SYSTEM.md §15.2 A3 / §15.4) ───────────────────
+  // ── Forge production ────────────────────────────────────────────────────
   router.post('/forge/charcoal-allocate', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const forgeProd = require('../game/forge-production');
@@ -2688,7 +2688,7 @@ module.exports = function (db) {
     }
   });
 
-  // POST /forge/build-barge — queue extra Flux-Barge (FORGE_SYSTEM.md §15.4 A4)
+  // POST /forge/build-barge — queue extra Flux-Barge
   router.post('/forge/build-barge', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const fluxBarge = require('../game/flux-barge');
@@ -3524,7 +3524,7 @@ module.exports = function (db) {
     }
   });
 
-  // POST /expedition/lava-draw — all-or-nothing lava expedition (FORGE_SYSTEM.md §6 / §15.4)
+  // POST /expedition/lava-draw — all-or-nothing lava expedition
   router.post('/expedition/lava-draw', requireAuth, requireCsrfToken, async (req, res) => {
     const { target_x, target_y, barge_id } = req.body;
     const { isTargetInBounds } = require('../game/epic-trek-paths');
@@ -3618,8 +3618,8 @@ module.exports = function (db) {
   });
 
   // GET /lava-vent?hex_col=&hex_row= — read-only vent status for the volcanic
-  // hex card (FORGE_SYSTEM.md Appendix G — no row yet means ACTIVE + Free,
-  // matching game/lava-vents.js's getVentState default exactly).
+  // hex card (no row yet means ACTIVE + Free, matching game/lava-vents.js's
+  // getVentState default exactly).
   router.get('/lava-vent', requireAuth, async (req, res) => {
     try {
       const hexCol = parseInt(req.query.hex_col, 10);

@@ -1,6 +1,5 @@
 /**
  * Forge production — charcoal, smelt, temper, gear craft
- * FORGE_SYSTEM.md §3 / §15.2 A3
  */
 
 'use strict';

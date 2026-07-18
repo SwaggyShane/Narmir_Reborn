@@ -489,7 +489,7 @@ async function initializeKingdomColumns(db, getTableColumns, getColumnType, addC
     ['iron', 'INTEGER NOT NULL DEFAULT 0'],
     ['coal', 'INTEGER NOT NULL DEFAULT 0'],
     ['steel', 'INTEGER NOT NULL DEFAULT 0'],
-    // Forge system — FORGE_SYSTEM.md §15.4 handshake (A1)
+    // Forge system (A1)
     // Reuses pre-existing coal/steel columns above; no coal_stored/steel_stored dupes.
     ['toolwright_yard', 'INTEGER NOT NULL DEFAULT 0'],
     ['engineers_lodge', 'INTEGER NOT NULL DEFAULT 0'],

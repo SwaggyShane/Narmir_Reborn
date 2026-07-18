@@ -1,5 +1,5 @@
 /**
- * Lava expedition — FORGE_SYSTEM.md §6 / §15.2 A6
+ * Lava expedition
  * All-or-nothing: win the arrival race and draw lava, or lose it and
  * return empty-handed. No cancellation at any phase (§5, §6.2). Crew
  * (25 engineers + 5 mages) is committed for the full round trip and

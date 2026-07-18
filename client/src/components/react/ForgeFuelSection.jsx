@@ -1,5 +1,5 @@
 /**
- * Forge Fuel section — FORGE_SYSTEM.md §15.3 B3
+ * Forge Fuel section
  * Charcoal wood allocation + coal stock.
  */
 import React, { useState } from 'react';

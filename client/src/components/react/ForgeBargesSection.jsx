@@ -1,5 +1,5 @@
 /**
- * Forge Barges section — FORGE_SYSTEM.md §15.3 B4
+ * Forge Barges section
  * List + hull bars; queue extra barge (POST /forge/build-barge, no body).
  * Costs: 100 steel + 150k gold + 1k stone, 20 turns; max 3.
  */

@@ -34,7 +34,7 @@ import {
   useNextForgeUpgrade,
 } from '../../stores';
 
-/** FORGE_SYSTEM.md §2.2 / §15.3 B1 — costs mirror server config */
+/** costs mirror server config */
 const FORGE_UPGRADE_META = {
   toolwright_yard: {
     label: "Toolwright's Yard",
@@ -1148,7 +1148,7 @@ const BuildPanel = () => {
 
         </div>
 
-        {/* Industrial upgrades footer — FORGE_SYSTEM.md §15.3 B1: only next upgrade */}
+        {/* Industrial upgrades footer — only next upgrade */}
         <div className="card mt-4 rounded-2xl border border-amber-500/30 bg-zinc-950/90">
           <div className="card-title mb-1 text-[14px]">🏭 Industrial upgrades</div>
           {forgeFlags.forge || !nextForgeUpgrade ? (

@@ -1,5 +1,5 @@
 /**
- * Forge Steel section — FORGE_SYSTEM.md §15.3 B3
+ * Forge Steel section
  * Smelt (iron+coal→steel) and steel gear craft. Uses coal/steel columns.
  */
 import React, { useState } from 'react';

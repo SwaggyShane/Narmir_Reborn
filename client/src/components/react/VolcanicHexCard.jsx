@@ -1,5 +1,5 @@
 /**
- * Volcanic hex card — FORGE_SYSTEM.md §7 / §15.3 B6
+ * Volcanic hex card
  * Teasers by stage; ACTIVE/DORMANT + Free/Occupied; Draw only when gates pass.
  * Launch via B5 lavaDrawLaunch.js only (no duplicate submit path).
  */

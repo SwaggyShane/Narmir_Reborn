@@ -43,7 +43,7 @@ export const useEconomyStore = create(
         iron: 0,
         steel: 0,
         coal: 0,
-        // Forge handshake stocks/flags (FORGE_SYSTEM.md §15.4) — B1+
+        // Forge stocks/flags
         tempered_steel: 0,
         lava_stored: 0,
         steel_weapons: 0,

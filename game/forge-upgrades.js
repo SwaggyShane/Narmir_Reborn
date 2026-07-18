@@ -1,5 +1,5 @@
 /**
- * Forge upgrade chain — FORGE_SYSTEM.md §2.2 / §15.2 A2
+ * Forge upgrade chain
  * Yard → Lodge → Forge. Chain order + effects + free barge on Forge.
  */
 

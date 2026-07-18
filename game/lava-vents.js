@@ -1,5 +1,5 @@
 /**
- * Lava vent state — FORGE_SYSTEM.md §6.3 / §15.2 A5
+ * Lava vent state
  * ACTIVE/DORMANT via a wall-clock `dormant_until` timestamp (never turns —
  * the server's turn clock advances whether anyone is online or not, so a
  * turn-based cooldown would make a vent's readiness depend on who happens

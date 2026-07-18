@@ -1,5 +1,5 @@
 /**
- * Forge Crucible section — FORGE_SYSTEM.md §15.3 B5
+ * Forge Crucible section
  * Lava stock, temper, tempered gear; shared lava-draw hex launch flow.
  */
 import React, { useCallback, useMemo, useState } from 'react';
@@ -23,7 +23,7 @@ const TEMPER = { steel: 1, lava: 2 };
 const TEMPERED_WEAPONS = { tempered_steel: 3, gold: 25000 };
 const TEMPERED_ARMOR = { tempered_steel: 3, gold: 30000 };
 
-// Mirrors game/config.js TEMPERED_STEEL_NAMES (FORGE_SYSTEM.md §3.6) — server is canonical.
+// Mirrors game/config.js TEMPERED_STEEL_NAMES — server is canonical.
 const TEMPERED_STEEL_NAMES = {
   high_elf: 'Runesteel',
   dwarf: 'Stonesteel',

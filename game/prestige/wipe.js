@@ -17,7 +17,7 @@ const ZERO_BUILDINGS = Object.freeze([
   'bld_castles', 'bld_libraries', 'bld_taverns', 'bld_mausoleums', 'bld_walls',
   'bld_woodyard', 'bld_lumber_camp', 'bld_sawmill', 'bld_gravel_pit', 'bld_blockfield',
   'bld_stone_quarry', 'bld_open_pit', 'bld_strip_mine', 'bld_deep_mine',
-  // Forge system upgrade chain (FORGE_SYSTEM.md §15.4) — install state resets like other buildings
+  // Forge system upgrade chain — install state resets like other buildings
   'toolwright_yard', 'engineers_lodge', 'forge',
 ]);
 
@@ -33,7 +33,7 @@ const ZERO_RESOURCES = Object.freeze([
   'tools_hammers', 'tools_scaffolding', 'tools_blueprints',
   'hammers_stored', 'scaffolding_stored', 'blueprints_stored',
   'trade_routes',
-  // Forge system stockpiles (FORGE_SYSTEM.md §15.4)
+  // Forge system stockpiles
   'tempered_steel', 'lava_stored', 'steel_weapons', 'steel_armor',
   'tempered_weapons', 'tempered_armor',
 ]);

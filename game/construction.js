@@ -241,7 +241,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
   const smithyProdMult = fragmentBonusManager.getBonusMultiplier(k, 'smithies', 'production');
   const smithyQualityMult = fragmentBonusManager.getBonusMultiplier(k, 'smithies', 'quality');
   const effectiveSmithyMult = smithySpeedMult * smithyProdMult * smithyQualityMult;
-  // Engineers' Lodge — FORGE_SYSTEM.md §2.2 construction ×1.10
+  // Engineers' Lodge — construction ×1.10
   let lodgeConstructMult = 1.0;
   try {
     lodgeConstructMult = require('./forge-upgrades').constructionSpeedMult(k);
@@ -483,7 +483,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
           }
 
           // ── Consume scaffolding on completion ───────────────────────────
-          // Toolwright's Yard — FORGE_SYSTEM.md §2.2 scaffold use ×0.90
+          // Toolwright's Yard — scaffold use ×0.90
           if (SCAFFOLDING_REQUIRED.has(building)) {
             let scaffoldMult = 1.0;
             try {

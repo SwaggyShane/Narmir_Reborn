@@ -2540,7 +2540,7 @@ const config = {
   },
   TOOL_GOLD_COST: { hammers: 0, scaffolding: 2500, blueprints: 0 },
 
-  // ── Forge system (FORGE_SYSTEM.md §2.2 / §8 / §15 handshake) ──────────────
+  // ── Forge system ────────────────────────────────────────────────────────
   FORGE_UPGRADE_ORDER: ["toolwright_yard", "engineers_lodge", "forge"],
   FORGE_UPGRADE_COSTS: {
     toolwright_yard: { wood: 500, stone: 2000, iron: 1500, gold: 50000, turns: 25 },

@@ -119,7 +119,7 @@ const coreSchema = `
       active_effects    TEXT NOT NULL DEFAULT '{}',
       coal              INTEGER NOT NULL DEFAULT 0,
       steel             INTEGER NOT NULL DEFAULT 0,
-      -- Forge system (FORGE_SYSTEM.md §15.4 handshake — A1 schema)
+      -- Forge system (A1 schema)
       -- Reuses pre-existing coal/steel columns above (no coal_stored/steel_stored dupes)
       toolwright_yard   INTEGER NOT NULL DEFAULT 0,
       engineers_lodge   INTEGER NOT NULL DEFAULT 0,
@@ -566,7 +566,7 @@ const coreSchema = `
     CREATE INDEX IF NOT EXISTS idx_resource_nodes_kingdom ON resource_nodes(kingdom_id);
     CREATE INDEX IF NOT EXISTS idx_resource_nodes_coords ON resource_nodes(map_x, map_y);
 
-    -- Lava vents (volcanic hex state) — FORGE_SYSTEM.md §15 A1 / §15.4
+    -- Lava vents (volcanic hex state)
     CREATE TABLE IF NOT EXISTS lava_vents (
       hex_col INTEGER NOT NULL,
       hex_row INTEGER NOT NULL,

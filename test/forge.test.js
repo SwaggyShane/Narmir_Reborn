@@ -1,17 +1,16 @@
 'use strict';
-// Regression tests for the Forge & Lava Industry system (FORGE_SYSTEM.md).
+// Regression tests for the Forge & Lava Industry system.
 // Covers the pure/sync logic across forge-upgrades, forge-production,
 // flux-barge, lava-vents, and lava-expedition's launch gate — the parts that
 // can run without a live Postgres connection. DB-dependent paths
 // (getVentState/claimVent/releaseVent/resolveLavaDraw) are exercised by the
-// live-DB walkthrough documented in FORGE_SYSTEM.md's Appendix I and by
+// live-DB integration walkthrough (see ARCHIVAL.md, 2026-07-18) and by
 // test-systems-harness, not here.
 //
-// This suite exists specifically to catch the class of bug found during the
-// live §15.5 integration walkthrough (2026-07-18): logic that looks right
-// in isolation but is wrong against the real contract (e.g. the
-// engineer-level gate accepting an OR-fallback that let troop-level-1
-// engineers launch). See test 12 below.
+// This suite exists specifically to catch the class of bug found during that
+// live integration walkthrough: logic that looks right in isolation but is
+// wrong against the real contract (e.g. the engineer-level gate accepting an
+// OR-fallback that let troop-level-1 engineers launch). See test 12 below.
 //
 // Run: node test/forge.test.js
 

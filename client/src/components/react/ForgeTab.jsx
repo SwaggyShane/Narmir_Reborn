@@ -1,5 +1,5 @@
 /**
- * Forge tab — FORGE_SYSTEM.md §9 / §15.3 B2–B5
+ * Forge tab
  * Gated on forge flag. Fuel / Steel / Barges / Crucible.
  */
 import React, { useState } from 'react';

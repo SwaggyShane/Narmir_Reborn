@@ -1,5 +1,5 @@
 /**
- * Shared lava-draw launch — FORGE_SYSTEM.md §6.1 / §15.3 B5
+ * Shared lava-draw launch
  * Single submit path for Forge tab and volcanic hex card (B6).
  * POST /api/kingdom/expedition/lava-draw
  * Body: { target_x, target_y, barge_id } — crew fixed server-side (25 eng + 5 mages).

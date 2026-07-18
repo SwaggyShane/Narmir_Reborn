@@ -736,7 +736,7 @@ async function initDb(options = {}) {
     }
   }
 
-  // Forge system A1 — kingdom columns + lava_vents table (FORGE_SYSTEM.md §15.2 A1)
+  // Forge system A1 — kingdom columns + lava_vents table
   const forgeA1Migration = '005_forge_a1_schema';
   const existingForgeA1 = await _db.get('SELECT id FROM migrations WHERE name = $1', [forgeA1Migration]);
   if (!existingForgeA1) {

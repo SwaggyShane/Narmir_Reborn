@@ -1,5 +1,5 @@
 /**
- * Flux-Barge logistics — FORGE_SYSTEM.md §5 / §15.2 A4
+ * Flux-Barge logistics
  * Entity: { id, integrity, status: 'idle'|'building'|'deployed', turns_left? }
  */
 

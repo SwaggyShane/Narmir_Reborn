@@ -1412,7 +1412,7 @@ function processTurn(k, db = null) {
   Object.assign(updates, buildUpdates);
   if (buildUpdates.xp_sources_updated) Object.assign(xpSourcesAccum, buildUpdates.xp_sources_updated);
 
-  // ── 8a. Forge charcoal pit (FORGE_SYSTEM.md §3.3 / A3) ───────────────────────
+  // ── 8a. Forge charcoal pit (A3) ────────────────────────────────────────────
   try {
     const { processCharcoalTick } = require('./forge-production');
     const charcoal = processCharcoalTick({ ...k, ...updates });
@@ -1429,7 +1429,7 @@ function processTurn(k, db = null) {
     /* forge-production optional if partial deploy */
   }
 
-  // ── 8a2. Flux-Barge build queue (FORGE_SYSTEM.md §5 / A4) ───────────────────
+  // ── 8a2. Flux-Barge build queue (A4) ─────────────────────────────────────
   try {
     const { processBargeBuildTick } = require('./flux-barge');
     const bargeTick = processBargeBuildTick({ ...k, ...updates });
@@ -2060,7 +2060,7 @@ async function resolveExpeditions(db, k, engine) {
         }
       }
 
-      // ── Lava draw: arrival race, draw or empty-handed, crew return (FORGE_SYSTEM.md §6 / A6) ──
+      // ── Lava draw: arrival race, draw or empty-handed, crew return (A6) ──────
       if (exp.type === 'lava-draw') {
         try {
           const { resolveLavaDraw } = require('./lava-expedition');
@@ -2211,7 +2211,7 @@ async function resolveExpeditions(db, k, engine) {
         "last_event_id",
         "achievements",
         "items",
-        // Forge system (FORGE_SYSTEM.md §6.4 / A6) — lava-draw resolution writes these
+        // Forge system (A6) — lava-draw resolution writes these
         "lava_stored",
         "engineer_level",
         "engineer_xp",
