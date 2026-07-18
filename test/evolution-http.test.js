@@ -29,6 +29,18 @@ if (fs.existsSync(envPath)) {
 const BASE = process.env.PRESTIGE_HTTP_BASE || process.env.EVOLUTION_HTTP_BASE || 'http://localhost:3010';
 
 async function main() {
+  // This test hits a real HTTP server (no in-process server here), so it
+  // only runs when the caller explicitly points at one via
+  // PRESTIGE_HTTP_BASE/EVOLUTION_HTTP_BASE -- otherwise `npm test` would
+  // fail every time against the unset default of localhost:3010, since
+  // nothing in the normal test run starts a server there. Matches the
+  // RUN_DB_PERSISTENCE opt-in pattern used by visibility.test.js and
+  // apply-kingdom-updates-persistence.test.js for other live-infra checks.
+  if (!process.env.PRESTIGE_HTTP_BASE && !process.env.EVOLUTION_HTTP_BASE) {
+    console.log('(skipped: set PRESTIGE_HTTP_BASE or EVOLUTION_HTTP_BASE to a running worktree server to enable)');
+    return;
+  }
+
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const r = await pool.query(
     `SELECT p.id as pid, k.id as kid FROM players p
