@@ -9,11 +9,19 @@ const { housingCapPerBuilding } = require('./population');
 const { happinessMult, happinessCombatMult } = require('./lib/combat-helpers');
 const { rebellionCheck, rebellionEvent } = require('./lib/special-events');
 
-function getHappinessRecoveryRate(k) {
-  const baseRecovery = (k.res_entertainment || 100) / 1200 + ((k.bld_taverns || 0) * 0.2);
+// Max points happiness can CLIMB in a single turn when conditions are improving.
+// Falling has no cap (bad conditions hit immediately) — this only throttles recovery,
+// so a kingdom can't undo several bad turns with one good one. Taverns/entertainment
+// raise the cap (investment = faster recovery); high tax drags it down even while
+// recovering. Tuned so a modestly-invested kingdom (~4 taverns, ~150 entertainment,
+// default tax) takes roughly 15 turns to climb from crashed back to healthy.
+function getHappinessRiseCap(k) {
+  const taverns = k.bld_taverns || 0;
+  const entertainment = k.res_entertainment || 100;
   const taxRate = Number(k.tax ?? 42);
-  const taxDrag = taxRate > 42 ? Math.min(5, Math.floor((taxRate - 42) / 14)) : 0;
-  return Math.max(0.2, Math.min(2.8, baseRecovery - taxDrag));
+  const taxDrag = taxRate > 42 ? Math.min(3, Math.floor((taxRate - 42) / 20)) : 0;
+  const raw = 2 + taverns * 0.7 + entertainment / 200 - taxDrag;
+  return Math.max(1, Math.min(15, raw));
 }
 
 function calculateHappiness(k) {
@@ -118,18 +126,24 @@ function calculateHappiness(k) {
     happiness += overcrowdingComponent;
   }
 
-  // Apply happiness recovery based on research + taverns and clamp to -50 to 120
-  const recoveryRate = getHappinessRecoveryRate(k);
-  happiness = Math.floor(Math.max(-50, Math.min(120, happiness + recoveryRate)));
-
   // Apply persistent fragment happiness penalty (accumulated via attunement effects)
+  // into the target itself, so a lingering curse also slows recovery, not just the
+  // final number.
   const fragmentPenalty = effects.fragment_happiness_penalty || 0;
-  if (fragmentPenalty < 0) {
-    happiness = Math.max(-50, happiness + fragmentPenalty);
-  }
+  happiness += fragmentPenalty;
+
+  // `happiness` above is the TARGET the kingdom is pulling toward given this turn's
+  // conditions. The actual stored value only moves toward it — falling is immediate
+  // (bad conditions bite right away), but climbing is capped per turn via
+  // getHappinessRiseCap, so a single good turn can't erase several bad ones. This is
+  // the only place happiness is written; there is no second recovery pass.
+  const target = Math.floor(Math.max(-50, Math.min(120, happiness)));
+  const current = (k.happiness !== undefined && k.happiness !== null) ? k.happiness : target;
+  const riseCap = getHappinessRiseCap(k);
+  const finalHappiness = Math.floor(target <= current ? target : Math.min(target, current + riseCap));
 
   return {
-    happiness,
+    happiness: finalHappiness,
     components: {
       base: 50,
       food: foodHappiness,
@@ -145,7 +159,8 @@ function calculateHappiness(k) {
       overcrowding: overcrowdingComponent,
       fragments: fragmentPenalty
     },
-    recovery: recoveryRate
+    target,
+    recovery: riseCap
   };
 }
 
@@ -157,7 +172,7 @@ function calculateHappiness(k) {
 
 module.exports = {
   calculateHappiness,
-  getHappinessRecoveryRate,
+  getHappinessRiseCap,
   happinessMult,
   happinessCombatMult,
   rebellionCheck,

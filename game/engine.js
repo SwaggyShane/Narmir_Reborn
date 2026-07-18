@@ -13,7 +13,7 @@ const {
 } = require('./lib/data-transformations');
 const {
   calculateHappiness,
-  getHappinessRecoveryRate,
+  getHappinessRiseCap,
 } = require('./happiness');
 
 const fragmentBonusManager = require("./fragment-bonus-manager");
@@ -238,7 +238,6 @@ const {
 // game/population.js; re-exported below.
 const populationMod = require('./population');
 const {
-  housingCapPerBuilding,
   popGrowth,
 } = populationMod;
 
@@ -870,125 +869,30 @@ function processTurn(k, db = null) {
     });
   }
 
-  // ── 6. Happiness ─────────────────────────────────────────────────────────────────
+  // ── 6. Low Tax Event (flavor bonus) ──────────────────────────────────────────────
+  // Happiness math itself lives entirely in calculateHappiness (game/happiness.js) —
+  // this is just a random gold/food perk for keeping taxes low, not a second
+  // happiness system.
   {
-    const capPerBuilding = housingCapPerBuilding(k);
-    let housingCap = k.bld_housing * capPerBuilding;
-    // Apply world fragment bonuses for housing capacity
-    const housingMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
-    housingCap *= housingMult;
-    const overcrowdingThreshold = housingCap * 1.3;
-    const overcrowded = housingCap > 0 && k.population > overcrowdingThreshold;
-
-    // Race overcrowding penalty modifiers
-    let overcrowdMult = { dire_wolf: 0.5, high_elf: 2.0 }[k.race] || 1.0;
-    const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
-    if (activeHousingSpecial?.name === "Goliath Dwellings") {
-      overcrowdMult *= 0.2; // 80% reduction in overcrowding penalty, since they are spacious
-    }
-    const overcrowdPenalty = overcrowded
-      ? Math.max(
-          0,
-          Math.floor(Math.max(0, (k.population - overcrowdingThreshold) * 0.018 * overcrowdMult)),
-        )
-      : 0;
-
-    let taxPenalty = 0;
-    let taxBoost = 0;
     const currentTax = k.tax || 42;
-
-    if (currentTax >= 50) {
-      taxPenalty = 15 + Math.floor(((currentTax - 50) / 50) * 80);
-    } else if (currentTax < 42) {
-      taxBoost = Math.floor(((42 - currentTax) / 41) * 25);
-    }
-
     if (currentTax < 20 && Math.random() < 0.05) {
       const taxEvents = config.TAX_EVENTS || [];
       if (taxEvents.length > 0) {
         const msg = taxEvents[Math.floor(Math.random() * taxEvents.length)];
-        const bonusType = Math.random();
         let bonusStr = "";
-        if (bonusType < 0.33) {
+        if (Math.random() < 0.5) {
           const goldBonus = Math.floor(100 + Math.random() * 900);
           updates.gold = (updates.gold || k.gold) + goldBonus;
           bonusStr = `+${goldBonus} Gold`;
-        } else if (bonusType < 0.66) {
+        } else {
           const foodBonus = Math.floor(100 + Math.random() * 400);
           updates.food = (updates.food || k.food) + foodBonus;
           bonusStr = `+${foodBonus} Food`;
-        } else {
-          const cur =
-            updates.happiness !== undefined
-              ? updates.happiness
-              : k.happiness !== undefined && k.happiness !== null
-                ? k.happiness
-                : 100;
-          const oldHappiness = cur;
-          updates.happiness = Math.min(100, cur + 2);
-          const mDelta = updates.happiness - oldHappiness;
-          if (mDelta > 0) {
-            bonusStr = `+${mDelta} Happiness`;
-          } else {
-            bonusStr = `Happiness at cap`;
-          }
         }
         events.push({
           type: "system",
           message: `🌟 Low Tax Event: ${msg} (${bonusStr})`,
         });
-      }
-    }
-
-    if (currentTax >= 50) {
-      const cur =
-        updates.happiness !== undefined
-          ? updates.happiness
-          : k.happiness !== undefined && k.happiness !== null
-            ? k.happiness
-            : 100;
-      const oldM = cur;
-      updates.happiness = Math.max(0, cur - taxPenalty);
-      if (updates.happiness !== oldM) {
-      }
-
-      if (overcrowdPenalty > 0) {
-        const cur2 = updates.happiness;
-        const newHappiness = Math.max(0, cur2 - overcrowdPenalty);
-        if (newHappiness !== cur2) {
-        }
-        updates.happiness = newHappiness;
-      }
-    } else {
-      const recovery =
-        1 + taxBoost + Math.floor(k.res_entertainment / 200);
-      const natCap = naturalHappinessCap(k);
-      const cur =
-        updates.happiness !== undefined
-          ? updates.happiness
-          : k.happiness !== undefined && k.happiness !== null
-            ? k.happiness
-            : 100;
-      let newHappiness = Math.min(natCap, cur + recovery);
-      let _recoveryReason = `Low taxes / Entertainment`;
-
-      // If currently above natural cap (due to spells/events), natural decay?
-      if (cur > natCap) {
-        newHappiness = Math.max(natCap, cur - 2); // Natural decay towards cap
-        if (newHappiness !== cur) {
-        }
-      } else if (newHappiness > cur) {
-      }
-
-      if (overcrowdPenalty > 0) {
-        const afterCrowdHappiness = Math.max(0, newHappiness - overcrowdPenalty);
-        if (afterCrowdHappiness !== newHappiness) {
-        }
-        newHappiness = afterCrowdHappiness;
-      }
-
-      if (newHappiness !== cur) {
-        updates.happiness = newHappiness;
       }
     }
   }
@@ -2723,7 +2627,7 @@ module.exports = {
   happinessMult,
   happinessCombatMult,
   calculateHappiness,
-  getHappinessRecoveryRate,
+  getHappinessRiseCap,
   recordHappinessHistory,
   logHappinessEvent,
   rebellionCheck,

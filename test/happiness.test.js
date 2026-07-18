@@ -1,6 +1,7 @@
 'use strict';
 // Characterization tests for game/happiness.js.
-// Locks happiness calculation, happiness multipliers, and rebellion triggers.
+// Locks happiness calculation (target + capped-rise momentum), happiness multipliers,
+// and rebellion triggers.
 //
 // Run: node test/happiness.test.js
 
@@ -41,6 +42,18 @@ function makeKingdom(overrides = {}) {
   };
 }
 
+// Runs calculateHappiness turn-over-turn, feeding each turn's output happiness
+// back in as next turn's k.happiness, simulating sustained conditions.
+function simulateTurns(kingdomOverrides, turns) {
+  let k = makeKingdom(kingdomOverrides);
+  let result;
+  for (let i = 0; i < turns; i++) {
+    result = happiness.calculateHappiness(k);
+    k = { ...k, happiness: result.happiness, turn: k.turn + 1 };
+  }
+  return result;
+}
+
 console.log('Testing happiness.js\n');
 
 // Test 1: calculateHappiness returns expected shape
@@ -50,72 +63,75 @@ console.log('Testing happiness.js\n');
   assert.ok(result && typeof result === 'object', 'result is object');
   assert.ok('happiness' in result, 'has happiness field');
   assert.ok('components' in result, 'has components field');
-  assert.ok('recovery' in result, 'has recovery field');
+  assert.ok('target' in result, 'has target field');
+  assert.ok('recovery' in result, 'has recovery field (rise cap)');
   assert.ok(Number.isFinite(result.happiness), 'happiness is finite number');
   console.log(`Test 1: calculateHappiness returns shape ✓ (happiness=${result.happiness})`);
 }
 
-// Test 2: calculateHappiness — high happiness with plentiful food + gold
+// Test 2: calculateHappiness — sustained high food/gold/taverns converges above 50
 {
-  const k = makeKingdom({ food: 50000, gold: 100000, population: 5000, bld_taverns: 5 });
-  const result = happiness.calculateHappiness(k);
-  assert.ok(result.happiness > 50, `happy kingdom should have happiness > 50, got ${result.happiness}`);
-  console.log(`Test 2: calculateHappiness high happiness ✓ (happiness=${result.happiness})`);
+  const k = { food: 50000, gold: 100000, population: 5000, bld_taverns: 5, happiness: 50 };
+  const result = simulateTurns(k, 60);
+  assert.ok(result.happiness > 50, `sustained happy conditions should converge above 50, got ${result.happiness}`);
+  console.log(`Test 2: calculateHappiness converges to high happiness ✓ (happiness=${result.happiness})`);
 }
 
-// Test 3: calculateHappiness — low happiness with no food + no gold + recent attack
+// Test 3: calculateHappiness — no food/gold + recent attack drops happiness below 50
+// (falling is immediate, so this shows up in a single turn from a neutral start)
 {
-  const k = makeKingdom({ food: 0, gold: 0, population: 5000, last_attack_turn: 9, turn: 10 });
+  const k = makeKingdom({ food: 0, gold: 0, population: 5000, last_attack_turn: 9, turn: 10, happiness: 50 });
   const result = happiness.calculateHappiness(k);
   assert.ok(result.happiness < 50, `kingdom with no food/gold and recent attack should have happiness < 50, got ${result.happiness}`);
   console.log(`Test 3: calculateHappiness low happiness ✓ (happiness=${result.happiness})`);
 }
 
-// Test 4: calculateHappiness — recent attack lowers safety happiness
+// Test 4: calculateHappiness — recent attack lowers the happiness target.
+// Compares .target (unaffected by rise-cap momentum) since two targets that are
+// both far above the same starting happiness would otherwise saturate at the same
+// capped .happiness value on a single turn.
 {
   const noAttack = happiness.calculateHappiness(makeKingdom({ last_attack_turn: null }));
   const recentAttack = happiness.calculateHappiness(makeKingdom({ last_attack_turn: 9, turn: 10 }));
-  assert.ok(noAttack.happiness > recentAttack.happiness,
-    `no attack should have higher happiness than recent attack (${noAttack.happiness} vs ${recentAttack.happiness})`);
-  console.log(`Test 4: calculateHappiness safety component ✓ (no_attack=${noAttack.happiness}, recent=${recentAttack.happiness})`);
+  assert.ok(noAttack.target > recentAttack.target,
+    `no attack should have higher target than recent attack (${noAttack.target} vs ${recentAttack.target})`);
+  console.log(`Test 4: calculateHappiness safety component ✓ (no_attack=${noAttack.target}, recent=${recentAttack.target})`);
 }
 
-// Test 5: calculateHappiness — high tax hurts happiness, low tax helps
-// Use a sad base kingdom so we're not capped at 120
+// Test 5: calculateHappiness — high tax hurts the target, low tax helps it
 {
   const base = { food: 1000, gold: 1000, population: 5000, last_attack_turn: 9, turn: 10 };
   const norm = happiness.calculateHappiness(makeKingdom({ ...base, tax: 42 }));
   const highTax = happiness.calculateHappiness(makeKingdom({ ...base, tax: 90 }));
   const lowTax = happiness.calculateHappiness(makeKingdom({ ...base, tax: 10 }));
-  assert.ok(norm.happiness > highTax.happiness, 'high tax should hurt happiness');
-  assert.ok(lowTax.happiness > norm.happiness, 'low tax should boost happiness');
-  console.log(`Test 5: calculateHappiness tax effect ✓ (high=${highTax.happiness}, norm=${norm.happiness}, low=${lowTax.happiness})`);
+  assert.ok(norm.target > highTax.target, 'high tax should hurt the target');
+  assert.ok(lowTax.target > norm.target, 'low tax should boost the target');
+  console.log(`Test 5: calculateHappiness tax effect ✓ (high=${highTax.target}, norm=${norm.target}, low=${lowTax.target})`);
 }
 
 // Test 6: calculateHappiness — tax 0% is valid (not coerced to 42%)
-// Use a depressed base kingdom so we're not capped at 120
 {
   const base = { food: 1000, gold: 1000, population: 5000, last_attack_turn: 9, turn: 10 };
   const zero = happiness.calculateHappiness(makeKingdom({ ...base, tax: 0 }));
   const norm = happiness.calculateHappiness(makeKingdom({ ...base, tax: 42 }));
-  assert.ok(zero.happiness > norm.happiness, `0% tax should give higher happiness than 42%, got ${zero.happiness} vs ${norm.happiness}`);
-  console.log(`Test 6: calculateHappiness 0% tax valid ✓ (zero=${zero.happiness}, norm=${norm.happiness})`);
+  assert.ok(zero.target > norm.target, `0% tax should give higher target than 42%, got ${zero.target} vs ${norm.target}`);
+  console.log(`Test 6: calculateHappiness 0% tax valid ✓ (zero=${zero.target}, norm=${norm.target})`);
 }
 
-// Test 7: getHappinessRecoveryRate returns value in [0.2, 2.8]
+// Test 7: getHappinessRiseCap returns value in [1, 15]
 {
   const k = makeKingdom({ res_entertainment: 100, bld_taverns: 0 });
-  const rate = happiness.getHappinessRecoveryRate(k);
-  assert.ok(rate >= 0.2 && rate <= 2.8, `recovery rate should be in [0.2, 2.8], got ${rate}`);
-  console.log(`Test 7: getHappinessRecoveryRate ✓ (rate=${rate})`);
+  const cap = happiness.getHappinessRiseCap(k);
+  assert.ok(cap >= 1 && cap <= 15, `rise cap should be in [1, 15], got ${cap}`);
+  console.log(`Test 7: getHappinessRiseCap ✓ (cap=${cap})`);
 }
 
-// Test 8: getHappinessRecoveryRate scales with entertainment + taverns
+// Test 8: getHappinessRiseCap scales with entertainment + taverns
 {
-  const lo = happiness.getHappinessRecoveryRate(makeKingdom({ res_entertainment: 0, bld_taverns: 0 }));
-  const hi = happiness.getHappinessRecoveryRate(makeKingdom({ res_entertainment: 2000, bld_taverns: 10 }));
-  assert.ok(hi > lo, `higher entertainment/taverns should give higher recovery (${lo} vs ${hi})`);
-  console.log(`Test 8: getHappinessRecoveryRate scales ✓ (lo=${lo}, hi=${hi})`);
+  const lo = happiness.getHappinessRiseCap(makeKingdom({ res_entertainment: 0, bld_taverns: 0, tax: 90 }));
+  const hi = happiness.getHappinessRiseCap(makeKingdom({ res_entertainment: 2000, bld_taverns: 10, tax: 10 }));
+  assert.ok(hi > lo, `higher entertainment/taverns/low tax should give higher rise cap (${lo} vs ${hi})`);
+  console.log(`Test 8: getHappinessRiseCap scales ✓ (lo=${lo}, hi=${hi})`);
 }
 
 // Test 9: happinessMult ranges correct
@@ -185,6 +201,45 @@ console.log('Testing happiness.js\n');
   // Should not throw
   happiness.calculateHappiness(k);
   console.log('Test 14: malformed JSON inputs handled ✓');
+}
+
+// Test 15: falling is immediate — one bad turn from a high starting happiness drops
+// straight to (or toward) the target, not gradually.
+{
+  const crashTarget = happiness.calculateHappiness(
+    makeKingdom({ tax: 100, food: 0, gold: 0, last_attack_turn: 9, turn: 10, happiness: 100 })
+  );
+  assert.ok(crashTarget.happiness <= crashTarget.target + 1, 'falling should land at (or essentially at) the target in one turn');
+  assert.ok(crashTarget.happiness < 50, `one turn of max tax + no food/gold should already crash happiness below 50, got ${crashTarget.happiness}`);
+  console.log(`Test 15: falling is immediate ✓ (happiness=${crashTarget.happiness}, target=${crashTarget.target})`);
+}
+
+// Test 16: rising is capped — one great turn after a crash does NOT fully restore
+// happiness; it can only climb by the rise cap.
+{
+  const crashed = makeKingdom({ tax: 42, food: 50000, gold: 100000, bld_taverns: 5, happiness: 0 });
+  const oneGoodTurn = happiness.calculateHappiness(crashed);
+  assert.ok(oneGoodTurn.happiness < oneGoodTurn.target,
+    `one turn should not fully reach a much higher target (happiness=${oneGoodTurn.happiness}, target=${oneGoodTurn.target})`);
+  assert.ok(oneGoodTurn.happiness <= 0 + 15, `single-turn rise should never exceed the max rise cap of 15, got ${oneGoodTurn.happiness}`);
+  console.log(`Test 16: rising is capped ✓ (happiness=${oneGoodTurn.happiness}, target=${oneGoodTurn.target})`);
+}
+
+// Test 17: recovery from a crash takes multiple turns for a modestly-invested kingdom
+{
+  const modest = { tax: 42, food: 10000, gold: 20000, population: 5000, bld_taverns: 4, res_entertainment: 150, happiness: 0 };
+  let k = makeKingdom(modest);
+  let turnsToRecover = 0;
+  let result;
+  for (let i = 0; i < 100; i++) {
+    result = happiness.calculateHappiness(k);
+    k = { ...k, happiness: result.happiness, turn: k.turn + 1 };
+    turnsToRecover++;
+    if (result.happiness >= 80) break;
+  }
+  assert.ok(result.happiness >= 80, `modest investment should eventually recover to 80+, got ${result.happiness} after ${turnsToRecover} turns`);
+  assert.ok(turnsToRecover >= 8, `recovery should take a meaningful number of turns, not snap back instantly (took ${turnsToRecover})`);
+  console.log(`Test 17: gradual recovery ✓ (${turnsToRecover} turns to reach ${result.happiness})`);
 }
 
 console.log('\nAll happiness tests passed.');
