@@ -68,27 +68,22 @@ npm run sweep:combat-v2-broad  # Advanced combat broad balance sweep
 ### For Developers
 - **[CLAUDE.md](CLAUDE.md)** — PR workflow, quality checks, branching strategy
 - **[TODO.md](TODO.md)** — Development roadmap and task tracking (current source of truth)
-- **[.claude/WORKFLOW-REQUIRED.md](.claude/WORKFLOW-REQUIRED.md)** — Enforcement checklist before commits/pushes
-- **[MAINTENANCE.md](MAINTENANCE.md)** — System health audit, architecture status
 - **[ARCHIVAL.md](ARCHIVAL.md)** — Completed tracks and features (historical record)
 
 ### For Setup & Deployment
-- **[WINDOWS_LOCAL_SETUP.md](WINDOWS_LOCAL_SETUP.md)** — Local dev environment on Windows
-- **[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)** — Pre-production deployment verification
-- **[docs/RAILWAY_SETUP.md](docs/RAILWAY_SETUP.md)** — Railway deployment guide
+- **[docs/ops/WINDOWS_LOCAL_SETUP.md](docs/ops/WINDOWS_LOCAL_SETUP.md)** — Local dev environment on Windows
+- **[docs/ops/DEPLOYMENT_CHECKLIST.md](docs/ops/DEPLOYMENT_CHECKLIST.md)** — Pre-production deployment verification
 - **[RAILWAY_SECRETS.md](RAILWAY_SECRETS.md)** — Production secrets management in Railway
-- **[docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md)** — Database backup and recovery procedures
 
 ### For Operations & Troubleshooting
-- **[docs/SUPPORT_RUNBOOK.md](docs/SUPPORT_RUNBOOK.md)** — Common issues, recovery, escalation (10+ scenarios)
-- **[ALERT_RUNBOOK.md](ALERT_RUNBOOK.md)** — On-call alert response guide
-- **[BACKUP_RESTORE_RUNBOOK.md](BACKUP_RESTORE_RUNBOOK.md)** — Backup and restore procedures
+- **[docs/ops/ALERT_RUNBOOK.md](docs/ops/ALERT_RUNBOOK.md)** — On-call alert response guide
+- **[docs/ops/BACKUP_RESTORE_RUNBOOK.md](docs/ops/BACKUP_RESTORE_RUNBOOK.md)** — Backup and restore procedures
 
 ### For Technical Reference
 - **[docs/API_ENDPOINTS.md](docs/API_ENDPOINTS.md)** — Complete API reference (900+ lines with examples)
-- **[HTTPS_ENFORCEMENT.md](HTTPS_ENFORCEMENT.md)** — HTTPS and TLS configuration
-- **[MONITORING_ALERTING_GUIDE.md](MONITORING_ALERTING_GUIDE.md)** — Error tracking and alerting setup
-- **[RATE_LIMITING_GUIDE.md](RATE_LIMITING_GUIDE.md)** — Rate limiter setup and config
+- **[docs/ops/HTTPS_ENFORCEMENT.md](docs/ops/HTTPS_ENFORCEMENT.md)** — HTTPS and TLS configuration
+- **[docs/ops/MONITORING_ALERTING_GUIDE.md](docs/ops/MONITORING_ALERTING_GUIDE.md)** — Error tracking and alerting setup
+- **[docs/ops/RATE_LIMITING_GUIDE.md](docs/ops/RATE_LIMITING_GUIDE.md)** — Rate limiter setup and config
 - **[game/ARCHITECTURE.md](game/ARCHITECTURE.md)** — Live architecture / verified status
 
 ### For Security & Compliance
@@ -96,18 +91,18 @@ npm run sweep:combat-v2-broad  # Advanced combat broad balance sweep
 - Parameterized queries + middleware are the live controls (see `routes/middleware.js`, `utils/numeric-validation.js`)
 
 ### For Performance & Testing
-- **[LOAD_TEST_EXECUTION_GUIDE.md](LOAD_TEST_EXECUTION_GUIDE.md)** — Run load tests (5,000+ concurrent)
-- **[TESTING_CHECKLISTS.md](TESTING_CHECKLISTS.md)** — QA test plans by system
+- **[docs/ops/LOAD_TEST_EXECUTION_GUIDE.md](docs/ops/LOAD_TEST_EXECUTION_GUIDE.md)** — Run load tests (5,000+ concurrent)
+- **[docs/dev/TESTING_CHECKLISTS.md](docs/dev/TESTING_CHECKLISTS.md)** — QA test plans by system
 
 ### For Players
-- **[GAMEPLAY_GUIDE.md](GAMEPLAY_GUIDE.md)** — Complete game mechanics reference
-- **[FAQ.md](FAQ.md)** — Frequently asked questions
-- **[NEW_PLAYER_TUTORIAL.md](NEW_PLAYER_TUTORIAL.md)** — Turn-by-turn tutorial notes
+- **[docs/player/GAMEPLAY_GUIDE.md](docs/player/GAMEPLAY_GUIDE.md)** — Complete game mechanics reference
+- **[docs/player/FAQ.md](docs/player/FAQ.md)** — Frequently asked questions
+- **[docs/player/NEW_PLAYER_TUTORIAL.md](docs/player/NEW_PLAYER_TUTORIAL.md)** — Turn-by-turn tutorial notes
 
 ### Reference & Standards
 - **[CHANGELOG.md](CHANGELOG.md)** — Feature history and release notes
-- **[TERMINOLOGY.md](TERMINOLOGY.md)** — Naming standards and conventions
-- **[TESTING_CHECKLISTS.md](TESTING_CHECKLISTS.md)** — QA test plans by system
+- **[docs/player/TERMINOLOGY.md](docs/player/TERMINOLOGY.md)** — Naming standards and conventions
+- **[docs/dev/TESTING_CHECKLISTS.md](docs/dev/TESTING_CHECKLISTS.md)** — QA test plans by system
 
 ---
 
@@ -250,13 +245,13 @@ The repo contains the current combat flow plus the more detailed simulation mode
 
 Core production docs:
 
-- [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) — deployment readiness and rollout checks
+- [docs/ops/DEPLOYMENT_CHECKLIST.md](docs/ops/DEPLOYMENT_CHECKLIST.md) — deployment readiness and rollout checks
 - [RAILWAY_SECRETS.md](RAILWAY_SECRETS.md) — Railway environment and secret setup
-- [HTTPS_ENFORCEMENT.md](HTTPS_ENFORCEMENT.md) — TLS, HSTS, and secure-cookie notes
-- [BACKUP_RESTORE_RUNBOOK.md](BACKUP_RESTORE_RUNBOOK.md) — backup and restore procedures
-- [RATE_LIMITING_GUIDE.md](RATE_LIMITING_GUIDE.md) — rate-limit configuration notes
-- [MONITORING_ALERTING_GUIDE.md](MONITORING_ALERTING_GUIDE.md) — monitoring and alerting setup
-- [LOAD_TEST_EXECUTION_GUIDE.md](LOAD_TEST_EXECUTION_GUIDE.md) — how to re-run load tests
+- [docs/ops/HTTPS_ENFORCEMENT.md](docs/ops/HTTPS_ENFORCEMENT.md) — TLS, HSTS, and secure-cookie notes
+- [docs/ops/BACKUP_RESTORE_RUNBOOK.md](docs/ops/BACKUP_RESTORE_RUNBOOK.md) — backup and restore procedures
+- [docs/ops/RATE_LIMITING_GUIDE.md](docs/ops/RATE_LIMITING_GUIDE.md) — rate-limit configuration notes
+- [docs/ops/MONITORING_ALERTING_GUIDE.md](docs/ops/MONITORING_ALERTING_GUIDE.md) — monitoring and alerting setup
+- [docs/ops/LOAD_TEST_EXECUTION_GUIDE.md](docs/ops/LOAD_TEST_EXECUTION_GUIDE.md) — how to re-run load tests
 
 ---
 
