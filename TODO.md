@@ -275,16 +275,16 @@ POST /api/kingdom/turn  (kingdom-gameplay.js)
 
 | ID | Item | Status |
 |----|------|--------|
-| A4-1 | Endpoint → flat vs structureUpdates usage table (Appendix B + grep). | **TODO** |
-| A4-2 | Policy: always structure on server **or** adapt on client; expand whitelists / log drops in dev. | **TODO** |
-| A4-3 | Eliminate direct `receiveServerSnapshot` outside normalizer (panels listed above). | **TODO** |
+| A4-1 | Endpoint → flat vs structureUpdates usage table (Appendix B + grep). | **DONE** — real counts (route file: `res.json({...updates})` sites / actual `structureUpdates()` calls): kingdom-build 3/3, kingdom-warfare 3/1, kingdom-economy 3/3, kingdom-research 2/1, kingdom-gameplay 7/5, kingdom-exploration 9/3. **12 response sites across warfare/research/gameplay/exploration send raw, non-domain-structured `updates` today.** |
+| A4-2 | Policy: always structure on server **or** adapt on client; expand whitelists / log drops in dev. | **DONE** — always structure on the server (`structureUpdates`), never require the client to branch on shape. Reasoning: `response-structurer.js`'s own header already claimed "all endpoints MUST use this" — that was aspirational, not enforced; making it actually true is simpler than teaching every client call site to handle two possible shapes. Dev-mode loud-warn (A4-10) is the enforcement mechanism going forward. |
+| A4-3 | Eliminate direct `receiveServerSnapshot` outside normalizer (panels listed above). | **TODO** — blocked on tracing each of the 12 raw-response sites from A4-1 against its actual client call site first (some may be intentionally raw for a "direct" CommandHandler-bypass system like forge/evolution, consumed by a matching direct-snapshot call — wrapping in `structureUpdates` blind risks breaking currently-working client code). Do this per-route, not in bulk. |
 | A4-4 | Unify `api.js` / `api.mjs`. | **TODO** |
 | A4-5 | `apiCallAndSync` when `updates` present. | **TODO** |
 | A4-6 | Socket action results → same client apply path as HTTP. | **TODO** |
 | A4-7 | Single auth/bootstrap hydrate. | **TODO** |
 | A4-8 | Scout progress full-reload bug. | **TODO** |
-| A4-9 | Fix response-structurer field completeness vs kingdom columns. | **TODO** |
-| A4-10 | Dev assert if flat keys appear under `updates` without domains. | **TODO** |
+| A4-9 | Fix response-structurer field completeness vs kingdom columns. | **DONE** — rebuilt `response-structurer.js` from each Zustand store's actual `receiveServerSnapshot` implementation, not just column names. Found and fixed a bigger bug than "missing fields": `militaryStore.receiveServerSnapshot` expects a **nested** `{ troops: {...} }` shape, but the structurer emitted flat keys — meaning troop-count updates were being silently no-op'd on the **client** side even for fields already in the old whitelist. Also found and fixed dual-domain fields (`mana`/`mana_regen` → economy+research; `researchers` → profile+research; `engineers` → profile+military.troops), and that **zero `bld_*` building columns were mapped to any domain at all**. Also found and fixed a full duplicate, more-incomplete copy of these field lists inline in `kingdom-gameplay.js`'s `/turn` handler (the single most-called route) — missing mages/clerics/thieves/ninjas, every Forge field, and every `bld_*`/`build_queue` field; deleted, now calls the shared function. Verified live: hit the real running `/turn` endpoint through a real JWT against kingdom id 1, confirmed `military.troops` is now correctly nested and zero unmapped-key warnings fired for the real response; separately verified the `bld_*` + dual-routing logic with a synthetic payload since this particular turn had no building complete. |
+| A4-10 | Dev assert if flat keys appear under `updates` without domains. | **DONE** — `structureUpdates` now takes a `warnUnmapped` option (defaults on outside production) and `console.warn`s any key that matched none of the domain sets, instead of the previous silent drop. |
 
 ---
 
@@ -411,7 +411,7 @@ Step 1   A1-*          index thin + single shutdown/handlers            DONE 202
 Step 2   A2-1, A5-6    docs truth (API + ARCHITECTURE)                  DONE 2026-07-19
 Step 3   A5-1, A5-2    mutator policy + coverage matrix                 DONE 2026-07-19
 Step 4   A5-7          systems harness on local main                   DONE (already merged earlier same session; re-verified 2026-07-19)
-Step 5   A4-1, A4-2    client/server updates contract
+Step 5   A4-1, A4-2    client/server updates contract                  DONE 2026-07-19 (A4-1/A4-2/A4-9/A4-10; A4-3..A4-8 remain, see §4)
 Step 6   A2-3          extract turn router from gameplay
 Step 7   A3-1, A3-3    turn pipeline doc + local timing
 Step 8+  remaining splits / forge router / client ban direct snapshots

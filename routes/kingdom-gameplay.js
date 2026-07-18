@@ -751,37 +751,12 @@ module.exports = function (db) {
         const totalTime = Date.now() - startTime;
         console.log(`[turn] complete for player ${req.player.playerId} in ${totalTime}ms (prefetch+process+tx+postfetch)`);
 
-        // Separate fields into proper domains for contract compliance
-        const profileFields = new Set(['turn', 'turns_stored', 'level', 'xp', 'xp_sources', 'scout_progress', 'score', 'unread_news', 'last_turn_at', 'updated_at']);
-        const economyFields = new Set(['gold', 'food', 'mana', 'wood', 'stone', 'iron', 'steel', 'coal', 'maps', 'scrolls', 'blueprints_stored', 'land', 'food_surplus_turns', 'food_shortage_turns', '_spoilage', 'food_balance', 'gold_income', 'mana_regen']);
-        const researchFields = new Set(['research_focus', 'research_progress']);
-        const populationFields = new Set(['population', 'happiness', 'goals']);
-        const militaryFields = new Set(['rangers', 'fighters', 'troop_levels', 'tower_progress']);
-
-        const structuredUpdates = {};
-
-        // Distribute fields into domains
-        Object.entries(txUpdates).forEach(([key, value]) => {
-          if (profileFields.has(key)) {
-            if (!structuredUpdates.profile) structuredUpdates.profile = {};
-            structuredUpdates.profile[key] = value;
-          } else if (economyFields.has(key)) {
-            if (!structuredUpdates.economy) structuredUpdates.economy = {};
-            structuredUpdates.economy[key] = value;
-          } else if (researchFields.has(key)) {
-            if (!structuredUpdates.research) structuredUpdates.research = {};
-            structuredUpdates.research[key] = value;
-          } else if (populationFields.has(key)) {
-            if (!structuredUpdates.population) structuredUpdates.population = {};
-            structuredUpdates.population[key] = value;
-          } else if (militaryFields.has(key)) {
-            if (!structuredUpdates.military) structuredUpdates.military = {};
-            structuredUpdates.military[key] = value;
-          }
-          // Any other fields are silently dropped (shouldn't happen)
-        });
-
-        return { ok: true, updates: structuredUpdates, events: txEvents };
+        // Use the shared structurer (response-structurer.js) — this used to be a
+        // separate, drifted-out-of-sync copy of the domain field lists, missing
+        // mages/clerics/thieves/ninjas, every Forge field, and EVERY bld_* building
+        // column + build_queue, meaning a building completing construction during a
+        // turn was silently dropped from the response. One implementation now.
+        return { ok: true, updates: structureUpdates(txUpdates), events: txEvents };
       });
       res.json(result);
     } catch (err) {
