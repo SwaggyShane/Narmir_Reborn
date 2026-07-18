@@ -4,7 +4,7 @@ Backlog for optional/low-priority feature ideas. **Not** the active product TODO
 
 **Verification rule:** Nothing is done until traced on a live code path. Docs alone do not count.
 
-**Last audited:** 2026-07-16 — wishlist items rechecked; themes nixed by product decision; resource biomes reclassified complete.
+**Last audited:** 2026-07-18 — Prestige economy reclassified complete (both roadmaps verified live-DB/live-HTTP; `EVOLUTION.md` archived and deleted).
 
 ---
 
@@ -18,13 +18,13 @@ Evidence also in [ARCHIVAL.md](ARCHIVAL.md) (*Admin wishlist validity audit*).
 | **Terrain advantages** | Complete | `game/combat-resolver.js` applies `combatAtk`/`combatDef` from `game/terrain.js`; expeditions use `expSpeed`/`resourceYield` |
 | **Resource biomes** | Complete | World hex biomes (`game/world-hex-grid.js` / `world-initialization.js` mixed biomes); terrain on resource nodes (`passive-resource-node-spawn.js`); hunting/prospecting/land economy terrain modifiers; expedition `resourceYield` by terrain |
 | **Dark / light / high-contrast theme toggles** | **Nixed** | Product decision 2026-07-16: app already ships dark UI + accent color themes (`client/src/utils/colorTheme.js`). Not a backlog item. |
+| **Prestige economy** | Complete | `game/prestige/` (full wipe/caps/TX contract) + `game/evolution/` (dragon endgame form) — both roadmaps verified live-DB and live-HTTP 2026-07-18. Evidence also in [ARCHIVAL.md](ARCHIVAL.md) (*Prestige & Dragon Evolution complete*). |
 
 ---
 
 ## Partial (adjacent systems exist; wishlist intent not fully shipped)
 
 - **Mercenary guilds** — basic merc hire/upkeep/contracts exist (`game/mercenaries.js`); not distinct hireable **factions**.
-- **Prestige economy** — stub only in code. **Canonical locked design:** [EVOLUTION.md](EVOLUTION.md) (Roadmap A wipe/caps/TX; Roadmap B dragon evolution).
 - **Artifact hunting** — epic-trek artifacts + dungeon/mountain expeditions exist; not a dedicated high-risk hunt loop.
 - **Dungeons and raids** — regional dungeon/mountain PvE expeditions exist; not multi-kingdom cooperative raids.
 - **Caravans / trade risk** — trade routes + Orc `raid_trade_route` exist; not general physical caravan entities.

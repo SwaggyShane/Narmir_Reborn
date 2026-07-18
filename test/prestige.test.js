@@ -1,5 +1,5 @@
 'use strict';
-// Prestige Roadmap A — unit tests (EVOLUTION.md)
+// Prestige unit tests
 // Run: node test/prestige.test.js
 
 const assert = require('assert');

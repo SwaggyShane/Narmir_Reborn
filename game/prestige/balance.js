@@ -1,5 +1,5 @@
 'use strict';
-// Prestige balance — sole source for gates, seeds, modifiers (EVOLUTION.md).
+// Prestige balance — sole source for gates, seeds, modifiers.
 
 /** 200 turns × 25 min ≈ 83.3 h ≈ 3.5 days wall clock. Flat at all ranks. */
 const PRESTIGE_COOLDOWN_TURNS = 200;

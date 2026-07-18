@@ -1,5 +1,5 @@
 'use strict';
-// Dragon evolution API — EVOLUTION.md Roadmap B.
+// Dragon evolution API.
 // Pure transforms; routes/engine apply updates inside TX.
 
 const {

@@ -421,7 +421,7 @@ function calculateCombatPower(kingdom, opponent, combatType) {
   diagnostics.defender.terrain = getTerrainDisplayName(opponent.terrain || 'plains');
   diagnostics.defender.terrainMod = defenderTerrain.combatDef || 1;
 
-  // Prestige combat mult once per side (EVOLUTION.md — game/prestige/combat.js only)
+  // Prestige combat mult once per side (game/prestige/combat.js only)
   attackerPower = applyPrestigeCombatMultiplier(attackerPower, kingdom.prestige_level || 0);
   defenderPower = applyPrestigeCombatMultiplier(defenderPower, opponent.prestige_level || 0);
   diagnostics.attacker.prestigeMod = getPrestigeModifiers(kingdom.prestige_level || 0).combat || 1;

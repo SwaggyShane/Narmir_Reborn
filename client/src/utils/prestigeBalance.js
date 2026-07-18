@@ -1,5 +1,5 @@
 /**
- * Client mirror of game/prestige/balance.js (EVOLUTION.md).
+ * Client mirror of game/prestige/balance.js.
  * Server is source of truth; keep numbers in sync manually (CJS/ESM split).
  */
 

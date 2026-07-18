@@ -1,5 +1,5 @@
 'use strict';
-// Roadmap B — dragon evolution unit tests (EVOLUTION.md)
+// Dragon evolution unit tests
 // Run: node test/evolution.test.js
 
 const assert = require('assert');

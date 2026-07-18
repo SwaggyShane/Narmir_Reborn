@@ -112,7 +112,7 @@ function awardTroopXp(k, unit, xpAmount) {
 
 // Effectiveness multiplier: +0.5% per unit level above 1, caps at +50% at level 100.
 // Prestige global combat is applyPrestigeCombatMultiplier only (max 1.05) — do not
-// stack +5%/prestige rank here (EVOLUTION.md Roadmap A single combat path).
+// stack +5%/prestige rank here (single combat path lives in game/prestige/combat.js).
 // Legendary race unit names: flat +15% when prestige_level > 0 (identity, not mult table).
 // prestige_level || 0 guards against NaN if the field is missing — the DB
 // column is NOT NULL but unit tests sometimes pass partial kingdom shapes.

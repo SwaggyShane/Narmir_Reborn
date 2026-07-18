@@ -140,7 +140,7 @@ function rebellionEvent(k, updates, events) {
   }
 }
 
-// Prestige: canonical implementation is game/prestige/ (EVOLUTION.md). Do not re-add stubs here.
+// Prestige: canonical implementation is game/prestige/. Do not re-add stubs here.
 
 function raidTradeRoute(attacker, defender, unitCount) {
   if (attacker.race !== "orc")

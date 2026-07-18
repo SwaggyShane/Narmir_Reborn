@@ -1,5 +1,5 @@
 'use strict';
-// Canonical prestige API — EVOLUTION.md Roadmap A.
+// Canonical prestige API.
 // Replaces special-events / world / game/prestige.js stubs.
 
 const {

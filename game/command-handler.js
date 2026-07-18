@@ -346,7 +346,7 @@ class CommandHandler {
 
   // Prestige rebirth is atomic only via POST /api/kingdom/rebirth (FOR UPDATE TX +
   // applyUpdates + side effects + news after commit). Pure processPrestige here
-  // would return wipe updates without applying them — refuse (EVOLUTION.md 3.1).
+  // would return wipe updates without applying them — refuse.
   handlePrestige() {
     throw new Error(
       'Prestige rebirth must use POST /api/kingdom/rebirth (atomic wipe). CommandHandler prestige is disabled.',

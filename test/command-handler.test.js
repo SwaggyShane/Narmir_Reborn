@@ -315,7 +315,7 @@ async function run() {
         obscure: false,
       };
       if (type === 'prestige') {
-        // Fenced: known type but refuses partial wipe (EVOLUTION.md atomic rebirth)
+        // Fenced: known type but refuses partial wipe (atomic rebirth)
         await assert.rejects(() => h.handle(payload, { kingdom, db }), /POST \/api\/kingdom\/rebirth/);
         continue;
       }

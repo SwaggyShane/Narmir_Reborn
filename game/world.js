@@ -1,7 +1,7 @@
 // game/world.js
 // World / meta-game functions: region assignment, alliance defense,
 // region control resolution, and kingdom score calculation.
-// Prestige: use game/prestige/ (EVOLUTION.md) — do not re-add stubs here.
+// Prestige: use game/prestige/ — do not re-add stubs here.
 
 const { safeJsonParse } = require('../utils/helpers');
 const { safeEmit } = require('./safe-socket-emit');

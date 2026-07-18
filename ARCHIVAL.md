@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-18 (Forge & Lava Industry system complete; happiness momentum-cap fix; repo doc/branch hygiene cleanup)
+**Last updated:** 2026-07-18 (Forge & Lava Industry system complete; Prestige & Dragon Evolution complete, both roadmaps; happiness momentum-cap fix; repo doc/branch hygiene cleanup)
 
 ---
 
@@ -30,6 +30,26 @@
 **Post-completion hardening (same day):** added `test/forge.test.js` — 19 synchronous regression tests covering the upgrade chain, production recipes, barge lifecycle, and the full lava-draw launch gate chain, including a test that specifically locks the engineer-level-gate fix (bug #2 above). Auto-discovered by `npm test` (84 test files total). Verified independently against the actual running code (files present on `main`, routes wired, modules load with expected exports, all three integration fixes genuinely present) rather than trusting the doc's own self-reported status.
 
 **Doc removed:** `FORGE_SYSTEM.md` (the design spec + roadmap + live handshake log) deleted from the repo root along with ~40 now-dangling `FORGE_SYSTEM.md §X.Y` citations across 26 files' comments. This archive entry is the historical record going forward; `game/forge-upgrades.js`, `game/forge-production.js`, `game/flux-barge.js`, `game/lava-vents.js`, `game/lava-expedition.js`, and `test/forge.test.js` are the living reference for exact mechanics, formulas, and contracts.
+
+---
+
+### 2026-07-18 — Prestige & Dragon Evolution complete, both roadmaps (`EVOLUTION.md` deleted — design spec + roadmap doc, now fully shipped)
+
+**Scope:** Both roadmaps from the 2026-07-16 design lock (below) are implemented, live, and independently verified — not just claimed by the doc's own status line. `EVOLUTION.md`'s last edit (v1.4, 2026-07-17) already asserted both complete; this entry is that claim checked against the actual running code and database before the doc was removed.
+
+**Roadmap A — Prestige, verified:**
+- `game/prestige/` (`index.js` canPrestige/processPrestige, `wipe.js` data-driven WIPE_RULES, `balance.js`, `combat.js` single-source multiplier) — all present, all old stub implementations removed (re-export comments only).
+- `POST /api/kingdom/rebirth` — FOR UPDATE + transaction, side-effect table work (heroes top-3, expedition cancellation, trade-route cleanup both directions) inside the same TX, news best-effort after commit.
+- `test/prestige.test.js`, `test/prestige-schema-coverage.test.js` (**all 186 `kingdoms` columns mapped** — the required schema-reflection gate), `test/prestige-live-db.test.js`, `test/prestige-ladder-live-db.test.js`, `test/prestige-http-rebirth.test.js` all run and pass live: a real DB wipe applying 153 columns, a real `POST /rebirth` against a running server producing a real DB state change, and the full P0→P10 ladder with the combat multiplier hard-capped at exactly 1.05 from P5 onward.
+
+**Roadmap B — Dragon Evolution, verified:**
+- `game/evolution/` (`index.js`, `balance.js`) present; `processEvolutionTurn` wired into `game/engine.js`'s `processTurn` (castle-fail / complete / decrement each turn); `dragon_egg` wired into epic-trek loot as the sole acquisition path (no admin grant); `evolution_form`/`evolution_ritual` columns added via the `addCol` migration pattern in `db/init-data.js`.
+- Routes `POST /evolution/start`, `POST /evolution/abort`, `GET /evolution` all present in `routes/kingdom-gameplay.js`; client has a full `DragonEvolutionSection` in `OptionsPanel.jsx` (confirm dialogs, live ritual status, testids).
+- `test/evolution.test.js`, `test/evolution-deep.test.js` (50-turn pure loop to dragon, trek-artifact egg-drop rarity sampling, prestige-wipe interaction keeping dragon form while aborting an active channel, fixed-army P8-dragon-vs-P5-peer budget curve), `test/evolution-live-db.test.js` (real Postgres persistence, `rowsAffected: 1` on both ritual start and completion), and `test/evolution-http.test.js` (real `GET`/`POST` against the actual running server on port 3000, real JSON contract responses for start/abort) all run and pass.
+
+**Locked design highlights kept for reference (full detail is in the code + tests now, not restated in full here):** stacking is prestige combat mult once (≤1.05) **plus** dragon-only defense/upkeep/terror modifiers — never a second global combat percentage; ritual is 50 turns, fails if `bld_castles < 1` at any tick, egg consumed on start and not refunded on abort; dragon form persists across future prestige rebirths (channeling itself aborts on prestige, the form does not).
+
+**Doc removed:** `EVOLUTION.md` deleted from the repo root along with ~30 now-dangling `EVOLUTION.md` comment citations across 27 files. `game/prestige/`, `game/evolution/`, and the test files listed above are the living reference for exact formulas and contracts going forward.
 
 ---
 

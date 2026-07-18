@@ -1,5 +1,5 @@
 'use strict';
-// Dragon evolution balance — sole source (EVOLUTION.md Roadmap B).
+// Dragon evolution balance — sole source.
 // ENDGAME optional identity: tradeoff form, not prestige-plus-combat.
 // Gates: high prestige + rare trek egg + long vulnerable ritual.
 

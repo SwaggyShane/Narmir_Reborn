@@ -365,7 +365,7 @@ function processTurn(k, db = null) {
     updated_at: Math.floor(Date.now() / 1000),
   };
 
-  // Roadmap B: dragon ritual tick (castle fail / complete / decrement) — EVOLUTION.md
+  // Dragon ritual tick (castle fail / complete / decrement)
   {
     const evoSnap = { ...k, turn: updates.turn, bld_castles: updates.bld_castles ?? k.bld_castles };
     const evoResult = processEvolutionTurn(evoSnap);

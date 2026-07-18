@@ -162,7 +162,7 @@ function foodConsumption(k) {
 
   const consumptionMult = fragmentBonusManager.getBonusMultiplier(k, 'farms', 'consumption');
   consumption *= consumptionMult;
-  // Dragon form upkeep (EVOLUTION.md) — tradeoff, not free power
+  // Dragon form upkeep — tradeoff, not free power
   consumption = Math.floor(consumption * getDragonUpkeepMult(k));
 
   return consumption;

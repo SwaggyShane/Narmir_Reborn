@@ -1,7 +1,7 @@
 'use strict';
 /**
  * Ensures every kingdoms column is accounted for by the prestige wipe map
- * (EVOLUTION.md gap: schema reflection).
+ * (schema reflection).
  *
  * Run: node test/prestige-schema-coverage.test.js
  * Requires DATABASE_URL.

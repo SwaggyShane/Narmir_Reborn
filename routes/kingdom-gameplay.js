@@ -1895,7 +1895,7 @@ module.exports = function (db) {
     }
   });
 
-  // FOR UPDATE serializes rebirth vs concurrent /turn on the same kingdom (EVOLUTION.md 3.1 / 3.1.1).
+  // FOR UPDATE serializes rebirth vs concurrent /turn on the same kingdom.
   router.post("/rebirth", requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const prestigeApi = require('../game/prestige');
@@ -1965,7 +1965,7 @@ module.exports = function (db) {
     }
   });
 
-  // Roadmap B: dragon evolution ritual (EVOLUTION.md) — egg consumed on start; TX + FOR UPDATE
+  // Dragon evolution ritual — egg consumed on start; TX + FOR UPDATE
   router.post("/evolution/start", requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const evolution = require('../game/evolution');

@@ -1,6 +1,6 @@
 'use strict';
 /**
- * Live DB integration tests for prestige Roadmap A (EVOLUTION.md).
+ * Live DB integration tests for prestige.
  * Requires DATABASE_URL and a reachable Postgres.
  * Run: node test/prestige-live-db.test.js
  * Or:  npm test (included via run-tests.js)

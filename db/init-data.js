@@ -392,7 +392,7 @@ async function initializeKingdomColumns(db, getTableColumns, getColumnType, addC
     ['resource_build_allocation', "TEXT NOT NULL DEFAULT '{}'"],
     ['prestige_level', 'INTEGER NOT NULL DEFAULT 0'],
     ['last_prestige_turn', 'INTEGER NOT NULL DEFAULT 0'],
-    // Roadmap B dragon evolution (EVOLUTION.md) — keep across prestige wipe
+    // Dragon evolution — keep across prestige wipe
     ['evolution_form', "TEXT NOT NULL DEFAULT ''"],
     ['evolution_ritual', "TEXT NOT NULL DEFAULT '{}'"],
     ['trade_routes', 'INTEGER NOT NULL DEFAULT 0'],

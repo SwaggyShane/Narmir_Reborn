@@ -14,7 +14,7 @@ import {
   RITUAL_CHANNEL_DEFENSE_MULT,
 } from '../../utils/evolutionBalance.js';
 
-/** Live mult table from client mirror of game/prestige/balance.js (EVOLUTION.md). */
+/** Live mult table from client mirror of game/prestige/balance.js. */
 const TIERS = [1, 2, 3, 4, 5].map((tier) => {
   const m = PRESTIGE_MODIFIERS[tier];
   return {
@@ -32,7 +32,7 @@ export default function PrestigePanel() {
   return (
     <div>
       <div style={{ color: 'var(--text3)', fontSize: 13, lineHeight: 1.6, marginBottom: 20, maxWidth: 700 }}>
-        Prestige rebirth (EVOLUTION.md Roadmap A): level {PRESTIGE_LEVEL_GATE} (max), full wipe contract (land seed,
+        Prestige rebirth: level {PRESTIGE_LEVEL_GATE} (max), full wipe contract (land seed,
         starter buildings, army/buildings/fragments wiped; top 3 heroes kept). Cooldown {PRESTIGE_COOLDOWN_TURNS} turns
         (~3.5 days). Mults hard-cap at Prestige 5. XP costs +20% per prestige rank. Combat mult applied once in combat
         resolver (max 1.05). Numbers mirror <code>game/prestige/balance.js</code>.

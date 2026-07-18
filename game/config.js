@@ -8,7 +8,7 @@
 // Research keys: Short names e.g., 'economy', 'weapons'
 //   → Maps to database columns: kingdoms.res_economy via RESEARCH_MAP
 
-// Prestige mults: single source game/prestige/balance.js (EVOLUTION.md).
+// Prestige mults: single source game/prestige/balance.js.
 // config re-exports so economy/recruitment/attunements keep `const { PRESTIGE_MODIFIERS } = config`.
 const { PRESTIGE_MODIFIERS: PRESTIGE_MODIFIERS_CANONICAL } = require('./prestige/balance');
 
@@ -3059,7 +3059,7 @@ const config = {
     PRESTIGE_BUTTON_TITLE: "You've reached max level! Click to explore prestige.",
   },
 
-  // Re-export only — never duplicate numbers here (EVOLUTION.md Roadmap A).
+  // Re-export only — never duplicate numbers here.
   PRESTIGE_MODIFIERS: PRESTIGE_MODIFIERS_CANONICAL,
 };
 

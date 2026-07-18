@@ -112,7 +112,7 @@ console.log('Test 1: XP table boundaries ✓');
 }
 
 // Test 6: unitLevelMult baseline at level 1 = 1.0; prestige rank does NOT stack
-// (EVOLUTION.md: combat mult only via applyPrestigeCombatMultiplier).
+// (combat mult only via applyPrestigeCombatMultiplier).
 // rangers is non-legendary for humans — isolates the rank effect.
 {
   const k = { race: 'human', prestige_level: 0, troop_levels: null };

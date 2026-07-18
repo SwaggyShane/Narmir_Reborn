@@ -1,5 +1,5 @@
 'use strict';
-// Contract: EVOLUTION.md section 3.3 — data-driven wipe updates + side-effect flags.
+// Data-driven wipe updates + side-effect flags.
 // Tests import ZERO_FIELDS / KEEP_COLUMNS / buildWipeUpdates.
 
 const {
@@ -163,7 +163,7 @@ function buildWipeUpdates(k) {
 
   // Endgame dragon form: KEEP evolution_form (not written = unchanged).
   // Mid-channel ritual cannot survive castle wipe — abort so next turn does not
-  // auto-FAIL with castles=0 (egg already spent; EVOLUTION.md endgame identity).
+  // auto-FAIL with castles=0 (egg already spent; endgame identity).
   try {
     const raw = k.evolution_ritual;
     if (raw && raw !== '{}' && raw !== '') {

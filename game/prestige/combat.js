@@ -1,6 +1,6 @@
 'use strict';
 // SINGLE SOURCE OF TRUTH for prestige combat — never multiply prestige combat elsewhere.
-// Contract: EVOLUTION.md section 3.5
+// Single source of truth for the prestige combat multiplier — never apply it elsewhere.
 
 const { getPrestigeModifiers } = require('./balance');
 

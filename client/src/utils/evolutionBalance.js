@@ -1,5 +1,5 @@
 /**
- * Client mirror of game/evolution/balance.js (EVOLUTION.md Roadmap B).
+ * Client mirror of game/evolution/balance.js.
  * ENDGAME optional form. Server is source of truth; keep in sync manually.
  */
 

@@ -78,7 +78,7 @@ const TREK_ARTIFACTS = Object.freeze([
   { id: 'trek_ranger_badge', name: 'Lost Ranger Badge' },
 ]);
 
-// Roadmap B: dragon_egg is trek-primary only (EVOLUTION.md). Separate from config ancient_dragon_egg.
+// dragon_egg is trek-primary only. Separate from config ancient_dragon_egg.
 let _eggBalance = null;
 function getEggBalance() {
   if (!_eggBalance) {
