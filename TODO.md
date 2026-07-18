@@ -149,7 +149,7 @@ Natural split clusters by line ranges (for future extract, not doing now):
 
 | ID | Item | Status |
 |----|------|--------|
-| A2-1 | Re-run route inventory; update `docs/API_ENDPOINTS.md` — remove or rewrite stale “16 dead routes” note; list real mounts from `kingdom.js`. | **TODO** |
+| A2-1 | Re-run route inventory; update `docs/API_ENDPOINTS.md` — remove or rewrite stale “16 dead routes” note; list real mounts from `kingdom.js`. | **DONE** — independently re-scanned (120 unique routes, 0 duplicates); the “16 dead routes” + school-allocation dup claims were both already false. Mount order note fixed too (was wrong — listed exploration before gameplay). |
 | A2-2 | Confirm no silent shadowing (including dynamic paths). Treat 0-dup scan as baseline; re-run after any route add. | **TODO** |
 | A2-3 | Split gameplay — **first slice:** turn + turn helpers only → e.g. `routes/kingdom-turn.js`, mount in `kingdom.js` before/after agreed position. | **TODO** |
 | A2-4 | Split gameplay — forge/lava cluster → `routes/kingdom-forge.js` (or under forge-named router). | **TODO** |
@@ -345,7 +345,7 @@ Scans kingdom-*, auth, hero, admin for:
 | A5-3 | Wire or delete dead command types (`prestige` vs rebirth route; `process-build-queue`). | **TODO** |
 | A5-4 | Expand boundary tooling: scan **`game/sockets.js`** for the same forbidden `engine.*` mutators; fail CI/local gate. | **TODO** |
 | A5-5 | Migrate socket attack/spell/covert to `commandHandler.handle` (parity with HTTP warfare). | **TODO** |
-| A5-6 | Fix ARCHITECTURE.md coupling section to match reality (CommandHandler + domain modules + sockets exception until A5-5). | **TODO** |
+| A5-6 | Fix ARCHITECTURE.md coupling section to match reality (CommandHandler + domain modules + sockets exception until A5-5). | **DONE** — "every route calls processTurn" removed (false; only /kingdom/turn does, via commandHandler); "Decoupling COMPLETE" verdict downgraded to PARTIAL with the sockets.js gap called out explicitly. |
 | A5-7 | Systems harness (local): land `b04214e2` work; prove combat/covert/spell/turn/hire through command + DB. | **TODO** |
 | A5-8 | Optionally extend boundary check to flag new kingdom POSTs that never call handle **and** never appear on an allowlist (high noise — only after A5-2 policy). | **TODO** |
 
@@ -408,7 +408,7 @@ A5-1 … A5-8 (see §5)
 
 ```
 Step 1   A1-*          index thin + single shutdown/handlers            DONE 2026-07-19
-Step 2   A2-1, A5-6    docs truth (API + ARCHITECTURE)
+Step 2   A2-1, A5-6    docs truth (API + ARCHITECTURE)                  DONE 2026-07-19
 Step 3   A5-1, A5-2    mutator policy + coverage matrix
 Step 4   A5-7          systems harness on local main
 Step 5   A4-1, A4-2    client/server updates contract

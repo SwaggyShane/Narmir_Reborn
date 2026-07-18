@@ -1,6 +1,6 @@
 # Narmir Reborn API Endpoints
 
-**Last Updated:** 2026-07-01
+**Last Updated:** 2026-07-19 — route precedence note corrected (real mount order + live duplicate scan, see below)
 
 This document is a concise route map for the current codebase. When this file and the route files disagree, treat the route files as truth.
 
@@ -13,16 +13,20 @@ Auth model:
 - mutating routes generally require CSRF protection
 
 > **Note on route precedence:** Several `/api/kingdom/*` routers are mounted on the same
-> path prefix in `index.js`, in this order: `kingdom-build`, `kingdom-warfare`,
-> `kingdom-economy`, `kingdom-research`, `kingdom-profile`, `kingdom-exploration`,
-> `kingdom-gameplay`. Express matches the first router that defines a given path+method,
-> so where two files define the same route, the earlier-mounted one wins and the later
-> one is dead code. This is currently true for 16 routes duplicated between
-> `kingdom-build.js` and `kingdom-gameplay.js` (e.g. `POST /build-queue`,
-> `POST /build`, `POST /tower-craft`) and 1 duplicated between `kingdom-build.js` and
-> `kingdom-research.js` (`POST /school-allocation`). This doc lists each route once,
-> attributed to the file that actually handles it. See `TODO.md` for the follow-up
-> cleanup item.
+> path prefix, composed explicitly in `routes/kingdom.js` (not `index.js`), in this
+> order: `kingdom-build`, `kingdom-warfare`, `kingdom-economy`, `kingdom-research`,
+> `kingdom-profile`, `kingdom-gameplay`, then `kingdom-exploration` mounted last. Express
+> matches the first router that defines a given path+method, so where two files define
+> the same route, the earlier-mounted one wins and the later one is dead code.
+>
+> **Verified 2026-07-19 (live scan of all 7 files, 120 unique routes): zero duplicate
+> method+path pairs.** This doc previously claimed 16 routes were duplicated between
+> `kingdom-build.js` and `kingdom-gameplay.js` plus 1 between `kingdom-build.js` and
+> `kingdom-research.js` (`POST /school-allocation`) — that was already stale by the time
+> it was written; `school-allocation` exists in exactly one place (`kingdom-build.js`).
+> Do not assume routes are dead based on an old doc claim — re-run the scan
+> (`routes/kingdom.js`'s `orderedRouters` list defines the real precedence) before
+> deleting anything on precedence grounds.
 
 ---
 
@@ -186,9 +190,6 @@ Endpoints:
 - `POST /kingdom/research-focus`
 - `GET /kingdom/studies/overview`
 - `POST /kingdom/select-school`
-
-`school-allocation` is defined here too but is dead code — `kingdom-build.js` owns it
-(see route precedence note).
 
 ---
 

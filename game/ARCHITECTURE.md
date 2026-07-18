@@ -1,8 +1,8 @@
 # Game Architecture: Current State (Narmir-shaped)
 
 **Purpose:** Describes how the game works **today** on the live runtime path.  
-**Date:** 2026-07-16  
-**Status:** As-is after CommandHandler boundary + safeEmit closeout (local `feature/webgl-worldmap`)
+**Date:** 2026-07-19  
+**Status:** As-is after CommandHandler boundary + safeEmit closeout (local `main`). Coupling section corrected 2026-07-19 — see below and `TODO.md` §5 for the honest state of mutator-boundary coverage (boundary check ≠ full coverage; `game/sockets.js` bypasses it entirely).
 
 Narmir’s architecture is **not** a generic RPG JSON content engine. It is a
 PostgreSQL multiplayer kingdom sim with:
@@ -20,7 +20,7 @@ Definition of done: player mutators via **CommandHandler**, game sockets via **s
 | Area | Verdict | Evidence |
 |------|---------|----------|
 | Foundation & as-is docs | **COMPLETE** | This file + turn/persistence notes |
-| Decoupling (Command boundary) | **COMPLETE (Narmir form)** | `game/command-handler.js`; `npm run check:command-boundary`. Events = turn result arrays + Socket.io — **no outbox** |
+| Decoupling (Command boundary) | **PARTIAL — corrected 2026-07-19** | `game/command-handler.js`; `npm run check:command-boundary` prevents kingdom-\*/auth/hero/admin routes from directly requiring `game/engine`, but does not require mutations to actually go through CommandHandler (most newer systems mutate via their own domain module + route-level transaction instead — real, by-design, not a gap by itself). The actual gap: `game/sockets.js` is not scanned by the boundary check at all and calls `engine.resolveMilitaryAttack`/`engine.castSpell` directly. See `TODO.md` §5 (A5-1..A5-8) for the full mutator-coverage matrix and policy. Events = turn result arrays + Socket.io — **no outbox** |
 | JSON content-pack “engine” vision | **CUT** | Wrong model for Narmir |
 | P0 honesty (passive scout, trek loot, terrain scout, safeEmit) | **COMPLETE in code** | Live modules on `feature/webgl-worldmap` (local; not production until ship) |
 | Post-complete debt | Open / deferred | Large `engine.js`; optional balance tuning |
@@ -100,9 +100,25 @@ npm test
 ### Current Tight Couplings
 
 **Routes ↔ Engine**
-- Every route calls `engine.processTurn()`
-- Routes also call specific functions directly
-- Routes reach into `game/*.js` with no abstraction
+- **Corrected 2026-07-19** — "every route calls `engine.processTurn()`" was false.
+  `check:command-boundary` forbids direct `engine.processTurn`/`resolveMilitaryAttack`/
+  `castSpell`/etc. calls from kingdom-\*/auth/hero/admin route files, and only
+  `POST /kingdom/turn` (plus the research-allocation path, which reuses the full
+  turn pipeline — see `TODO.md` A3-6) actually reaches `processTurn`, via
+  `commandHandler.handle({ type: 'turn' }, …)`, not directly.
+- **But the boundary check ≠ full mutator coverage.** It only prevents route files
+  from `require('../game/engine')` directly — it says nothing about whether a
+  mutation goes through `CommandHandler` at all. Build/economy/exploration mostly
+  mutate via their own domain modules + a route-level DB transaction, not
+  `CommandHandler` (see `game/COMMAND_COVERAGE.md` once `TODO.md` A5-1 lands).
+  Newer systems (forge, lava expedition/vents, evolution start/abort,
+  prestige/rebirth, attunements/synergies) do the same — real, by-design, just not
+  `CommandHandler`-shaped.
+- **`game/sockets.js` bypasses the boundary check entirely** (`check:command-boundary`
+  doesn't scan it) and calls `engine.resolveMilitaryAttack`/`engine.castSpell`
+  directly — the exact functions HTTP routes are forbidden from calling. See
+  `TODO.md` A5-4/A5-5.
+- Routes reach into `game/*.js` with no abstraction beyond the above.
 
 **Engine ↔ Database**
 - `processTurn()` receives `db` parameter and calls it directly
