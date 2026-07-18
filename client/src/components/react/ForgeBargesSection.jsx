@@ -2,7 +2,6 @@
  * Forge Barges section — FORGE_SYSTEM.md §15.3 B4
  * List + hull bars; queue extra barge (POST /forge/build-barge, no body).
  * Costs: 100 steel + 150k gold + 1k stone, 20 turns; max 3.
- * Stocks use steel (not steel_stored).
  */
 import React, { useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api.mjs';
@@ -86,9 +85,7 @@ const ForgeBargesSection = () => {
         steel:
           result.steel !== undefined
             ? result.steel
-            : result.steel_stored !== undefined
-              ? result.steel_stored
-              : Math.max(0, steel - EXTRA_COST.steel),
+            : Math.max(0, steel - EXTRA_COST.steel),
         gold: result.gold !== undefined ? result.gold : Math.max(0, gold - EXTRA_COST.gold),
         stone: result.stone !== undefined ? result.stone : Math.max(0, stone - EXTRA_COST.stone),
       });

@@ -92,9 +92,7 @@ const ForgeCrucibleSection = () => {
         steel:
           result.steel !== undefined
             ? result.steel
-            : result.steel_stored !== undefined
-              ? result.steel_stored
-              : Math.max(0, steel - TEMPER.steel * n),
+            : Math.max(0, steel - TEMPER.steel * n),
         lava_stored:
           result.lava_stored !== undefined
             ? result.lava_stored

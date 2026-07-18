@@ -1,6 +1,6 @@
 /**
  * Forge Fuel section — FORGE_SYSTEM.md §15.3 B3
- * Charcoal wood allocation + coal stock (column: coal, not coal_stored).
+ * Charcoal wood allocation + coal stock.
  */
 import React, { useState } from 'react';
 import { apiCall } from '../../utils/api.mjs';

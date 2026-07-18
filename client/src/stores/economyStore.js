@@ -44,7 +44,6 @@ export const useEconomyStore = create(
         steel: 0,
         coal: 0,
         // Forge handshake stocks/flags (FORGE_SYSTEM.md §15.4) — B1+
-        // coal/steel are pre-existing columns (never coal_stored/steel_stored)
         tempered_steel: 0,
         lava_stored: 0,
         steel_weapons: 0,
@@ -147,9 +146,6 @@ export const useEconomyStore = create(
           if (data?.iron !== undefined) state.iron = data.iron;
           if (data?.steel !== undefined) state.steel = data.steel;
           if (data?.coal !== undefined) state.coal = data.coal;
-          // Accept legacy aliases if a bad payload still uses *_stored
-          if (data?.coal_stored !== undefined && data?.coal === undefined) state.coal = data.coal_stored;
-          if (data?.steel_stored !== undefined && data?.steel === undefined) state.steel = data.steel_stored;
           if (data?.tempered_steel !== undefined) state.tempered_steel = data.tempered_steel;
           if (data?.lava_stored !== undefined) state.lava_stored = data.lava_stored;
           if (data?.steel_weapons !== undefined) state.steel_weapons = data.steel_weapons;
@@ -390,7 +386,6 @@ export const useSteel = () => useEconomyStore((state) => state.steel);
 
 export const useCoal = () => useEconomyStore((state) => state.coal);
 
-/** Canonical stock columns: coal / steel (not coal_stored / steel_stored). */
 export const useCoalStored = () =>
   useEconomyStore((state) => Number(state.coal || 0));
 

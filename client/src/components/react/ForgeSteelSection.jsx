@@ -46,21 +46,10 @@ const ForgeSteelSection = () => {
         toast(result.error, 'error');
         return;
       }
-      // Canonical columns: coal / steel (map old aliases if server not yet renamed)
       applySnapshot({
         iron: result.iron !== undefined ? result.iron : iron - SMELT.iron * n,
-        coal:
-          result.coal !== undefined
-            ? result.coal
-            : result.coal_stored !== undefined
-              ? result.coal_stored
-              : coal,
-        steel:
-          result.steel !== undefined
-            ? result.steel
-            : result.steel_stored !== undefined
-              ? result.steel_stored
-              : steel,
+        coal: result.coal !== undefined ? result.coal : coal,
+        steel: result.steel !== undefined ? result.steel : steel,
       });
       toast(
         result.steelOut != null
@@ -93,9 +82,7 @@ const ForgeSteelSection = () => {
         steel:
           result.steel !== undefined
             ? result.steel
-            : result.steel_stored !== undefined
-              ? result.steel_stored
-              : Math.max(0, steel - cost.steel * q),
+            : Math.max(0, steel - cost.steel * q),
         [type]:
           result.stock !== undefined
             ? result.stock
