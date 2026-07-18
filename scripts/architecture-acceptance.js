@@ -17,9 +17,26 @@
 'use strict';
 
 const { spawnSync } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
+
+// Guard against index.js re-growing into a boot-orchestration monolith again —
+// it was ~172 lines before the A1 boot refactor (lib/bootstrap.js, lib/shutdown.js,
+// lib/error-handlers.js single-owner). New boot concerns belong under lib/, not here.
+const ENTRYPOINT_LINE_LIMIT = 60;
+
+function checkEntrypointSize() {
+  console.log('\n[entrypoint size]');
+  const entrypoint = path.join(root, 'index.js');
+  const lines = fs.readFileSync(entrypoint, 'utf8').split(/\r?\n/).length;
+  if (lines > ENTRYPOINT_LINE_LIMIT) {
+    console.error(`  FAIL: index.js is ${lines} lines (limit ${ENTRYPOINT_LINE_LIMIT}). New boot concerns go in lib/, not index.js.`);
+    process.exit(1);
+  }
+  console.log(`  ok: index.js is ${lines} lines (limit ${ENTRYPOINT_LINE_LIMIT})`);
+}
 
 function runNode(scriptRel) {
   const script = path.join(root, scriptRel);
@@ -74,6 +91,7 @@ function main() {
   runNode('scripts/check-command-boundary.js');
   runNode('scripts/validate-game-tables.js');
   smokeModules();
+  checkEntrypointSize();
 
   console.log('\nPASSED: architecture acceptance (local; not a production deploy)');
   process.exit(0);
