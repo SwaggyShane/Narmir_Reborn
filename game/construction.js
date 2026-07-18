@@ -241,8 +241,15 @@ function processBuildQueue(k, events, xpSourcesAccum) {
   const smithyProdMult = fragmentBonusManager.getBonusMultiplier(k, 'smithies', 'production');
   const smithyQualityMult = fragmentBonusManager.getBonusMultiplier(k, 'smithies', 'quality');
   const effectiveSmithyMult = smithySpeedMult * smithyProdMult * smithyQualityMult;
+  // Engineers' Lodge — FORGE_SYSTEM.md §2.2 construction ×1.10
+  let lodgeConstructMult = 1.0;
+  try {
+    lodgeConstructMult = require('./forge-upgrades').constructionSpeedMult(k);
+  } catch {
+    lodgeConstructMult = 1.0;
+  }
   const baseToolMult =
-    hammerBonus * smithyBonus * raceConstr * engLevelMult * resConstr * effectiveSmithyMult;
+    hammerBonus * smithyBonus * raceConstr * engLevelMult * resConstr * effectiveSmithyMult * lodgeConstructMult;
 
   // Consumable tool pools — tracked across the building loop this turn
   let blueprintsLeft = k.blueprints_stored || 0;
@@ -476,10 +483,21 @@ function processBuildQueue(k, events, xpSourcesAccum) {
           }
 
           // ── Consume scaffolding on completion ───────────────────────────
+          // Toolwright's Yard — FORGE_SYSTEM.md §2.2 scaffold use ×0.90
           if (SCAFFOLDING_REQUIRED.has(building)) {
-            const consume = Math.min(canAdd, scaffoldingLeft);
-            scaffoldingLeft -= consume;
-            scaffoldingUsed += consume;
+            let scaffoldMult = 1.0;
+            try {
+              scaffoldMult = require('./forge-upgrades').scaffoldUseMult(k);
+            } catch {
+              scaffoldMult = 1.0;
+            }
+            const rawConsume = Math.min(canAdd, scaffoldingLeft);
+            const paid = Math.min(
+              scaffoldingLeft,
+              Math.max(0, Math.round(rawConsume * scaffoldMult)),
+            );
+            scaffoldingLeft -= paid;
+            scaffoldingUsed += paid;
           }
 
           // ── Resource building auto-consumption on first completion ────────
@@ -658,10 +676,16 @@ function processBuildQueue(k, events, xpSourcesAccum) {
 
     // Award engineer unit XP per building completed
     // XP scaled to meaningful progression: level 2 (200 XP) should take substantial time
+    let engXpAmount = totalCompleted * 3;
+    try {
+      engXpAmount = Math.floor(engXpAmount * require('./forge-upgrades').engineerXpMult(k));
+    } catch {
+      /* forge-upgrades optional during partial deploys */
+    }
     const engXpRes = awardTroopXp(
       { ...k, troop_levels: updates.troop_levels || k.troop_levels },
       "engineers",
-      totalCompleted * 3,
+      engXpAmount,
     );
     updates.troop_levels = typeof engXpRes.troop_levels === "string" ? JSON.parse(engXpRes.troop_levels) : engXpRes.troop_levels;
 

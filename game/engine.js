@@ -1508,6 +1508,40 @@ function processTurn(k, db = null) {
   Object.assign(updates, buildUpdates);
   if (buildUpdates.xp_sources_updated) Object.assign(xpSourcesAccum, buildUpdates.xp_sources_updated);
 
+  // ── 8a. Forge charcoal pit (FORGE_SYSTEM.md §3.3 / A3) ───────────────────────
+  try {
+    const { processCharcoalTick } = require('./forge-production');
+    const charcoal = processCharcoalTick({ ...k, ...updates });
+    if (charcoal.updates && Object.keys(charcoal.updates).length) {
+      Object.assign(updates, charcoal.updates);
+      if (charcoal.coalGain > 0) {
+        events.push({
+          type: 'system',
+          message: `🔥 Charcoal pit: burned ${charcoal.woodSpent.toLocaleString()} wood → ${charcoal.coalGain.toLocaleString()} coal.`,
+        });
+      }
+    }
+  } catch {
+    /* forge-production optional if partial deploy */
+  }
+
+  // ── 8a2. Flux-Barge build queue (FORGE_SYSTEM.md §5 / A4) ───────────────────
+  try {
+    const { processBargeBuildTick } = require('./flux-barge');
+    const bargeTick = processBargeBuildTick({ ...k, ...updates });
+    if (bargeTick.updates && Object.keys(bargeTick.updates).length) {
+      Object.assign(updates, bargeTick.updates);
+      if (bargeTick.completed && bargeTick.completed.length) {
+        events.push({
+          type: 'system',
+          message: `🚤 Flux-Barge ready: #${bargeTick.completed.join(', #')}.`,
+        });
+      }
+    }
+  } catch {
+    /* flux-barge optional if partial deploy */
+  }
+
   // ── 8b. Library — mages produce mana, scribes craft maps/blueprints, mages craft scrolls ──
   const libUpdates = processLibrary({ ...k, ...updates }, events);
   Object.assign(updates, libUpdates);
@@ -2122,6 +2156,23 @@ async function resolveExpeditions(db, k, engine) {
         }
       }
 
+      // ── Lava draw: arrival race, draw or empty-handed, crew return (FORGE_SYSTEM.md §6 / A6) ──
+      if (exp.type === 'lava-draw') {
+        try {
+          const { resolveLavaDraw } = require('./lava-expedition');
+          const lavaResult = await resolveLavaDraw(db, exp, freshK);
+          if (lavaResult && lavaResult.events) events.push(...lavaResult.events);
+          if (lavaResult && lavaResult.updates) Object.assign(updates, lavaResult.updates);
+          if (lavaResult && lavaResult.rewards) rewards.push(...lavaResult.rewards);
+        } catch (err) {
+          console.error(`[lava-draw] Resolution error for kingdom ${k.id} id=${exp.id}:`, err.message);
+          events.push({
+            type: 'system',
+            message: `Lava draw returned -- an error occurred processing the result.`,
+          });
+        }
+      }
+
       // ── Throne of Nazdreg check ──────────────────────────────────────────────
       if (updates._check_throne) {
         delete updates._check_throne;
@@ -2256,6 +2307,11 @@ async function resolveExpeditions(db, k, engine) {
         "last_event_id",
         "achievements",
         "items",
+        // Forge system (FORGE_SYSTEM.md §6.4 / A6) — lava-draw resolution writes these
+        "lava_stored",
+        "engineer_level",
+        "engineer_xp",
+        "flux_barges",
       ]);
 
       // Award XP

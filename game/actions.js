@@ -532,7 +532,14 @@ function forgeTools(k, toolType, quantity) {
   const cost = TOOL_GOLD_COST[toolType];
   const col = TOOL_COL[toolType];
   if (cost === undefined || !col) return { error: "Unknown tool type" };
-  const totalCost = cost * quantity;
+  // Toolwright's Yard — FORGE_SYSTEM.md §2.2 hammer gold ×0.90 (all tool gold costs)
+  let goldMult = 1.0;
+  try {
+    goldMult = require('./forge-upgrades').hammerGoldCostMult(k);
+  } catch {
+    goldMult = 1.0;
+  }
+  const totalCost = Math.ceil(cost * quantity * goldMult);
   const currentGold = k.gold || 0;
   if (totalCost > currentGold)
     return {
