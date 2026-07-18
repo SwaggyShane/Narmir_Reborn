@@ -37,6 +37,9 @@ const NUMERIC_FIELDS = [
   'hammers_stored', 'scaffolding_stored',
   // Inventory / resources
   'maps', 'blueprints_stored', 'wood', 'stone', 'iron', 'coal', 'steel',
+  // Forge system (FORGE_SYSTEM.md §15.4 handshake — A1)
+  'toolwright_yard', 'engineers_lodge', 'forge', 'tempered_steel', 'lava_stored',
+  'steel_weapons', 'steel_armor', 'tempered_weapons', 'tempered_armor',
   // Heroes
   'hp', 'max_hp',
   // Expeditions / resource nodes / trade routes

@@ -17,6 +17,8 @@ const ZERO_BUILDINGS = Object.freeze([
   'bld_castles', 'bld_libraries', 'bld_taverns', 'bld_mausoleums', 'bld_walls',
   'bld_woodyard', 'bld_lumber_camp', 'bld_sawmill', 'bld_gravel_pit', 'bld_blockfield',
   'bld_stone_quarry', 'bld_open_pit', 'bld_strip_mine', 'bld_deep_mine',
+  // Forge system upgrade chain (FORGE_SYSTEM.md §15.4) — install state resets like other buildings
+  'toolwright_yard', 'engineers_lodge', 'forge',
 ]);
 
 const ZERO_TROOPS = Object.freeze([
@@ -31,6 +33,9 @@ const ZERO_RESOURCES = Object.freeze([
   'tools_hammers', 'tools_scaffolding', 'tools_blueprints',
   'hammers_stored', 'scaffolding_stored', 'blueprints_stored',
   'trade_routes',
+  // Forge system stockpiles (FORGE_SYSTEM.md §15.4)
+  'tempered_steel', 'lava_stored', 'steel_weapons', 'steel_armor',
+  'tempered_weapons', 'tempered_armor',
 ]);
 
 const ZERO_RESEARCH = Object.freeze([
@@ -85,6 +90,7 @@ const EMPTY_JSON_STRING = Object.freeze({
   active_event: '{}',
   location_maps_wip: '[]',
   wounded_troops: '{}',
+  flux_barges: '[]',
 });
 
 /** Explicit keep list for schema-coverage tests (not written in updates). */
@@ -110,6 +116,7 @@ const ZERO_FIELDS = Object.freeze([
   'wall_hp', 'school_of_magic',
   // Extra numeric columns found via live schema reflection
   'last_attack_turn', 'rebellion_cooldown',
+  'charcoal_wood_allocation',
   'engineer_level', 'engineer_xp',
   'scrolls', 'hybrid_blueprints', 'fortified_blueprints', 'fortified_buildings',
   'certified_blueprints_stored',
@@ -198,7 +205,7 @@ async function applyPrestigeSideEffects(db, kingdomId) {
   // Expeditions: cancel — rewards lost (delete active rows)
   try {
     await db.run('DELETE FROM expeditions WHERE kingdom_id = $1 AND turns_left > 0', [kingdomId]);
-  } catch (_e) {
+  } catch {
     /* table may vary */
   }
   try {
@@ -206,13 +213,13 @@ async function applyPrestigeSideEffects(db, kingdomId) {
       `DELETE FROM resource_expeditions WHERE kingdom_id = $1 AND status IN ('active','outbound','returning','in_progress')`,
       [kingdomId],
     );
-  } catch (_e) {
+  } catch {
     try {
       await db.run('DELETE FROM resource_expeditions WHERE kingdom_id = $1 AND status = $2', [
         kingdomId,
         'active',
       ]);
-    } catch (_e2) {
+    } catch {
       /* ignore */
     }
   }

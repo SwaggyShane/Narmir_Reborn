@@ -722,6 +722,64 @@ async function initDb(options = {}) {
     }
   }
 
+  // Migration: make target_id nullable in expeditions -- scout/deep/hunting/
+  // prospecting/epic-trek are self-directed (no target kingdom), and nothing
+  // in the codebase reads expeditions.target_id at all.
+  const expTargetIdMigration = '005_make_target_id_nullable_in_expeditions';
+  const existingExpTargetIdMigration = await _db.get('SELECT id FROM migrations WHERE name = $1', [expTargetIdMigration]);
+  if (!existingExpTargetIdMigration) {
+    try {
+      await _db.run(`ALTER TABLE expeditions ALTER COLUMN target_id DROP NOT NULL`);
+      await _db.run('INSERT INTO migrations (name) VALUES ($1)', [expTargetIdMigration]);
+    } catch (err) {
+      console.warn('[db] Migration skipped (target_id may already be nullable):', err.message);
+    }
+  }
+
+  // Forge system A1 — kingdom columns + lava_vents table (FORGE_SYSTEM.md §15.2 A1)
+  const forgeA1Migration = '005_forge_a1_schema';
+  const existingForgeA1 = await _db.get('SELECT id FROM migrations WHERE name = $1', [forgeA1Migration]);
+  if (!existingForgeA1) {
+    try {
+      const kCols = await getTableColumns('kingdoms');
+      // Reuses pre-existing coal/steel columns; no coal_stored/steel_stored dupes.
+      const forgeKingdomCols = [
+        ['toolwright_yard', 'INTEGER NOT NULL DEFAULT 0'],
+        ['engineers_lodge', 'INTEGER NOT NULL DEFAULT 0'],
+        ['forge', 'INTEGER NOT NULL DEFAULT 0'],
+        ['tempered_steel', 'INTEGER NOT NULL DEFAULT 0'],
+        ['lava_stored', 'INTEGER NOT NULL DEFAULT 0'],
+        ['steel_weapons', 'INTEGER NOT NULL DEFAULT 0'],
+        ['steel_armor', 'INTEGER NOT NULL DEFAULT 0'],
+        ['tempered_weapons', 'INTEGER NOT NULL DEFAULT 0'],
+        ['tempered_armor', 'INTEGER NOT NULL DEFAULT 0'],
+        ['flux_barges', "TEXT NOT NULL DEFAULT '[]'"],
+        ['charcoal_wood_allocation', 'INTEGER NOT NULL DEFAULT 0'],
+      ];
+      for (const [col, def] of forgeKingdomCols) {
+        if (!kCols.includes(col)) {
+          await _db.run(`ALTER TABLE kingdoms ADD COLUMN ${col} ${def}`);
+          kCols.push(col);
+        }
+      }
+      await _db.run(`
+        CREATE TABLE IF NOT EXISTS lava_vents (
+          hex_col INTEGER NOT NULL,
+          hex_row INTEGER NOT NULL,
+          occupying_kingdom_id INTEGER REFERENCES kingdoms(id) ON DELETE SET NULL,
+          dormant_until TIMESTAMPTZ,
+          PRIMARY KEY (hex_col, hex_row)
+        )
+      `);
+      await _db.run('CREATE INDEX IF NOT EXISTS idx_lava_vents_occupying ON lava_vents(occupying_kingdom_id)');
+      await _db.run('CREATE INDEX IF NOT EXISTS idx_lava_vents_dormant ON lava_vents(dormant_until)');
+      await _db.run('INSERT INTO migrations (name) VALUES ($1)', [forgeA1Migration]);
+      console.log('[db] Migration 005_forge_a1_schema applied');
+    } catch (err) {
+      console.warn('[db] Forge A1 migration issue:', err.message);
+    }
+  }
+
   // Trade offers table
 
   // market prices seeding now in init-data

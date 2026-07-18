@@ -65,6 +65,8 @@ async function initializeAdditionalColumns(db, getTableColumns, addCol) {
     ['rewards_claimed', 'INTEGER NOT NULL DEFAULT 0'],
     ['extra_data', 'TEXT'],
     ['engineers', 'INTEGER NOT NULL DEFAULT 0'],
+    ['rangers', 'INTEGER NOT NULL DEFAULT 0'],
+    ['fighters', 'INTEGER NOT NULL DEFAULT 0'],
   ];
   for (const [col, def] of expAdds) {
     if (!eCols.includes(col)) await addCol('expeditions', col, def, eCols);
@@ -487,6 +489,19 @@ async function initializeKingdomColumns(db, getTableColumns, getColumnType, addC
     ['iron', 'INTEGER NOT NULL DEFAULT 0'],
     ['coal', 'INTEGER NOT NULL DEFAULT 0'],
     ['steel', 'INTEGER NOT NULL DEFAULT 0'],
+    // Forge system — FORGE_SYSTEM.md §15.4 handshake (A1)
+    // Reuses pre-existing coal/steel columns above; no coal_stored/steel_stored dupes.
+    ['toolwright_yard', 'INTEGER NOT NULL DEFAULT 0'],
+    ['engineers_lodge', 'INTEGER NOT NULL DEFAULT 0'],
+    ['forge', 'INTEGER NOT NULL DEFAULT 0'],
+    ['tempered_steel', 'INTEGER NOT NULL DEFAULT 0'],
+    ['lava_stored', 'INTEGER NOT NULL DEFAULT 0'],
+    ['steel_weapons', 'INTEGER NOT NULL DEFAULT 0'],
+    ['steel_armor', 'INTEGER NOT NULL DEFAULT 0'],
+    ['tempered_weapons', 'INTEGER NOT NULL DEFAULT 0'],
+    ['tempered_armor', 'INTEGER NOT NULL DEFAULT 0'],
+    ['flux_barges', "TEXT NOT NULL DEFAULT '[]'"],
+    ['charcoal_wood_allocation', 'INTEGER NOT NULL DEFAULT 0'],
     ['bld_woodyard', 'INTEGER NOT NULL DEFAULT 0'],
     ['bld_lumber_camp', 'INTEGER NOT NULL DEFAULT 0'],
     ['bld_sawmill', 'INTEGER NOT NULL DEFAULT 0'],

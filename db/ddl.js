@@ -119,6 +119,19 @@ const coreSchema = `
       active_effects    TEXT NOT NULL DEFAULT '{}',
       coal              INTEGER NOT NULL DEFAULT 0,
       steel             INTEGER NOT NULL DEFAULT 0,
+      -- Forge system (FORGE_SYSTEM.md §15.4 handshake — A1 schema)
+      -- Reuses pre-existing coal/steel columns above (no coal_stored/steel_stored dupes)
+      toolwright_yard   INTEGER NOT NULL DEFAULT 0,
+      engineers_lodge   INTEGER NOT NULL DEFAULT 0,
+      forge             INTEGER NOT NULL DEFAULT 0,
+      tempered_steel    INTEGER NOT NULL DEFAULT 0,
+      lava_stored       INTEGER NOT NULL DEFAULT 0,
+      steel_weapons     INTEGER NOT NULL DEFAULT 0,
+      steel_armor       INTEGER NOT NULL DEFAULT 0,
+      tempered_weapons  INTEGER NOT NULL DEFAULT 0,
+      tempered_armor    INTEGER NOT NULL DEFAULT 0,
+      flux_barges       TEXT NOT NULL DEFAULT '[]',
+      charcoal_wood_allocation INTEGER NOT NULL DEFAULT 0,
       school_of_magic   TEXT,
       school_spellbook  INTEGER NOT NULL DEFAULT 0,
       x                 INTEGER NOT NULL DEFAULT 0,
@@ -180,7 +193,7 @@ const coreSchema = `
     CREATE TABLE IF NOT EXISTS expeditions (
       id              SERIAL PRIMARY KEY,
       kingdom_id      INTEGER NOT NULL REFERENCES kingdoms(id),
-      target_id       INTEGER NOT NULL REFERENCES kingdoms(id),
+      target_id       INTEGER REFERENCES kingdoms(id),
       type            TEXT    NOT NULL,
       turns_left      INTEGER NOT NULL,
       rewards         TEXT,
@@ -552,6 +565,17 @@ const coreSchema = `
     );
     CREATE INDEX IF NOT EXISTS idx_resource_nodes_kingdom ON resource_nodes(kingdom_id);
     CREATE INDEX IF NOT EXISTS idx_resource_nodes_coords ON resource_nodes(map_x, map_y);
+
+    -- Lava vents (volcanic hex state) — FORGE_SYSTEM.md §15 A1 / §15.4
+    CREATE TABLE IF NOT EXISTS lava_vents (
+      hex_col INTEGER NOT NULL,
+      hex_row INTEGER NOT NULL,
+      occupying_kingdom_id INTEGER REFERENCES kingdoms(id) ON DELETE SET NULL,
+      dormant_until TIMESTAMPTZ,
+      PRIMARY KEY (hex_col, hex_row)
+    );
+    CREATE INDEX IF NOT EXISTS idx_lava_vents_occupying ON lava_vents(occupying_kingdom_id);
+    CREATE INDEX IF NOT EXISTS idx_lava_vents_dormant ON lava_vents(dormant_until);
 
     CREATE TABLE IF NOT EXISTS resource_expeditions (
       id SERIAL PRIMARY KEY,

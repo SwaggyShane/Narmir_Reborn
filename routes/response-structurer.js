@@ -18,7 +18,10 @@ const economyFields = new Set([
   'maps', 'scrolls', 'blueprints_stored', 'land', 'food_surplus_turns',
   'food_shortage_turns', '_spoilage', 'wall_upgrades', 'tower_def_upgrades',
   'outpost_upgrades', 'mausoleum_upgrades', 'school_upgrades',
-  'food_balance', 'gold_income', 'mana_regen'
+  'food_balance', 'gold_income', 'mana_regen',
+  // Forge system (FORGE_SYSTEM.md §15.4 handshake — A1)
+  'toolwright_yard', 'engineers_lodge', 'forge', 'tempered_steel', 'lava_stored',
+  'steel_weapons', 'steel_armor', 'tempered_weapons', 'tempered_armor', 'flux_barges',
 ]);
 
 const researchFields = new Set([
