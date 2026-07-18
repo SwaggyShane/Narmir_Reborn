@@ -155,54 +155,29 @@ console.log('path 2: mergeKingdomDiscovery scout/surveyor/expedition + strip fla
 }
 console.log('path 3: location_maps_wip completion sets mapped');
 
-// ── 4. Epic trek hex-matched discoveries ────────────────────────────────────
+// ── 4. Epic trek path discoveries no longer roll kingdoms ───────────────────
+// Kingdom discovery on an Epic Trek path is handled by
+// game/kingdom-fog-discovery.js's checkFogDiscoveries (deterministic: anything
+// on a hex whose fog is removed is found, no roll) called directly from
+// resolveEpicTrek once the path's fog is revealed -- not by rolling odds per
+// hex here. processPathDiscoveries should only ever produce 'loot' entries.
 {
-  const kingdom = { id: 3, turn: 12 };
-  // Find a hex that rolls kingdom discovery for this kingdom
-  let hitHex = null;
-  for (let c = 0; c < 80 && !hitHex; c++) {
-    for (let r = 0; r < 40; r++) {
-      if (rollKingdomDiscovery(c, r, kingdom)) {
-        hitHex = { col: c, row: r };
-        break;
-      }
-    }
+  const kingdom = { id: 3, turn: 12, race: 'human' };
+  const path = [];
+  for (let c = 0; c < 40; c++) {
+    for (let r = 0; r < 20; r++) path.push({ col: c, row: r });
   }
-  assert.ok(hitHex, 'need at least one seeded kingdom-hit hex for tests');
-
-  const discoveries = processPathDiscoveries([hitHex], kingdom);
-  const kingdomHits = discoveries.filter((d) => d.type === 'kingdom');
-  assert.ok(kingdomHits.length >= 1, 'path includes kingdom discovery on hit hex');
-  assert.strictEqual(kingdomHits[0].hex_col, hitHex.col);
-  assert.strictEqual(kingdomHits[0].hex_row, hitHex.row);
-
-  // Simulate resolveEpicTrek match: other kingdom home hex equals discovery hex
-  const otherKingdoms = [
-    { id: 99, race: 'orc', name: 'Bloodfort', _hex: hitHex },
-    { id: 100, race: 'human', name: 'Elsewhere', _hex: { col: hitHex.col + 50, row: hitHex.row + 50 } },
-  ];
-  let disc = {};
-  let discoveredCount = 0;
-  for (const discovered of kingdomHits) {
-    const match = otherKingdoms.find((ok) => {
-      const h = ok._hex;
-      return h.col === discovered.hex_col && h.row === discovered.hex_row;
-    });
-    if (match && !disc[match.id]) {
-      disc[match.id] = {
-        found: true,
-        discovered_turn: discovered.discovered_turn,
-        name: match.name,
-      };
-      discoveredCount++;
-    }
-  }
-  assert.strictEqual(discoveredCount, 1);
-  assert.strictEqual(disc[99].name, 'Bloodfort');
-  assert.strictEqual(disc[99].found, true);
-  assert.ok(!disc[100], 'off-path kingdom not discovered');
+  const discoveries = processPathDiscoveries(path, kingdom);
+  assert.ok(
+    discoveries.every((d) => d.type === 'loot'),
+    'processPathDiscoveries never emits kingdom-type entries',
+  );
+  // rollKingdomDiscovery itself still exists as a pure function (still unit
+  // tested directly in epic-trek-discovery.test.js) -- it's just no longer
+  // wired into the live discovery path.
+  assert.strictEqual(typeof rollKingdomDiscovery, 'function');
 }
-console.log('path 4: epic trek kingdom hits match home hex only');
+console.log('path 4: epic trek path discoveries are loot-only; kingdom discovery moved to checkFogDiscoveries');
 
 // ── 5. Search type=targets (pure random-exclude loop) ───────────────────────
 {

@@ -142,20 +142,20 @@ console.log('EPIC_TREK_DISCOVERY table covers core loot types');
 {
   const { findRegionalLocationsOnPath } = require('../game/epic-trek-discovery');
   const path = [{ col: 5, row: 5 }, { col: 6, row: 5 }];
-  const getLoc = (race, type) => {
-    if (type === 'dungeon') return { id: 1, x: 100, y: 200, type: 'dungeon' };
-    return null;
-  };
+  const getAllLocations = () => [
+    { id: 1, x: 100, y: 200, type: 'dungeon', region_name: 'human' },
+    { id: 2, x: 999, y: 999, type: 'mountain', region_name: 'orc' },
+  ];
   const pixelToHex = (x, y) => {
     if (x === 100 && y === 200) return { col: 5, row: 5 };
     return { col: 0, row: 0 };
   };
-  const found = findRegionalLocationsOnPath(path, 'human', getLoc, pixelToHex);
+  const found = findRegionalLocationsOnPath(path, getAllLocations, pixelToHex);
   assert.strictEqual(found.length, 1);
   assert.strictEqual(found[0].type, 'dungeon');
-  assert.deepStrictEqual(findRegionalLocationsOnPath([], 'human', getLoc, pixelToHex), []);
+  assert.deepStrictEqual(findRegionalLocationsOnPath([], getAllLocations, pixelToHex), []);
 }
-console.log('findRegionalLocationsOnPath: matches dungeon hex on path');
+console.log('findRegionalLocationsOnPath: matches any region\'s location on path, not just the traveler\'s own');
 
 // ── artifact apply ──────────────────────────────────────────────────────────
 {

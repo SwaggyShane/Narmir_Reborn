@@ -23,7 +23,7 @@ const { getProgressMetrics } = require("./scout-rings");
 const { processPassiveScoutFinds } = require("./passive-scout-finds");
 const { revealRingHexes } = require("./visibility");
 const { checkFogDiscoveries } = require("./kingdom-fog-discovery");
-const { safeJsonParse, safeJsonStringify, clearParseCache } = require('../utils/helpers');
+const { safeJsonParse, safeJsonStringify, clearParseCache, roll } = require('../utils/helpers');
 const { EPOCH_NOW } = require('../lib/db-sql');
 const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
 const { getProfiler, resetDevProfiler } = require('./profiling');
@@ -1924,96 +1924,81 @@ async function resolveEpicTrek(db, exp, kingdom) {
     });
   }
 
-  // Process discoveries along path — kingdom matches + real loot + regional locations.
-  // No flavor-only "found N locations" lines; only rewards that mutate state.
+  // Kingdom/node discovery is NOT a roll: anything sitting on a hex whose fog
+  // just got removed is found unconditionally, same as scout ring-reveal.
+  // Resource nodes already work this way for free (the /world-map route
+  // filters purely on seenCells, no reveal event needed); kingdoms need the
+  // explicit check below since discovered_kingdoms is a persisted list.
   try {
-    const {
-      applyLootDiscoveries,
-      findRegionalLocationsOnPath,
-    } = require('./epic-trek-discovery');
+    if (db && kingdom.id) {
+      const kingdomDiscoveries = await checkFogDiscoveries(db, kingdom.id);
+      for (const d of kingdomDiscoveries) {
+        if (d.message) rewards.push({ text: d.message });
+      }
+    }
+  } catch (err) {
+    console.error(`[epic-trek] Kingdom fog-discovery check failed for kingdom ${kingdom.id}:`, err.message);
+  }
+
+  // Dungeon/mountain hex on path unlocks that region's location — checked
+  // against every region, not just the traveler's own (region-specific
+  // rewards mean any region's dungeon/mountain is worth finding).
+  try {
+    const { findRegionalLocationsOnPath } = require('./epic-trek-discovery');
+    const { pixelToHex } = require('./hex-utils');
+    const { getAllLocations, markLocationDiscovered, isPubliclyDiscovered } = require('./world-locations');
+    const onPath = findRegionalLocationsOnPath(pathHexes, getAllLocations, pixelToHex);
+    for (const { type: locType, location } of onPath) {
+      if (isPubliclyDiscovered(location)) continue;
+      await markLocationDiscovered(db, location.id, kingdom.id);
+      const turnColumn = locType === 'dungeon' ? 'first_dungeon_found_turn' : 'first_mountain_found_turn';
+      await db.run(
+        `UPDATE kingdoms SET ${turnColumn} = $1 WHERE race = $2 AND ${turnColumn} IS NULL`,
+        [kingdom.turn || 0, location.region_name],
+      );
+      rewards.push({
+        text: `Your explorers uncovered the ${locType} of ${location.region_name}!`,
+      });
+    }
+  } catch (locErr) {
+    console.error(`[epic-trek] Regional location check failed:`, locErr.message);
+  }
+
+  // Small junk-focused finds along the way — one roll per turn spent
+  // traveling (not per hex), diminished compared to the path-loot/artifact
+  // tier below. Mirrors the same "simulate every turn at resolution time"
+  // pattern mountain expeditions already use for their per-turn junk rolls.
+  const turnsTotal = Number(extraData.turns_total) || 0;
+  if (turnsTotal > 0) {
+    let junkCount = 0;
+    for (let t = 0; t < turnsTotal; t++) {
+      if (roll(0.2)) {
+        junkPrize({ ...kingdom, ...updates }, updates);
+        junkCount++;
+      }
+    }
+    if (junkCount > 0) {
+      rewards.push({
+        text: `Along the way, your rangers picked up ${junkCount} small find${junkCount !== 1 ? 's' : ''}`,
+      });
+    }
+  }
+
+  // The bigger, end-of-trek prize: real resources/maps/troops/artifacts
+  // rolled per hex crossed and delivered as one batch on arrival — a richer
+  // tier than the per-turn junk finds above.
+  try {
+    const { applyLootDiscoveries } = require('./epic-trek-discovery');
     const discoveries = processPathDiscoveries(pathHexes, kingdom);
     if (discoveries && discoveries.length > 0) {
-      const newKingdoms = discoveries.filter((d) => d.type === 'kingdom');
-
-      if (newKingdoms.length > 0 && db) {
-        const { getKingdomMapCoords } = require('./world-map-coords');
-        const { pixelToHex } = require('./hex-utils');
-        const otherKingdoms = await db.all('SELECT id, race, name FROM kingdoms WHERE id != $1', [kingdom.id]);
-
-        let disc = {};
-        try {
-          disc = safeJsonParse(kingdom.discovered_kingdoms, {}, 'epic-trek:discovered_kingdoms');
-        } catch { /* keep empty */ }
-
-        let discoveredCount = 0;
-        for (const discovered of newKingdoms) {
-          const match = otherKingdoms.find((ok) => {
-            const coords = getKingdomMapCoords({ id: ok.id, race: ok.race });
-            const h = pixelToHex(coords.map_x, coords.map_y);
-            return h.col === discovered.hex_col && h.row === discovered.hex_row;
-          });
-
-          if (match && !disc[match.id]) {
-            disc[match.id] = {
-              found: true,
-              discovered_turn: discovered.discovered_turn,
-              name: match.name,
-            };
-            discoveredCount++;
-          }
-        }
-
-        if (discoveredCount > 0) {
-          updates.discovered_kingdoms = safeJsonStringify(disc);
-          rewards.push({
-            text: `Your explorers discovered ${discoveredCount} kingdom${discoveredCount !== 1 ? 's' : ''}!`,
-          });
-        }
-      }
-
-      const lootResult = applyLootDiscoveries(
-        { ...kingdom, ...updates },
-        discoveries,
-      );
+      const lootResult = applyLootDiscoveries({ ...kingdom, ...updates }, discoveries);
       Object.assign(updates, lootResult.updates);
       for (const r of lootResult.rewards) {
         rewards.push(r);
       }
     }
-
-    // FoW 5A: dungeon/mountain hex on path unlocks regional location (same as scout ring).
-    if (db && kingdom.race) {
-      try {
-        const { pixelToHex } = require('./hex-utils');
-        const {
-          getLocationByRegionAndType,
-          markLocationDiscovered,
-          isPubliclyDiscovered,
-        } = require('./world-locations');
-        const onPath = findRegionalLocationsOnPath(
-          pathHexes,
-          kingdom.race,
-          getLocationByRegionAndType,
-          pixelToHex,
-        );
-        for (const { type: locType, location } of onPath) {
-          if (isPubliclyDiscovered(location)) continue;
-          await markLocationDiscovered(db, location.id, kingdom.id);
-          const turnColumn = locType === 'dungeon' ? 'first_dungeon_found_turn' : 'first_mountain_found_turn';
-          await db.run(
-            `UPDATE kingdoms SET ${turnColumn} = $1 WHERE race = $2 AND ${turnColumn} IS NULL`,
-            [kingdom.turn || 0, kingdom.race],
-          );
-          rewards.push({
-            text: `Your explorers uncovered the regional ${locType}!`,
-          });
-        }
-      } catch (locErr) {
-        console.error(`[epic-trek] Regional location check failed:`, locErr.message);
-      }
-    }
   } catch (err) {
-    console.error(`[epic-trek] Discovery processing failed for kingdom ${kingdom.id}:`, err.message);
+    console.error(`[epic-trek] Path-loot processing failed for kingdom ${kingdom.id}:`, err.message);
   }
 
   return { events, updates, rewards };

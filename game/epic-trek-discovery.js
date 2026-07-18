@@ -1,9 +1,18 @@
 /**
  * Epic Trek path discovery & loot (P0 §3b)
  *
- * Per hex on the completed path:
- * - Kingdom discovery signal (~30% seeded) — resolved against real kingdoms in resolveEpicTrek
- * - Loot roll (~12% seeded) — real persisted resources/maps/troops, NOT flavor-only "locations"
+ * Kingdoms/nodes/dungeons/mountains are NOT rolled here — anything on a hex
+ * whose fog gets removed is found unconditionally (see resolveEpicTrek in
+ * game/engine.js, which calls checkFogDiscoveries + the region-scoped
+ * dungeon/mountain check directly). What IS rolled, per hex on the completed
+ * path:
+ * - Loot roll (~12% seeded) — real persisted resources/maps/troops/artifacts
+ * - Biome resource roll (~10% seeded) — the resource a hex's terrain should
+ *   naturally hold; see BIOME_RESOURCES (mountains/forest/hills/plains/
+ *   desert/coast/lake). Swamp has no dedicated resource — see its note above.
+ * A third, smaller-value tier (per-turn flavor junk prizes, not real
+ * resources) is simulated in resolveEpicTrek over the trek's turn count
+ * rather than its hex count.
  *
  * Honesty rule: never emit reward text for finds that do not mutate kingdom state.
  */
@@ -25,6 +34,39 @@ const EPIC_TREK_DISCOVERY = Object.freeze({
     { type: 'land', weight: 2, min: 1, max: 1 },
     { type: 'artifact', weight: 2 }, // rare path artifact → kingdom items
   ]),
+  /**
+   * Swamp has no dedicated BIOME_RESOURCES entry (no primary material), but
+   * still uses the general loot roll above with mana's weight boosted —
+   * magical bogs leaking residual mana fits swamp better than an even split
+   * across all outcome types.
+   */
+  SWAMP_LOOT_OUTCOMES: Object.freeze([
+    { type: 'gold', weight: 20, min: 40, max: 180 },
+    { type: 'wood', weight: 10, min: 15, max: 50 },
+    { type: 'stone', weight: 10, min: 15, max: 50 },
+    { type: 'mana', weight: 40, min: 15, max: 60 },
+    { type: 'maps', weight: 10, amount: 1 },
+    { type: 'food', weight: 5, min: 30, max: 100 },
+    { type: 'troops', weight: 3, unit: 'rangers', min: 1, max: 4 },
+    { type: 'land', weight: 1, min: 1, max: 1 },
+    { type: 'artifact', weight: 2 },
+  ]),
+  /**
+   * Small chance per hex to find the resource its biome should hold. Swamp
+   * is deliberately absent — it has no primary material, and just falls
+   * through to the general LOOT_OUTCOMES roll above (maps/junk/rare gold
+   * fit swampy ruins better than a dedicated resource).
+   */
+  BIOME_RESOURCE_CHANCE: 0.1,
+  BIOME_RESOURCES: Object.freeze({
+    mountains: 'iron',
+    forest: 'wood',
+    hills: 'stone',
+    plains: 'food',
+    desert: 'gold',
+    coast: 'food',
+    lake: 'food',
+  }),
 });
 
 /** Catalog of trek artifacts (persist via items JSON). */
@@ -92,14 +134,17 @@ function rollKingdomDiscovery(hexCol, hexRow, kingdom) {
  * @param {number} hexCol
  * @param {number} hexRow
  * @param {object} kingdom
+ * @param {string|null} [terrain] - swamp uses SWAMP_LOOT_OUTCOMES (mana-weighted)
  * @returns {object|null} { type: 'loot', lootType, amount?, unit? }
  */
-function rollLootDiscovery(hexCol, hexRow, kingdom) {
+function rollLootDiscovery(hexCol, hexRow, kingdom, terrain) {
   if (!kingdom || !kingdom.id) return null;
   const hit = seededUnit(hexCol + 17, hexRow + 31, kingdom.id * 7 + 3);
   if (hit >= EPIC_TREK_DISCOVERY.LOOT_CHANCE) return null;
 
-  const outcomes = EPIC_TREK_DISCOVERY.LOOT_OUTCOMES;
+  const outcomes = terrain === 'swamp'
+    ? EPIC_TREK_DISCOVERY.SWAMP_LOOT_OUTCOMES
+    : EPIC_TREK_DISCOVERY.LOOT_OUTCOMES;
   const totalW = outcomes.reduce((s, o) => s + o.weight, 0);
   let pick = seededUnit(hexCol + 99, hexRow + 41, kingdom.id * 11) * totalW;
   let chosen = outcomes[outcomes.length - 1];
@@ -185,6 +230,40 @@ function rollLocationDiscovery(hexCol, hexRow, kingdom) {
 }
 
 /**
+ * Small per-hex chance to find the resource a biome should naturally hold —
+ * see EPIC_TREK_DISCOVERY.BIOME_RESOURCES for the terrain map. Swamp,
+ * tundra, volcanic, and ocean have no biome-resource chance for now.
+ * @param {number} hexCol
+ * @param {number} hexRow
+ * @param {string|null} terrain
+ * @param {object} kingdom
+ * @returns {object|null} { type: 'loot', lootType, amount, hex_col, hex_row } or null
+ */
+function rollBiomeResourceDiscovery(hexCol, hexRow, terrain, kingdom) {
+  if (!kingdom || !kingdom.id || !terrain) return null;
+  const resourceType = EPIC_TREK_DISCOVERY.BIOME_RESOURCES[terrain];
+  if (!resourceType) return null;
+  const hit = seededUnit(hexCol + 53, hexRow + 61, kingdom.id * 23 + 7);
+  if (hit >= EPIC_TREK_DISCOVERY.BIOME_RESOURCE_CHANCE) return null;
+  const amount = 10 + Math.floor(seededUnit(hexCol + 71, hexRow + 83, kingdom.id * 29) * 30);
+  return {
+    type: 'loot',
+    lootType: resourceType,
+    amount,
+    hex_col: hexCol,
+    hex_row: hexRow,
+    discovered_turn: kingdom.turn || 0,
+  };
+}
+
+/**
+ * Kingdom discovery is NOT rolled here — a hex whose fog gets removed reveals
+ * anything sitting on it unconditionally (see game/kingdom-fog-discovery.js's
+ * checkFogDiscoveries, called directly from resolveEpicTrek once the path's
+ * fog is revealed). This rolls the "big" per-hex loot tier plus the biome
+ * resource chance (also per hex crossed); the small per-turn junk-prize tier
+ * lives in resolveEpicTrek instead, looped over the trek's turn count rather
+ * than its hex count.
  * @param {Array<{col:number,row:number}>} pathHexes
  * @param {object} kingdom
  * @returns {Array}
@@ -194,13 +273,26 @@ function processPathDiscoveries(pathHexes, kingdom) {
     return [];
   }
 
+  // Optional: elevation-lane hex grid cache, same safe-require pattern as
+  // game/passive-resource-node-spawn.js — this module must load without it.
+  let terrainApi;
+  try {
+    terrainApi = require('./world-hex-grid-cache');
+  } catch {
+    terrainApi = { hasHexGrid: () => false, getTerrainAt: () => null };
+  }
+  const hasTerrain = terrainApi.hasHexGrid();
+
   const discoveries = [];
   for (const hex of pathHexes) {
     if (hex == null || hex.col === undefined || hex.row === undefined) continue;
-    const kingdomDisc = rollKingdomDiscovery(hex.col, hex.row, kingdom);
-    if (kingdomDisc) discoveries.push(kingdomDisc);
-    const lootDisc = rollLootDiscovery(hex.col, hex.row, kingdom);
+    const terrain = hasTerrain ? terrainApi.getTerrainAt(hex.col, hex.row) : null;
+    const lootDisc = rollLootDiscovery(hex.col, hex.row, kingdom, terrain);
     if (lootDisc) discoveries.push(lootDisc);
+    if (terrain) {
+      const biomeDisc = rollBiomeResourceDiscovery(hex.col, hex.row, terrain, kingdom);
+      if (biomeDisc) discoveries.push(biomeDisc);
+    }
   }
   return discoveries;
 }
@@ -236,6 +328,7 @@ function applyLootDiscoveries(kingdom, discoveries) {
     gold: 0,
     wood: 0,
     stone: 0,
+    iron: 0,
     mana: 0,
     food: 0,
     maps: 0,
@@ -251,6 +344,7 @@ function applyLootDiscoveries(kingdom, discoveries) {
       case 'gold':
       case 'wood':
       case 'stone':
+      case 'iron':
       case 'mana':
       case 'food':
       case 'land':
@@ -294,6 +388,7 @@ function applyLootDiscoveries(kingdom, discoveries) {
   if (totals.gold) rewards.push({ text: `Path loot: +${totals.gold.toLocaleString()} gold` });
   if (totals.wood) rewards.push({ text: `Path loot: +${totals.wood.toLocaleString()} wood` });
   if (totals.stone) rewards.push({ text: `Path loot: +${totals.stone.toLocaleString()} stone` });
+  if (totals.iron) rewards.push({ text: `Path loot: +${totals.iron.toLocaleString()} iron` });
   if (totals.mana) rewards.push({ text: `Path loot: +${totals.mana.toLocaleString()} mana` });
   if (totals.food) rewards.push({ text: `Path loot: +${totals.food.toLocaleString()} food` });
   if (totals.land) rewards.push({ text: `Path loot: +${totals.land} land` });
@@ -307,17 +402,19 @@ function applyLootDiscoveries(kingdom, discoveries) {
 }
 
 /**
- * Find regional dungeon/mountain locations whose hex sits on the trek path.
- * Pure filter — caller marks discovered + race unlock turns.
+ * Find any region's dungeon/mountain location whose hex sits on the trek
+ * path — every region's location can be found this way, not just the
+ * traveling kingdom's own (dungeons/mountains carry region-specific rewards,
+ * same reasoning as the scout-ring reveal check in game/visibility.js).
+ * Pure filter — caller marks discovered + region unlock turns.
  *
  * @param {Array<{col:number,row:number}>} pathHexes
- * @param {string} race - kingdom race (region)
- * @param {function(string,string): object|null} getLocation - getLocationByRegionAndType
+ * @param {function(): object[]} getAllLocationsFn - world-locations' getAllLocations
  * @param {function(number,number): {col:number,row:number}} pixelToHexFn
  * @returns {Array<{type:string, location: object}>}
  */
-function findRegionalLocationsOnPath(pathHexes, race, getLocation, pixelToHexFn) {
-  if (!Array.isArray(pathHexes) || !race || typeof getLocation !== 'function' || typeof pixelToHexFn !== 'function') {
+function findRegionalLocationsOnPath(pathHexes, getAllLocationsFn, pixelToHexFn) {
+  if (!Array.isArray(pathHexes) || typeof getAllLocationsFn !== 'function' || typeof pixelToHexFn !== 'function') {
     return [];
   }
   const pathKeys = new Set(
@@ -326,13 +423,12 @@ function findRegionalLocationsOnPath(pathHexes, race, getLocation, pixelToHexFn)
       .map((h) => `${h.col},${h.row}`),
   );
   const found = [];
-  for (const locType of ['dungeon', 'mountain']) {
-    const location = getLocation(race, locType);
-    if (!location || location.x == null || location.y == null) continue;
+  for (const location of getAllLocationsFn()) {
+    if (location.x == null || location.y == null) continue;
     const hex = pixelToHexFn(location.x, location.y);
     if (!hex) continue;
     if (!pathKeys.has(`${hex.col},${hex.row}`)) continue;
-    found.push({ type: locType, location });
+    found.push({ type: location.type, location });
   }
   return found;
 }
@@ -344,6 +440,7 @@ module.exports = {
   rollKingdomDiscovery,
   rollLootDiscovery,
   rollLocationDiscovery,
+  rollBiomeResourceDiscovery,
   processPathDiscoveries,
   applyLootDiscoveries,
   findRegionalLocationsOnPath,

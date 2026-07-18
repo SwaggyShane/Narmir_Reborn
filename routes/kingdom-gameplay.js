@@ -3168,7 +3168,8 @@ module.exports = function (db) {
   // Gated: Hidden until Ring 2 Scout complete
   // Cost: 1.5 turns per hex distance
   router.post('/expedition/epic-trek', requireAuth, requireCsrfToken, async (req, res) => {
-    const { target_x, target_y } = req.body;
+    const { target_x, target_y, rangers } = req.body;
+    const requestedRangers = Math.max(0, parseInt(rangers, 10) || 0);
     const { getPathHexes, getEpicTrekTurns, isTargetInBounds } = require('../game/epic-trek-paths');
 
     try {
@@ -3181,6 +3182,10 @@ module.exports = function (db) {
         return res.status(400).json({ error: 'Target is outside map bounds' });
       }
 
+      if (requestedRangers < 1) {
+        return res.status(400).json({ error: 'Send at least 1 ranger' });
+      }
+
       const result = await db.withTransaction(async () => {
         const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
           req.player.playerId,
@@ -3188,6 +3193,12 @@ module.exports = function (db) {
         if (!k) {
           const err = new Error('Kingdom not found');
           err.statusCode = 404;
+          throw err;
+        }
+
+        if (requestedRangers > commandHandler.getAvailableUnits(k, 'rangers')) {
+          const err = new Error('Not enough available rangers (some may be in training)');
+          err.statusCode = 400;
           throw err;
         }
 
@@ -3227,7 +3238,7 @@ module.exports = function (db) {
         // Calculate path and food cost
         const pathHexes = getPathHexes(map_x, map_y, target_x, target_y);
         const DEEP_EXP_FOOD_COST_PER_HEX = 50;
-        const rangerCount = k.rangers || 0;
+        const rangerCount = requestedRangers;
         const rangerLevel = parseTroopLevel(k.troop_levels || {}, 'rangers') || 1;
         const levelMult = 1 + (rangerLevel - 1) * 0.05;
         const foodNeeded = Math.ceil(pathHexes.length * DEEP_EXP_FOOD_COST_PER_HEX * levelMult);
@@ -3258,7 +3269,7 @@ module.exports = function (db) {
         // Create expedition with path stored as JSON
         await db.run(
           'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, extra_data) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-          [k.id, 'epic-trek', turnsNeeded, rangerCount, 0, foodNeeded, JSON.stringify({ path_hexes: pathHexes, target_x, target_y })]
+          [k.id, 'epic-trek', turnsNeeded, rangerCount, 0, foodNeeded, JSON.stringify({ path_hexes: pathHexes, target_x, target_y, turns_total: turnsNeeded })]
         );
 
         return { turnsNeeded, distance, pathHexes, foodNeeded };
