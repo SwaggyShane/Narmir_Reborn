@@ -352,6 +352,7 @@
   - **Files:** `game/fix-kingdom-1-visibility.js` (new migration script)
   - **Commits:** `c98c0f16` (initial), `4dcc27b6` (address Gemini feedback)
   - **Impact:** Kingdom 1 now displays correct home hex visibility; production deployment of this script will sync production database state to match expected visibility
+  - **Cleanup (2026-07-18):** The investigation that produced this fix left six exploratory one-off scripts at the repo root — `check-visibility.js`, `check-kingdoms.js`, `check-k11-visibility.js`, `fix-k11.js` (targets kingdom id 11 with the same `cellIndex(1,5)` coordinates as the real fix — an earlier wrong-ID attempt on the way to this one), `fix-stolice-visibility.js`, `fix-stolice-visibility-simple.js` — plus a stray `test-vis-run.log`. None were referenced anywhere in the codebase or `package.json`; all were dead debugging aids superseded by `game/fix-kingdom-1-visibility.js` above. Removed. `game/fix-kingdom-1-visibility.js` itself is kept — it's the actual, documented, potentially-still-needed-in-production migration script, not exploratory scratch.
 
 - **Fog of War Scout Ring Visibility Bugs Fixed** (PR #840, merged `860e5abb` 2026-07-06): Fixed critical visibility calculation bugs in scout ring progression that caused random hexes to be revealed and visual state mismatches.
   - **Issues Fixed:**
