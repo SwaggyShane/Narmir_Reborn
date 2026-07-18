@@ -523,74 +523,6 @@ module.exports = function (db) {
     return { updates, events: allEvents };
   }
 
-  // —— Process turn effects without deducting another turn (for instant actions like hunt) ——
-  async function processTurnEffectsOnly(db, k) {
-    if (!k) throw new Error('Kingdom not found');
-    console.time(`[turn-${k.id}] effects-only`);
-
-    // Load context before transaction
-    await loadTurnContext(db, k);
-
-    console.time(`[turn-${k.id}] effects-only-transaction`);
-    const { updates: finalUpdates, events: finalEvents } = await db.withTransaction(async () => {
-      // Re-fetch with FOR UPDATE for row lock in transaction
-      let lockedK = await db.get("SELECT * FROM kingdoms WHERE id = $1 FOR UPDATE", [k.id]);
-      if (!lockedK) throw new Error('Kingdom not found');
-
-      // Merge the pre-fetched context onto the fresh lockedK
-      Object.assign(lockedK, {
-        _region_owned_by_my_alliance: k._region_owned_by_my_alliance,
-        _region_bonus_type: k._region_bonus_type,
-        heroes: k.heroes,
-        _trade_routes: k._trade_routes,
-      });
-
-      console.time(`[turn-${k.id}] commandHandler.turn`);
-      const { updates, events } = await commandHandler.handle(
-        { type: 'turn' },
-        { kingdom: lockedK, db },
-      );
-      console.timeEnd(`[turn-${k.id}] commandHandler.turn`);
-
-      // Don't deduct a turn (it was already deducted by the action that called this)
-      updates.turns_stored = lockedK.turns_stored;
-
-      const { updates: txUpdates, events: txEvents } = await commitTurnResults(db, lockedK, updates, events);
-
-      // Fix turns_stored since commitTurnResults would have deducted another turn
-      txUpdates.turns_stored = lockedK.turns_stored;
-
-      return { updates: txUpdates, events: txEvents };
-    });
-    console.timeEnd(`[turn-${k.id}] effects-only-transaction`);
-
-    // Refresh fields that resolveExpeditions may have updated via SQL
-    console.time(`[turn-${k.id}] refresh-queries`);
-    const refreshed = await db.get(
-      "SELECT rangers, fighters, gold, mana, land, scrolls, maps, blueprints_stored, troop_levels, library_progress, tower_progress, racial_bonuses_unlocked, scout_progress FROM kingdoms WHERE id = $1",
-      [k.id],
-    );
-    if (refreshed) Object.assign(finalUpdates, refreshed);
-
-    // Fetch unread news count
-    const unread = await db.get(
-      "SELECT COUNT(*) as c FROM news WHERE kingdom_id = $1 AND is_read = 0",
-      [k.id],
-    );
-    console.timeEnd(`[turn-${k.id}] refresh-queries`);
-    finalUpdates.unread_news = unread.c;
-
-    // Calculate new score after turn
-    const finalState = { ...k, ...finalUpdates };
-    finalUpdates.score = await commandHandler.handle(
-      { type: 'calculate-score' },
-      { kingdom: finalState },
-    );
-
-    console.timeEnd(`[turn-${k.id}] effects-only`);
-    return { updates: finalUpdates, events: finalEvents };
-  }
-
   // —— Shared turn runner - used by ALL routes that consume a turn ————————————
   async function runTurn(db, k) {
     if (!k) throw new Error('Kingdom not found');
@@ -3645,12 +3577,13 @@ module.exports = function (db) {
     }
   });
 
-  // Export helper functions for use in other routes
-  router.withTurnLock = withTurnLock;
-  router.runTurn = runTurn;
-  router.processTurnEffectsOnly = processTurnEffectsOnly;
-  router.loadTurnContext = loadTurnContext;
-  router.commitTurnResults = commitTurnResults;
+  // These were previously exported as router.withTurnLock / .runTurn /
+  // .processTurnEffectsOnly / .loadTurnContext / .commitTurnResults "for use in
+  // other routes" — verified 2026-07-19 (grep across the whole repo) that nothing
+  // outside this file ever read any of them; routes/kingdom.js only calls the
+  // factory function and mounts the returned router, never touches these
+  // properties. Removed as dead exports. The functions themselves stay — they're
+  // still used internally (runTurn by /smithy/forge-tools and /search below).
 
   return router;
 };
