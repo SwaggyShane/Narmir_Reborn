@@ -289,7 +289,7 @@ const ForgeCrucibleSection = () => {
       {/* Tempered gear — hide until first tempered metal/gear attained */}
       {showTemperedGear && (
         <div className="space-y-2 border-t border-white/5 pt-3">
-          <div className="text-[12px] text-text2 font-semibold">{temperedName}: Tempered gear</div>
+          <div className="text-[12px] text-text2 font-semibold">{temperedName} gear</div>
           <div className="text-[11px] text-text3">
             Weapons: {TEMPERED_WEAPONS.tempered_steel} tempered + {fmt(TEMPERED_WEAPONS.gold)} gold
             · Armor: {TEMPERED_ARMOR.tempered_steel} tempered + {fmt(TEMPERED_ARMOR.gold)} gold

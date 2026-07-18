@@ -9,6 +9,16 @@ import { useRace, useTroopLevels, useTrainingAllocation, useBuildTraining, useWe
 
 const TROOP_TYPES = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas'];
 
+// Mirrors game/lib/troops.js troopXpForLevel — server is canonical.
+function troopXpForLevel(level) {
+  if (level <= 1) return 0;
+  if (level <= 10) return level * 100;
+  if (level <= 25) return level * 300;
+  if (level <= 50) return level * 800;
+  if (level <= 75) return level * 2000;
+  return level * 5000;
+}
+
 const RACE_TRAINING_BONUS = {
   high_elf: 'Increased XP for Clerics, Mages, and Researchers',
   dwarf: 'Increased XP for Fighters and Engineers',
@@ -41,12 +51,15 @@ const TrainingPanel = () => {
   const getTroopLevel = (unit) => troopLevels?.[unit] || { level: 1, xp: 0 };
   const getTroopXpView = (unit) => {
     const data = getTroopLevel(unit);
-    const xpNeeded = 100;
-    const xpInLevel = Math.max(0, Number(data.xp || 0) - ((Number(data.level || 1) - 1) * 100));
-    const pct = Math.min(100, Math.floor((xpInLevel / xpNeeded) * 100));
+    const level = Number(data.level || 1);
+    // Server (awardTroopXp) stores data.xp as the remainder already earned
+    // toward the *next* level, not cumulative XP since level 1.
+    const xpInLevel = Math.max(0, Number(data.xp || 0));
+    const xpNeeded = level >= 100 ? 0 : troopXpForLevel(level + 1) - troopXpForLevel(level);
+    const pct = xpNeeded > 0 ? Math.min(100, Math.floor((xpInLevel / xpNeeded) * 100)) : 100;
     return {
-      level: Number(data.level || 1),
-      xpText: `${fmt(xpInLevel)} / ${fmt(xpNeeded)} XP`,
+      level,
+      xpText: level >= 100 ? 'MAX' : `${fmt(xpInLevel)} / ${fmt(xpNeeded)} XP`,
       barWidth: `${pct}%`,
     };
   };
