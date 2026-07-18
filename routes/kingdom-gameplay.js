@@ -2551,6 +2551,143 @@ module.exports = function (db) {
     }
   });
 
+  // ── Forge production (FORGE_SYSTEM.md §15.2 A3 / §15.4) ───────────────────
+  router.post('/forge/charcoal-allocate', requireAuth, requireCsrfToken, async (req, res) => {
+    try {
+      const forgeProd = require('../game/forge-production');
+      const wood = req.body?.wood;
+      const k = await db.get(
+        `SELECT id, forge, wood, charcoal_wood_allocation FROM kingdoms WHERE player_id = $1`,
+        [req.player.playerId],
+      );
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+      const result = forgeProd.setCharcoalAllocation(k, wood);
+      if (result.error) return res.status(400).json({ error: result.error });
+      await db.run(
+        `UPDATE kingdoms SET charcoal_wood_allocation = $1, updated_at = $2 WHERE id = $3`,
+        [result.updates.charcoal_wood_allocation, result.updates.updated_at, k.id],
+      );
+      return res.json({
+        ok: true,
+        charcoal_wood_allocation: result.updates.charcoal_wood_allocation,
+      });
+    } catch (e) {
+      console.error('[forge/charcoal-allocate] POST:', e.message);
+      res.status(500).json({ error: 'Failed to set charcoal allocation' });
+    }
+  });
+
+  router.post('/forge/smelt', requireAuth, requireCsrfToken, async (req, res) => {
+    try {
+      const forgeProd = require('../game/forge-production');
+      const k = await db.get(
+        `SELECT id, race, forge, iron, coal, steel FROM kingdoms WHERE player_id = $1`,
+        [req.player.playerId],
+      );
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+      const result = forgeProd.smeltSteel(k, req.body?.batches);
+      if (result.error) return res.status(400).json({ error: result.error });
+      const u = result.updates;
+      await db.run(
+        `UPDATE kingdoms SET iron = $1, coal = $2, steel = $3, updated_at = $4 WHERE id = $5`,
+        [u.iron, u.coal, u.steel, u.updated_at, k.id],
+      );
+      return res.json({
+        ok: true,
+        batches: result.batches,
+        steelOut: result.steelOut,
+        steel: u.steel,
+        coal: u.coal,
+        iron: u.iron,
+      });
+    } catch (e) {
+      console.error('[forge/smelt] POST:', e.message);
+      res.status(500).json({ error: 'Failed to smelt steel' });
+    }
+  });
+
+  router.post('/forge/temper', requireAuth, requireCsrfToken, async (req, res) => {
+    try {
+      const forgeProd = require('../game/forge-production');
+      const k = await db.get(
+        `SELECT id, race, forge, engineer_level, steel, lava_stored, tempered_steel, troop_levels
+         FROM kingdoms WHERE player_id = $1`,
+        [req.player.playerId],
+      );
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+      const engLvl = parseTroopLevel(k.troop_levels, 'engineers') || k.engineer_level || 1;
+      const result = forgeProd.temperSteel(k, req.body?.batches, Math.max(engLvl, k.engineer_level || 1));
+      if (result.error) return res.status(400).json({ error: result.error });
+      const u = result.updates;
+      await db.run(
+        `UPDATE kingdoms SET steel = $1, lava_stored = $2, tempered_steel = $3, updated_at = $4 WHERE id = $5`,
+        [u.steel, u.lava_stored, u.tempered_steel, u.updated_at, k.id],
+      );
+      return res.json({
+        ok: true,
+        batches: result.batches,
+        temperedOut: result.temperedOut,
+        displayName: result.displayName,
+        tempered_steel: u.tempered_steel,
+        steel: u.steel,
+        lava_stored: u.lava_stored,
+      });
+    } catch (e) {
+      console.error('[forge/temper] POST:', e.message);
+      res.status(500).json({ error: 'Failed to temper steel' });
+    }
+  });
+
+  router.post('/forge/craft-gear', requireAuth, requireCsrfToken, async (req, res) => {
+    try {
+      const forgeProd = require('../game/forge-production');
+      const type = req.body?.type;
+      const qty = req.body?.qty;
+      const k = await db.get(
+        `SELECT id, race, forge, engineer_level, gold, steel, tempered_steel,
+                steel_weapons, steel_armor, tempered_weapons, tempered_armor, troop_levels
+         FROM kingdoms WHERE player_id = $1`,
+        [req.player.playerId],
+      );
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+      const engLvl = Math.max(
+        parseTroopLevel(k.troop_levels, 'engineers') || 1,
+        k.engineer_level || 1,
+      );
+      const result = forgeProd.craftGear(k, type, qty, engLvl);
+      if (result.error) return res.status(400).json({ error: result.error });
+      const u = result.updates;
+      const cols = ['gold = $1', 'updated_at = $2'];
+      const params = [u.gold, u.updated_at];
+      let p = 3;
+      for (const col of [
+        'steel',
+        'tempered_steel',
+        'steel_weapons',
+        'steel_armor',
+        'tempered_weapons',
+        'tempered_armor',
+      ]) {
+        if (u[col] !== undefined) {
+          cols.push(`${col} = $${p++}`);
+          params.push(u[col]);
+        }
+      }
+      params.push(k.id);
+      await db.run(`UPDATE kingdoms SET ${cols.join(', ')} WHERE id = $${p}`, params);
+      return res.json({
+        ok: true,
+        type: result.type,
+        qty: result.qty,
+        stock: u[type],
+        gold: u.gold,
+      });
+    } catch (e) {
+      console.error('[forge/craft-gear] POST:', e.message);
+      res.status(500).json({ error: 'Failed to craft gear' });
+    }
+  });
+
   // POST /resource-upgrade — purchase stage 2 or 3 upgrade for a resource type
   router.post('/resource-upgrade', requireAuth, requireCsrfToken, async (req, res) => {
     try {

@@ -1508,6 +1508,23 @@ function processTurn(k, db = null) {
   Object.assign(updates, buildUpdates);
   if (buildUpdates.xp_sources_updated) Object.assign(xpSourcesAccum, buildUpdates.xp_sources_updated);
 
+  // ── 8a. Forge charcoal pit (FORGE_SYSTEM.md §3.3 / A3) ───────────────────────
+  try {
+    const { processCharcoalTick } = require('./forge-production');
+    const charcoal = processCharcoalTick({ ...k, ...updates });
+    if (charcoal.updates && Object.keys(charcoal.updates).length) {
+      Object.assign(updates, charcoal.updates);
+      if (charcoal.coalGain > 0) {
+        events.push({
+          type: 'system',
+          message: `🔥 Charcoal pit: burned ${charcoal.woodSpent.toLocaleString()} wood → ${charcoal.coalGain.toLocaleString()} coal.`,
+        });
+      }
+    }
+  } catch {
+    /* forge-production optional if partial deploy */
+  }
+
   // ── 8b. Library — mages produce mana, scribes craft maps/blueprints, mages craft scrolls ──
   const libUpdates = processLibrary({ ...k, ...updates }, events);
   Object.assign(updates, libUpdates);
