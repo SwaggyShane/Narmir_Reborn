@@ -376,7 +376,7 @@ Race → metal name string; storage remains `tempered_steel`.
 
 ## 15. Implementation roadmap — 2-lane parallel build
 
-**This section is the handshake.** Everything below — field names, endpoint names, request/response shapes — is the contract both lanes build against. Neither lane waits on the other's branches to merge; they only synchronize at the final integration slice (§15.4). If a name here needs to change during implementation, update this table first and treat that as the new contract, not a silent drift.
+**This section is the direction, not the handshake.** §15.1–§15.4 below is the fixed instruction set — the split rationale, each lane's task list, and the contract shape both lanes build against. It does not change once work starts except by deliberate amendment (§15.4's rule on that). Live coordination — status, what actually happened, corrections, what to do right now — is a **separate, appended section at the very end of this document: "Appendix: Handshake Log."** Read the roadmap to know what to build. Read the appendix to know what's actually going on.
 
 ### 15.1 Why this split
 
@@ -388,25 +388,25 @@ Lane A = server (`db/`, `game/`, `routes/`). Lane B = client (`client/src/`). Th
 
 | # | Branch | Scope | Files touched | Depends on | Status |
 |---|--------|-------|----------------|------------|--------|
-| A1 | `forge/a1-schema` | Migration only, no logic: upgrade flags (`toolwright_yard`, `engineers_lodge`, `forge`), stocks (`tempered_steel`, `lava_stored`, `steel_weapons`, `steel_armor`, tempered weapons/armor fields) + **reuse existing `coal`/`steel` (do not add `coal_stored`/`steel_stored`)**, `flux_barges` JSON column, vent fields (`occupying_kingdom_id`, `dormant_until`) on the volcanic hex/location data | `db/ddl.js`, `db/init-data.js`, `db/schema.js` | — | **done** — also landed on local `main` as `a499dfc6` (see §15.5) |
-| A2 | `forge/a2-upgrade-chain` | Install validation + chain-order enforcement for Yard/Lodge/Forge; apply §2.2 effects (hammer ×0.90, scaffold ×0.90, eng XP ×1.15, construction ×1.10); Forge install grants first free barge (stub call into A4) | `game/config.js`, new `game/forge-upgrades.js`, `routes/kingdom-gameplay.js` | A1 | **done** — `bb8b1dc8` |
-| A3 | `forge/a3-charcoal-steel` | Charcoal pit (`floor(wood × 0.25 × race_charcoal_mult)`), smelt (20 iron + 10 coal → 1 steel, race smelt mult on output), steel/tempered gear craft per §3.5 costs | new `game/forge-production.js`, `routes/kingdom-gameplay.js` | A1, A2 | **done** — `7332724a` |
-| A4 | `forge/a4-flux-barge` | Barge entity (`{ id, integrity, status }`); free-barge grant hook; extra-barge build queue (100 steel/150k gold/1k stone, 20 turns); hull wear (−20 success / −5 empty); max-3 cap; deployed-lock | new `game/flux-barge.js`, `game/engine.js` (turn-tick for barge queue), `routes/kingdom-gameplay.js` | A1, A2 | **done** — `13f8711d` |
-| A5 | `forge/a5-vent-dormancy` | Vent ACTIVE/DORMANT via `dormant_until` UTC compare-on-read (no cron, no turn dependency); occupation contestation (one kingdom on-site at a time); lava yield `max(1, floor(8 × race_lava_mult))` | new `game/lava-vents.js` | A1 | **done** — `536f0a35` |
-| A6 | `forge/a6-lava-expedition` | Full lava-draw resolver: crew reservation (pool commit/return, mirrors `resolveEpicTrek`'s pattern), path fog-reveal + travel-finds reuse, arrival race against A5's vent state, +100-turn on-site simulate-at-resolution, all-or-nothing outcome, hull wear via A4, dormancy set via A5, XP on resolve — `awardTroopXp('mages', …)` **and** `awardTroopXp('engineers', …)` **and** `awardEngineerXp` (both engineer systems, per §6.4) | new `game/lava-expedition.js`, `game/engine.js` (resolver hookup), `routes/kingdom-gameplay.js` (`POST /api/kingdom/expedition/lava-draw`) | A1–A5 | **next** — branch off `forge/a5-vent-dormancy` (`536f0a35`) |
+| A1 | `forge/a1-schema` | Migration only, no logic: upgrade flags (`toolwright_yard`, `engineers_lodge`, `forge`), stocks (`tempered_steel`, `lava_stored`, `steel_weapons`, `steel_armor`, tempered weapons/armor fields) + **reuse existing `coal`/`steel` (do not add `coal_stored`/`steel_stored`)**, `flux_barges` JSON column, vent fields (`occupying_kingdom_id`, `dormant_until`) on the volcanic hex/location data | `db/ddl.js`, `db/init-data.js`, `db/schema.js` | — | done — see Appendix |
+| A2 | `forge/a2-upgrade-chain` | Install validation + chain-order enforcement for Yard/Lodge/Forge; apply §2.2 effects (hammer ×0.90, scaffold ×0.90, eng XP ×1.15, construction ×1.10); Forge install grants first free barge (stub call into A4) | `game/config.js`, new `game/forge-upgrades.js`, `routes/kingdom-gameplay.js` | A1 | done — see Appendix |
+| A3 | `forge/a3-charcoal-steel` | Charcoal pit (`floor(wood × 0.25 × race_charcoal_mult)`), smelt (20 iron + 10 coal → 1 steel, race smelt mult on output), steel/tempered gear craft per §3.5 costs | new `game/forge-production.js`, `routes/kingdom-gameplay.js` | A1, A2 | done — see Appendix |
+| A4 | `forge/a4-flux-barge` | Barge entity (`{ id, integrity, status }`); free-barge grant hook; extra-barge build queue (100 steel/150k gold/1k stone, 20 turns); hull wear (−20 success / −5 empty); max-3 cap; deployed-lock | new `game/flux-barge.js`, `game/engine.js` (turn-tick for barge queue), `routes/kingdom-gameplay.js` | A1, A2 | done — see Appendix |
+| A5 | `forge/a5-vent-dormancy` | Vent ACTIVE/DORMANT via `dormant_until` UTC compare-on-read (no cron, no turn dependency); occupation contestation (one kingdom on-site at a time); lava yield `max(1, floor(8 × race_lava_mult))` | new `game/lava-vents.js` | A1 | done — see Appendix |
+| A6 | `forge/a6-lava-expedition` | Full lava-draw resolver: crew reservation (pool commit/return, mirrors `resolveEpicTrek`'s pattern), path fog-reveal + travel-finds reuse, arrival race against A5's vent state, +100-turn on-site simulate-at-resolution, all-or-nothing outcome, hull wear via A4, dormancy set via A5, XP on resolve — `awardTroopXp('mages', …)` **and** `awardTroopXp('engineers', …)` **and** `awardEngineerXp` (both engineer systems, per §6.4) | new `game/lava-expedition.js`, `game/engine.js` (resolver hookup), `routes/kingdom-gameplay.js` (`POST /api/kingdom/expedition/lava-draw`) | A1–A5 | next — see Appendix for branch-off point |
 
 ### 15.3 Lane B — Client
 
 | # | Branch | Scope | Files touched | Depends on | Status |
 |---|--------|-------|----------------|------------|--------|
-| B1 | `forge/b1-footer-upgrade-chain` | Build-tab footer widget: show only the next available upgrade; collapse to "Forge online" once complete | `client/src/components/react/BuildPanel.jsx`, `client/src/stores/economyStore.js`, `client/src/stores/index.js` (new selectors) | — | **done** — `5259dc0a` |
-| B2 | `forge/b2-forge-tab-shell` | New Forge tab, gated on `forge` flag; 4-section scaffold (Fuel/Steel/Barges/Crucible), empty sections | new `client/src/components/react/ForgeTab.jsx`, `BuildPanel.jsx` (tab registration) | B1 | **done** — `dd37d7d0` |
-| B3 | `forge/b3-fuel-steel-sections` | Fuel section (charcoal wood allocation, coal stock) + Steel section (smelt batch control, steel stock, steel gear craft) | new `client/src/components/react/ForgeFuelSection.jsx`, `ForgeSteelSection.jsx` | B2 | **done** — `2c59283a` |
-| B4 | `forge/b4-barges-section` | Barge list + hull bars; queue-extra-barge control (cost/turns/max-3 display) | new `client/src/components/react/ForgeBargesSection.jsx` | B2 | **done** — `ed5f1aff` |
-| B5 | `forge/b5-crucible-lava-launch` | Crucible section (lava stock, temper control, tempered gear craft when unlocked); **the one shared lava-draw launch flow** (§6.1 — hex-select + submit), reusing the existing hex-modal pattern established for `epic_trek` | new `client/src/components/react/ForgeCrucibleSection.jsx`, new `client/src/utils/lavaDrawLaunch.js` (shared `submitLavaDraw` + `clientLavaDrawGates`), extend `client/src/components/react/HexSelectionModal.jsx` (new `lava_draw` context type) | B2 | **done** — `9ef62698` |
-| B6 | `forge/b6-volcanic-hex-card` | Volcanic hex card: two fixed teasers by stage, ACTIVE/DORMANT + Free/Occupied-Kingdom display with real-time countdown, Draw control hidden until all 5 gates pass (client-side mirror of §7 — server remains source of truth). Calls into **B5's shared `lavaDrawLaunch.js`**, does not duplicate it | new `client/src/components/react/VolcanicHexCard.jsx` (or extends whatever component the world map currently uses for hex info cards — confirm exact target at implement time) | B5 | **next** — branch off `forge/b5-crucible-lava-launch` (`9ef62698`) |
+| B1 | `forge/b1-footer-upgrade-chain` | Build-tab footer widget: show only the next available upgrade; collapse to "Forge online" once complete | `client/src/components/react/BuildPanel.jsx`, `client/src/stores/economyStore.js`, `client/src/stores/index.js` (new selectors) | — | done — see Appendix |
+| B2 | `forge/b2-forge-tab-shell` | New Forge tab, gated on `forge` flag; 4-section scaffold (Fuel/Steel/Barges/Crucible), empty sections | new `client/src/components/react/ForgeTab.jsx`, `BuildPanel.jsx` (tab registration) | B1 | done — see Appendix |
+| B3 | `forge/b3-fuel-steel-sections` | Fuel section (charcoal wood allocation, coal stock) + Steel section (smelt batch control, steel stock, steel gear craft) | new `client/src/components/react/ForgeFuelSection.jsx`, `ForgeSteelSection.jsx` | B2 | done — see Appendix |
+| B4 | `forge/b4-barges-section` | Barge list + hull bars; queue-extra-barge control (cost/turns/max-3 display) | new `client/src/components/react/ForgeBargesSection.jsx` | B2 | done — see Appendix |
+| B5 | `forge/b5-crucible-lava-launch` | Crucible section (lava stock, temper control, tempered gear craft when unlocked); **the one shared lava-draw launch flow** (§6.1 — hex-select + submit), reusing the existing hex-modal pattern established for `epic_trek` | new `client/src/components/react/ForgeCrucibleSection.jsx`, new `client/src/utils/lavaDrawLaunch.js` (shared `submitLavaDraw` + `clientLavaDrawGates`), extend `client/src/components/react/HexSelectionModal.jsx` (new `lava_draw` context type) | B2 | done — see Appendix |
+| B6 | `forge/b6-volcanic-hex-card` | Volcanic hex card: two fixed teasers by stage, ACTIVE/DORMANT + Free/Occupied-Kingdom display with real-time countdown, Draw control hidden until all 5 gates pass (client-side mirror of §7 — server remains source of truth). Calls into **B5's shared `lavaDrawLaunch.js`**, does not duplicate it | new `client/src/components/react/VolcanicHexCard.jsx` (or extends whatever component the world map currently uses for hex info cards — confirm exact target at implement time) | B5 | next — **read the Appendix before starting this one** |
 
-### 15.4 Handshake contract (freeze before either lane starts)
+### 15.4 Contract shape (frozen before either lane starts)
 
 | Contract item | Shape |
 |---|---|
@@ -422,39 +422,63 @@ Lane A = server (`db/`, `game/`, `routes/`). Lane B = client (`client/src/`). Th
 | `POST /api/kingdom/forge/build-barge` | *(no body — queues one extra barge)* |
 | `POST /api/kingdom/expedition/lava-draw` | `{ target_x: int, target_y: int, barge_id: int }` *(crew is the fixed 25 eng + 5 mage requirement, not player-selectable — no crew count field, unlike Epic Trek's ranger count)* |
 
-**If this table changes after Lane B has already branched off it, Lane B must rebase.** This already happened once in Lane A itself: A1's original schema briefly introduced `coal_stored`/`steel_stored` before the bug was caught and the contract corrected to reuse the pre-existing `coal`/`steel` columns (row above). Every slice built on top of that A1 commit (A2, A3, A4) had to be rebased onto the fix, in each case propagating a rename of every reference to the old field names. The same failure mode applies across lanes: if Lane A amends a field name, endpoint shape, or gate value in this table *after* Lane B has already coded against it, Lane B is now stale in exactly the way A2–A4 were — rebase onto Lane A's corrected commit and re-grep for every reference to the old contract value before re-verifying. Don't assume "my lane's tests still pass" is sufficient; the whole point of a shared contract is that a silent drift on one side breaks the other side's assumptions without either lane's own test suite ever catching it.
+**If this table is amended after a lane has already branched off it, that lane must rebase.** This is a rule of the roadmap; the actual instance of it happening, what was done about it, and what to do next live in the Appendix — not here. This section states the rule; it does not narrate events.
 
-### 15.5 What actually happened (2026-07-17) and the corrected process going forward
+### 15.5 Integration (the final step, not a running log)
 
-**This subsection is now the single source of truth for coordination status.** A second document, `FORGE_HANDSHAKE.md`, was created alongside this one during implementation — that was a mistake; this file's §15 was always meant to be the one handshake, per the explicit instruction that started this roadmap. `FORGE_HANDSHAKE.md`'s content has been folded in below and the file removed. If anyone goes looking for it and it's back, that's drift — this file wins.
+`forge/z-integration` — after **both** A6 and B6 are merged to main: point Lane B's calls at the real Lane A endpoints (if B was built against this contract without a live backend), run the full quality gate, then walk the §10 happy path live in the browser end-to-end (Yard→Lodge→Forge, charcoal→coal→steel→gear, Draw a lava vent, resolve win and resolve loss). One commit. This is the only point where the two lanes' work actually meets.
 
-**The mistake:** the `coal_stored`/`steel_stored` bug (and a small unrelated lint bug — unused catch bindings in `game/prestige/wipe.js`) got found and fixed, but the fix was made *only* inside Lane A's own branch chain — `forge/a1-schema` was amended, then `forge/a2-upgrade-chain` and `forge/a4-flux-barge` (holding A3+A4) were each rebased onto the fix in turn. None of that touched local `main`. Lane B was told to rebase off "the fix on main," and there was nothing there — main was still sitting at the commit it had been on before any Forge work started. A fix kept inside one lane's private branch history doesn't count as fixed from a coordination standpoint, no matter how well-tested it is, because the other lane has no way to discover it.
+---
 
-**The corrected rule — read this before touching either lane again:** local `main` is the only place both lanes actually share. Any bug found in shared/foundational code (schema, contract shape, anything upstream of both lanes — not lane-internal implementation detail) gets fixed with a **real local commit on `main`** before either lane keeps building on top of the old, wrong assumption. Not a push (nothing leaves this machine), not a merge of a branch's full history (that's a separate, later step — see §15.7) — a direct, deliberate, well-tested commit on `main` that both lanes can `git rebase` onto. This is now the standing process, not a one-time exception.
+**Design FINAL. Ready for implementation planning.**
 
-**The correction actually done:** the corrected A1 schema (plus an unrelated pre-existing expeditions migration that was already sitting on `main`'s working tree uncommitted from earlier, unrelated work) is now commit `a499dfc6` on local `main`. Lane A's entire chain was rebased onto it and re-verified (lint clean, live `initDb()` against local Postgres, `npm test` — only the pre-existing unrelated `evolution-http.test.js` gap remains, which needs a separately-running server on a different port):
+---
 
-| Branch | Commit (after rebase onto `main`) |
+## Appendix: Handshake Log — live coordination between the two lanes
+
+**This is the handshake.** The roadmap above (§15) is fixed direction — what to build. This appendix is not fixed — it is a running log of actual status, problems found, corrections made, and what each lane must do right now. Check this before starting or resuming any slice. It gets rewritten as things happen; the roadmap does not.
+
+### A. What went wrong (2026-07-17)
+
+A schema bug was found in A1: it had introduced brand-new `coal_stored`/`steel_stored` columns, duplicating pre-existing `coal`/`steel` columns that were already fully wired through the rest of the app. It was fixed — but only inside Lane A's own private branch chain (`forge/a1-schema` amended, then `forge/a2-upgrade-chain` and `forge/a4-flux-barge`, which holds A3+A4, each rebased onto the fix in turn). None of that touched local `main`. Lane B was then told to rebase off "the fix on main" — and there was nothing on `main` to rebase onto, because the fix had never actually landed there. A fix that only exists inside one lane's private branch history is not fixed from a coordination standpoint, no matter how well-tested — the other lane has no way to discover it.
+
+A second problem compounded this: a separate document, `FORGE_HANDSHAKE.md`, had been created during implementation to track exactly this kind of status — outside of this roadmap's intended single-appendix design. It independently found and documented the same `coal_stored`/`steel_stored` bug (confirming the diagnosis was right), but its existence as a second "source of truth" alongside this roadmap's own appendix is itself part of what caused the confusion. It has been deleted; everything useful in it is folded into this appendix.
+
+### B. The rule, going forward
+
+**Local `main` is the only thing both lanes actually share.** Any bug found in shared/foundational code — schema, contract shape (§15.4), anything upstream of both lanes, as opposed to a lane-internal implementation detail — gets fixed with a real local commit on `main` *before* either lane keeps building on the old, wrong assumption. Not a push (nothing leaves this machine). Not a merge of a branch's full history (that's §15.5's job, later, once). A direct, deliberate, quality-gated commit on `main` that both lanes then `git rebase` onto. Whoever finds a shared-foundation bug fixes it on `main` and writes what they did in this appendix — they do not just fix it in their own branch and move on.
+
+### C. What was actually done about it
+
+The corrected A1 schema (plus an unrelated pre-existing expeditions migration that happened to already be sitting uncommitted on `main`'s working tree from earlier, unrelated work) landed as commit `a499dfc6` on local `main`. This document itself landed as `d7aa6308`. Lane A's entire chain was rebased onto `main` and re-verified — lint clean, live `initDb()` against local Postgres succeeds, `npm test` passes (aside from the pre-existing, unrelated `evolution-http.test.js` gap that needs a separately-running server on a different port).
+
+| Branch | Commit (current tip, rebased onto `main`) |
 |---|---|
-| `forge/a1-schema` | `a499dfc6` (identical to `main` — nothing left unique once its diff landed there) |
+| `forge/a1-schema` | `a499dfc6` (identical to `main` — A1 had nothing left unique once its diff landed there) |
 | `forge/a2-upgrade-chain` | `bb8b1dc8` |
 | `forge/a3-charcoal-steel` | `7332724a` |
 | `forge/a4-flux-barge` | `13f8711d` |
 | `forge/a5-vent-dormancy` | `536f0a35` |
+| `forge/b1-footer-upgrade-chain` | `5259dc0a` (not yet rebased onto `main` — see D) |
+| `forge/b2-forge-tab-shell` | `dd37d7d0` (not yet rebased onto `main` — see D) |
+| `forge/b3-fuel-steel-sections` | `2c59283a` (not yet rebased onto `main` — see D) |
+| `forge/b4-barges-section` | `ed5f1aff` (not yet rebased onto `main` — see D) |
+| `forge/b5-crucible-lava-launch` | `9ef62698` (not yet rebased onto `main` — see D) |
 
-**What Lane B does now:**
+### D. What Lane B must do right now
 
-1. `git rebase main` on whichever `forge/b*` branch is your current tip (`forge/b5-crucible-lava-launch`, `9ef62698`, per §15.3). Earlier B branches in your chain (b1–b4) follow by moving their refs to point at the corresponding rebased commit, same as `forge/a3-charcoal-steel`'s ref was moved after A4's rebase.
-2. `grep -rn "coal_stored\|steel_stored" client/src/` — should find nothing. §15.4's contract table has said `coal`/`steel` since the correction; anything else means you coded from an earlier/incorrect read of it — rename to match.
-3. Re-run your quality gate (`npm run lint`, `npm run test:components`, `npm run build`) after the rebase.
-4. B3's response-aliasing note below still applies until this rebase happens — see the contract matrix.
+1. `git rebase main` on `forge/b5-crucible-lava-launch` (your current tip). Then move `b1`–`b4`'s branch refs to point at their corresponding rebased commits, the same way `forge/a3-charcoal-steel`'s ref was moved to the new commit after A4 was rebased — see §15.1's "workflow per slice" for the branch-per-slice pattern this mirrors.
+2. `grep -rn "coal_stored\|steel_stored" client/src/` — should return nothing. §15.4 has said `coal`/`steel` since the correction; anything found means code was written from an earlier or incorrect read of the contract — rename it.
+3. Remove the **legacy response-alias fallback** B3 added (it accepted both old and new field names as a defensive measure while the contract was still unstable) — once rebased, only `coal`/`steel` will ever come back from the API, the fallback is dead code.
+4. Re-run your quality gate (`npm run lint`, `npm run test:components`, `npm run build`) after the rebase.
+5. B6 is next after that — branch off the rebased `forge/b5-crucible-lava-launch`, and call into B5's existing `client/src/utils/lavaDrawLaunch.js` (`submitLavaDraw` + `clientLavaDrawGates`) rather than re-implementing hex-select + submit.
 
-### 15.6 Contract matrix (who implements what, folded in from the retired handshake log)
+### E. Contract matrix (who implements what)
 
 | Contract item | Server slice | Client slice | Notes |
 |---|---|---|---|
 | Flags `toolwright_yard`/`engineers_lodge`/`forge` | A1–A2 | B1 | |
-| Stocks (`coal`/`steel`/tempered/gear) | A1, A3 | B1 snapshot, B3 UI | B3 built against a pre-correction response shape and added a **legacy response-alias fallback** (accepts old field names once) — remove that fallback once B rebases per §15.6 |
+| Stocks (`coal`/`steel`/tempered/gear) | A1, A3 | B1 snapshot, B3 UI | see D.3 — remove B3's legacy alias fallback after rebase |
 | `flux_barges[]` | A1 (schema), A2 (free grant), A4 (queue/tick/wear) | B1 store, B4 UI (hull bars, queue) | |
 | `POST /forge/build-barge` | A4 | B4 | empty body; costs are **`steel`**, not `steel_stored` |
 | Vent `dormant_until` / occupancy | A1 (table), A5 (logic) | B6 (display) | |
@@ -463,14 +487,12 @@ Lane A = server (`db/`, `game/`, `routes/`). Lane B = client (`client/src/`). Th
 | `POST /forge/smelt` | A3 | B3 | body `{ batches }` — response uses `coal`/`steel` |
 | `POST /forge/craft-gear` | A3 | B3 | steel/tempered weapons+armor |
 | `POST /forge/temper` | A3 | B5 | body `{ batches }` |
-| `POST /expedition/lava-draw` | A6 | B5 (`client/src/utils/lavaDrawLaunch.js` — shared `submitLavaDraw` + `clientLavaDrawGates`, B6 calls into this rather than duplicating) | `{ target_x, target_y, barge_id }` |
+| `POST /expedition/lava-draw` | A6 | B5's `lavaDrawLaunch.js`, called by B6 | `{ target_x, target_y, barge_id }` |
 
-**B5 already built the shared launch util** (`client/src/utils/lavaDrawLaunch.js`) that §15.3's B6 row requires — B6 must call it, not re-implement hex-select + submit.
+### F. Next up
 
-### 15.7 Integration (the actual handshake moment)
+- **Lane A:** A6 (lava expedition resolver) — branch off `forge/a5-vent-dormancy` (`536f0a35`).
+- **Lane B:** B6 (volcanic hex card) — branch off rebased `forge/b5-crucible-lava-launch`, only after completing D above.
+- **Nobody:** the integration slice (§15.5) — not until both A6 and B6 are done.
 
-`forge/z-integration` — after **both** A6 and B6 are merged to main: point Lane B's calls at the real Lane A endpoints (if B was built against this contract without a live backend), run the full quality gate, then walk the §10 happy path live in the browser end-to-end (Yard→Lodge→Forge, charcoal→coal→steel→gear, Draw a lava vent, resolve win and resolve loss). One commit. This is the only point where the two lanes' work actually meets.
-
----
-
-**Design FINAL. Ready for implementation planning.**
+*Last updated 2026-07-17, after the main-commit correction and the FORGE_HANDSHAKE.md merge.*
