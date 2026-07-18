@@ -52,14 +52,25 @@ async function run(report) {
     return `${econ.length} economy routes`;
   });
 
-  await report.run(system, 'gameplay owns turn/hire/expedition', async () => {
+  await report.run(system, 'gameplay owns hire/expedition', async () => {
     const all = scanAllRoutes();
     const gp = all.filter((e) => e.file === 'kingdom-gameplay.js');
     const paths = new Set(gp.map((e) => `${e.method} ${e.path}`));
-    for (const need of ['POST /turn', 'POST /hire']) {
+    for (const need of ['POST /hire']) {
       assert(paths.has(need), `kingdom-gameplay.js missing ${need}`);
     }
     return `${gp.length} gameplay routes`;
+  });
+
+  await report.run(system, 'turn owns POST /turn', async () => {
+    // POST /turn split out of kingdom-gameplay.js into its own file (A2-3,
+    // 2026-07-19) — kingdom-gameplay.js had grown to 53 handlers covering
+    // everything from forge production to happiness to epic trek.
+    const all = scanAllRoutes();
+    const turnFile = all.filter((e) => e.file === 'kingdom-turn.js');
+    const paths = new Set(turnFile.map((e) => `${e.method} ${e.path}`));
+    assert(paths.has('POST /turn'), 'kingdom-turn.js missing POST /turn');
+    return `${turnFile.length} turn routes`;
   });
 }
 

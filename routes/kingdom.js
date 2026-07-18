@@ -15,6 +15,7 @@ module.exports = function (db) {
     { name: 'economy', factory: require('./kingdom-economy') },
     { name: 'research', factory: require('./kingdom-research') },
     { name: 'profile', factory: require('./kingdom-profile') },
+    { name: 'turn', factory: require('./kingdom-turn') },
     { name: 'gameplay', factory: require('./kingdom-gameplay') },
   ];
 

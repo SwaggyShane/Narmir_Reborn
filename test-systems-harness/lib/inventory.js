@@ -130,6 +130,7 @@ const FILE_MOUNT = {
   'kingdom-research.js': '/api/kingdom',
   'kingdom-profile.js': '/api/kingdom',
   'kingdom-exploration.js': '/api/kingdom',
+  'kingdom-turn.js': '/api/kingdom',
   'kingdom-gameplay.js': '/api/kingdom',
   'hero.js': '/api/hero',
   'admin.js': '/api/admin',

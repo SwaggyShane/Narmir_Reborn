@@ -14,7 +14,10 @@ const GOOD_CALL = /await\s+applyKingdomUpdates\s*\(\s*kingdomId\s*,\s*updatesFor
 
 const ROUTES_WITH_APPLY_UPDATES = [
   'routes/kingdom-build.js',
-  'routes/kingdom-gameplay.js',
+  // kingdom-gameplay.js's own local applyUpdates() moved to lib/kingdom-turn-helpers.js
+  // (A2-3, 2026-07-19) — shared with routes/kingdom-turn.js rather than duplicated, so
+  // that's the file that now actually contains the correct-arity call for the turn path.
+  'routes/lib/kingdom-turn-helpers.js',
   'routes/kingdom-economy.js',
   'routes/kingdom-research.js',
 ];

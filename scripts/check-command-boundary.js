@@ -28,6 +28,7 @@ const STRICT_FILES = [
   'kingdom-gameplay.js',
   'kingdom-profile.js',
   'kingdom-research.js',
+  'kingdom-turn.js',
   'kingdom-warfare.js',
   'auth.js',
   'hero.js',
