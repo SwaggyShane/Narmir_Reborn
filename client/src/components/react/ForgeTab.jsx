@@ -1,10 +1,11 @@
 /**
- * Forge tab shell — FORGE_SYSTEM.md §9 / §15.3 B2
- * Gated on forge flag. Four section scaffolds (Fuel / Steel / Barges / Crucible).
- * Section bodies filled in B3–B5.
+ * Forge tab — FORGE_SYSTEM.md §9 / §15.3 B2–B3
+ * Gated on forge flag. Fuel + Steel live (B3); Barges/Crucible placeholders (B4–B5).
  */
 import React, { useState } from 'react';
 import { useForgeFlags } from '../../stores';
+import ForgeFuelSection from './ForgeFuelSection.jsx';
+import ForgeSteelSection from './ForgeSteelSection.jsx';
 
 const SECTIONS = [
   { id: 'fuel', label: 'Fuel', icon: '🔥' },
@@ -56,16 +57,8 @@ const ForgeTab = () => {
           ))}
         </div>
 
-        {section === 'fuel' && (
-          <SectionPlaceholder title="🔥 Fuel — Charcoal pit">
-            Wood allocation and coal stock will appear here (B3).
-          </SectionPlaceholder>
-        )}
-        {section === 'steel' && (
-          <SectionPlaceholder title="⚙️ Steel — Smelt & gear">
-            Smelt batches and steel weapons/armor craft will appear here (B3).
-          </SectionPlaceholder>
-        )}
+        {section === 'fuel' && <ForgeFuelSection />}
+        {section === 'steel' && <ForgeSteelSection />}
         {section === 'barges' && (
           <SectionPlaceholder title="🚤 Barges — Flux fleet">
             Hull bars and queue-extra-barge controls will appear here (B4).
