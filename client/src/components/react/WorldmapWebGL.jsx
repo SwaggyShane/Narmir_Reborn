@@ -1150,15 +1150,33 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
 
-        // Pan the camera
-        const panScale = 0.5 / cameraState.zoomLevel;
-        cameraState.camX -= deltaX * panScale;
-        cameraState.camY += deltaY * panScale;
-
-        if (!cameraState.inPerspective) {
-          updateOrthoCamera();
-        } else {
+        if (cameraState.inPerspective) {
+          // Perspective zoom is `distance`, not `zoomLevel` -- zoomLevel is
+          // only ever touched by the ortho wheel branch, so it sits frozen
+          // at whatever it was before switching to perspective. Panning
+          // against it meant drag speed never reflected how zoomed in/out
+          // the pitched view actually was. Scale with horizontalDist
+          // instead (same term updatePerspCamera uses to place the
+          // camera), so panning stays proportional to the real zoom.
+          const pitchRad = (cameraState.pitch * Math.PI) / 180;
+          const horizontalDist = cameraState.distance * Math.cos(pitchRad);
+          const panScale = (horizontalDist * 2.2) / w;
+          cameraState.camX -= deltaX * panScale;
+          cameraState.camY += deltaY * panScale;
           updatePerspCamera();
+        } else {
+          // True grab-and-drag: world units per pixel derived from the
+          // actual ortho frustum width and container width, so the point
+          // under the cursor stays under the cursor. Previously a flat
+          // 0.5/zoomLevel constant with no relation to screen size or the
+          // real frustum -- panned far slower than a 1:1 drag at typical
+          // zoom levels and window widths, hence "takes forever" to cross
+          // the map.
+          const frustumWidth = initialFrustumWidth / cameraState.zoomLevel;
+          const panScale = frustumWidth / w;
+          cameraState.camX -= deltaX * panScale;
+          cameraState.camY += deltaY * panScale;
+          updateOrthoCamera();
         }
       };
 
