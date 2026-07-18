@@ -1,13 +1,10 @@
-let targetFromRankingsImpl = null;
+import { switchTab } from './panelNav.js';
+import { setWarfareTarget } from './warfareTabs.js';
 
-export function registerTargetFromRankings(fn) {
-  targetFromRankingsImpl = typeof fn === 'function' ? fn : null;
-  return () => {
-    if (targetFromRankingsImpl === fn) targetFromRankingsImpl = null;
-  };
-}
-
+// Navigate to the Warfare panel's attack/spells/covert tab with a specific
+// kingdom pre-selected as the target — used by the world map card, kingdom
+// profile modal, and rankings row action buttons.
 export function targetFromRankings(id, tab) {
-  if (!targetFromRankingsImpl) return null;
-  return targetFromRankingsImpl(id, tab);
+  setWarfareTarget(id);
+  switchTab(tab);
 }

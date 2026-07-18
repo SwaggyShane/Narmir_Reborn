@@ -36,10 +36,9 @@ import {
 } from '../../stores';
 import WarfareIntelTab from './WarfareIntelTab';
 import WarfareReportsTab from './WarfareReportsTab';
-import { registerTargetFromRankings } from '../../utils/rankingsTarget.js';
 import { getLastSpellTarget, setLastSpellTarget } from '../../utils/spellTargetHistory.js';
 import { switchTab } from '../../utils/panelNav.js';
-import { registerWarfareTab, consumePendingWarfareTab } from '../../utils/warfareTabs.js';
+import { registerWarfareTab, consumePendingWarfareTab, peekPendingWarfareTarget, clearPendingWarfareTarget } from '../../utils/warfareTabs.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { playGameSound } from '../../utils/audio.js';
 import { registerShowBattleReport } from '../../utils/showBattleReport.js';
@@ -424,6 +423,23 @@ const WarfarePanel = () => {
       refreshAttackTargets();
     }
   }, [activeTab, loadAllianceIntel, loadSpyReports, loadWarLog, refreshAttackTargets, targets.length]);
+
+  // Resolve a pending target from targetFromRankings() (map card / kingdom
+  // profile / rankings row Attack/Spell/Covert buttons) once the target list
+  // has actually loaded -- the list arrives via a separate API call after
+  // the tab switch, so this can't run just once on navigation.
+  useEffect(() => {
+    const pendingId = peekPendingWarfareTarget();
+    if (!pendingId || targets.length === 0) return;
+    if (activeTab !== 'attack' && activeTab !== 'wspells' && activeTab !== 'wcovert') return;
+    const list = buildTargetList(targets, disc, stateData, { prependSelf: activeTab === 'wspells' });
+    const match = list.find((entry) => String(entry.id) === String(pendingId));
+    if (!match) return;
+    if (activeTab === 'attack') setAttackTarget(match);
+    else if (activeTab === 'wspells') setSpellTarget(match);
+    else if (activeTab === 'wcovert') setCovertTarget(match);
+    clearPendingWarfareTarget();
+  }, [activeTab, targets, disc, stateData]);
 
   useEffect(() => {
     if (activeTab === 'wspells' && !Object.keys(spellDefs).length && !spellDefsLoading) {
