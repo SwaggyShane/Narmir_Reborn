@@ -1,12 +1,13 @@
 /**
- * Forge tab — FORGE_SYSTEM.md §9 / §15.3 B2–B4
- * Gated on forge flag. Fuel/Steel/Barges live; Crucible placeholder (B5).
+ * Forge tab — FORGE_SYSTEM.md §9 / §15.3 B2–B5
+ * Gated on forge flag. Fuel / Steel / Barges / Crucible.
  */
 import React, { useState } from 'react';
 import { useForgeFlags } from '../../stores';
 import ForgeFuelSection from './ForgeFuelSection.jsx';
 import ForgeSteelSection from './ForgeSteelSection.jsx';
 import ForgeBargesSection from './ForgeBargesSection.jsx';
+import ForgeCrucibleSection from './ForgeCrucibleSection.jsx';
 
 const SECTIONS = [
   { id: 'fuel', label: 'Fuel', icon: '🔥' },
@@ -14,15 +15,6 @@ const SECTIONS = [
   { id: 'barges', label: 'Barges', icon: '🚤' },
   { id: 'crucible', label: 'Crucible', icon: '🌋' },
 ];
-
-function SectionPlaceholder({ title, children }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-bg3/80 p-4 min-h-[120px]">
-      <div className="text-[13px] font-semibold text-text mb-2">{title}</div>
-      <div className="text-[12px] text-text3">{children}</div>
-    </div>
-  );
-}
 
 const ForgeTab = () => {
   const { forge } = useForgeFlags();
@@ -61,11 +53,7 @@ const ForgeTab = () => {
         {section === 'fuel' && <ForgeFuelSection />}
         {section === 'steel' && <ForgeSteelSection />}
         {section === 'barges' && <ForgeBargesSection />}
-        {section === 'crucible' && (
-          <SectionPlaceholder title="🌋 Crucible — Lava & temper">
-            Lava stock, temper, tempered gear, and lava-draw launch will appear here (B5).
-          </SectionPlaceholder>
-        )}
+        {section === 'crucible' && <ForgeCrucibleSection />}
       </div>
     </div>
   );

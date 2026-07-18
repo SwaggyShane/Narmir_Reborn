@@ -39,6 +39,8 @@ const HexSelectionModal = ({ isOpen, context, onHexSelected, onClose }) => {
     prospecting: { icon: '⛏️', name: 'Prospecting Expedition', desc: 'Click on a hex to send engineers' },
     land_expansion: { icon: '🗺️', name: 'Land Expansion', desc: 'Click on a hex to claim lands' },
     epic_trek: { icon: '🛤️', name: 'Epic Trek', desc: 'Click on a destination hex' },
+    // FORGE_SYSTEM.md §15.3 B5 — shared lava-draw map pick
+    lava_draw: { icon: '🌋', name: 'Lava Draw', desc: 'Click a volcanic vent hex to draw lava' },
   };
 
   const contextLabel = contextLabels[context?.type] || { icon: '🗺️', name: 'Target Selection', desc: 'Click on a hex' };
