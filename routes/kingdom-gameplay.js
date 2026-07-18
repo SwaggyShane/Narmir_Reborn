@@ -2492,6 +2492,65 @@ module.exports = function (db) {
     }
   });
 
+  // POST /forge/install-upgrade — Yard → Lodge → Forge chain (FORGE_SYSTEM.md §15.4)
+  router.post('/forge/install-upgrade', requireAuth, requireCsrfToken, async (req, res) => {
+    try {
+      const forgeUpgrades = require('../game/forge-upgrades');
+      const upgrade = req.body?.upgrade;
+      if (!upgrade || typeof upgrade !== 'string') {
+        return res.status(400).json({ error: 'upgrade required' });
+      }
+      const k = await db.get(
+        `SELECT id, wood, stone, iron, gold, toolwright_yard, engineers_lodge, forge, flux_barges
+         FROM kingdoms WHERE player_id = $1`,
+        [req.player.playerId],
+      );
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+
+      const result = forgeUpgrades.installUpgrade(k, upgrade);
+      if (result.error) return res.status(400).json({ error: result.error });
+
+      const u = result.updates;
+      const sets = ['wood = $1', 'stone = $2', 'iron = $3', 'gold = $4', 'updated_at = $5'];
+      const params = [u.wood, u.stone, u.iron, u.gold, u.updated_at];
+      let p = 6;
+      if (u.toolwright_yard !== undefined) {
+        sets.push(`toolwright_yard = $${p++}`);
+        params.push(u.toolwright_yard);
+      }
+      if (u.engineers_lodge !== undefined) {
+        sets.push(`engineers_lodge = $${p++}`);
+        params.push(u.engineers_lodge);
+      }
+      if (u.forge !== undefined) {
+        sets.push(`forge = $${p++}`);
+        params.push(u.forge);
+      }
+      if (u.flux_barges !== undefined) {
+        sets.push(`flux_barges = $${p++}`);
+        params.push(u.flux_barges);
+      }
+      params.push(k.id);
+      await db.run(
+        `UPDATE kingdoms SET ${sets.join(', ')} WHERE id = $${p}`,
+        params,
+      );
+
+      const status = forgeUpgrades.upgradeStatus({ ...k, ...u });
+      return res.json({
+        ok: true,
+        message: `Installed ${upgrade.replace(/_/g, ' ')}`,
+        upgrade,
+        cost: result.cost,
+        forge: status,
+        flux_barges: u.flux_barges ? JSON.parse(u.flux_barges) : undefined,
+      });
+    } catch (e) {
+      console.error('[forge/install-upgrade] POST:', e.message);
+      res.status(500).json({ error: 'Failed to install forge upgrade' });
+    }
+  });
+
   // POST /resource-upgrade — purchase stage 2 or 3 upgrade for a resource type
   router.post('/resource-upgrade', requireAuth, requireCsrfToken, async (req, res) => {
     try {
