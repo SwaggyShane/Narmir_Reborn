@@ -404,7 +404,7 @@ Lane A = server (`db/`, `game/`, `routes/`). Lane B = client (`client/src/`). Th
 | B3 | `forge/b3-fuel-steel-sections` | Fuel section (charcoal wood allocation, coal stock) + Steel section (smelt batch control, steel stock, steel gear craft) | new `client/src/components/react/ForgeFuelSection.jsx`, `ForgeSteelSection.jsx` | B2 | done — see Appendix |
 | B4 | `forge/b4-barges-section` | Barge list + hull bars; queue-extra-barge control (cost/turns/max-3 display) | new `client/src/components/react/ForgeBargesSection.jsx` | B2 | done — see Appendix |
 | B5 | `forge/b5-crucible-lava-launch` | Crucible section (lava stock, temper control, tempered gear craft when unlocked); **the one shared lava-draw launch flow** (§6.1 — hex-select + submit), reusing the existing hex-modal pattern established for `epic_trek` | new `client/src/components/react/ForgeCrucibleSection.jsx`, new `client/src/utils/lavaDrawLaunch.js` (shared `submitLavaDraw` + `clientLavaDrawGates`), extend `client/src/components/react/HexSelectionModal.jsx` (new `lava_draw` context type) | B2 | done — see Appendix |
-| B6 | `forge/b6-volcanic-hex-card` | Volcanic hex card: two fixed teasers by stage, ACTIVE/DORMANT + Free/Occupied-Kingdom display with real-time countdown, Draw control hidden until all 5 gates pass (client-side mirror of §7 — server remains source of truth). Calls into **B5's shared `lavaDrawLaunch.js`**, does not duplicate it | new `client/src/components/react/VolcanicHexCard.jsx` (or extends whatever component the world map currently uses for hex info cards — confirm exact target at implement time) | B5 | next — **read the Appendix before starting this one** |
+| B6 | `forge/b6-volcanic-hex-card` | Volcanic hex card: two fixed teasers by stage, ACTIVE/DORMANT + Free/Occupied-Kingdom display with real-time countdown, Draw control hidden until all 5 gates pass (client-side mirror of §7 — server remains source of truth). Calls into **B5's shared `lavaDrawLaunch.js`**, does not duplicate it | new `client/src/components/react/VolcanicHexCard.jsx` (or extends whatever component the world map currently uses for hex info cards — confirm exact target at implement time) | B5 | done — see Appendix |
 
 ### 15.4 Contract shape (frozen before either lane starts)
 
@@ -450,49 +450,77 @@ A second problem compounded this: a separate document, `FORGE_HANDSHAKE.md`, had
 
 ### C. What was actually done about it
 
-The corrected A1 schema (plus an unrelated pre-existing expeditions migration that happened to already be sitting uncommitted on `main`'s working tree from earlier, unrelated work) landed as commit `a499dfc6` on local `main`. This document itself landed as `d7aa6308`. Lane A's entire chain was rebased onto `main` and re-verified — lint clean, live `initDb()` against local Postgres succeeds, `npm test` passes (aside from the pre-existing, unrelated `evolution-http.test.js` gap that needs a separately-running server on a different port).
+The corrected A1 schema (plus an unrelated pre-existing expeditions migration that happened to already be sitting uncommitted on `main`'s working tree from earlier, unrelated work) landed as commit `a499dfc6` on local `main`. This document itself landed as `d7aa6308`, then was restructured into its current roadmap/appendix split as `c2064a32`.
+
+A second shared-foundation bug was found and fixed the same way while building A6: `parseTroopLevel` was required from `game/lib/troops.js` throughout the routes (including A3's and A4's own route handlers), but only ever existed as a private, unexported function inside `game/combat-resolver.js` — every call site outside that file was destructuring `undefined`. This meant **A3's and A4's actual HTTP routes were broken the whole time**; earlier verification of those slices only exercised the underlying pure functions directly (`smeltSteel`, `queueExtraBarge`, etc.), never the routes themselves, so the gap went undetected until A6 needed the same import. Fixed on `main` as commit `2abe45ae` (moved the canonical implementation to `troops.js`, exported it, `combat-resolver.js` now imports from there), then the entire Lane A chain was rebased onto it a second time.
+
+Lane A's chain was re-verified after each `main` landing — lint clean, live `initDb()` against local Postgres succeeds, `npm test` passes (aside from the pre-existing, unrelated `evolution-http.test.js`/`prestige-http-rebirth.test.js` gaps that need separately-running servers).
 
 | Branch | Commit (current tip, rebased onto `main`) |
 |---|---|
-| `forge/a1-schema` | `a499dfc6` (identical to `main` — A1 had nothing left unique once its diff landed there) |
-| `forge/a2-upgrade-chain` | `bb8b1dc8` |
-| `forge/a3-charcoal-steel` | `7332724a` |
-| `forge/a4-flux-barge` | `13f8711d` |
-| `forge/a5-vent-dormancy` | `536f0a35` |
-| `forge/b1-footer-upgrade-chain` | `5259dc0a` (not yet rebased onto `main` — see D) |
-| `forge/b2-forge-tab-shell` | `dd37d7d0` (not yet rebased onto `main` — see D) |
-| `forge/b3-fuel-steel-sections` | `2c59283a` (not yet rebased onto `main` — see D) |
-| `forge/b4-barges-section` | `ed5f1aff` (not yet rebased onto `main` — see D) |
-| `forge/b5-crucible-lava-launch` | `9ef62698` (not yet rebased onto `main` — see D) |
+| `forge/a1-schema` | `2abe45ae` (identical to `main` — nothing left unique once its diffs landed there) |
+| `forge/a2-upgrade-chain` | `8adc106d` |
+| `forge/a3-charcoal-steel` | `0a6992ed` |
+| `forge/a4-flux-barge` | `0e055668` |
+| `forge/a5-vent-dormancy` | `37e2ce58` |
+| `forge/a6-lava-expedition` | `700b9c74` — **done**, see H |
+| `forge/b1-footer-upgrade-chain` | `de41aeb2` (rebased onto `main` as of `c2064a32`; **not yet rebased onto `2abe45ae`** — see D) |
+| `forge/b2-forge-tab-shell` | `78c667fd` (same caveat) |
+| `forge/b3-fuel-steel-sections` | `595285d4` (same caveat) |
+| `forge/b4-barges-section` | `329a4e3d` (same caveat) |
+| `forge/b5-crucible-lava-launch` | `3e8e5483` (same caveat) |
+| `forge/b6-volcanic-hex-card` | `738a1dc1` (same caveat) — **done**, see G |
 
 ### D. What Lane B must do right now
 
-1. `git rebase main` on `forge/b5-crucible-lava-launch` (your current tip). Then move `b1`–`b4`'s branch refs to point at their corresponding rebased commits, the same way `forge/a3-charcoal-steel`'s ref was moved to the new commit after A4 was rebased — see §15.1's "workflow per slice" for the branch-per-slice pattern this mirrors.
-2. `grep -rn "coal_stored\|steel_stored" client/src/` — should return nothing. §15.4 has said `coal`/`steel` since the correction; anything found means code was written from an earlier or incorrect read of the contract — rename it.
-3. Remove the **legacy response-alias fallback** B3 added (it accepted both old and new field names as a defensive measure while the contract was still unstable) — once rebased, only `coal`/`steel` will ever come back from the API, the fallback is dead code.
-4. Re-run your quality gate (`npm run lint`, `npm run test:components`, `npm run build`) after the rebase.
-5. B6 is next after that — branch off the rebased `forge/b5-crucible-lava-launch`, and call into B5's existing `client/src/utils/lavaDrawLaunch.js` (`submitLavaDraw` + `clientLavaDrawGates`) rather than re-implementing hex-select + submit.
+**Already done (2026-07-18, Lane B worker), before A6 landed:**
+1. Rebased onto `main` at `c2064a32`, moved b1–b4 HEADs to match.
+2. Confirmed no `coal_stored`/`steel_stored` in `client/src/`.
+3. Removed legacy `*_stored` response-alias fallbacks (`3e8e5483`).
+4. Full quality gate passed on B5.
+5. Built B6 (`738a1dc1`) — done, see G.
+
+**New, as of A6 landing (`700b9c74`) — do this now:**
+1. `git rebase main` on `forge/b6-volcanic-hex-card` (your current tip) — `main` has moved twice since your last rebase (`c2064a32` → `a499dfc6`-family already absorbed → now `2abe45ae`, the `parseTroopLevel` fix). Move b1–b5 refs the same way you did last time.
+2. **`GET /api/kingdom/lava-vent?hex_col=&hex_row=` now exists** (added in A6, commit `700b9c74`) — the thing you flagged as missing in your G note. Returns exactly `getVentState`'s shape: `{ hex_col, hex_row, active, occupying_kingdom_id, occupying_kingdom_name, dormant_until }`. Wire B6 to it if it was still using the "no endpoint, assume ACTIVE + Free" fallback.
+3. Re-run your full quality gate after the rebase.
+4. After that: **Lane B is done.** Nothing else is scoped for B.
 
 ### E. Contract matrix (who implements what)
 
 | Contract item | Server slice | Client slice | Notes |
 |---|---|---|---|
 | Flags `toolwright_yard`/`engineers_lodge`/`forge` | A1–A2 | B1 | |
-| Stocks (`coal`/`steel`/tempered/gear) | A1, A3 | B1 snapshot, B3 UI | see D.3 — remove B3's legacy alias fallback after rebase |
+| Stocks (`coal`/`steel`/tempered/gear) | A1, A3 | B1 snapshot, B3 UI | legacy alias fallback already removed (D) |
 | `flux_barges[]` | A1 (schema), A2 (free grant), A4 (queue/tick/wear) | B1 store, B4 UI (hull bars, queue) | |
 | `POST /forge/build-barge` | A4 | B4 | empty body; costs are **`steel`**, not `steel_stored` |
-| Vent `dormant_until` / occupancy | A1 (table), A5 (logic) | B6 (display) | |
+| `GET /lava-vent?hex_col=&hex_row=` | **A6** (new, `700b9c74`) | B6 | see D.2 |
+| Vent `dormant_until` / occupancy | A1 (table), A5 (logic), A6 (claim/release wired into resolver) | B6 (display) | |
 | `POST /forge/install-upgrade` | A2 | B1 | |
 | `POST /forge/charcoal-allocate` | A3 | B3 | body `{ wood }` |
 | `POST /forge/smelt` | A3 | B3 | body `{ batches }` — response uses `coal`/`steel` |
 | `POST /forge/craft-gear` | A3 | B3 | steel/tempered weapons+armor |
 | `POST /forge/temper` | A3 | B5 | body `{ batches }` |
-| `POST /expedition/lava-draw` | A6 | B5's `lavaDrawLaunch.js`, called by B6 | `{ target_x, target_y, barge_id }` |
+| `POST /expedition/lava-draw` | **A6** (done, `700b9c74`) | B5's `lavaDrawLaunch.js`, called by B6 | `{ target_x, target_y, barge_id }` — crew is fixed 25 eng + 5 mage, no count field |
 
 ### F. Next up
 
-- **Lane A:** A6 (lava expedition resolver) — branch off `forge/a5-vent-dormancy` (`536f0a35`).
-- **Lane B:** B6 (volcanic hex card) — branch off rebased `forge/b5-crucible-lava-launch`, only after completing D above.
-- **Nobody:** the integration slice (§15.5) — not until both A6 and B6 are done.
+- **Lane A: done.** A1–A6 all committed, rebased onto current `main`, and verified. Nothing further scoped for Lane A unless Integration (§15.5) surfaces a gap.
+- **Lane B:** rebase onto `main` (`2abe45ae`) and wire the new vent-read endpoint — see D. Otherwise done.
+- **Nobody yet:** the integration slice (§15.5, `forge/z-integration`) — both A6 and B6 are functionally done, but Lane B needs to complete D above first. Once that's confirmed, Integration can start.
 
-*Last updated 2026-07-17, after the main-commit correction and the FORGE_HANDSHAKE.md merge.*
+### G. B6 notes (Lane B)
+
+- `VolcanicHexCard.jsx` wired into `WorldmapPanel` when `clickedHex.terrain === 'volcanic'`.
+- Draw uses **only** `lavaDrawLaunch.js` (`submitLavaDraw` + `clientLavaDrawGates`).
+- Vent status fetch: `GET /api/kingdom/lava-vent?hex_col=&hex_row=` — **now built, see D.2 and E**.
+
+### H. A6 notes (Lane A)
+
+- `game/lava-expedition.js`: `canLaunch`/`buildLaunch` (pure, launch-time gate + debit computation) and `resolveLavaDraw` (async, called from `game/engine.js`'s `resolveExpeditions` the same way `resolveEpicTrek` is).
+- Full round trip (outbound + 100 on-site + return) is one `turns_total` computed at launch — this codebase has no live per-tick expedition state, everything multi-turn resolves in one batch at completion (same pattern as mountain expeditions and Epic Trek). The "arrival race" is simulated at that single resolution moment via `claimVent`.
+- Crew (25 eng + 5 mage) debited at launch, always returns at resolution — no casualty mechanic, only barge hull wear (-20 success / -5 empty, via A4's `applyHullWear`).
+- XP on resolve: `awardTroopXp` for both `engineers` and `mages` troop levels, **and** `awardEngineerXp` for the separate construction-skill column, Lodge ×1.15 on the engineer grant only — matches §6.4 exactly. Verified with direct functional tests against live Postgres for both outcomes (win: correct race-multiplied yield + XP; lose: correct occupant name surfaced, correct empty-handed XP) — see the A6 commit message for exact numbers checked.
+- `GET /api/kingdom/lava-vent` added on top of the original A6 scope once Lane B's G note flagged it was missing — small, directly related addition, folded into the same commit rather than a separate slice.
+
+*Last updated 2026-07-18, after A6 landed and the parseTroopLevel shared-foundation fix.*

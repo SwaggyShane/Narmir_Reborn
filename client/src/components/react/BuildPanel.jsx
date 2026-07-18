@@ -5,6 +5,7 @@ import { toast } from '../../utils/toast.js';
 import ProgressBar from './ProgressBar';
 import HybridBlueprintModal from './HybridBlueprintModal';
 import { AllocationButtons } from './AllocationButtons.jsx';
+import ForgeTab from './ForgeTab.jsx';
 import {
   useEconomyStore,
   useRace,
@@ -29,7 +30,28 @@ import {
   useScaffoldingStored,
   useBuildCount,
   useBuildingCounts,
+  useForgeFlags,
+  useNextForgeUpgrade,
 } from '../../stores';
+
+/** FORGE_SYSTEM.md §2.2 / §15.3 B1 — costs mirror server config */
+const FORGE_UPGRADE_META = {
+  toolwright_yard: {
+    label: "Toolwright's Yard",
+    blurb: 'Hammer gold −10%, scaffolding use −10%',
+    cost: { wood: 500, stone: 2000, iron: 1500, gold: 50000 },
+  },
+  engineers_lodge: {
+    label: "Engineers' Lodge",
+    blurb: 'Engineer XP +15%, construction speed +10%',
+    cost: { wood: 500, stone: 2500, iron: 2000, gold: 75000 },
+  },
+  forge: {
+    label: 'Forge',
+    blurb: 'Unlocks Forge tab, crucible, free Flux-Barge',
+    cost: { wood: 800, stone: 4000, iron: 3500, gold: 150000 },
+  },
+};
 
 const RESONANCE_HINTS = {
   faint: [
@@ -183,6 +205,9 @@ const BuildPanel = () => {
   const [synergyCooldown, setSynergyCooldown] = useState(null);
   const [activatingAbility, setActivatingAbility] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [forgeInstallBusy, setForgeInstallBusy] = useState(false);
+  /** 'build' | 'forge' — Forge tab only when forge flag (B2) */
+  const [buildPanelTab, setBuildPanelTab] = useState('build');
   const [buildUiTick, setBuildUiTick] = useState(0);
   const [engineerAllocations, setEngineerAllocations] = useState({});
   const [smithyDisplay, setSmithyDisplay] = useState({
@@ -209,6 +234,8 @@ const BuildPanel = () => {
   const iron = useIron();
   const steel = useSteel();
   const coal = useCoal();
+  const forgeFlags = useForgeFlags();
+  const nextForgeUpgrade = useNextForgeUpgrade();
   const blueprintsStored = useBlueprintsStored();
   const scaffoldingStored = useScaffoldingStored();
   const hammersStored = useHammersStored();
@@ -684,6 +711,41 @@ const BuildPanel = () => {
 
   return (
     <div id="build" className="panel" data-ui-tick={buildUiTick}>
+      {forgeFlags.forge && (
+        <div className="flex gap-2 px-4 pt-3">
+          <button
+            type="button"
+            onClick={() => setBuildPanelTab('build')}
+            className={
+              'rounded-full border px-3 py-1 text-[12px] font-semibold ' +
+              (buildPanelTab === 'build'
+                ? 'border-white/40 bg-white/10 text-text'
+                : 'border-white/15 text-text3 hover:bg-white/5')
+            }
+          >
+            Build
+          </button>
+          <button
+            type="button"
+            onClick={() => setBuildPanelTab('forge')}
+            className={
+              'rounded-full border px-3 py-1 text-[12px] font-semibold ' +
+              (buildPanelTab === 'forge'
+                ? 'border-amber-400 bg-amber-500/15 text-amber-200'
+                : 'border-white/15 text-text3 hover:bg-white/5')
+            }
+          >
+            ⚒️ Forge
+          </button>
+        </div>
+      )}
+
+      {forgeFlags.forge && buildPanelTab === 'forge' ? (
+        <div className="px-4 pb-5 pt-3">
+          <ForgeTab />
+        </div>
+      ) : (
+      <>
       <div className="build-sticky-header px-4 pt-4">
         <div className="card rounded-2xl border border-white/10 bg-zinc-950/80 shadow-[0_12px_32px_rgba(0,0,0,0.35)]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -1084,6 +1146,92 @@ const BuildPanel = () => {
 
         </div>
 
+        {/* Industrial upgrades footer — FORGE_SYSTEM.md §15.3 B1: only next upgrade */}
+        <div className="card mt-4 rounded-2xl border border-amber-500/30 bg-zinc-950/90">
+          <div className="card-title mb-1 text-[14px]">🏭 Industrial upgrades</div>
+          {forgeFlags.forge || !nextForgeUpgrade ? (
+            <div className="px-1 py-2 text-[13px] text-amber-200/90">
+              <span className="font-semibold text-amber-300">Forge online</span>
+              <span className="text-text3"> — industry lives on the Forge tab.</span>
+            </div>
+          ) : (
+            (() => {
+              const meta = FORGE_UPGRADE_META[nextForgeUpgrade];
+              if (!meta) return null;
+              const c = meta.cost;
+              const canAfford =
+                gold >= c.gold && wood >= c.wood && stone >= c.stone && iron >= c.iron;
+              return (
+                <div className="space-y-2 px-1 pb-2">
+                  <div className="text-[13px] font-semibold text-text">{meta.label}</div>
+                  <div className="text-[11px] text-text3">{meta.blurb}</div>
+                  <div className="text-[11px] text-text2">
+                    Cost:{' '}
+                    <span className={wood >= c.wood ? 'text-text' : 'text-red-400'}>
+                      {fmt(c.wood)} wood
+                    </span>
+                    {' · '}
+                    <span className={stone >= c.stone ? 'text-text' : 'text-red-400'}>
+                      {fmt(c.stone)} stone
+                    </span>
+                    {' · '}
+                    <span className={iron >= c.iron ? 'text-text' : 'text-red-400'}>
+                      {fmt(c.iron)} iron
+                    </span>
+                    {' · '}
+                    <span className={gold >= c.gold ? 'text-gold' : 'text-red-400'}>
+                      {fmt(c.gold)} gold
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={forgeInstallBusy || !canAfford}
+                    className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-3 py-1.5 text-[12px] font-semibold text-amber-200 disabled:opacity-40 hover:bg-amber-500/20"
+                    onClick={async () => {
+                      setForgeInstallBusy(true);
+                      try {
+                        const result = await apiCall('/api/kingdom/forge/install-upgrade', {
+                          method: 'POST',
+                          body: { upgrade: nextForgeUpgrade },
+                        });
+                        if (result?.error) {
+                          toast(result.error, 'error');
+                          return;
+                        }
+                        useEconomyStore.getState().receiveServerSnapshot({
+                          toolwright_yard:
+                            nextForgeUpgrade === 'toolwright_yard' || forgeFlags.toolwright_yard
+                              ? 1
+                              : 0,
+                          engineers_lodge:
+                            nextForgeUpgrade === 'engineers_lodge' ||
+                            nextForgeUpgrade === 'forge' ||
+                            forgeFlags.engineers_lodge
+                              ? 1
+                              : 0,
+                          forge: nextForgeUpgrade === 'forge' || forgeFlags.forge ? 1 : 0,
+                          wood: Math.max(0, wood - c.wood),
+                          stone: Math.max(0, stone - c.stone),
+                          iron: Math.max(0, iron - c.iron),
+                          gold: Math.max(0, gold - c.gold),
+                          ...(result?.flux_barges ? { flux_barges: result.flux_barges } : {}),
+                        });
+                        toast(result?.message || `Installed ${meta.label}`, 'success');
+                      } catch (e) {
+                        toast(e?.message || 'Install failed', 'error');
+                      } finally {
+                        setForgeInstallBusy(false);
+                      }
+                    }}
+                  >
+                    {forgeInstallBusy ? 'Installing…' : `Install ${meta.label}`}
+                  </button>
+                </div>
+              );
+            })()
+          )}
+        </div>
+
         {showBlueprintModal && (
           <HybridBlueprintModal
             blueprintId={selectedBlueprint}
@@ -1096,6 +1244,8 @@ const BuildPanel = () => {
           />
         )}
       </div>
+      </>
+      )}
     </div>
   );
 };

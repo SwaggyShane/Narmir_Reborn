@@ -19,6 +19,7 @@ import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { useKingdomId, useMarketUpgrades, useDiscoveredKingdoms } from '../../stores';
 import { switchTab } from '../../utils/panelNav.js';
 import { animateMapPanelCard } from '../../utils/worldMapGsap.js';
+import VolcanicHexCard from './VolcanicHexCard.jsx';
 
 const TERRAIN_COLORS = {
   plains: '#556b2f',
@@ -582,7 +583,17 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
               </div>
             )}
 
-            {clickedHex && (
+            {clickedHex && clickedHex.terrain === 'volcanic' && (
+              <VolcanicHexCard
+                col={clickedHex.col}
+                row={clickedHex.row}
+                x={clickedHex.x}
+                y={clickedHex.y}
+                onClose={() => setClickedHex(null)}
+              />
+            )}
+
+            {clickedHex && clickedHex.terrain !== 'volcanic' && (
               <div className="card flex-1 min-h-0 overflow-y-auto">
                 <div className="card-title !mb-2">📍 Hex Info</div>
                 <div className="text-[12px] text-[var(--text3)] mb-2">
