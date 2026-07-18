@@ -18,6 +18,7 @@ const config = require('./config');
 const combatCalc = require('./combat-new');
 const { getTerrainModifiers, getTerrainDisplayName } = require('./terrain');
 const { applyPrestigeCombatMultiplier } = require('./prestige/combat');
+const { parseTroopLevel } = require('./lib/troops');
 const { getPrestigeModifiers } = require('./prestige/balance');
 const {
   getDragonDefenseMult,
@@ -1238,23 +1239,6 @@ function getTotalLivingTroops(kingdom, injuredTroops) {
   }
 
   return total;
-}
-
-/**
- * Helper: Parse troop level from JSON
- */
-function parseTroopLevel(troopLevels, troopType) {
-  if (troopType === 'thralls') return 1;
-  try {
-    const levels = typeof troopLevels === 'string' ? JSON.parse(troopLevels || '{}') : troopLevels || {};
-    const entry = levels[troopType];
-    if (!entry) return 1;
-    if (typeof entry === 'number') return entry;
-    if (typeof entry.level === 'number') return entry.level;
-    return 1;
-  } catch {
-    return 1;
-  }
 }
 
 function parseJson(value, fallback) {

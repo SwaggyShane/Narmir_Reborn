@@ -44,6 +44,18 @@ function troopXpForLevel(level) {
   return level * 5000;
 }
 
+// Raw troop level for a unit type straight out of the troop_levels JSON blob
+// (no race-bonus adjustment — see effectiveTroopLevel below for that).
+function parseTroopLevel(troopLevels, troopType) {
+  if (troopType === "thralls") return 1;
+  const levels = safeJsonParse(troopLevels, {}, "parseTroopLevel:troop_levels");
+  const entry = levels[troopType];
+  if (!entry) return 1;
+  if (typeof entry === "number") return entry;
+  if (typeof entry.level === "number") return entry.level;
+  return 1;
+}
+
 function effectiveTroopLevel(k, unit) {
   const troopLevels = safeJsonParse(
     k.troop_levels,
@@ -220,6 +232,7 @@ module.exports = {
   LEGENDARY_NAMES,
   getUnitName,
   troopXpForLevel,
+  parseTroopLevel,
   effectiveTroopLevel,
   awardTroopXp,
   unitLevelMult,
