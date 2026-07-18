@@ -95,22 +95,19 @@ function constructionSpeedMult(k) {
     : 1.0;
 }
 
-/**
- * Stub free barge grant (A4 owns full barge module).
- * Max 3; integrity 100; status idle.
- */
+/** Free barge on Forge install — delegates to flux-barge (A4). */
 function grantFreeFluxBarge(fluxBargesRaw) {
-  const list = Array.isArray(fluxBargesRaw)
-    ? [...fluxBargesRaw]
-    : safeJsonParse(fluxBargesRaw, [], 'forge-upgrades:flux_barges');
-  if (list.length >= 3) return list;
-  const maxId = list.reduce((m, b) => Math.max(m, Number(b.id) || 0), 0);
-  list.push({
-    id: maxId + 1,
-    integrity: 100,
-    status: 'idle',
-  });
-  return list;
+  try {
+    return require('./flux-barge').grantFreeBarge(fluxBargesRaw);
+  } catch {
+    const list = Array.isArray(fluxBargesRaw)
+      ? [...fluxBargesRaw]
+      : safeJsonParse(fluxBargesRaw, [], 'forge-upgrades:flux_barges');
+    if (list.length >= 3) return list;
+    const maxId = list.reduce((m, b) => Math.max(m, Number(b.id) || 0), 0);
+    list.push({ id: maxId + 1, integrity: 100, status: 'idle' });
+    return list;
+  }
 }
 
 /**

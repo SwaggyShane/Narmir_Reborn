@@ -1525,6 +1525,23 @@ function processTurn(k, db = null) {
     /* forge-production optional if partial deploy */
   }
 
+  // ── 8a2. Flux-Barge build queue (FORGE_SYSTEM.md §5 / A4) ───────────────────
+  try {
+    const { processBargeBuildTick } = require('./flux-barge');
+    const bargeTick = processBargeBuildTick({ ...k, ...updates });
+    if (bargeTick.updates && Object.keys(bargeTick.updates).length) {
+      Object.assign(updates, bargeTick.updates);
+      if (bargeTick.completed && bargeTick.completed.length) {
+        events.push({
+          type: 'system',
+          message: `🚤 Flux-Barge ready: #${bargeTick.completed.join(', #')}.`,
+        });
+      }
+    }
+  } catch {
+    /* flux-barge optional if partial deploy */
+  }
+
   // ── 8b. Library — mages produce mana, scribes craft maps/blueprints, mages craft scrolls ──
   const libUpdates = processLibrary({ ...k, ...updates }, events);
   Object.assign(updates, libUpdates);

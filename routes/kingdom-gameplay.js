@@ -2688,6 +2688,42 @@ module.exports = function (db) {
     }
   });
 
+  // POST /forge/build-barge — queue extra Flux-Barge (FORGE_SYSTEM.md §15.4 A4)
+  router.post('/forge/build-barge', requireAuth, requireCsrfToken, async (req, res) => {
+    try {
+      const fluxBarge = require('../game/flux-barge');
+      const k = await db.get(
+        `SELECT id, forge, engineer_level, troop_levels, steel, gold, stone, flux_barges
+         FROM kingdoms WHERE player_id = $1`,
+        [req.player.playerId],
+      );
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+      const engLvl = Math.max(
+        parseTroopLevel(k.troop_levels, 'engineers') || 1,
+        k.engineer_level || 1,
+      );
+      const result = fluxBarge.queueExtraBarge(k, engLvl);
+      if (result.error) return res.status(400).json({ error: result.error });
+      const u = result.updates;
+      await db.run(
+        `UPDATE kingdoms SET steel = $1, gold = $2, stone = $3, flux_barges = $4, updated_at = $5 WHERE id = $6`,
+        [u.steel, u.gold, u.stone, u.flux_barges, u.updated_at, k.id],
+      );
+      return res.json({
+        ok: true,
+        barge_id: result.bargeId,
+        turns: result.turns,
+        flux_barges: fluxBarge.parseBarges(u.flux_barges),
+        steel: u.steel,
+        gold: u.gold,
+        stone: u.stone,
+      });
+    } catch (e) {
+      console.error('[forge/build-barge] POST:', e.message);
+      res.status(500).json({ error: 'Failed to queue Flux-Barge' });
+    }
+  });
+
   // POST /resource-upgrade — purchase stage 2 or 3 upgrade for a resource type
   router.post('/resource-upgrade', requireAuth, requireCsrfToken, async (req, res) => {
     try {
