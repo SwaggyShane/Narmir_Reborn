@@ -3513,6 +3513,118 @@ module.exports = function (db) {
     }
   });
 
+  // POST /expedition/lava-draw — all-or-nothing lava expedition (FORGE_SYSTEM.md §6 / §15.4)
+  router.post('/expedition/lava-draw', requireAuth, requireCsrfToken, async (req, res) => {
+    const { target_x, target_y, barge_id } = req.body;
+    const { isTargetInBounds } = require('../game/epic-trek-paths');
+    const lavaExp = require('../game/lava-expedition');
+
+    try {
+      if (!Number.isFinite(target_x) || !Number.isFinite(target_y)) {
+        return res.status(400).json({ error: 'Invalid target coordinates' });
+      }
+      if (!isTargetInBounds(target_x, target_y)) {
+        return res.status(400).json({ error: 'Target is outside map bounds' });
+      }
+      if (!Number.isFinite(barge_id)) {
+        return res.status(400).json({ error: 'barge_id required' });
+      }
+
+      const result = await db.withTransaction(async () => {
+        const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          const err = new Error('Kingdom not found');
+          err.statusCode = 404;
+          throw err;
+        }
+
+        const existing = await db.get(
+          "SELECT id FROM expeditions WHERE kingdom_id = $1 AND type = 'lava-draw' AND turns_left > 0",
+          [k.id],
+        );
+        if (existing) {
+          const err = new Error('A lava draw is already underway');
+          err.statusCode = 400;
+          throw err;
+        }
+
+        const homeCoords = getKingdomMapCoords(k);
+        const { getFlag } = require('../game/feature-flags');
+        const { hasElevationGrid, getElevationGrid } = require('../game/world-elevation-cache');
+        const launch = lavaExp.buildLaunch(k, target_x, target_y, barge_id, {
+          homeCoords,
+          turnOpts: { getFlag, elevationGrid: hasElevationGrid() ? getElevationGrid() : null },
+        });
+        if (launch.error) {
+          const err = new Error(launch.error);
+          err.statusCode = 400;
+          throw err;
+        }
+
+        const u = launch.updates;
+        await db.run(
+          `UPDATE kingdoms SET engineers = $1, mages = $2, food = $3, turns_stored = $4, flux_barges = $5 WHERE id = $6`,
+          [u.engineers, u.mages, u.food, u.turns_stored, u.flux_barges, k.id],
+        );
+
+        await db.run(
+          `INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, extra_data)
+           VALUES ($1, 'lava-draw', $2, 0, 0, $3, $4)`,
+          [
+            k.id,
+            launch.turnsTotal,
+            launch.foodNeeded,
+            JSON.stringify({
+              path_hexes: launch.pathHexes,
+              target_x: launch.targetX,
+              target_y: launch.targetY,
+              target_hex_col: launch.targetHexCol,
+              target_hex_row: launch.targetHexRow,
+              barge_id: launch.bargeId,
+            }),
+          ],
+        );
+
+        return launch;
+      });
+
+      res.json({
+        ok: true,
+        turns_left: result.turnsTotal,
+        food_used: result.foodNeeded,
+        path_hexes: result.pathHexes.length,
+        message: `Lava draw launched to (${Math.round(target_x)}, ${Math.round(target_y)}) — ${result.turnsTotal} turns round trip. All or nothing.`,
+      });
+    } catch (err) {
+      console.error('[expedition/lava-draw] failed:', err.message);
+      if (err.statusCode) {
+        return res.status(err.statusCode).json({ error: err.message });
+      }
+      res.status(500).json({ error: 'Lava draw failed — please try again' });
+    }
+  });
+
+  // GET /lava-vent?hex_col=&hex_row= — read-only vent status for the volcanic
+  // hex card (FORGE_SYSTEM.md Appendix G — no row yet means ACTIVE + Free,
+  // matching game/lava-vents.js's getVentState default exactly).
+  router.get('/lava-vent', requireAuth, async (req, res) => {
+    try {
+      const hexCol = parseInt(req.query.hex_col, 10);
+      const hexRow = parseInt(req.query.hex_row, 10);
+      if (!Number.isFinite(hexCol) || !Number.isFinite(hexRow)) {
+        return res.status(400).json({ error: 'hex_col and hex_row required' });
+      }
+      const { getVentState } = require('../game/lava-vents');
+      const state = await getVentState(db, hexCol, hexRow);
+      res.json(state);
+    } catch (err) {
+      console.error('[lava-vent] GET failed:', err.message);
+      res.status(500).json({ error: 'Failed to fetch vent status' });
+    }
+  });
+
   // Fix visibility corruption: reset currentCells to just the home hex
   // (useful after map expansions or visibility migrations)
   router.post('/fix-visibility', requireAuth, async (req, res) => {

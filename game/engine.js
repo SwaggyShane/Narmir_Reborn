@@ -2171,6 +2171,23 @@ async function resolveExpeditions(db, k, engine) {
         }
       }
 
+      // ── Lava draw: arrival race, draw or empty-handed, crew return (FORGE_SYSTEM.md §6 / A6) ──
+      if (exp.type === 'lava-draw') {
+        try {
+          const { resolveLavaDraw } = require('./lava-expedition');
+          const lavaResult = await resolveLavaDraw(db, exp, freshK);
+          if (lavaResult && lavaResult.events) events.push(...lavaResult.events);
+          if (lavaResult && lavaResult.updates) Object.assign(updates, lavaResult.updates);
+          if (lavaResult && lavaResult.rewards) rewards.push(...lavaResult.rewards);
+        } catch (err) {
+          console.error(`[lava-draw] Resolution error for kingdom ${k.id} id=${exp.id}:`, err.message);
+          events.push({
+            type: 'system',
+            message: `Lava draw returned -- an error occurred processing the result.`,
+          });
+        }
+      }
+
       // ── Throne of Nazdreg check ──────────────────────────────────────────────
       if (updates._check_throne) {
         delete updates._check_throne;
