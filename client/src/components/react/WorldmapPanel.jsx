@@ -131,9 +131,20 @@ function HexLegendPreview({ terrain }) {
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x040710);
 
+      // Pitched, not straight-down: the real map's symbols (terrainSymbols.js)
+      // are built as vertical spires/cones with small white tips/caps up top
+      // (mountains especially -- 5 cylindrical spires topped with white
+      // spheres). Viewed from directly overhead those bodies foreshorten to
+      // nearly nothing and only the caps remain, which at this icon's small
+      // size blurs into an indistinct smudge instead of reading as a
+      // mountain -- even though it's the exact same geometry the full-size
+      // map renders as a crisp white "+" of peaks. A pitched angle (roughly
+      // matching the map's own default 30 degree tilt once a player rotates
+      // into 3D view) actually shows the spire bodies, so the thumbnail
+      // reads as what it's meant to be a preview of.
       const camera = new THREE.OrthographicCamera(-35, 35, 35, -35, 0.1, 1000);
-      camera.position.set(0, 0, 50);
-      camera.lookAt(0, 0, 0);
+      camera.position.set(0, -38, 42);
+      camera.lookAt(0, 0, 10);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
       renderer.setSize(64, 64);
@@ -145,11 +156,14 @@ function HexLegendPreview({ terrain }) {
       renderer.domElement.style.display = 'block';
       container.appendChild(renderer.domElement);
 
-      // Lighting
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+      // Lighting -- angled to match the pitched camera so spire bodies pick
+      // up real shading contrast instead of being lit flat from directly
+      // above (which, combined with a top-down camera, is what made every
+      // symbol read as a flat blob regardless of its actual 3D shape).
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
       scene.add(ambientLight);
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8);
-      directionalLight.position.set(0, 0, 100);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1.6);
+      directionalLight.position.set(30, -20, 80);
       scene.add(directionalLight);
 
       // Hex
