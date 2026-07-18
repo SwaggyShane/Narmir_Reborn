@@ -36,7 +36,7 @@ function lavaCfg() {
 }
 
 function kingdomEngineerLevel(k) {
-  return Math.max(parseTroopLevel(k.troop_levels, 'engineers') || 1, k.engineer_level || 1);
+  return k.engineer_level || 1;
 }
 
 function kingdomMageLevel(k) {

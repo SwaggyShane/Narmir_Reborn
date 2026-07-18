@@ -16,11 +16,25 @@ import {
   useEngineers,
   useMages,
   useTroopLevels,
+  useRace,
 } from '../../stores';
 
 const TEMPER = { steel: 1, lava: 2 };
 const TEMPERED_WEAPONS = { tempered_steel: 3, gold: 25000 };
 const TEMPERED_ARMOR = { tempered_steel: 3, gold: 30000 };
+
+// Mirrors game/config.js TEMPERED_STEEL_NAMES (FORGE_SYSTEM.md §3.6) — server is canonical.
+const TEMPERED_STEEL_NAMES = {
+  high_elf: 'Runesteel',
+  dwarf: 'Stonesteel',
+  human: 'Crownsteel',
+  dire_wolf: 'Rimesteel',
+  vampire: 'Cruorsteel',
+  ogre: 'Slagmetal',
+  wood_elf: 'Briersteel',
+  orc: 'Killsteel',
+  dark_elf: 'Vipersteel',
+};
 
 function normalizeBarges(raw) {
   if (Array.isArray(raw)) return raw;
@@ -57,6 +71,8 @@ const ForgeCrucibleSection = () => {
   const mages = Number(useMages() || 0);
   const troopLevels = useTroopLevels();
   const mageLevel = mageLevelFromTroops(troopLevels);
+  const race = useRace();
+  const temperedName = TEMPERED_STEEL_NAMES[race] || 'Tempered steel';
 
   const barges = useMemo(() => normalizeBarges(fluxBarges), [fluxBarges]);
   const idleBarges = useMemo(
@@ -102,7 +118,7 @@ const ForgeCrucibleSection = () => {
             ? result.tempered_steel
             : tempered + (result.temperedOut || n),
       });
-      const name = result.displayName || 'tempered steel';
+      const name = result.displayName || temperedName;
       toast(
         result.temperedOut != null
           ? `Tempered ${result.temperedOut} ${name}`
@@ -223,7 +239,7 @@ const ForgeCrucibleSection = () => {
           Steel: <strong className="text-amber-200">{fmt(steel)}</strong>
         </span>
         <span>
-          Tempered: <strong className="text-text">{fmt(tempered)}</strong>
+          {temperedName}: <strong className="text-text">{fmt(tempered)}</strong>
         </span>
         {showTemperedGear && (
           <>

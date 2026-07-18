@@ -2322,6 +2322,11 @@ async function resolveExpeditions(db, k, engine) {
         "last_event_id",
         "achievements",
         "items",
+        // Forge system (FORGE_SYSTEM.md §6.4 / A6) — lava-draw resolution writes these
+        "lava_stored",
+        "engineer_level",
+        "engineer_xp",
+        "flux_barges",
       ]);
 
       // Award XP
