@@ -340,13 +340,13 @@ Scans kingdom-*, auth, hero, admin for:
 
 | ID | Item | Status |
 |----|------|--------|
-| A5-1 | Finish written matrix: every kingdom mutating path (list in Appendix B) → CH type **or** domain module + txn. Check into `game/COMMAND_COVERAGE.md` when implementing. | **TODO** |
-| A5-2 | Decide policy: (A) expand COMMAND_TYPES for forge/lava/evolution/prestige/attune, or (B) document “CommandHandler = classic mutators only; new systems use named modules + transaction in route.” Write the policy in ARCHITECTURE. | **TODO** |
-| A5-3 | Wire or delete dead command types (`prestige` vs rebirth route; `process-build-queue`). | **TODO** |
+| A5-1 | Finish written matrix: every kingdom mutating path (list in Appendix B) → CH type **or** domain module + txn. Check into `game/COMMAND_COVERAGE.md` when implementing. | **DONE** — `game/COMMAND_COVERAGE.md`, all 83 mutating kingdom+hero routes classified (13 CommandHandler, 70 direct+domain-module) |
+| A5-2 | Decide policy: (A) expand COMMAND_TYPES for forge/lava/evolution/prestige/attune, or (B) document “CommandHandler = classic mutators only; new systems use named modules + transaction in route.” Write the policy in ARCHITECTURE. | **DONE** — Policy B (refined). Full reasoning in `game/COMMAND_COVERAGE.md`, summarized in `game/ARCHITECTURE.md` |
+| A5-3 | Wire or delete dead command types (`prestige` vs rebirth route; `process-build-queue`). | **DONE** — `process-build-queue` deleted (0 callers, redundant with automatic per-turn processing, AND its handler passed the wrong argument type — would have thrown TypeError if ever called). `prestige` kept — confirmed it's a deliberate working fence (`handlePrestige()` throws, directs to `/rebirth`), not dead code. |
 | A5-4 | Expand boundary tooling: scan **`game/sockets.js`** for the same forbidden `engine.*` mutators; fail CI/local gate. | **TODO** |
 | A5-5 | Migrate socket attack/spell/covert to `commandHandler.handle` (parity with HTTP warfare). | **TODO** |
 | A5-6 | Fix ARCHITECTURE.md coupling section to match reality (CommandHandler + domain modules + sockets exception until A5-5). | **DONE** — "every route calls processTurn" removed (false; only /kingdom/turn does, via commandHandler); "Decoupling COMPLETE" verdict downgraded to PARTIAL with the sockets.js gap called out explicitly. |
-| A5-7 | Systems harness (local): land `b04214e2` work; prove combat/covert/spell/turn/hire through command + DB. | **TODO** |
+| A5-7 | Systems harness (local): land `b04214e2` work; prove combat/covert/spell/turn/hire through command + DB. | **DONE** (already, prior to this TODO's own assessment pass) — `chore/test-systems-harness` merged to local `main` same day; re-ran `npm run test:systems` just now to confirm still green: 76 passed, 0 failed, 1 skipped (http, no server flag). |
 | A5-8 | Optionally extend boundary check to flag new kingdom POSTs that never call handle **and** never appear on an allowlist (high noise — only after A5-2 policy). | **TODO** |
 
 ---
@@ -409,8 +409,8 @@ A5-1 … A5-8 (see §5)
 ```
 Step 1   A1-*          index thin + single shutdown/handlers            DONE 2026-07-19
 Step 2   A2-1, A5-6    docs truth (API + ARCHITECTURE)                  DONE 2026-07-19
-Step 3   A5-1, A5-2    mutator policy + coverage matrix
-Step 4   A5-7          systems harness on local main
+Step 3   A5-1, A5-2    mutator policy + coverage matrix                 DONE 2026-07-19
+Step 4   A5-7          systems harness on local main                   DONE (already merged earlier same session; re-verified 2026-07-19)
 Step 5   A4-1, A4-2    client/server updates contract
 Step 6   A2-3          extract turn router from gameplay
 Step 7   A3-1, A3-3    turn pipeline doc + local timing

@@ -108,15 +108,24 @@ npm test
   `commandHandler.handle({ type: 'turn' }, …)`, not directly.
 - **But the boundary check ≠ full mutator coverage.** It only prevents route files
   from `require('../game/engine')` directly — it says nothing about whether a
-  mutation goes through `CommandHandler` at all. Build/economy/exploration mostly
-  mutate via their own domain modules + a route-level DB transaction, not
-  `CommandHandler` (see `game/COMMAND_COVERAGE.md` once `TODO.md` A5-1 lands).
-  Newer systems (forge, lava expedition/vents, evolution start/abort,
-  prestige/rebirth, attunements/synergies) do the same — real, by-design, just not
-  `CommandHandler`-shaped.
+  mutation goes through `CommandHandler` at all. Of 83 mutating kingdom+hero routes,
+  only 13 route through `CommandHandler`; the other 70 mutate via their own domain
+  module + a route-level transaction. Full per-route breakdown and the policy for
+  why that's correct, not a gap: `game/COMMAND_COVERAGE.md`.
+- **Policy (2026-07-19):** `CommandHandler` owns the classic engine-rooted systems
+  (turn, combat, spell, covert-\*, expeditions, hire/recruit, build-queue,
+  study/school, purchase-upgrade, score, trade-route raid, legacy forge-tools,
+  XP awards). Newer, already-modularized systems (Forge & Lava Industry, Dragon
+  Evolution, Prestige rebirth, attunements/synergies) are policy-sanctioned to
+  mutate via their own dedicated domain module instead — concrete precedent:
+  `handlePrestige()` deliberately throws, directing callers to `POST /rebirth`,
+  because rebirth's atomic wipe transaction doesn't fit `CommandHandler`'s simple
+  `handle(type, payload)` shape. Full reasoning in `game/COMMAND_COVERAGE.md`.
 - **`game/sockets.js` bypasses the boundary check entirely** (`check:command-boundary`
   doesn't scan it) and calls `engine.resolveMilitaryAttack`/`engine.castSpell`
-  directly — the exact functions HTTP routes are forbidden from calling. See
+  directly — the exact functions HTTP routes are forbidden from calling. This one
+  *is* a real gap, unlike the above (sockets skip `engine.js`'s forbidden-mutator
+  list entirely, rather than correctly using a dedicated domain module). See
   `TODO.md` A5-4/A5-5.
 - Routes reach into `game/*.js` with no abstraction beyond the above.
 

@@ -26,11 +26,10 @@ const COMMAND_TYPES = Object.freeze([
   'recruit-hero',
   'queue-buildings',
   'demolish-building',
-  'process-build-queue',
   'study-discipline',
   'select-school',
   'purchase-upgrade',
-  'prestige',
+  'prestige', // deliberately fenced — handlePrestige() throws; real path is POST /rebirth (atomic wipe TX)
   'calculate-score',
   'raid-trade-route',
   'forge-tools',
@@ -160,9 +159,6 @@ class CommandHandler {
 
       case 'demolish-building':
         return this.handleDemolishBuilding(kingdom, payload);
-
-      case 'process-build-queue':
-        return this.handleProcessBuildQueue(kingdom, db);
 
       case 'study-discipline':
         return this.handleStudyDiscipline(kingdom, payload);
@@ -321,10 +317,6 @@ class CommandHandler {
   handleDemolishBuilding(kingdom, payload) {
     const { buildingType, amount } = payload;
     return this.engine.demolishBuilding(kingdom, buildingType, amount);
-  }
-
-  handleProcessBuildQueue(kingdom, db) {
-    return this.engine.processBuildQueue(kingdom, db);
   }
 
   // ── Research / upgrades ───────────────────────────────────────────────────
