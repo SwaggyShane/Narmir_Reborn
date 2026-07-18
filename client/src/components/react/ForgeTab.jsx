@@ -1,11 +1,12 @@
 /**
- * Forge tab — FORGE_SYSTEM.md §9 / §15.3 B2–B3
- * Gated on forge flag. Fuel + Steel live (B3); Barges/Crucible placeholders (B4–B5).
+ * Forge tab — FORGE_SYSTEM.md §9 / §15.3 B2–B4
+ * Gated on forge flag. Fuel/Steel/Barges live; Crucible placeholder (B5).
  */
 import React, { useState } from 'react';
 import { useForgeFlags } from '../../stores';
 import ForgeFuelSection from './ForgeFuelSection.jsx';
 import ForgeSteelSection from './ForgeSteelSection.jsx';
+import ForgeBargesSection from './ForgeBargesSection.jsx';
 
 const SECTIONS = [
   { id: 'fuel', label: 'Fuel', icon: '🔥' },
@@ -59,11 +60,7 @@ const ForgeTab = () => {
 
         {section === 'fuel' && <ForgeFuelSection />}
         {section === 'steel' && <ForgeSteelSection />}
-        {section === 'barges' && (
-          <SectionPlaceholder title="🚤 Barges — Flux fleet">
-            Hull bars and queue-extra-barge controls will appear here (B4).
-          </SectionPlaceholder>
-        )}
+        {section === 'barges' && <ForgeBargesSection />}
         {section === 'crucible' && (
           <SectionPlaceholder title="🌋 Crucible — Lava & temper">
             Lava stock, temper, tempered gear, and lava-draw launch will appear here (B5).
