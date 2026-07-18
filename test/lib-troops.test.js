@@ -79,6 +79,38 @@ console.log('Test 1: XP table boundaries ✓');
   console.log('Test 5: level 100 cap respected ✓');
 }
 
+// Test 5b: awardTroopXp must compare against the *span* to the next level,
+// not the absolute cumulative threshold — regression for a bug where a
+// mid-level unit's stored (relative) xp was compared against
+// troopXpForLevel(level+1) (absolute), so units above level 1 could almost
+// never level up regardless of how much XP they earned. Also verifies a
+// single large grant cascades through multiple levels (mirrors
+// diluteTroopXp's while-loop, not a single if-check).
+{
+  const k = {
+    race: 'human',
+    troop_levels: JSON.stringify({ mages: { level: 29, xp: 500, count: 50 } }),
+  };
+  // troopXpForLevel(29)=23200, troopXpForLevel(30)=24000 -> span is 800.
+  // 500 + 2000 = 2500 clears that span comfortably and should level up,
+  // even though 2500 is nowhere near the absolute threshold of 24000.
+  const result = awardTroopXp(k, 'mages', 2000);
+  const parsed = JSON.parse(result.troop_levels);
+  assert.ok(parsed.mages.level > 29, `expected level up past 29, got ${parsed.mages.level}`);
+  console.log('Test 5b: awardTroopXp levels a mid-level unit past a relative threshold ✓');
+}
+
+// Test 5c: a single oversized grant at level 1 cascades through several
+// levels in one call instead of banking the remainder as stuck in-level xp.
+{
+  const k = { race: 'dwarf', troop_levels: JSON.stringify({}) };
+  const result = awardTroopXp(k, 'engineers', 17250); // Lodge-boosted lava-draw grant
+  const parsed = JSON.parse(result.troop_levels);
+  assert.ok(parsed.engineers.level > 2, `expected multi-level cascade, got level ${parsed.engineers.level}`);
+  assert.equal(result.levelUps.length, parsed.engineers.level - 1);
+  console.log(`Test 5c: single large grant cascades to level ${parsed.engineers.level} ✓`);
+}
+
 // Test 6: unitLevelMult baseline at level 1 = 1.0; prestige rank does NOT stack
 // (EVOLUTION.md: combat mult only via applyPrestigeCombatMultiplier).
 // rangers is non-legendary for humans — isolates the rank effect.

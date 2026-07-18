@@ -88,21 +88,25 @@ function awardTroopXp(k, unit, xpAmount) {
     return { troop_levels: JSON.stringify(troopLevels), levelUps: [] };
 
   const raceBonus = TROOP_RACE_BONUS[k.race]?.[unit] || 1.0;
-  let earned = Math.floor(xpAmount * raceBonus);
-  const newXp = current.xp + earned;
-  const xpNeeded = troopXpForLevel(current.level + 1);
+  const earned = Math.floor(xpAmount * raceBonus);
+  // current.xp is stored as the remainder *within* the current level, not
+  // cumulative since level 1 — convert to an absolute total before comparing
+  // against troopXpForLevel's absolute (cumulative) thresholds, same as
+  // diluteTroopXp does. Loop so one large grant can cross several levels.
+  const totalXp = current.xp + troopXpForLevel(current.level) + earned;
   const levelUps = [];
+  let newLevel = current.level;
 
-  if (newXp >= xpNeeded && current.level < cap) {
-    troopLevels[unit] = {
-      level: current.level + 1,
-      xp: newXp - xpNeeded,
-      count: current.count,
-    };
-    levelUps.push(`${unit} reached Level ${current.level + 1}`);
-  } else {
-    troopLevels[unit] = { ...current, xp: Math.min(newXp, xpNeeded - 1) };
+  while (newLevel < cap && totalXp >= troopXpForLevel(newLevel + 1)) {
+    newLevel++;
+    levelUps.push(`${unit} reached Level ${newLevel}`);
   }
+
+  troopLevels[unit] = {
+    level: newLevel,
+    xp: Math.max(0, totalXp - troopXpForLevel(newLevel)),
+    count: current.count,
+  };
   return { troop_levels: JSON.stringify(troopLevels), levelUps };
 }
 
