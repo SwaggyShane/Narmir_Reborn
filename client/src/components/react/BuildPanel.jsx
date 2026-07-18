@@ -628,6 +628,7 @@ const BuildPanel = () => {
           <div className="bld-main">
             <span className="bld-icon" style={{ background: icon.color }}>{icon.emoji}</span>
             <span className="name">{b.name}</span>
+            <span className="bld-qty" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
           </div>
           {(buildDisplay.warnings[b.id] || buildDisplay.estimates[b.id]) && (
             <span className="bld-est">
@@ -637,10 +638,9 @@ const BuildPanel = () => {
             </span>
           )}
         </div>
-        <span className="bld-qty" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
         <div className="bld-controls">
           <div className="bld-eng">
-            <span className="bld-control-label">Hire</span>
+            <span className="bld-control-label">Engineers</span>
             <input
               type="number"
               className="input text-right"
@@ -654,7 +654,7 @@ const BuildPanel = () => {
               placeholder="Qty"
             />
             <button
-              className="base-btn px-2 py-1 text-[10px]"
+              className="base-btn bld-control-btn text-[10px]"
               onClick={() => {
                 if (isEng) setMaxValue(b.id);
                 else setBuildMax(b.id);
@@ -665,7 +665,6 @@ const BuildPanel = () => {
           </div>
           {showDemolish && (
             <div className="bld-demolish">
-              <span className="bld-control-label">Destroy</span>
               <input
                 type="number"
                 className="input text-right"
@@ -674,7 +673,7 @@ const BuildPanel = () => {
                 min="1"
                 placeholder="1"
               />
-              <button className="base-btn px-1.5 py-1 text-[10px] bg-[var(--red)] text-white" onClick={() => demolishB(b.id)}>🗑️</button>
+              <button className="base-btn bld-control-btn text-[10px] bg-[var(--red)] text-white" onClick={() => demolishB(b.id)}>🗑️</button>
             </div>
           )}
         </div>
@@ -718,15 +717,15 @@ const BuildPanel = () => {
         <div className="flex justify-center gap-3 pt-4">
           <button
             onClick={() => setShowAttunements(true)}
-            className="rounded-full border border-blue-400 px-4 py-1.5 text-[12px] font-semibold text-blue-400 cursor-pointer whitespace-nowrap hover:bg-blue-400/10 transition-colors"
+            className="rounded-full border border-accent1 px-4 py-1.5 text-[12px] font-semibold text-accent1 cursor-pointer whitespace-nowrap hover:bg-accent1/10 transition-colors"
           >
-            🌌 Attunements
+            Attunements
           </button>
           <button
             onClick={() => setShowBlueprintModal(true)}
-            className="rounded-full border border-purple-400 px-4 py-1.5 text-[12px] font-semibold text-purple-400 cursor-pointer whitespace-nowrap hover:bg-purple-400/10 transition-colors"
+            className="rounded-full border border-accent1 px-4 py-1.5 text-[12px] font-semibold text-accent1 cursor-pointer whitespace-nowrap hover:bg-accent1/10 transition-colors"
           >
-            ✨ Fragments
+            Fragments
           </button>
         </div>
 
@@ -755,13 +754,6 @@ const BuildPanel = () => {
                 })}
               </div>
             )}
-          </div>
-          <div className="px-3 pb-3">
-            <AllocationButtons
-              onDistribute={distributeBuildEvenly}
-              onRelease={releaseAllEngineers}
-              onAllocate={saveBuildAllocation}
-            />
           </div>
         </div>
 
@@ -921,10 +913,60 @@ const BuildPanel = () => {
         )}
 
         <div className="card mt-4">
+          <div className="card-title">
+            Build queue — engineers work each turn automatically
+          </div>
+          <div id="build-queue-display">
+            {buildQueueItems.length === 0 ? (
+              <div className="text-text3 text-[13px] py-2">
+                No engineers allocated | assign engineers below and save to start building.
+              </div>
+            ) : (
+              buildQueueItems.map((item) => {
+                const turnsStr = typeof item.turnsRemaining === 'number'
+                  ? `${item.turnsRemaining.toLocaleString()} turn${item.turnsRemaining === 1 ? '' : 's'}`
+                  : '∞';
+                return (
+                  <div
+                    key={item.key}
+                    className="flex items-center gap-2.5 border-b border-white/5 py-2 text-[13px] last:border-b-0"
+                  >
+                    <span className="text-[18px]">{item.icon}</span>
+                    <div className="flex-1">
+                      <div className="mb-1 flex justify-between">
+                        <span className="font-medium text-text">{item.label}</span>
+                        <span className="text-[12px] text-text3">
+                          {fmt(item.eng)} engineers | ~{turnsStr} per unit
+                        </span>
+                      </div>
+                      <ProgressBar
+                        percent={item.progressPct}
+                        wrapperClassName="h-[5px] rounded-sm bg-bg4"
+                        barClassName="h-[5px] rounded-sm bg-amber transition-[width] duration-300"
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <div className="pt-3">
+            <AllocationButtons
+              onDistribute={distributeBuildEvenly}
+              onRelease={releaseAllEngineers}
+              onAllocate={saveBuildAllocation}
+            />
+          </div>
+        </div>
+
+        <div className="card mt-0">
           <div id="build-rows">
             <div id="build-header">
-              <span className="bld-header-name">Building</span>
-              <span className="bld-header-qty">Qty</span>
+              <span className="bld-header-left">
+                <span className="bld-header-icon-spacer" aria-hidden="true" />
+                <span className="bld-header-name">Building</span>
+                <span className="bld-header-qty">Qty</span>
+              </span>
               <span className="bld-controls-spacer" aria-hidden="true" />
             </div>
 
@@ -960,46 +1002,6 @@ const BuildPanel = () => {
               {BUILDINGS_MAP['armor'] && renderBuildingRow(BUILDINGS_MAP['armor'], { emoji: '🔰', color: '#1a3a6a' })}
             </div>
 
-          </div>
-        </div>
-
-        <div className="card mt-0">
-          <div className="card-title">
-            Build queue — engineers work each turn automatically
-          </div>
-          <div id="build-queue-display">
-            {buildQueueItems.length === 0 ? (
-              <div className="text-text3 text-[13px] py-2">
-                No engineers allocated | assign engineers above and save to start building.
-              </div>
-            ) : (
-              buildQueueItems.map((item) => {
-                const turnsStr = typeof item.turnsRemaining === 'number'
-                  ? `${item.turnsRemaining.toLocaleString()} turn${item.turnsRemaining === 1 ? '' : 's'}`
-                  : '∞';
-                return (
-                  <div
-                    key={item.key}
-                    className="flex items-center gap-2.5 border-b border-white/5 py-2 text-[13px] last:border-b-0"
-                  >
-                    <span className="text-[18px]">{item.icon}</span>
-                    <div className="flex-1">
-                      <div className="mb-1 flex justify-between">
-                        <span className="font-medium text-text">{item.label}</span>
-                        <span className="text-[12px] text-text3">
-                          {fmt(item.eng)} engineers | ~{turnsStr} per unit
-                        </span>
-                      </div>
-                      <ProgressBar
-                        percent={item.progressPct}
-                        wrapperClassName="h-[5px] rounded-sm bg-bg4"
-                        barClassName="h-[5px] rounded-sm bg-amber transition-[width] duration-300"
-                      />
-                    </div>
-                  </div>
-                );
-              })
-            )}
           </div>
         </div>
 
@@ -1048,8 +1050,8 @@ const BuildPanel = () => {
             <div className="text-[12px] text-text2 font-semibold mb-3.5 text-center">
               Purchase tools <span className="text-text3 font-normal">— instant gold purchase | requires at least 1 smithy</span>
             </div>
-            <div className="flex flex-col gap-6">
-              <div className="text-center">
+            <div className="flex flex-col gap-6 sm:flex-row sm:justify-center">
+              <div className="text-center sm:flex-1">
                 <div className="text-[12px] text-text3 mb-1.5">
                   🔨 Hammers — <strong className="text-gold">25 GC each</strong>
                 </div>
@@ -1064,7 +1066,7 @@ const BuildPanel = () => {
                   </div>
                 </div>
               </div>
-              <div className="text-center">
+              <div className="text-center sm:flex-1">
                 <div className="text-[12px] text-text3 mb-1.5">
                   🏗️ Scaffolding — <strong className="text-gold">2,500 GC each</strong>
                 </div>

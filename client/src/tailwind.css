@@ -802,14 +802,25 @@
     @apply flex items-center gap-2 pb-2 mb-1 border-b border-white/10 text-[10px] uppercase tracking-wide text-text3;
   }
 
+  .bld-header-left {
+    @apply flex min-w-0 flex-1 items-center gap-2;
+  }
+
+  .bld-header-icon-spacer {
+    width: 22px;
+    flex-shrink: 0;
+  }
+
   .bld-header-name {
-    @apply flex-1;
+    width: 108px;
+    flex-shrink: 0;
   }
 
   .bld-header-qty {
-    width: 56px;
+    width: 40px;
     flex-shrink: 0;
-    text-align: right;
+    text-align: center;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .bld-controls-spacer {
@@ -830,22 +841,24 @@
   }
 
   .bld-main .name {
-    min-width: 0;
+    width: 108px;
+    flex: 0 0 auto;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     font-size: 13px;
-    flex: 0 1 auto;
   }
 
   .bld-qty {
-    width: 56px;
+    width: 40px;
     flex-shrink: 0;
-    text-align: right;
+    text-align: center;
     font-size: 13px;
     font-weight: 600;
     color: var(--text);
     white-space: nowrap;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    padding-left: 8px;
   }
 
   .bld-est {
@@ -860,7 +873,7 @@
   }
 
   .bld-eng {
-    @apply flex items-center gap-1.5;
+    @apply flex items-center justify-end gap-1.5;
   }
 
   .bld-eng .input {
@@ -868,7 +881,7 @@
   }
 
   .bld-demolish {
-    @apply flex items-center gap-1.5;
+    @apply flex items-center justify-end gap-1.5;
   }
 
   .bld-demolish .input {
@@ -877,7 +890,14 @@
 
   .bld-control-label {
     @apply text-[10px] text-text3 flex-shrink-0;
-    width: 42px;
+  }
+
+  .bld-control-btn {
+    width: 36px;
+    flex-shrink: 0;
+    padding-left: 0;
+    padding-right: 0;
+    text-align: center;
   }
 
   /* ── News panel ── */
