@@ -43,6 +43,20 @@ export const useEconomyStore = create(
         iron: 0,
         steel: 0,
         coal: 0,
+        // Forge handshake stocks/flags (FORGE_SYSTEM.md §15.4) — B1+
+        coal_stored: 0,
+        steel_stored: 0,
+        tempered_steel: 0,
+        lava_stored: 0,
+        steel_weapons: 0,
+        steel_armor: 0,
+        tempered_weapons: 0,
+        tempered_armor: 0,
+        toolwright_yard: 0,
+        engineers_lodge: 0,
+        forge: 0,
+        flux_barges: [],
+        charcoal_wood_allocation: 0,
         maps: 0,
 
         // Resource modifiers (percentages: 100 = normal, 80 = -20%, 120 = +20%)
@@ -134,6 +148,27 @@ export const useEconomyStore = create(
           if (data?.iron !== undefined) state.iron = data.iron;
           if (data?.steel !== undefined) state.steel = data.steel;
           if (data?.coal !== undefined) state.coal = data.coal;
+          if (data?.coal_stored !== undefined) state.coal_stored = data.coal_stored;
+          if (data?.steel_stored !== undefined) state.steel_stored = data.steel_stored;
+          if (data?.tempered_steel !== undefined) state.tempered_steel = data.tempered_steel;
+          if (data?.lava_stored !== undefined) state.lava_stored = data.lava_stored;
+          if (data?.steel_weapons !== undefined) state.steel_weapons = data.steel_weapons;
+          if (data?.steel_armor !== undefined) state.steel_armor = data.steel_armor;
+          if (data?.tempered_weapons !== undefined) state.tempered_weapons = data.tempered_weapons;
+          if (data?.tempered_armor !== undefined) state.tempered_armor = data.tempered_armor;
+          if (data?.toolwright_yard !== undefined) state.toolwright_yard = data.toolwright_yard ? 1 : 0;
+          if (data?.engineers_lodge !== undefined) state.engineers_lodge = data.engineers_lodge ? 1 : 0;
+          if (data?.forge !== undefined) state.forge = data.forge ? 1 : 0;
+          if (data?.flux_barges !== undefined) {
+            state.flux_barges = Array.isArray(data.flux_barges)
+              ? data.flux_barges
+              : (typeof data.flux_barges === 'string'
+                ? (() => { try { return JSON.parse(data.flux_barges); } catch { return []; } })()
+                : []);
+          }
+          if (data?.charcoal_wood_allocation !== undefined) {
+            state.charcoal_wood_allocation = data.charcoal_wood_allocation;
+          }
           if (data?.maps !== undefined) state.maps = data.maps;
           if (data?.res_weapons !== undefined) state.res_weapons = data.res_weapons;
           if (data?.res_military !== undefined) state.res_military = data.res_military;
@@ -354,6 +389,30 @@ export const useIron = () => useEconomyStore((state) => state.iron);
 export const useSteel = () => useEconomyStore((state) => state.steel);
 
 export const useCoal = () => useEconomyStore((state) => state.coal);
+
+/** Prefer coal_stored (handshake); fall back to legacy coal. */
+export const useCoalStored = () =>
+  useEconomyStore((state) => Number(state.coal_stored || state.coal || 0));
+
+export const useSteelStored = () =>
+  useEconomyStore((state) => Number(state.steel_stored || state.steel || 0));
+
+export const useForgeFlags = () =>
+  useEconomyStore(
+    useShallow((state) => ({
+      toolwright_yard: !!state.toolwright_yard,
+      engineers_lodge: !!state.engineers_lodge,
+      forge: !!state.forge,
+    })),
+  );
+
+export const useNextForgeUpgrade = () =>
+  useEconomyStore((state) => {
+    if (!state.toolwright_yard) return 'toolwright_yard';
+    if (!state.engineers_lodge) return 'engineers_lodge';
+    if (!state.forge) return 'forge';
+    return null;
+  });
 
 export const useMaps = () => useEconomyStore((state) => state.maps);
 
