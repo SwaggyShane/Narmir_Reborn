@@ -243,12 +243,13 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     }
   }, []);
 
-  const logInstantEntry = useCallback((icon, title, subtitle) => {
+  const logInstantEntry = useCallback((icon, title, subtitle, rewards) => {
     const entry = {
       id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       icon,
       title,
       subtitle,
+      rewards: Array.isArray(rewards) ? rewards : [],
       kind: 'instant',
     };
     setInstantEntries((prev) => [entry, ...prev].slice(0, 50));
@@ -323,8 +324,9 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
         TYPE_META[type].icon,
         repairText(result.message || `${TYPE_META[type].label} launched!`),
         rewardTexts.length > 0
-          ? rewardTexts.join(' • ')
+          ? `${rewardTexts.length} reward${rewardTexts.length === 1 ? '' : 's'}`
           : `Sent ${formatNum(rangers)} rangers${fighters > 0 ? ` | ${formatNum(fighters)} fighters` : ''} | ${formatNum(foodNeeded)} food`,
+        rewardTexts,
       );
       await refreshAll();
     } catch (err) {
@@ -1197,6 +1199,11 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold text-[var(--text)]">{entry.title}</div>
                     <div className="mt-0.5 text-[11px] text-[var(--text3)]">{entry.subtitle}</div>
+                    {entry.rewards.length > 0 && (
+                      <ul className="mt-2 list-disc pl-5 text-[12px] leading-6 text-[var(--text2)]">
+                        {entry.rewards.map((reward, idx) => <li key={`${entry.id}-reward-${idx}`}>{reward}</li>)}
+                      </ul>
+                    )}
                   </div>
                 </div>
               ))}

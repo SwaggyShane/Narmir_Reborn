@@ -457,7 +457,7 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
         Math.floor(rangers * 0.2 * exploreBonus),
         Math.floor(rangers * 0.8 * exploreBonus),
       );
-      rewards.push({ text: `+${mana} mana from a hidden shrine` });
+      rewards.push({ text: `+${mana.toLocaleString()} mana from a hidden shrine` });
       updates.mana = k.mana + mana;
     }
     if (roll(0.1)) {
@@ -548,7 +548,7 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
         Math.floor(rangers * 2 * exploreBonus),
       );
       rewards.push({
-        text: `+${mana} mana from ley lines discovered deep in the wilderness`,
+        text: `+${mana.toLocaleString()} mana from ley lines discovered deep in the wilderness`,
       });
       updates.mana = k.mana + mana;
     }
@@ -695,7 +695,7 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
           Math.floor(rangers * 4 * exploreBonus),
         ) * dungeonMult,
       );
-      rewards.push({ text: `+${mana} mana from dungeon ley stones` });
+      rewards.push({ text: `+${mana.toLocaleString()} mana from dungeon ley stones` });
       updates.mana = k.mana + mana;
 
       const disc = [
@@ -777,11 +777,17 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
     const attritionLog = [];
 
     for (let turn = 1; turn <= expTurns; turn++) {
-      // Determine max loss % based on ranger level (BALANCED: 0-8/6/5/4% per turn)
-      let maxLoss = 8;
-      if (rangerLevel >= 21 && rangerLevel <= 30) maxLoss = 6;
-      else if (rangerLevel >= 31 && rangerLevel <= 40) maxLoss = 5;
-      else if (rangerLevel >= 41) maxLoss = 4;
+      // Determine max loss % based on ranger level. These per-turn caps look
+      // small in isolation but compound multiplicatively across `expTurns`
+      // (100) iterations — the previous 8/6/5/4% tiers compounded to
+      // 87-98.5% average total attrition (verified by simulation), blowing
+      // past the "~75%" target below. Recalibrated so the base (<=20) tier's
+      // *compounded* average lands on ~75%, with higher tiers scaling down
+      // proportionally for a meaningfully better survival rate.
+      let maxLoss = 2.75;
+      if (rangerLevel >= 21 && rangerLevel <= 30) maxLoss = 2.2;
+      else if (rangerLevel >= 31 && rangerLevel <= 40) maxLoss = 1.8;
+      else if (rangerLevel >= 41) maxLoss = 1.4;
 
       // Roll between 0 and maxLoss (always allows zero-loss outcome)
       const lossPercent = rand(0, maxLoss);
@@ -829,7 +835,7 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
         rand(rangers * 10, rangers * 50) * mountainMult * exploreBonus
       );
       rewards.push({
-        text: `+${mountainMana} mana from ancient ley lines`,
+        text: `+${mountainMana.toLocaleString()} mana from ancient ley lines`,
       });
       updates.mana = k.mana + mountainMana;
 
