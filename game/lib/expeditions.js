@@ -17,6 +17,12 @@ function processLocationMapsWip(k, events) {
   let scribesUsed = 0;
   const completed = [];
   const remaining = [];
+  // Parsed once and mutated across iterations, not re-read per completion —
+  // re-reading k.discovered_kingdoms fresh each time silently dropped every
+  // completion but the last whenever 2+ maps completed in the same call
+  // (each iteration overwrote updates.discovered_kingdoms from the stale
+  // pre-loop snapshot instead of building on the previous iteration's add).
+  let disc = null;
 
   for (const item of wip) {
     const cost = 10; // scribes required
@@ -28,11 +34,13 @@ function processLocationMapsWip(k, events) {
     item.turns_remaining = (item.turns_remaining || 5) - 1;
     if (item.turns_remaining <= 0) {
       completed.push(item);
-      const disc = safeJsonParse(
-        k.discovered_kingdoms,
-        {},
-        "processLocationMapsWip:discovered_kingdoms",
-      );
+      if (disc === null) {
+        disc = safeJsonParse(
+          k.discovered_kingdoms,
+          {},
+          "processLocationMapsWip:discovered_kingdoms",
+        );
+      }
       disc[item.target_id] = { found: true, mapped: true };
       updates.discovered_kingdoms = JSON.stringify(disc);
       events.push({

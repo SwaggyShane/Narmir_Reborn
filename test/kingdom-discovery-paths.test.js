@@ -37,7 +37,11 @@ const {
   rollPassiveScoutFind,
   pickWeightedOutcome,
 } = require('../game/passive-scout-finds');
-const { processLocationMapsWip } = require('../game/location-maps');
+// game/lib/expeditions.js is the real production implementation (required
+// by game/engine.js's processTurn). game/location-maps.js and game/turn.js
+// were orphaned duplicates with no production callers — deleted (A3-2,
+// 2026-07-19) after this test was found to be exercising the wrong one.
+const { processLocationMapsWip } = require('../game/lib/expeditions');
 const {
   processPathDiscoveries,
   rollKingdomDiscovery,
@@ -154,6 +158,31 @@ console.log('path 2: mergeKingdomDiscovery scout/surveyor/expedition + strip fla
   assert.ok(events.some((e) => /location map/i.test(e.message)));
 }
 console.log('path 3: location_maps_wip completion sets mapped');
+
+// ── 3b. Two location maps completing in the SAME call ───────────────────────
+// Regression lock: processLocationMapsWip used to re-read k.discovered_kingdoms
+// fresh on every loop iteration instead of accumulating, so when 2+ maps
+// completed in one call each iteration silently discarded the previous
+// iteration's addition — only the last-processed map's discovery survived.
+// Fixed 2026-07-19 (A3-2 investigation); this locks it in.
+{
+  const k = {
+    id: 1,
+    scribes: 20,
+    discovered_kingdoms: JSON.stringify({}),
+    location_maps_wip: JSON.stringify([
+      { target_id: 5, target_name: 'First', turns_remaining: 1 },
+      { target_id: 6, target_name: 'Second', turns_remaining: 1 },
+    ]),
+  };
+  const events = [];
+  const updates = processLocationMapsWip(k, events);
+  const disc = parseDisc(updates.discovered_kingdoms);
+  assert.strictEqual(disc[5]?.mapped, true, 'first completion must not be dropped by the second');
+  assert.strictEqual(disc[6]?.mapped, true, 'second completion must also be present');
+  assert.strictEqual(Object.keys(disc).length, 2, 'both completions must coexist in the same updates object');
+}
+console.log('path 3b: two location_maps_wip completions in one call both persist');
 
 // ── 4. Epic trek path discoveries no longer roll kingdoms ───────────────────
 // Kingdom discovery on an Epic Trek path is handled by

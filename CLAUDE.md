@@ -117,7 +117,7 @@ See `/game/ARCHITECTURE.md` for detailed patterns and import rules.
 - **Game state sync:** Server pushes updates; client stores in Zustand (`/client/src/stores/`)
 
 ### Game Tick System
-- **Turn timer:** `/game/turn.js` - increments every 25 minutes
+- **Turn timer:** `lib/boot.js` — `setInterval` regen every 25 minutes, plus crash-safe catch-up on boot for missed windows (`game/turn.js` did **not** contain this despite an earlier version of this doc claiming so — that file only ever held two small discovery helpers, `calcDiscoveryChance`/`processLocationMapsWip`, both orphaned duplicates of the real production code in `game/lib/expeditions.js`/`game/lib/data-transformations.js`; deleted 2026-07-19, A3-2)
 - **Resource regen:** Turn tick triggers regen, scout progress, market changes
 - **Execution:** Server-side only; client receives updates via Socket.io
 

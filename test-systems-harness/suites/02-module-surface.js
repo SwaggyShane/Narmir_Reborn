@@ -67,7 +67,6 @@ const MODULE_SURFACE = {
   'game/upgrades.js': [],
   'game/config.js': ['SPELL_DEFS'],
   'game/actions.js': [],
-  'game/turn.js': [],
   'game/turn-systems.js': [],
   'game/regen.js': [],
   'game/active-ability-manager.js': [],
