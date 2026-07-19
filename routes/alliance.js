@@ -1,6 +1,22 @@
 const express = require('express');
 const { requireAuth } = require('./middleware');
 const { safeJsonParse } = require('../utils/helpers');
+const commandHandler = require('../game/command-handler');
+const { safeEmit } = require('../game/safe-socket-emit');
+
+// A4-6, 2026-07-19: client/src/hooks/useSocket.js listens for this to
+// refresh alliance UI + reload the player's own kingdom (alliance_buffs
+// can change on membership events). Notifies both the alliance's room and
+// the specific affected kingdom directly, since socket room membership for
+// `alliance:${id}` is only (re)joined on connect (game/sockets.js) — a
+// kingdom that just joined/left won't be in the right room until it
+// reconnects.
+function notifyAllianceUpdated(allianceId, kingdomId) {
+  const io = commandHandler.getIo();
+  if (!io) return;
+  if (allianceId) safeEmit(io.to(`alliance:${allianceId}`), 'event:alliance_updated', {});
+  if (kingdomId) safeEmit(io.to(`kingdom:${kingdomId}`), 'event:alliance_updated', {});
+}
 
 function httpError(status, message) {
   const err = new Error(message);
@@ -132,6 +148,7 @@ module.exports = (db) => {
     if (targetKingdomId === kingdom.id) return res.status(400).json({ error: 'Cannot dismiss yourself' });
     await db.run('DELETE FROM alliance_members WHERE kingdom_id = $1 AND alliance_id = $2', [targetKingdomId, alliance.id]);
     await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id = $1', [targetKingdomId]);
+    notifyAllianceUpdated(alliance.id, targetKingdomId);
     res.json({ ok: true });
   });
 
@@ -185,6 +202,7 @@ module.exports = (db) => {
         await db.run('UPDATE kingdoms SET alliance_buffs = $1 WHERE id = $2', [alliance.projects || '{}', targetKingdomId]);
       });
 
+      notifyAllianceUpdated(membership.alliance_id, targetKingdomId);
       res.json({ ok: true });
     } catch (e) {
       if (e.statusCode) return res.status(e.statusCode).json({ error: e.message });
@@ -196,18 +214,21 @@ module.exports = (db) => {
     try {
       const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
 
-      await db.withTransaction(async () => {
+      const disbandedAllianceId = await db.withTransaction(async () => {
         const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = $1 FOR UPDATE', [kingdom.id]);
         if (alliance) {
           await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id IN (SELECT kingdom_id FROM alliance_members WHERE alliance_id = $1)', [alliance.id]);
           await db.run('DELETE FROM alliance_members WHERE alliance_id = $1', [alliance.id]);
           await db.run('DELETE FROM alliances WHERE id = $1', [alliance.id]);
-        } else {
-          await db.run('DELETE FROM alliance_members WHERE kingdom_id = $1', [kingdom.id]);
-          await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id = $1', [kingdom.id]);
+          return alliance.id;
         }
+        const membership = await db.get('SELECT alliance_id FROM alliance_members WHERE kingdom_id = $1', [kingdom.id]);
+        await db.run('DELETE FROM alliance_members WHERE kingdom_id = $1', [kingdom.id]);
+        await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id = $1', [kingdom.id]);
+        return membership?.alliance_id || null;
       });
 
+      notifyAllianceUpdated(disbandedAllianceId, kingdom.id);
       res.json({ ok: true });
     } catch (err) {
       console.error(err);

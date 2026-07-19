@@ -10,6 +10,8 @@ const {
 } = require("../lib/forum-profiles");
 const { getBadgesForPlayer } = require("../lib/forum-badges");
 const { pgInList } = require("../lib/pg-placeholders");
+const commandHandler = require("../game/command-handler");
+const { safeEmit } = require("../game/safe-socket-emit");
 
 module.exports = function (db) {
   // ──────────── HELPER FUNCTIONS ────────────────────────────────────────
@@ -371,6 +373,9 @@ module.exports = function (db) {
           return { topicId: id };
         });
 
+        const io = commandHandler.getIo();
+        if (io) safeEmit(io.to('global'), 'event:forum_new', {});
+
         res.status(201).json({
           success: true,
           topicId,
@@ -438,6 +443,9 @@ module.exports = function (db) {
 
           return { postId: id };
         });
+
+        const io = commandHandler.getIo();
+        if (io) safeEmit(io.to('global'), 'event:forum_new_post', {});
 
         res.status(201).json({
           success: true,

@@ -387,6 +387,13 @@ class CommandHandler {
     };
   }
 
+  // Socket.io instance, set once at boot (lib/setup-routes.js: `engine.io = io`).
+  // Routes need this to push real-time notifications (A4-6) without requiring
+  // engine.js directly, which check-command-boundary forbids.
+  getIo() {
+    return this.engine.io;
+  }
+
   // ── Read helpers used by routes for validation ────────────────────────────
   getAvailableUnits(kingdom, unitType) {
     return this.engine.getAvailableUnits(kingdom, unitType);

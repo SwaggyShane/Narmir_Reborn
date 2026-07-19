@@ -2436,6 +2436,11 @@ async function resolveRegions(db, io) {
                 message: `🚩 REGION CAPTURED: The alliance [${alliance.name}] has seized control of ${region.name}!`,
                 is_system: true,
               });
+              // A4-6: client/src/hooks/useSocket.js listens for this to
+              // trigger a worldmap refresh — the chat message above is the
+              // player-readable announcement, this is what actually updates
+              // the map's region-ownership display.
+              safeEmit(io, "event:world_updated", {});
             }
           } else {
             await db.run(

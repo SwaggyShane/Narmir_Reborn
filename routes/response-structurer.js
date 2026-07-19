@@ -97,7 +97,11 @@ const populationFields = new Set(['population', 'happiness']);
 //   consumers are admin-only (KingdomWidgets.jsx, KingdomEditModal.jsx).
 //   Surfacing active effects in the player UI would be a real feature, not
 //   a normalizer wiring fix, so it's excluded here rather than invented.
-const serverInternalOnlyFields = new Set(['achievements', 'racial_bonuses_unlocked', 'active_effects']);
+// - goals (A4-6, 2026-07-19): written by game/goals.js's progressGoal, called
+//   from the attack/spell/etc. routes — reachable through their responses.
+//   GoalsPanel.jsx fetches goal progress on demand via its own dedicated
+//   GET /api/kingdom/goals, never via the turn/updates path.
+const serverInternalOnlyFields = new Set(['achievements', 'racial_bonuses_unlocked', 'active_effects', 'goals']);
 
 /** Every kingdoms column starting with bld_ — dynamic, matches economyStore's own handling. */
 function isBuildingField(key) {

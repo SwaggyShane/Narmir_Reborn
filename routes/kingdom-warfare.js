@@ -11,6 +11,7 @@ const { pixelToHex } = require('../game/hex-utils');
 const { getKingdomMapCoords } = require('../game/world-map-coords');
 const { structureUpdates } = require('./response-structurer');
 const { convertNumericFields } = require('../db/numeric-fields');
+const { safeEmit } = require('../game/safe-socket-emit');
 
 const router = express.Router();
 
@@ -273,8 +274,17 @@ module.exports = function (db) {
             await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [target.id, 'attack', `Attackers burned ${result.report.buildingDamaged} with no walls to stop them.`, target.turn]);
           }
         }
-        response = { result, attackerId };
+        response = { result, attackerId, targetId: target.id, attackerName: k.name };
       });
+
+      // Real-time notification to the defender (A4-6) — the room join
+      // happens at socket connect (game/sockets.js: `kingdom:${kingdom.id}`).
+      const io = commandHandler.getIo();
+      if (io && response) {
+        safeEmit(io.to(`kingdom:${response.targetId}`), 'event:attack_received', {
+          from: response.attackerName,
+        });
+      }
 
       // gold/turns_stored are refreshed here rather than trusted from
       // attackerUpdates because they can change outside it: turns_stored is
@@ -388,8 +398,18 @@ module.exports = function (db) {
           await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [attackerK.id, 'system', result.casterEvent, attackerK.turn]);
         }
 
-        response = { result, attackerId };
+        response = {
+          result,
+          attackerId,
+          notifyTargetId: (!validation.isFriendly && attackerK.id !== validation.target.id) ? validation.target.id : null,
+        };
       });
+
+      // Real-time notification to the spell target (A4-6), offensive casts only.
+      const io = commandHandler.getIo();
+      if (io && response?.notifyTargetId) {
+        safeEmit(io.to(`kingdom:${response.notifyTargetId}`), 'event:spell_received', {});
+      }
 
       const freshK = await db.get('SELECT mana, scrolls, maps, active_effects FROM kingdoms WHERE id = $1', [attackerId]);
       if (freshK) convertNumericFields(freshK);

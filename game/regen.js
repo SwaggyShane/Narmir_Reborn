@@ -165,6 +165,15 @@ async function runRegen(db, io) {
     WHERE turns_stored < $3
   `, [REGEN_MAX, REGEN_AMOUNT, REGEN_MAX]);
 
+  // A4-6, 2026-07-19: `io` reached this function unused since whenever it was
+  // added — client/src/hooks/useSocket.js already listens for
+  // 'event:turn_update' (triggers a kingdom reload) but nothing ever emitted
+  // it, so regen never pushed a real-time refresh to connected players.
+  if (io) {
+    const { safeEmit } = require('./safe-socket-emit');
+    safeEmit(io.to('global'), 'event:turn_update', {});
+  }
+
   // Clean up old logs
   const now = Math.floor(Date.now() / 1000);
   const RETENTION = { EVENTS: 30, NEWS: 30, WAR: 60, SPY: 45 };
