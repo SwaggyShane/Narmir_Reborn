@@ -292,13 +292,6 @@ async function run(report) {
       // No route invocation — verify config / engine surface for market
       const config = require('../../game/config');
       assert(config.COMMODITY_VALUES || config.commodity_values || config.MARKET || true, 'config loads');
-      // gold income helper if present
-      try {
-        const goldIncome = require('../../game/systems/gold-income');
-        assert(goldIncome, 'gold-income module');
-      } catch {
-        // optional
-      }
       return 'economy modules load';
     });
 

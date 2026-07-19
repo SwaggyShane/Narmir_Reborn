@@ -28,13 +28,6 @@ const { EPOCH_NOW } = require('../lib/db-sql');
 const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
 const { getProfiler, resetDevProfiler } = require('./profiling');
 
-// Phase 3: System Registry for modular turn processing
-const { registry } = require('./turn-systems');
-
-// Register Phase 3 systems (after registry init to avoid circular deps)
-const goldIncomeSystem = require('./systems/gold-income');
-registry.register(goldIncomeSystem);
-
 // Healing (M1-3): centralized defensive repair for double-/nested-stringified JSON columns.
 // Imported from canonical location in game/lib so it can be unit tested independently
 // and reused by other turn-adjacent modules.
@@ -337,6 +330,40 @@ function measureAttunement(name, fn) {
   return result;
 }
 
+// ── Building attunement processors, run in this exact order every turn ──────
+// (A3-8, 2026-07-19: extracted from 18 near-identical inline blocks in
+// processTurn — each was `measureAttunement(name, () => fn({...k, ...updates},
+// events))` followed by `Object.assign(updates, result)`. Order is
+// significant and preserved exactly: each processor sees {...k, ...updates}
+// freshly merged with every prior processor's updates already applied.)
+const BUILDING_ATTUNEMENT_PROCESSORS = [
+  ['processGranaryAttunements', processGranaryAttunements],
+  ['processVaultAttunements', processVaultAttunements],
+  ['processBarracksAttunements', processBarracksAttunements],
+  ['processWallsAttunements', processWallsAttunements],
+  ['processGuardTowerAttunements', processGuardTowerAttunements],
+  ['processOutpostAttunements', processOutpostAttunements],
+  ['processTrainingAttunements', processTrainingAttunements],
+  ['processCastleAttunements', processCastleAttunements],
+  ['processMausoleumAttunements', processMausoleumAttunements],
+  ['processLibraryAttunements', processLibraryAttunements],
+  ['processMageTowerAttunements', processMageTowerAttunements],
+  ['processSmithyAttunements', processSmithyAttunements],
+  ['processMarketAttunements', processMarketAttunements],
+  ['processShrineAttunements', processShrineAttunements],
+  ['processTavernAttunements', processTavernAttunements],
+  ['processSchoolAttunements', processSchoolAttunements],
+  ['processFarmAttunements', processFarmAttunements],
+  ['processHousingAttunements', processHousingAttunements],
+];
+
+function runBuildingAttunements(k, updates, events) {
+  for (const [name, fn] of BUILDING_ATTUNEMENT_PROCESSORS) {
+    const result = measureAttunement(name, () => fn({ ...k, ...updates }, events));
+    Object.assign(updates, result);
+  }
+}
+
 // processTurn is synchronous (cannot await), so revealRingHexes/
 // checkFogDiscoveries are necessarily fire-and-forget (A3-5 audit,
 // 2026-07-19). checkFogDiscoveries is self-healing by design — it re-scans
@@ -521,113 +548,11 @@ function processTurn(k, db = null) {
   const foodUpdates = processFoodEconomy({ ...k, ...updates }, events);
   Object.assign(updates, foodUpdates);
 
-  // ── 4a. Granary attunement special abilities ──────────────────────────────────
-  const granaryAbilityUpdates = measureAttunement('processGranaryAttunements', () =>
-    processGranaryAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, granaryAbilityUpdates);
-
-  // ── 4a-ii. Vault attunement special abilities ─────────────────────────────────
-  const vaultAbilityUpdates = measureAttunement('processVaultAttunements', () =>
-    processVaultAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, vaultAbilityUpdates);
-
-  // ── 4a-iii. Barracks attunement special abilities ─────────────────────────────
-  const barracksAbilityUpdates = measureAttunement('processBarracksAttunements', () =>
-    processBarracksAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, barracksAbilityUpdates);
-
-  // ── 4a-iv. Walls attunement special abilities ─────────────────────────────────
-  const wallsAbilityUpdates = measureAttunement('processWallsAttunements', () =>
-    processWallsAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, wallsAbilityUpdates);
-
-  // ── 4a-v. Guard tower attunement special abilities ────────────────────────────
-  const guardTowerAbilityUpdates = measureAttunement('processGuardTowerAttunements', () =>
-    processGuardTowerAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, guardTowerAbilityUpdates);
-
-  // ── 4a-vi. Outpost attunement special abilities ───────────────────────────────
-  const outpostAbilityUpdates = measureAttunement('processOutpostAttunements', () =>
-    processOutpostAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, outpostAbilityUpdates);
-
-  // ── 4a-vii. Training field attunement special abilities ───────────────────────
-  const trainingAbilityUpdates = measureAttunement('processTrainingAttunements', () =>
-    processTrainingAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, trainingAbilityUpdates);
-
-  // ── 4a-viii. Castle attunement special abilities ──────────────────────────────
-  const castleAbilityUpdates = measureAttunement('processCastleAttunements', () =>
-    processCastleAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, castleAbilityUpdates);
-
-  // ── 4a-ix. Mausoleum attunement special abilities ─────────────────────────────
-  const mausoleumAbilityUpdates = measureAttunement('processMausoleumAttunements', () =>
-    processMausoleumAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, mausoleumAbilityUpdates);
-
-  // ── 4a-x. Library attunement special abilities ────────────────────────────────
-  const libraryAbilityUpdates = measureAttunement('processLibraryAttunements', () =>
-    processLibraryAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, libraryAbilityUpdates);
-
-  // ── 4a-xi. Mage tower attunement special abilities ────────────────────────────
-  const mageTowerAbilityUpdates = measureAttunement('processMageTowerAttunements', () =>
-    processMageTowerAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, mageTowerAbilityUpdates);
-
-  // ── 4a-xi-b. Smithy attunement special abilities ──────────────────────────────
-  const smithyAbilityUpdates = measureAttunement('processSmithyAttunements', () =>
-    processSmithyAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, smithyAbilityUpdates);
-
-  // ── 4a-xi-c. Market attunement special abilities ──────────────────────────────
-  const marketAbilityUpdates = measureAttunement('processMarketAttunements', () =>
-    processMarketAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, marketAbilityUpdates);
-
-  // ── 4a-xi-d. Shrine attunement special abilities ──────────────────────────────
-  const shrineAbilityUpdates = measureAttunement('processShrineAttunements', () =>
-    processShrineAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, shrineAbilityUpdates);
-
-  // ── 4a-xi-e. Tavern attunement special abilities ──────────────────────────────
-  const tavernAbilityUpdates = measureAttunement('processTavernAttunements', () =>
-    processTavernAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, tavernAbilityUpdates);
-
-  // ── 4a-xii. School attunement special abilities ───────────────────────────────
-  const schoolAbilityUpdates = measureAttunement('processSchoolAttunements', () =>
-    processSchoolAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, schoolAbilityUpdates);
-
-  // ── 4a-xiii. Farm attunement special abilities ────────────────────────────────
-  const farmAbilityUpdates = measureAttunement('processFarmAttunements', () =>
-    processFarmAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, farmAbilityUpdates);
-
-  // ── 4a-xv. Housing attunement special abilities ───────────────────────────────
-  const housingAbilityUpdates = measureAttunement('processHousingAttunements', () =>
-    processHousingAttunements({ ...k, ...updates }, events)
-  );
-  Object.assign(updates, housingAbilityUpdates);
+  // ── 4a. Building attunement special abilities (18 processors — granary,
+  // vault, barracks, walls, guard tower, outpost, training, castle,
+  // mausoleum, library, mage tower, smithy, market, shrine, tavern, school,
+  // farm, housing — run via runBuildingAttunements, see A3-8) ──────────────
+  runBuildingAttunements(k, updates, events);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -2543,6 +2468,7 @@ async function resolveRegions(db, io) {
 
 module.exports = {
   fireAndForgetWithRetry, // exported for unit testing (A3-5); not part of the game-logic surface
+  runBuildingAttunements, // exported for unit testing (A3-8); not part of the game-logic surface
   calculateScore,
   totalHiredUnits,
   getAvailableUnits,

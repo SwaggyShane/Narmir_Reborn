@@ -57,7 +57,6 @@ const MODULE_SURFACE = {
   'game/xp.js': [],
   'game/goals.js': [],
   'game/config.js': ['SPELL_DEFS'],
-  'game/turn-systems.js': [],
   'game/regen.js': [],
   'game/active-ability-manager.js': [],
   'game/fragment-bonus-manager.js': [],
