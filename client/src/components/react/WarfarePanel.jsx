@@ -681,6 +681,7 @@ const WarfarePanel = () => {
       toast(data.error, 'error');
       return null;
     }
+    normalizeAndRouteResponse(data, { reason: 'spell', spellId, targetId: target?.id });
     if (spellId && target?.id) {
       setLastSpellTarget(spellId, target.id);
     }

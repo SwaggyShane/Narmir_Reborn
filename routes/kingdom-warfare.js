@@ -392,17 +392,18 @@ module.exports = function (db) {
       });
 
       const freshK = await db.get('SELECT mana, scrolls, maps, active_effects FROM kingdoms WHERE id = $1', [attackerId]);
+      if (freshK) convertNumericFields(freshK);
       const result = response?.result;
       return res.json({
         ok: true,
         report: result?.report,
-        updates: {
+        updates: structureUpdates({
           mana: freshK?.mana,
           scrolls: safeJsonParse(freshK?.scrolls, {}, 'auto:scrolls'),
           maps: freshK?.maps,
           active_effects: safeJsonParse(freshK?.active_effects, {}, 'auto:active_effects'),
           ...result?.casterUpdates,
-        },
+        }),
       });
     } catch (err) {
       if (err?.status) return res.status(err.status).json({ error: err.message });

@@ -91,7 +91,13 @@ const populationFields = new Set(['population', 'happiness']);
 //   event message pushed when it unlocks (game/engine.js); the flag itself
 //   is server-side bookkeeping (prevents re-triggering) surfaced to humans
 //   only via the admin KingdomEditModal raw field editor.
-const serverInternalOnlyFields = new Set(['achievements', 'racial_bonuses_unlocked']);
+// - active_effects (A4-3, 2026-07-19): active spell buffs/debuffs, written by
+//   game/magic.js's casterUpdates and reachable through POST /kingdom/spell's
+//   response. No Zustand store currently reads it — its only client
+//   consumers are admin-only (KingdomWidgets.jsx, KingdomEditModal.jsx).
+//   Surfacing active effects in the player UI would be a real feature, not
+//   a normalizer wiring fix, so it's excluded here rather than invented.
+const serverInternalOnlyFields = new Set(['achievements', 'racial_bonuses_unlocked', 'active_effects']);
 
 /** Every kingdoms column starting with bld_ — dynamic, matches economyStore's own handling. */
 function isBuildingField(key) {
