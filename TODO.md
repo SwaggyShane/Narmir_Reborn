@@ -213,20 +213,20 @@ POST /api/kingdom/turn  (kingdom-gameplay.js)
 ### Problems
 
 1. Mega-function still in engine; attunement ladder is the obvious extract/profile target.  
-2. Prod latency ~3–4s — **not measured this session**.  
+2. Prod latency ~3–4s — **not measured this session**; local `processTurn` compute now measured (A3-3, 2026-07-18) at ~4.84ms steady-state even for the largest local kingdom, which rules out the phase logic itself as the cause and narrows the search to the HTTP/transaction layer (prefetch/postfetch queries, `FOR UPDATE` lock wait, `resolveExpeditions`) — still open, see A3-4.  
 3. Fire-and-forget happiness history.  
 4. Research burns full turns via same processTurn.  
 5. Profiling gated to non-production on route.  
 6. Postfetch column subset vs client domains.  
-7. TURN_PIPELINE.md phase numbering lags live comments (evolution early; barge queue mid-turn).
+7. ~~TURN_PIPELINE.md phase numbering lags live comments (evolution early; barge queue mid-turn).~~ Fixed by A3-1 (2026-07-18).
 
 ### Work items
 
 | ID | Item | Status |
 |----|------|--------|
-| A3-1 | Refresh `TURN_PIPELINE.md` to match live comment order above + line span 340–1771. | **TODO** |
+| A3-1 | Refresh `TURN_PIPELINE.md` to match live comment order above + line span 340–1771. | **DONE** (2026-07-18) — full rewrite; verified real lifecycle against `routes/kingdom-turn.js` (removed a fabricated "Socket.io broadcast" step that had no corresponding code — turn is a plain HTTP response, no `io.emit` anywhere in that path), verified phase map against live `// ──` comments incl. the duplicate "6"/"8d" labels, missing `4a-xiv`, dead tavern-entertainment path, and mislabeled "Happiness Audit Report" comment. |
 | A3-2 | Rename or document `game/turn.js` (not the pipeline). | **TODO** |
-| A3-3 | Local timing capture with profiler; record phase ms especially attunements 4a–4a-xv. | **TODO** |
+| A3-3 | Local timing capture with profiler; record phase ms especially attunements 4a–4a-xv. | **DONE** (2026-07-18) — 8 direct `processTurn` calls (out-of-band, `db=null` to avoid mutating live history) against kingdom id=1 "Stolice" (turn 132, land 64330, 2258 total buildings — largest in local DB), wrapped in `runWithProfiler`. Real result: steady-state `totalTime` avg 4.84ms (run 1 was a 62.92ms JIT-warmup outlier), all 18 attunements individually measured at 0.09–0.23ms avg each (~2.1ms combined — **not** the 50-200ms the old doc guessed). Full table + methodology in `game/TURN_PIPELINE.md`. Confirms item 1/7 below are stale scares, not real bottlenecks — see item 2 note. |
 | A3-4 | Prod latency investigation (when allowed). | **TODO** |
 | A3-5 | Audit fire-and-forget DB writes in processTurn. | **TODO** |
 | A3-6 | Document all 5 `type: 'turn'` call sites and why research double-runs a turn. | **TODO** |
@@ -413,7 +413,7 @@ Step 3   A5-1, A5-2    mutator policy + coverage matrix                 DONE 202
 Step 4   A5-7          systems harness on local main                   DONE (already merged earlier same session; re-verified 2026-07-19)
 Step 5   A4-1, A4-2    client/server updates contract                  DONE 2026-07-19 (A4-1/A4-2/A4-9/A4-10; A4-3..A4-8 remain, see §4)
 Step 6   A2-3          extract turn router from gameplay              DONE 2026-07-19
-Step 7   A3-1, A3-3    turn pipeline doc + local timing
+Step 7   A3-1, A3-3    turn pipeline doc + local timing                  DONE 2026-07-18
 Step 8+  remaining splits / forge router / client ban direct snapshots
 ```
 
@@ -471,7 +471,7 @@ Mount prefix: `/api/kingdom` except hero → `/api/hero`.
 
 Only with **runtime** work (still local; still not PRs):
 
-1. Boot server; capture one profiled turn JSON; fill phase timings in A3-3.  
+1. ~~Boot server; capture one profiled turn JSON; fill phase timings in A3-3.~~ Done 2026-07-18 without needing a running server — direct out-of-band `processTurn` call with `runWithProfiler`, see `game/TURN_PIPELINE.md`.  
 2. Hit each Appendix B path once with systems harness / manual; note structureUpdates yes/no + client store keys changed.  
 3. Confirm socket attack/spell from a real client still exercises `engine.*` (code says yes; play confirm).  
 4. Line-level map of admin.js POST groups (41 posts) for A2-9.  

@@ -1,162 +1,184 @@
 # Turn Pipeline: Detailed Flow & Bottlenecks
 
-**Purpose:** Document the exact sequence of operations during a single turn, including timing, bottlenecks, and state mutation points.
+**Purpose:** Document the exact sequence of operations during a single turn, including real measured timing and state mutation points.
 
-**Date:** 2026-07-08 (baseline)  
-**Status:** Living reference — line counts/latencies may drift; confirm against `game/engine.js` / `processTurn` before trusting exact numbers. Architecture boundary: routes → CommandHandler → engine (see `ARCHITECTURE.md`).
+**Date:** 2026-07-18 (rewrite — previous version dated 2026-07-08 had a wrong line reference, a fabricated phase list, and "Estimated time" ranges that were never actually measured; see "What changed" at the bottom).
+
+**Status:** Living reference. Line numbers verified against `game/engine.js` on this date via brace-depth matching and `grep -n "^  // ──"`. Confirm against the file before trusting exact line numbers if it has since changed.
+
+**Verification rule this doc follows:** every number below is either (a) measured directly from a live call into `processTurn`, with methodology shown, or (b) explicitly marked as not individually instrumented. No estimates are presented as measurements.
 
 ---
 
-## High-Level Turn Lifecycle
+## High-Level Turn Lifecycle (verified against live route code)
 
 ```
-Input (HTTP POST /turn)
+Input: HTTP POST /api/kingdom/turn  (routes/kingdom-turn.js)
   ↓
-Route validation (kingdom exists, has turns)
+requireAuth, requireCsrfToken
   ↓
-processTurn(kingdom, db) — 1429 lines, 16 major phases
+withTurnLock(playerId) — serializes concurrent turn requests per player
   ↓
-Database write (atomic transaction)
+PREFETCH (outside transaction, parallel):
+  - SELECT kingdom by player_id
+  - loadTurnContext: region ownership, alliance, idle heroes, trade routes
+      (3 independent queries run via Promise.all + 1 trade-routes query)
   ↓
-Socket.io broadcast (game:turn event)
+TRANSACTION (db.withTransaction):
+  - SELECT kingdom ... FOR UPDATE  (row lock + authoritative fresh snapshot)
+  - commandHandler.handle({type:'turn'}) → engine.processTurn(lockedK, db)
+      (wrapped in runWithProfiler() outside production — see "Real measured
+      timing" below)
+  - commitTurnResults(): applyUpdates (persist columns), hero XP batch UPDATE,
+    news dedup + bulkInsertNews, kingdom-discovery flag resolution,
+    commandHandler.handle({type:'expeditions'}) (resolveExpeditions + resource
+    harvests), more bulkInsertNews for expedition events
   ↓
-Client receives + Zustand store updates + React renders
+POSTFETCH (outside transaction):
+  - SELECT refreshed fields expeditions may have changed via raw SQL
+  - unread news COUNT
+  - commandHandler.handle({type:'calculate-score'})
+  ↓
+structureUpdates(txUpdates) — flat DB columns → domain-shaped bag
+  ↓
+res.json({ ok: true, updates, events })   ← plain HTTP response, synchronous
+  ↓
+Client: apiCall('/api/kingdom/turn') → applyResult(data,'turn') →
+        normalizeAndRouteResponse → Zustand stores → React re-render
 ```
 
-**Total latency:** ~3000-4000ms on production (likely DB + JSON parsing)
+**Correction from the previous version of this doc:** there is no Socket.io broadcast in this path. `routes/kingdom-turn.js` never calls `io.emit`; the client (`client/src/hooks/useGameActions.js:58` `takeTurn()`) gets the full result back as the HTTP response body and applies it directly. The old doc's "Socket.io broadcast (game:turn event)" step in the lifecycle diagram did not correspond to any code in this path — sockets are used elsewhere (chat, other players' presence, etc.), not for your own turn result.
 
 ---
 
-## processTurn() Execution Sequence
+## `processTurn()` — real phase map
 
-The `processTurn()` function in `game/engine.js` (line 330) executes in this exact order:
+`processTurn(k, db = null)` in `game/engine.js`, **lines 340–1771 (1432 lines)**, confirmed by brace-depth matching. `resolveEpicTrek` (1811) and `resolveExpeditions` (1945) are separate functions called later in `commitTurnResults`/expedition resolution — they are **not** part of `processTurn` and are out of scope for this doc.
 
-### 1. Initialization
-Clear caches, create updates/events, initialize XP tracking.
-**Estimated time:** < 1ms
+Marker map (from the code's own `// ── N. Name ──` comments, `grep -n "^  // ──" game/engine.js`, lines 340–1771 only):
 
-### 2. Gold Income
-Calculate production from cities, trade routes, and investments.
-**State mutation:** `updates.gold`  
-**Estimated time:** 1-5ms
+| Line | Phase | Notes |
+|---|---|---|
+| 340–441 | *(unlabeled pre-phase)* | JSON healing (345–360), Dragon evolution ritual tick (368–379), `progressGoal` (381), `calculateHappiness` (389–390), fragment happiness penalty decay (392–403), happiness history record — **fire-and-forget `.catch()`, not awaited** (405–410), happiness news event (412–437), `rebellionCheck` (440) |
+| 442 | 1. Gold income | |
+| 460 | 2. Mana regeneration | |
+| 478 | 3. Population growth | |
+| 496 | 4. Food economy | farms, consumption, shortage |
+| 500–602 | 4a – 4a-xv | 18 attunement sub-blocks (granary → housing). **Individually measured — see below.** Note: the sequence jumps `4a-xiii` → `4a-xv`; there is no `4a-xiv` in the live comments. |
+| 608 | 4b. Resource production | wood/stone/iron |
+| 612 | 4c. Tavern entertainment bonus | comment says "Disabled" — dead/inactive path |
+| 623 | 4c. Mercenary upkeep and expiry | duplicate "4c" label in the source comments |
+| 627 | 4d. Location maps in progress | |
+| 631 | 4e. Active event tick-down | |
+| 646 | 4e-i. Scout ring progression | may fire async DB reveal calls, not awaited. **Individually measured — see below.** |
+| 710 | 5. Lore Events | |
+| 756 | 5b. Building completion | |
+| 799 | 6. Troop upkeep | |
+| 872 | 6. Low Tax Event (flavor bonus) | duplicate "6" label in the source comments |
+| 900 | 6b. Happiness Threshold Events | |
+| 1063 | 7. Auto-research | per-discipline allocation |
+| 1277 | 7b. Mage research | |
+| 1410 | 8. Build queue | |
+| 1415 | 8a. Forge charcoal pit (A3) | |
+| 1432 | 8a2. Flux-Barge build queue (A4) | |
+| 1449 | 8b. Library | |
+| 1453 | 8d. Legacy trade_routes INT income | first of three "8d" labels, out of order |
+| 1493 | 8d. Defence — defense tiers | second "8d" |
+| 1497 | 8c. Mage tower research | out of alphanumeric sequence |
+| 1501 | 8d. Shrines | third "8d" |
+| 1510 | 8e. Active effects tick-down | |
+| 1514 | 9. Training fields | |
+| 1588 | 9b. Racial passive bonuses | |
+| 1640 | *(unlabeled)* XP awards this turn | |
+| 1670 | *(unlabeled)* Milestone check | |
+| 1688 | *(unlabeled)* Racial bonus unlock check | |
+| 1736 | *(mislabeled "Happiness Audit Report")* | Actual content: temp-field cleanup, expired-synergy-effect removal, `profiler.end()`, dev budget-warning logs, `resetDevProfiler()`, final `return` at 1770 |
 
-### 3. Mana Regeneration
-Calculate from Mage Towers and award XP to mages.
-**State mutation:** `updates.mana`, possibly `updates.troop_levels`  
-**Estimated time:** 1-3ms
-
-### 4. Population Growth
-Calculate from housing and happiness.
-**State mutation:** `updates.population`  
-**Estimated time:** 1-3ms
-
-### 5. Food Economy + Attunements (SLOW)
-- Farm production & consumption
-- Handle starvation from shortage
-- Process 13 different building attunement abilities
-- Mercenary upkeep & expiry
-- Location map progress
-- Active event tick-down
-- Scout ring progression (may async DB call for reveal)
-
-**State mutation:** `updates.food`, `updates.scout_progress`, 15+ attunement fields  
-**Estimated time:** 50-200ms (attunements are expensive)
-
-### 6. Lore Events
-0.1% chance per turn to grant random lore entry.
-**State mutation:** `updates.collected_lore`  
-**Estimated time:** < 1ms
-
-### 7. Building Completion
-Process build queue: complete buildings, award engineer XP.
-**State mutation:** `updates.build_queue`, building counts, `updates.troop_levels`  
-**Estimated time:** 2-10ms
-
-### 8. Troop Upkeep
-Calculate upkeep cost (population × multiplier - barracks discount).
-**State mutation:** `updates.gold`  
-**Estimated time:** 5-10ms
-
-### 9. Happiness Calculation
-Tax penalty/boost, overcrowding, entertainment bonus, recovery rate.
-**State mutation:** `updates.happiness`  
-**Estimated time:** 10-20ms
-
-### 10. Auto-Research (SLOW)
-Calculate progress for 14 research disciplines with allocations.
-**State mutation:** 16 research fields, `updates.xp`, `updates.level`  
-**Estimated time:** 20-50ms
-
-### 11. Build Queue Processing
-Start new buildings if slots available.
-**State mutation:** `updates.build_queue`  
-**Estimated time:** 5-15ms
-
-### 12. Training Fields (SLOW)
-Award XP to 6 troop types based on allocation and equipment.
-**State mutation:** `updates.troop_levels`  
-**Estimated time:** 20-40ms
-
-### 13. Racial Passive Bonuses
-Orc free fighters, Human cleric healing aura.
-**State mutation:** `updates.fighters`, `updates.happiness`  
-**Estimated time:** 1-3ms
-
-### 14. XP Awards
-Award turn XP, calculate level-ups.
-**State mutation:** `updates.xp`, `updates.level`, `updates.xp_sources`  
-**Estimated time:** 10-20ms
-
-### 15. Milestone Check
-Grant rewards for level milestones.
-**State mutation:** Multiple reward fields  
-**Estimated time:** 2-5ms
-
-### 16. Racial Unlock & End of Turn
-Check if signature unit reached mastery, record achievement progress.
-**State mutation:** `updates.last_turn_at`, `updates.active_effects`  
-**Estimated time:** 5-10ms
+The duplicate/missing/mislabeled comment markers above are a pre-existing cosmetic inconsistency in `game/engine.js`'s own comments (not introduced by this doc), not a functional bug — noted here for accuracy rather than fixed, since renaming labels in the highest-risk file in the codebase is out of scope for a documentation pass.
 
 ---
 
-## Bottleneck Summary
+## Real measured timing (A3-3)
 
-| Bottleneck | Time | Cause | Fix Priority |
-|-----------|------|-------|---|
-| Attunement processing | 50-200ms | 13 building systems × calculations | High |
-| Auto-research | 20-50ms | 14 disciplines × allocations | High |
-| Training fields | 20-40ms | 6 troops × XP checks | High |
-| Scattered JSON parsing | varies | safeJsonParse() per phase | Medium |
-| Synchronous DB write | ~2000ms | Single atomic transaction | Low |
+**Methodology:** `game/profiling.js`'s `TurnProfiler` is already wired into the live `/turn` route (`routes/kingdom-turn.js:400-405`, active automatically whenever `NODE_ENV !== 'production'`) but its `_profileReport` is only `console.log`'d server-side, never returned in the HTTP response. To capture it directly, `processTurn` was called out-of-band against the live Postgres data for the most built-up real kingdom in the local database (`id=1`, "Stolice", turn 132, land 64330, 2258 total building count across all types — the largest of any kingdom on this instance), wrapped in `runWithProfiler(initProfiler(), () => engine.processTurn(k, null))`. `db=null` was passed deliberately: `processTurn`'s only DB use is fire-and-forget `.catch()`-only writes (happiness history, fog/ring discovery reveals) that are not awaited and are not part of the timed critical path, so passing `null` measures the same synchronous compute without mutating this kingdom's live history data. 8 runs were captured.
+
+**What `TurnProfiler` actually instruments:** JSON parse/stringify time+count, synergy-lookup count, and **per-attunement** timing (`recordAttunementCall`, one entry per attunement function, storing `{count, totalTime, maxTime}`). It does **not** individually instrument the other ~20 phases (gold income, mana regen, population growth, food economy itself, lore events, building completion, troop upkeep, happiness events, auto-research, build queue, training fields, XP/milestone/racial-unlock checks) — those are only reflected in the overall `totalTime`, not broken out. That gap is a real, current limitation of the profiler, not an oversight in this doc.
+
+**Results (8 runs, kingdom id=1, land=64330, 2258 buildings):**
+
+| Metric | Run 1 (cold) | Runs 2–8 (steady-state) |
+|---|---|---|
+| `totalTime` | 62.92ms | 3.28–6.15ms (avg 4.84ms) |
+| `jsonOperations.totalTime` | 0.29ms | 0.08–0.14ms |
+| `synergyLookups` | 7 | 7 (constant across all 8 runs) |
+
+Run 1's outlier is JIT warm-up (V8 compiling the code paths on first execution), not representative of a warm server process — the production server stays warm between requests, so runs 2–8 are the realistic figure.
+
+**Per-attunement average (aggregated across all 8 runs, ms per call):**
+
+| Attunement | avg ms | max ms |
+|---|---|---|
+| processMarketAttunements | 0.225 | 0.80 |
+| processScoutProgress | 0.170 | 0.68 |
+| processGranaryAttunements | 0.140 | 0.46 |
+| processVaultAttunements | 0.135 | 0.40 |
+| processLibraryAttunements | 0.123 | 0.30 |
+| processWallsAttunements | 0.121 | 0.31 |
+| processOutpostAttunements | 0.119 | 0.32 |
+| processCastleAttunements | 0.119 | 0.40 |
+| processBarracksAttunements | 0.118 | 0.31 |
+| processGuardTowerAttunements | 0.116 | 0.29 |
+| processTrainingAttunements | 0.113 | 0.31 |
+| processMageTowerAttunements | 0.105 | 0.28 |
+| processMausoleumAttunements | 0.101 | 0.29 |
+| processSmithyAttunements | 0.101 | 0.28 |
+| processHousingAttunements | 0.099 | 0.27 |
+| processFarmAttunements | 0.098 | 0.33 |
+| processShrineAttunements | 0.094 | 0.24 |
+| processTavernAttunements | 0.091 | 0.25 |
+| processSchoolAttunements | 0.091 | 0.28 |
+
+Sum of the 18 attunement averages ≈ 2.1ms — roughly half of the ~4.84ms steady-state `totalTime` for this kingdom. The remaining ~2.7ms covers everything else in the function (pre-phase, gold/mana/population/food, research, training fields, XP/milestone checks) as an undifferentiated block, per the profiler gap noted above.
+
+---
+
+## What this means for the reported production latency
+
+TODO.md's Problem #2 records production `/turn` latency at roughly 3000–4000ms, unmeasured at the time. The measurement above shows `processTurn`'s own synchronous compute is **single-digit milliseconds even for the single largest kingdom in the database** (2258 buildings, 18 active attunement types). That rules out the phase logic itself as the source of multi-second production latency.
+
+Given the route code in `routes/kingdom-turn.js`, the real cost is almost certainly in the HTTP-layer I/O around `processTurn`, not inside it:
+- PREFETCH: kingdom SELECT + 3 parallel context queries + trade-routes query
+- TRANSACTION: `FOR UPDATE` row lock acquisition/wait, `applyUpdates` column UPDATE, hero XP batch UPDATE, news dedup SELECT + bulk INSERT, `resolveExpeditions` (a separate, unmeasured function that does its own DB reads/writes), a second bulk news INSERT
+- POSTFETCH: refresh SELECT + unread-count SELECT
+
+All of the above already have `console.time`/`console.timeEnd` markers in the live route code (`[turn] prefetch`, `[turn] transaction`, `[turn] postfetch`, `[turn-{id}] applyUpdates`, `[turn-{id}] resolveExpeditions`, etc.) but those numbers are not aggregated anywhere — they only appear in server stdout. Getting a real production latency breakdown means reading those log lines from a production request (or shipping them to structured logging), not adding more instrumentation to `processTurn`. This is a distinct, still-open item from `TODO.md`'s Problem #2 and from `project_production_turn_delay.md` in memory (which already suspected "mixed biomes or DB query issue" over compute) — this measurement is consistent with that suspicion and narrows it: the compute layer is now ruled out, the DB/transaction layer is not.
 
 ---
 
 ## State Persistence After Turn
 
-1. `processTurn()` returns `{ updates, events }`
-2. Route writes to DB: `UPDATE kingdoms SET gold=$1, food=$2, ... WHERE id=$3`
-3. Socket.io broadcasts: `emit('game:turn', { updates, events })`
-4. Client updates Zustand store
-5. React components re-render
+1. `processTurn()` returns `{ updates, events, _profileReport }` — pure computation, no DB writes of its own (aside from the fire-and-forget `.catch()`-only calls noted above).
+2. `commitTurnResults()` (inside the transaction) calls `applyUpdates(db, k.id, updates)` — the actual column UPDATE — plus hero XP, news, discovery-flag resolution, and expedition resolution.
+3. `structureUpdates(txUpdates)` reshapes the flat updates into the domain-bag shape the client stores expect (`routes/response-structurer.js`).
+4. `res.json({ ok: true, updates, events })` — synchronous HTTP response, no socket involved.
+5. Client: `applyResult(data, 'turn')` → `normalizeAndRouteResponse` → per-store `receiveServerSnapshot` → React re-render.
 
 ---
 
-## Architecture Issues in Current Pipeline
+## Known gaps (accurate as of this measurement, not fixed here)
 
-❌ No event system — results returned, not events broadcast  
-❌ Tight coupling — processTurn calls game/*.js directly  
-❌ Mutable state — kingdom object modified in-place  
-❌ No transaction guarantee — DB write failure = inconsistent state  
-❌ JSON parsing overhead — Multiple parses per phase  
-❌ No parallelization — All phases sequential  
-❌ Attunements hardcoded — 13 systems, each with unique logic  
+- Non-attunement phases (~20 of them) have no individual timing — only attunements, JSON, and synergy lookups are instrumented by `TurnProfiler`. If a specific phase besides attunements needs isolating, that requires new instrumentation, scoped as its own task.
+- `_profileReport` is computed on every non-production request but discarded after a console.log — it is not persisted, aggregated, or exposed anywhere for trend analysis.
+- Production-layer latency (prefetch/transaction/postfetch) is timed in code but never captured in this doc — it needs a real production log sample, which this local measurement cannot substitute for.
+- The duplicate/missing comment-label inconsistencies in `game/engine.js` listed in the phase map above are unfixed (out of scope here).
 
 ---
 
-## Next: Phase 2 Improvements
+## What changed from the 2026-07-08 version of this doc
 
-1. Introduce Command → Simulation → Events pattern
-2. Replace tight coupling with explicit dependencies
-3. Make processTurn pure (no side effects)
-4. Batch attunement/research/training processing
-5. Implement Outbox Pattern for transaction safety
+- Fixed line reference: `processTurn` starts at line 340, not "line 330".
+- Fixed size claim: 1432 lines, not "1429 lines, 16 major phases" (the real phase count is ~35+ distinct marked sections).
+- Removed the fabricated "Socket.io broadcast" step — verified not present in the actual `/turn` code path.
+- Replaced every "Estimated time" range (which were never measured — confirmed by the absence of any profiling methodology in the old doc) with real measured numbers from a live call into `processTurn`, explicitly separating what is measured from what is not.
+- Replaced the "Bottleneck Summary" table's guesses (e.g. "Attunement processing: 50-200ms", "Auto-research: 20-50ms") with the actual finding: attunements collectively cost ~2ms, not 50-200ms, for the largest kingdom in the database — the old numbers were off by roughly two orders of magnitude.
+- Removed the "Architecture Issues" / "Next: Phase 2 Improvements" sections — those described a pre-CommandHandler architecture; `game/COMMAND_COVERAGE.md` and `game/ARCHITECTURE.md` are now the source of truth for that, and duplicating stale architecture claims here caused drift.
