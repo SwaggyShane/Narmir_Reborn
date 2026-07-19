@@ -212,7 +212,7 @@ module.exports = function (db) {
           turns_left: 0,
           turns_stored: result.newTurnsStored,
           distance: result.distance.toFixed(1),
-          updates: { turns_stored: result.newTurnsStored, ...result.updates },
+          updates: structureUpdates({ turns_stored: result.newTurnsStored, ...result.updates }),
           rewards: result.rewards,
           events: result.events,
           message: repairMojibake(message),
@@ -323,7 +323,7 @@ module.exports = function (db) {
         ok: true,
         turns_left: EXP_TURNS[type],
         turns_stored: k.turns_stored,
-        updates: updates,
+        updates: structureUpdates(updates),
         events: expeditionEvents,
         message: message,
       });
@@ -465,7 +465,7 @@ module.exports = function (db) {
 
       res.json({
         ok: true,
-        updates: updates,
+        updates: structureUpdates(updates),
         reward: reward,
         message: msg,
       });
@@ -613,7 +613,7 @@ module.exports = function (db) {
 
       res.json({
         ok: true,
-        updates: updates,
+        updates: structureUpdates(updates),
         reward: reward,
         message: msg,
       });
@@ -677,7 +677,12 @@ module.exports = function (db) {
         let updates = {
           turns_stored: Math.max(0, k.turns_stored - totalTurns),
           population: Math.max(0, k.population - reward.populationCost),
-          lands: (k.lands || 0) + reward.landsDiscovered,
+          // `land`, not `lands` — matches the real kingdoms column and the
+          // raw SQL increment above; the response previously wrote to a
+          // nonexistent `lands` field, which also always read k.lands as
+          // undefined (0), so it never reflected the kingdom's real prior
+          // land total even before the naming was fixed.
+          land: (k.land || 0) + reward.landsDiscovered,
         };
 
         return { updates, reward };
@@ -685,7 +690,7 @@ module.exports = function (db) {
 
       res.json({
         ok: true,
-        updates: updates,
+        updates: structureUpdates(updates),
         reward: reward,
         message: `Rangers discovered ${reward.landsDiscovered.toLocaleString()} new lands.`,
       });
@@ -871,7 +876,7 @@ module.exports = function (db) {
         allocated: k.allocated,
         scoutAllocation: k.scoutAllocation,
         availableRangers: k.availableRangers,
-        updates: k.updates,
+        updates: structureUpdates(k.updates),
       });
     } catch (err) {
       console.error('[scout/allocate]', err.message);
@@ -912,6 +917,7 @@ module.exports = function (db) {
       res.json({
         ok: true,
         ...k,
+        updates: structureUpdates(k.updates),
       });
     } catch (err) {
       console.error('[scout/release-all]', err.message);
