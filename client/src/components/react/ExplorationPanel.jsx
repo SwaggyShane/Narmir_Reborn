@@ -293,7 +293,13 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       return;
     }
 
-    const turns = expeditionTurns[type] || 0;
+    // Dungeon/mountain duration is the selected location's actual distance-based
+    // turnCost, not the flat per-type default — must match the server's formula
+    // (routes/kingdom-exploration.js) or this pre-check can pass while the real
+    // request still gets rejected for insufficient food.
+    const turns = (type === 'dungeon' || type === 'mountain')
+      ? (worldLocations.find((l) => String(l.id) === String(locationId))?.turnCost || 0)
+      : (expeditionTurns[type] || 0);
     const foodNeeded = Math.ceil(turns * ((rangers * 0.5 + fighters) * 0.75));
     if (availableFood < foodNeeded) {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(`You need ${formatNum(foodNeeded - availableFood)} more food to start the expedition`, 'error');
@@ -313,27 +319,21 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
 
       applyResult(result, 'expedition-start');
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || `${TYPE_META[type].label} launched!`, 'success');
-      // Dungeon/mountain resolve instantly, so unlike scout/deep/hunting the
-      // reward breakdown (gold, mana, artifacts, air fragment, attrition...)
-      // is already in this response — show it instead of the generic
-      // "sent N rangers" line, or the player never sees what they actually got.
-      const rewardTexts = Array.isArray(result.rewards)
-        ? result.rewards.map((r) => repairText(r?.text || '')).filter(Boolean)
-        : [];
+      // Dungeon/mountain now travel in real time (turns_left counts down like
+      // scout/deep), so the reward breakdown isn't known yet at launch — it
+      // shows up later via the completed-expeditions list once turns_left
+      // hits 0. This is just a launch confirmation line.
       logInstantEntry(
         TYPE_META[type].icon,
         repairText(result.message || `${TYPE_META[type].label} launched!`),
-        rewardTexts.length > 0
-          ? `${rewardTexts.length} reward${rewardTexts.length === 1 ? '' : 's'}`
-          : `Sent ${formatNum(rangers)} rangers${fighters > 0 ? ` | ${formatNum(fighters)} fighters` : ''} | ${formatNum(foodNeeded)} food`,
-        rewardTexts,
+        `Sent ${formatNum(rangers)} rangers${fighters > 0 ? ` | ${formatNum(fighters)} fighters` : ''} | ${formatNum(foodNeeded)} food`,
       );
       await refreshAll();
     } catch (err) {
       console.error('[expedition/start] failed:', err);
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Expedition failed — please try again', 'error');
     }
-  }, [applyResult, availableFighters, availableFood, availableRangers, dungeonFighters, dungeonLocationId, dungeonRangers, expeditionTurns, logInstantEntry, mountainLocationId, mountainRangers, refreshAll]);
+  }, [applyResult, availableFighters, availableFood, availableRangers, dungeonFighters, dungeonLocationId, dungeonRangers, expeditionTurns, logInstantEntry, mountainLocationId, mountainRangers, refreshAll, worldLocations]);
 
   const clearExpeditionLog = useCallback(async () => {
     try {

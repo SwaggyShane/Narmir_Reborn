@@ -10,7 +10,6 @@ const { calculateLandExpansionReward } = require('../game/land-expansion');
 const { validateAllocation, getAllocationStatus } = require('../game/scout-allocation');
 const { getAllLocations, getLocationById, isPubliclyDiscovered, markLocationDiscovered } = require('../game/world-locations');
 const { getDistanceToLocation, getLocationTurnCost } = require('../game/location-distance');
-const { resolveInstantExpedition } = require('../game/lib/gameplay');
 const { structureUpdates } = require('./response-structurer');
 
 const MOJIBAKE_SIGNATURE = /[ÃÂâïðÅ�]/;
@@ -85,7 +84,14 @@ module.exports = function (db) {
     const f = Math.max(0, parseInt(fighters) || 0);
     if (r < 1) return res.status(400).json({ error: 'Send at least 1 ranger' });
 
-    // Phase 4: Handle dungeon/mountain locations with distance-based turn costs
+    // Handle dungeon/mountain locations with distance-based turn costs. The
+    // location/distance system (added in the 2026-07-04 "Phase 4" refactor)
+    // is kept, but expeditions now travel in real time — turns_left counts
+    // down via the same resolveExpeditions() turn-processing loop scout/deep
+    // already use, instead of resolving instantly by pre-paying turnCost out
+    // of turns_stored. (Reverted 2026-07-19 at the user's request: an
+    // expedition costing 164 turns should take 164 real turns, not complete
+    // on the click that launched it.)
     if (type === 'dungeon' || type === 'mountain') {
       if (f < 1 && type === 'dungeon')
         return res.status(400).json({ error: 'Dungeon raids require fighters' });
@@ -99,6 +105,12 @@ module.exports = function (db) {
           ]);
           if (!k) throw new Error('Kingdom not found');
 
+          if (k.turns_stored < 1) {
+            const error = new Error('No turns available');
+            error.statusCode = 429;
+            throw error;
+          }
+
           // Validate unit availability
           if (r > commandHandler.getAvailableUnits(k, 'rangers')) {
             const error = new Error('Not enough available rangers (some may be in training)');
@@ -107,6 +119,16 @@ module.exports = function (db) {
           }
           if (f > commandHandler.getAvailableUnits(k, 'fighters')) {
             const error = new Error('Not enough available fighters (some may be in training)');
+            error.statusCode = 400;
+            throw error;
+          }
+
+          const existing = await db.get(
+            'SELECT id FROM expeditions WHERE kingdom_id = $1 AND type = $2',
+            [k.id, type],
+          );
+          if (existing) {
+            const error = new Error(`A ${type} expedition is already underway`);
             error.statusCode = 400;
             throw error;
           }
@@ -125,38 +147,32 @@ module.exports = function (db) {
             throw error;
           }
 
-          // Calculate distance and turn cost
+          // Calculate distance and turn cost — turnCost is now the real
+          // travel+exploration duration (turns_left), not an upfront
+          // turns_stored toll.
           const distance = getDistanceToLocation(k, location);
           const turnCost = getLocationTurnCost(type, distance);
 
-          if (k.turns_stored < turnCost) {
-            const error = new Error(`${type.charAt(0).toUpperCase() + type.slice(1)} expedition requires ${turnCost} turns (you have ${k.turns_stored})`);
-            error.statusCode = 429;
-            throw error;
-          }
-
-          // Food cost mirrors the async scout/deep/hunting/prospecting formula
-          // below — a fixed EXP_TURNS[type] duration, not the distance-based
-          // turnCost (that's what turns_stored pays for; food pays for
-          // supplying the troops for the raid itself).
+          // Food supplies the troops for the whole real journey, so it scales
+          // with turnCost (actual duration) rather than a fixed baseline —
+          // matches how scout/deep tie food to their own EXP_TURNS[type].
           const foodMult = commandHandler.foodConsumptionMult(k.race);
           const foodPerTurn = (r * 0.5 + f * 1.0) * foodMult;
-          const foodNeeded = Math.ceil((EXP_TURNS[type] || 0) * foodPerTurn * 0.75);
+          const foodNeeded = Math.ceil(turnCost * foodPerTurn * 0.75);
           if (k.food < foodNeeded) {
             const error = new Error(`${type.charAt(0).toUpperCase() + type.slice(1)} expedition requires ${foodNeeded.toLocaleString()} food (you have ${k.food.toLocaleString()}).`);
             error.statusCode = 400;
             throw error;
           }
 
-          const newTurnsStored = Math.max(0, k.turns_stored - turnCost);
           const newRangers = Math.max(0, k.rangers - r);
           const newFighters = Math.max(0, k.fighters - f);
           const newFood = Math.max(0, k.food - foodNeeded);
 
-          // Deduct turns/rangers/fighters/food, mark location discovered
+          // Deduct rangers/fighters/food, mark location discovered
           await db.run(
-            'UPDATE kingdoms SET turns_stored = $1, rangers = $2, fighters = $3, food = $4 WHERE id = $5',
-            [newTurnsStored, newRangers, newFighters, newFood, k.id]
+            'UPDATE kingdoms SET rangers = $1, fighters = $2, food = $3 WHERE id = $4',
+            [newRangers, newFighters, newFood, k.id]
           );
 
           await markLocationDiscovered(db, location.id, k.id);
@@ -171,29 +187,15 @@ module.exports = function (db) {
             await db.run('UPDATE kingdoms SET first_mountain_found_turn = $1 WHERE race = $2 AND first_mountain_found_turn IS NULL', [k.turn || 0, location.region_name]);
           }
 
-          // Resolve the actual raid/journey outcome (attrition, gold, mana,
-          // artifacts, air fragment, ultra rares, etc.) -- restores the reward
-          // pipeline that scout/deep/hunting/prospecting already get via
-          // expeditionRewards(), which Phase 4's location-discovery refactor
-          // never wired up for dungeon/mountain.
-          const kAfterDeductions = {
-            ...k,
-            turns_stored: newTurnsStored,
-            rangers: newRangers,
-            fighters: newFighters,
-            food: newFood,
-          };
-          const resolved = await resolveInstantExpedition(db, kAfterDeductions, type, r, f);
-
-          if (Object.keys(resolved.updates).length > 0) {
-            await applyKingdomUpdates(k.id, resolved.updates, db);
-          }
-          if (resolved.rangersReturned > 0) {
-            await db.run('UPDATE kingdoms SET rangers = rangers + $1 WHERE id = $2', [resolved.rangersReturned, k.id]);
-          }
-          if (resolved.fightersReturned > 0) {
-            await db.run('UPDATE kingdoms SET fighters = fighters + $1 WHERE id = $2', [resolved.fightersReturned, k.id]);
-          }
+          // Enqueue the expedition — resolveExpeditions() (game/engine.js)
+          // ticks turns_left down by 1 per real turn processed and resolves
+          // via expeditionRewards() on arrival, exactly like scout/deep.
+          // extra_data carries the distance/location context so the
+          // completion message can still report it (see engine.js).
+          await db.run(
+            'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, extra_data) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            [k.id, type, turnCost, r, f, foodNeeded, JSON.stringify({ locationId: location.id, distance, turnCost })],
+          );
 
           const goalUpdates = {};
           progressGoal(k, goalUpdates, 'expedition_started', 1);
@@ -201,20 +203,33 @@ module.exports = function (db) {
             await db.run('UPDATE kingdoms SET goals = $1 WHERE id = $2', [goalUpdates.goals, k.id]);
           }
 
-          return { turnCost, distance, newTurnsStored, ...resolved };
+          return { turnCost, distance, newRangers, newFighters, newFood };
         });
 
+        const updatedK = await db.get('SELECT * FROM kingdoms WHERE id = $1', [
+          req.player.playerId,
+        ]);
+        let expeditionEvents = [];
+        try {
+          expeditionEvents = await commandHandler.handle(
+            { type: 'expeditions' },
+            { kingdom: updatedK, db },
+          );
+        } catch (expErr) {
+          console.error('[expedition/start] immediate resolution error:', expErr.message);
+        }
+
         const label = type === 'dungeon' ? 'Dungeon' : 'Mountain';
-        const message = `${label} expedition complete -- Location found at distance ${result.distance.toFixed(1)} hexes. ${result.turnCost} turns spent exploring.`;
+        const troops = `${r.toLocaleString()} rangers${f > 0 ? ', ' + f.toLocaleString() + ' fighters' : ''}`;
+        const message = `${label} expedition launched -- ${troops} traveling ${result.distance.toFixed(1)} hexes (${result.turnCost} turns until arrival).`;
 
         res.json({
           ok: true,
-          turns_left: 0,
-          turns_stored: result.newTurnsStored,
+          turns_left: result.turnCost,
+          turns_stored: updatedK.turns_stored,
           distance: result.distance.toFixed(1),
-          updates: structureUpdates({ turns_stored: result.newTurnsStored, ...result.updates }),
-          rewards: result.rewards,
-          events: result.events,
+          updates: structureUpdates({ rangers: result.newRangers, fighters: result.newFighters, food: result.newFood }),
+          events: expeditionEvents,
           message: repairMojibake(message),
         });
         return;
@@ -228,6 +243,7 @@ module.exports = function (db) {
         }
         res.status(500).json({ error: `${type.charAt(0).toUpperCase() + type.slice(1)} expedition failed - please try again` });
       }
+      return;
     }
 
     // Original logic for scout, deep, hunting, prospecting

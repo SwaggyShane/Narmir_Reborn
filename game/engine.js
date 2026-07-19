@@ -1988,6 +1988,19 @@ async function resolveExpeditions(db, k, engine) {
         exp.rewards,
       );
 
+      // Dungeon/mountain expeditions carry their launch-time distance/turn
+      // cost in extra_data (routes/kingdom-exploration.js) — surface it as
+      // the first reward line so arrival still reports what the old
+      // instant-resolve flow's top-level message used to.
+      if (exp.type === 'dungeon' || exp.type === 'mountain') {
+        const locData = safeJsonParse(exp.extra_data, {}, 'expedition:location-distance');
+        if (typeof locData.distance === 'number') {
+          rewards.unshift({
+            text: `Location found at distance ${locData.distance.toFixed(1)} hexes. ${locData.turnCost || '?'} turns spent exploring.`,
+          });
+        }
+      }
+
       // ── Epic Trek: Reveal fog along path and process discoveries ──────────
       if (exp.type === 'epic-trek') {
         try {
