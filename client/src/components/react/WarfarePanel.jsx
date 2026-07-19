@@ -42,6 +42,29 @@ import { registerShowBattleReport } from '../../utils/showBattleReport.js';
 import BattleReportModal from './BattleReportModal.jsx';
 import SpellCastingModal from './SpellCastingModal.jsx';
 
+// Mirrors the accepted values in routes/kingdom-warfare.js's POST /covert
+// handler (game/covert.js's covertLoot/covertAssassinate/covertSabotage).
+const COVERT_LOOT_TYPES = [
+  { value: 'random', label: 'Random' },
+  { value: 'gold', label: 'Gold' },
+  { value: 'food', label: 'Food' },
+  { value: 'wm', label: 'War Machines' },
+  { value: 'maps', label: 'Maps' },
+  { value: 'blueprints', label: 'Blueprints' },
+  { value: 'hammers', label: 'Hammers' },
+  { value: 'research', label: 'Research' },
+  { value: 'resources', label: 'Resources (wood/stone/iron)' },
+  { value: 'trade_routes', label: 'Trade Routes' },
+];
+const COVERT_ASSASSINATE_TARGETS = [
+  'fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas', 'researchers', 'engineers', 'scribes',
+];
+const COVERT_SABOTAGE_BUILDINGS = [
+  'farms', 'granaries', 'smithies', 'mage_towers', 'barracks', 'libraries', 'schools', 'armories',
+  'housing', 'markets', 'shrines', 'outposts', 'training', 'guard_towers', 'vaults', 'castles',
+  'taverns', 'mausoleums', 'walls', 'war_machines',
+];
+
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 function parseDisc(raw) {
@@ -239,6 +262,10 @@ const WarfarePanel = () => {
   const [wspSearchQ, setWspSearchQ] = useState('');
   const [wcovSearchQ, setWcovSearchQ] = useState('');
   const [wcovTargetRace, setWcovTargetRace] = useState(null);
+  const [covertUnits, setCovertUnits] = useState('');
+  const [covertLootType, setCovertLootType] = useState('random');
+  const [covertUnitType, setCovertUnitType] = useState('fighters');
+  const [covertBldType, setCovertBldType] = useState('farms');
   const [spellDefs, setSpellDefs] = useState({});
   const [selectedSpellId, setSelectedSpellId] = useState('');
   const [spellDefsLoading, setSpellDefsLoading] = useState(false);
@@ -689,7 +716,40 @@ const WarfarePanel = () => {
     toast('Spell cast.', 'success');
     return data;
   };
-  const doWcovert = () => {};
+  const doWcovert = async (op) => {
+    if (!covertTarget?.id) {
+      toast('Pick a target first.', 'error');
+      return;
+    }
+    const units = Math.max(0, parseInt(covertUnits, 10) || 0);
+    if (units <= 0) {
+      toast('Enter how many units to send.', 'error');
+      return;
+    }
+    try {
+      const result = await apiCall('/api/kingdom/covert', {
+        method: 'POST',
+        body: {
+          op,
+          targetId: covertTarget.id,
+          units,
+          lootType: op === 'loot' ? covertLootType : undefined,
+          unitType: op === 'assassinate' ? covertUnitType : undefined,
+          bldType: op === 'sabotage' ? covertBldType : undefined,
+        },
+      });
+      if (result?.error) {
+        toast(result.error, 'error');
+        return;
+      }
+      normalizeAndRouteResponse(result, { reason: `covert/${op}`, targetId: covertTarget.id });
+      const message = result?.event || (result?.success ? `${op} succeeded.` : `${op} failed.`);
+      toast(message, result?.success ? 'success' : 'error');
+    } catch (err) {
+      console.error(`[covert/${op}] failed:`, err);
+      toast('Covert operation failed', 'error');
+    }
+  };
   const updateWspellCalc = () => {};
 
   const fmtDate = (value) => {
@@ -1043,11 +1103,46 @@ const WarfarePanel = () => {
         </div>
         <div className="card">
           <div className="card-title">Warfare Covert Ops</div>
-          <div className="mt-3">
-            <button className="base-btn" onClick={() => doWcovert('spy')}>Spy</button>
-            <button className="base-btn ml-2" onClick={() => doWcovert('loot')}>Loot</button>
-            <button className="base-btn ml-2" onClick={() => doWcovert('assassinate')}>Assassinate</button>
-            <button className="base-btn ml-2" onClick={() => doWcovert('sabotage')}>Sabotage</button>
+          <div className="mt-3 mb-3 flex items-center gap-2">
+            <label className="text-[11px] text-[var(--text3)]">UNITS TO SEND</label>
+            <input
+              type="number"
+              className="input text-right w-[90px] px-1.5 py-1.5"
+              min="0"
+              value={covertUnits}
+              onChange={(e) => setCovertUnits(e.target.value)}
+              placeholder="Qty"
+            />
+            <span className="text-[11px] text-[var(--text3)]">(thieves for Spy/Loot, ninjas for Assassinate/Sabotage)</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <button className="base-btn" onClick={() => doWcovert('spy')}>Spy</button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="base-btn" onClick={() => doWcovert('loot')}>Loot</button>
+              <select className="input" value={covertLootType} onChange={(e) => setCovertLootType(e.target.value)}>
+                {COVERT_LOOT_TYPES.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="base-btn" onClick={() => doWcovert('assassinate')}>Assassinate</button>
+              <select className="input" value={covertUnitType} onChange={(e) => setCovertUnitType(e.target.value)}>
+                {COVERT_ASSASSINATE_TARGETS.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="base-btn" onClick={() => doWcovert('sabotage')}>Sabotage</button>
+              <select className="input" value={covertBldType} onChange={(e) => setCovertBldType(e.target.value)}>
+                {COVERT_SABOTAGE_BUILDINGS.map((b) => (
+                  <option key={b} value={b}>{b.replace(/_/g, ' ')}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>

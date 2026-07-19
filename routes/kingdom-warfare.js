@@ -530,7 +530,7 @@ module.exports = function (db) {
         report: result.report || null,
         reportId: reportRow.lastID,
         event: result.spyEvent,
-        updates: spyAttackerUpdates,
+        updates: structureUpdates(spyAttackerUpdates),
       });
     } else if (op === "loot") {
       const thievesSent = Math.max(1, parseInt(units) || 0);
@@ -585,7 +585,7 @@ module.exports = function (db) {
         stolen: result.stolen,
         lootType: result.lootType,
         event: result.thiefEvent,
-        updates: lootAttackerUpdates,
+        updates: structureUpdates(lootAttackerUpdates),
       });
     } else if (op === "assassinate") {
       const ninjasSent = Math.max(1, parseInt(units) || 0);
@@ -652,7 +652,7 @@ module.exports = function (db) {
         success: result.success,
         killed: result.killed,
         event: result.assassinEvent,
-        updates: assassinAttackerUpdates,
+        updates: structureUpdates(assassinAttackerUpdates),
       });
     } else if (op === "sabotage") {
       const ninjasSent = Math.max(1, parseInt(units) || 0);
@@ -713,7 +713,7 @@ module.exports = function (db) {
         destroyed: result.destroyed,
         ninjasLost: result.ninjasLost,
         event: result.assassinEvent,
-        updates: sabotageAttackerUpdates,
+        updates: structureUpdates(sabotageAttackerUpdates),
       });
     } else if (op === "raid_trade_route") {
       const thievesSent = Math.max(1, parseInt(units) || 0);
@@ -773,7 +773,7 @@ module.exports = function (db) {
       });
       return res.json(response);
   } catch (err) {
-    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
+    if (err.status) return res.status(err.status).json({ error: err.message });
     console.error("[covert] operation failed:", err.message);
     return res.status(500).json({ error: "Covert operation failed - please try again" });
   }
