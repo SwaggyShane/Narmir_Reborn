@@ -1852,25 +1852,10 @@ async function resolveEpicTrek(db, exp, kingdom) {
     console.error(`[epic-trek] Regional location check failed:`, locErr.message);
   }
 
-  // Small junk-focused finds along the way — one roll per turn spent
-  // traveling (not per hex), diminished compared to the path-loot/artifact
-  // tier below. Mirrors the same "simulate every turn at resolution time"
-  // pattern mountain expeditions already use for their per-turn junk rolls.
-  const turnsTotal = Number(extraData.turns_total) || 0;
-  if (turnsTotal > 0) {
-    let junkCount = 0;
-    for (let t = 0; t < turnsTotal; t++) {
-      if (roll(0.2)) {
-        junkPrize({ ...kingdom, ...updates }, updates);
-        junkCount++;
-      }
-    }
-    if (junkCount > 0) {
-      rewards.push({
-        text: `Along the way, your rangers picked up ${junkCount} small find${junkCount !== 1 ? 's' : ''}`,
-      });
-    }
-  }
+  // Small junk-focused finds no longer roll here — they now happen turn-by-turn
+  // while the expedition is actually traveling (resolveExpeditions' tick loop),
+  // named and surfaced to the log as each one occurs instead of being
+  // batch-simulated and dumped as a single count on arrival.
 
   // The bigger, end-of-trek prize: real resources/maps/troops/artifacts
   // rolled per hex crossed and delivered as one batch on arrival — a richer
@@ -1891,6 +1876,78 @@ async function resolveEpicTrek(db, exp, kingdom) {
 
   return { events, updates, rewards };
 }
+
+// Shared by resolveExpeditions' tick loop (mid-journey finds) and its
+// completion loop (final rewards) — whichever kingdom columns a reward is
+// allowed to write. "stone" was missing here despite junkPrize()'s 100th
+// suspicious-rock achievement granting +1000 stone: the bonus event still
+// fired, but the actual stone was silently filtered out and never applied.
+const EXPEDITION_VALID_KINGDOM_COLS = new Set([
+  "gold",
+  "mana",
+  "land",
+  "population",
+  "happiness",
+  "food",
+  "fighters",
+  "rangers",
+  "clerics",
+  "mages",
+  "thieves",
+  "ninjas",
+  "researchers",
+  "engineers",
+  "war_machines",
+  "weapons_stockpile",
+  "armor_stockpile",
+  "res_economy",
+  "res_weapons",
+  "res_armor",
+  "res_military",
+  "res_attack_magic",
+  "res_defense_magic",
+  "res_entertainment",
+  "res_construction",
+  "res_war_machines",
+  "res_spellbook",
+  "bld_farms",
+  "bld_barracks",
+  "bld_markets",
+  "bld_mage_towers",
+  "blueprints_stored",
+  "certified_blueprints_stored",
+  "maps",
+  "troop_levels",
+  "xp",
+  "level",
+  "xp_sources",
+  "discovered_kingdoms",
+  "world_fragments",
+  "collected_events",
+  "last_event_id",
+  "achievements",
+  "items",
+  "stone",
+  // Forge system (A6) — lava-draw resolution writes these
+  "lava_stored",
+  "engineer_level",
+  "engineer_xp",
+  "flux_barges",
+]);
+
+// Mid-journey find chance per real turn tick, for expedition types where
+// travel takes real time. Rolled once per tick in the loop below instead of
+// being batch-simulated at completion — the player sees each find (and its
+// actual item name) as it happens, not all at once dumped on arrival.
+// mountain's rate is much lower than its old batch-simulated 60%/turn (which
+// only worked because it was invisible math collapsed into one count on
+// arrival — surfaced individually that would be ~60 log entries per trip);
+// epic-trek and lava-draw keep roughly their old per-turn/per-hex odds.
+const MID_TRAVEL_FIND_CONFIG = {
+  mountain: { icon: "🏔️", title: "Mountain expedition", chance: 0.05 },
+  "epic-trek": { icon: "🛤️", title: "Epic Trek", chance: 0.2 },
+  "lava-draw": { icon: "🌋", title: "Lava draw", chance: 0.08 },
+};
 
 async function resolveExpeditions(db, k, engine) {
   // Pick up active ones AND unclaimed ones (turns_left=0 but rewards_claimed=0)
@@ -1929,6 +1986,39 @@ async function resolveExpeditions(db, k, engine) {
       if (newTurns > 0) {
         tickDowns.push({ id: exp.id, newTurns });
         expsByState[exp.id] = { ...exp, turns_left: newTurns, mustProcess: false };
+
+        const findCfg = MID_TRAVEL_FIND_CONFIG[exp.type];
+        if (findCfg && roll(findCfg.chance)) {
+          const findUpdates = {};
+          const found = junkPrize(freshK, findUpdates);
+          // Keep in-memory freshK current so a second expedition (or a second
+          // roll later this same call) sees this item already in inventory,
+          // rather than each write clobbering the last.
+          Object.assign(freshK, findUpdates);
+          const safeFindUpdates = Object.fromEntries(
+            Object.entries(findUpdates).filter(
+              ([col, v]) => EXPEDITION_VALID_KINGDOM_COLS.has(col) && v !== undefined && v !== null,
+            ),
+          );
+          if (Object.keys(safeFindUpdates).length > 0) {
+            const cols = Object.keys(safeFindUpdates);
+            const { setClause, nextPlaceholder } = pgSetClauseWithNextPlaceholder(cols);
+            await db.run(`UPDATE kingdoms SET ${setClause} WHERE id = ${nextPlaceholder}`, [
+              ...Object.values(safeFindUpdates),
+              k.id,
+            ]);
+          }
+          expeditionEvents.push({
+            type: "system",
+            message: `${findCfg.icon} ${findCfg.title}: your crew found ${found}`,
+            skipNews: true,
+            expeditionLogEntry: {
+              icon: findCfg.icon,
+              title: findCfg.title,
+              subtitle: `Found: ${found}`,
+            },
+          });
+        }
       } else {
         completions.push(exp.id);
         expsByState[exp.id] = { ...exp, turns_left: 0, mustProcess: true };
@@ -2112,12 +2202,22 @@ async function resolveExpeditions(db, k, engine) {
       delete updates._server_announce;
       delete updates._ultra_rare;
 
+      // Every type resolveExpeditions can actually complete needs an entry
+      // here — a miss silently produced "undefined expedition returned..."
+      // (hunting/prospecting/land_expansion/epic-trek/lava-draw were missing).
+      // The `|| exp.type` fallback means a future type can no longer produce
+      // that "undefined" text even if someone forgets to add it here.
       const label = {
         scout: "🔭 Scout",
         deep: "🌲 Deep",
         dungeon: "⚔️ Dungeon",
         mountain: "🏔️ Mountain",
-      }[exp.type];
+        hunting: "🥩 Hunting",
+        prospecting: "⛏️ Prospecting",
+        land_expansion: "🗺️ Land Expansion",
+        "epic-trek": "🛤️ Epic Trek",
+        "lava-draw": "🌋 Lava Draw",
+      }[exp.type] || exp.type;
 
       // Apply kingdom updates
       const rangersReturned =
@@ -2128,58 +2228,6 @@ async function resolveExpeditions(db, k, engine) {
           : 0;
       delete updates._rangers_returned;
       delete updates._fighters_returned;
-
-      const VALID_KINGDOM_COLS = new Set([
-        "gold",
-        "mana",
-        "land",
-        "population",
-        "happiness",
-        "food",
-        "fighters",
-        "rangers",
-        "clerics",
-        "mages",
-        "thieves",
-        "ninjas",
-        "researchers",
-        "engineers",
-        "war_machines",
-        "weapons_stockpile",
-        "armor_stockpile",
-        "res_economy",
-        "res_weapons",
-        "res_armor",
-        "res_military",
-        "res_attack_magic",
-        "res_defense_magic",
-        "res_entertainment",
-        "res_construction",
-        "res_war_machines",
-        "res_spellbook",
-        "bld_farms",
-        "bld_barracks",
-        "bld_markets",
-        "bld_mage_towers",
-        "blueprints_stored",
-        "certified_blueprints_stored",
-        "maps",
-        "troop_levels",
-        "xp",
-        "level",
-        "xp_sources",
-        "discovered_kingdoms",
-        "world_fragments",
-        "collected_events",
-        "last_event_id",
-        "achievements",
-        "items",
-        // Forge system (A6) — lava-draw resolution writes these
-        "lava_stored",
-        "engineer_level",
-        "engineer_xp",
-        "flux_barges",
-      ]);
 
       // Award XP
       const expXpAmount = { scout: 8, deep: 20, dungeon: 40, mountain: 100 }[exp.type] || 8;
@@ -2230,7 +2278,7 @@ async function resolveExpeditions(db, k, engine) {
       const safeUpdates = Object.fromEntries(
         Object.entries(updates).filter(
           ([k2, v]) =>
-            VALID_KINGDOM_COLS.has(k2) && v !== undefined && v !== null,
+            EXPEDITION_VALID_KINGDOM_COLS.has(k2) && v !== undefined && v !== null,
         ),
       );
       if (Object.keys(safeUpdates).length > 0) {

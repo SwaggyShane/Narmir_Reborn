@@ -848,19 +848,10 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
       });
       updates[res] = (k[res] || 0) + resBoost;
 
-      // Junk prizes more frequent on mountain (60% chance per turn) — consolidated summary
-      let junkCount = 0;
-      for (let t = 0; t < expTurns; t++) {
-        if (roll(0.6)) {
-          junkPrize(k, updates);
-          junkCount++;
-        }
-      }
-      if (junkCount > 0) {
-        rewards.push({
-          text: `Rangers discovered ${junkCount} artifacts in the mountain passes`,
-        });
-      }
+      // Junk finds no longer roll here — they now happen turn-by-turn while
+      // the expedition is actually traveling (game/engine.js's resolveExpeditions
+      // tick loop), named and surfaced to the log as each one occurs instead of
+      // being batch-simulated and dumped as a single count on arrival.
     }
 
     // No land rewards from mountain — focus purely on artifacts/magic

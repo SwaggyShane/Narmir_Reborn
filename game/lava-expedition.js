@@ -16,7 +16,6 @@ const { flagOn } = require('./forge-upgrades');
 const { claimVent, releaseVent, lavaYield } = require('./lava-vents');
 const { applyHullWear, findDeployableBarge, setBargeStatus, serializeBarges } = require('./flux-barge');
 const { awardEngineerXp } = require('./engineers');
-const { junkPrize } = require('./lib/gameplay');
 
 const FOOD_PER_HEX = 50;
 
@@ -162,17 +161,10 @@ async function resolveLavaDraw(db, exp, kingdom) {
     }
   }
 
-  // Travel finds — small per-hex junk chance, no rolls during the on-site draw itself.
-  let junkCount = 0;
-  for (let i = 0; i < pathHexes.length; i++) {
-    if (Math.random() < 0.08) {
-      junkPrize({ ...kingdom, ...updates }, updates);
-      junkCount++;
-    }
-  }
-  if (junkCount > 0) {
-    rewards.push({ text: `Along the way, your crew picked up ${junkCount} small find${junkCount !== 1 ? 's' : ''}.` });
-  }
+  // Travel finds no longer roll here — they now happen turn-by-turn while the
+  // expedition is actually traveling (resolveExpeditions' tick loop in
+  // game/engine.js), named and surfaced to the log as each one occurs instead
+  // of being batch-simulated and dumped as a single count on arrival.
 
   // Crew always returns — committed for the round trip only (§5).
   updates.engineers = (kingdom.engineers || 0) + cfg.crew_engineers;

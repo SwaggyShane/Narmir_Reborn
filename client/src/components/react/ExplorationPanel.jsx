@@ -36,6 +36,17 @@ const TYPE_META = {
     color: '#6b9bd1',
     border: '#6b9bd1',
   },
+  // These four don't launch from a card in this file (hunting/prospecting have
+  // their own sections below, epic-trek launches from the world-map hex
+  // modal, lava-draw from the Forge panel) — no badge/button needed, but the
+  // top "Active expeditions" card and the log still render any expedition
+  // type that shows up in /expedition/list, so they need an icon/label/color
+  // here too or they fall back to a raw type string like "land_expansion".
+  hunting: { icon: '🥩', label: 'Hunting', color: 'var(--gold)', border: 'var(--gold)' },
+  prospecting: { icon: '⛏️', label: 'Prospecting', color: 'var(--gold)', border: 'var(--gold)' },
+  land_expansion: { icon: '🗺️', label: 'Land Expansion', color: 'var(--green)', border: 'var(--green)' },
+  'epic-trek': { icon: '🛤️', label: 'Epic Trek', color: 'var(--green)', border: 'var(--green)' },
+  'lava-draw': { icon: '🌋', label: 'Lava Draw', color: 'var(--red)', border: 'var(--red)' },
 };
 
 const formatNum = (value) => Number(value || 0).toLocaleString();
@@ -649,7 +660,10 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
         <div className="min-w-0 flex-1">
           <div className="font-semibold text-[var(--text)]">
             {repairText(label)}
-            {!isCompleted && entry.type !== 'land_expansion' && ` departed — ${entry.turns_left} turn${entry.turns_left === 1 ? '' : 's'} left`}
+            {/* No countdown here — the top "Active expeditions" card and the
+                nav sidebar indicator already show live turns-left; repeating
+                it in the log just means three places to keep in sync. */}
+            {!isCompleted && entry.type !== 'land_expansion' && ' departed'}
             {isCompleted && ' — Returned'}
           </div>
           <div className="mt-0.5 text-[11px] text-[var(--text3)]">{repairText(subtitle)}</div>
