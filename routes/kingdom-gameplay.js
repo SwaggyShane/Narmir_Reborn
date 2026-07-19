@@ -104,7 +104,7 @@ module.exports = function (db) {
 
       res.json({
         ok: true,
-        updates: hireUpdates,
+        updates: structureUpdates(hireUpdates),
         events: [],
         turns_stored: k.turns_stored,
       });

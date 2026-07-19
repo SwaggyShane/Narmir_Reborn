@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { toast } from '../../utils/toast.js';
 import { apiCall } from '../../utils/api';
+import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
 import { fmt } from "../../utils/fmt";
 import {
   useKingdomId,
@@ -28,11 +29,7 @@ import {
   useResWarMachines,
   useDiscoveredKingdoms,
   useHappiness,
-  useMilitaryStore,
-  useProfileStore,
-  useEconomyStore,
   useResearchStore,
-  usePopulationStore,
 } from '../../stores';
 import WarfareIntelTab from './WarfareIntelTab';
 import WarfareReportsTab from './WarfareReportsTab';
@@ -627,27 +624,7 @@ const WarfarePanel = () => {
     if (r.wallsDestroyed > 0) rows.push(['Walls Destroyed', fmt(r.wallsDestroyed)]);
     if (r.bullyMsg) rows.push(['⚠️ Penalty', r.bullyMsg]);
 
-    if (result && Object.keys(result).length > 0) {
-      if (result.troops || result.wall_hp !== undefined || result.troop_levels) {
-        useMilitaryStore.getState().receiveServerSnapshot({
-          troops: result.troops,
-          wall_hp: result.wall_hp,
-          troop_levels: result.troop_levels,
-        });
-      }
-      if (result.food !== undefined || result.gold !== undefined) {
-        useEconomyStore.getState().receiveServerSnapshot({
-          food: result.food,
-          gold: result.gold,
-        });
-      }
-      if (result.morale !== undefined) {
-        usePopulationStore.getState().receiveServerSnapshot({ happiness: result.morale });
-      }
-      if (result.turns_stored !== undefined) {
-        useProfileStore.getState().receiveServerSnapshot({ turns_stored: result.turns_stored });
-      }
-    }
+    normalizeAndRouteResponse(result, { reason: 'attack', targetId: attackTarget?.id });
 
     setBattleReport({
       type: 'Military attack',

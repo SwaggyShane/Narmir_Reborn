@@ -10,6 +10,7 @@ const { safeBitmapHasCell } = require('../game/visibility-cells');
 const { pixelToHex } = require('../game/hex-utils');
 const { getKingdomMapCoords } = require('../game/world-map-coords');
 const { structureUpdates } = require('./response-structurer');
+const { convertNumericFields } = require('../db/numeric-fields');
 
 const router = express.Router();
 
@@ -275,12 +276,24 @@ module.exports = function (db) {
         response = { result, attackerId };
       });
 
-      const freshK = await db.get("SELECT maps FROM kingdoms WHERE id = $1", [attackerId]);
+      // gold/turns_stored are refreshed here rather than trusted from
+      // attackerUpdates because they can change outside it: turns_stored is
+      // decremented via raw SQL above, and gold can also be bumped by a
+      // bounty claim (raw SQL, only when result.win) a few lines up — same
+      // "refetch what raw SQL might have touched" pattern as
+      // routes/kingdom-turn.js's postfetch (A3-7).
+      const freshK = await db.get("SELECT maps, gold, turns_stored FROM kingdoms WHERE id = $1", [attackerId]);
+      if (freshK) convertNumericFields(freshK);
       const result = response?.result;
       return res.json({
         ok: true,
         report: result?.report,
-        updates: { ...result?.attackerUpdates, maps: freshK?.maps ?? 0 },
+        updates: structureUpdates({
+          ...result?.attackerUpdates,
+          maps: freshK?.maps ?? 0,
+          gold: freshK?.gold,
+          turns_stored: freshK?.turns_stored,
+        }),
         event: result?.atkEvent,
       });
     } catch (err) {

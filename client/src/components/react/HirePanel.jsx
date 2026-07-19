@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { fmt } from "../../utils/fmt";
 import { toast } from '../../utils/toast';
-import { useRace, useGold, usePopulation, useFighters, useRangers, useMages, useClerics, useNinjas, useThieves, useMilitaryEngineers as useEngineers, useEconomyStore, useMilitaryStore, usePopulationStore, useResearchStore, useProfileStore, useBuildCount, useResearchers } from '../../stores';
+import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
+import { useRace, useGold, usePopulation, useFighters, useRangers, useMages, useClerics, useNinjas, useThieves, useMilitaryEngineers as useEngineers, useBuildCount, useResearchers } from '../../stores';
 
 const UNIT_ROWS = [
   {
@@ -153,13 +154,7 @@ const HirePanel = () => {
         return;
       }
 
-      if (res.updates) {
-        if (res.updates.economy) useEconomyStore.getState().receiveServerSnapshot(res.updates.economy);
-        if (res.updates.military) useMilitaryStore.getState().receiveServerSnapshot(res.updates.military);
-        if (res.updates.population) usePopulationStore.getState().receiveServerSnapshot(res.updates.population);
-        if (res.updates.research) useResearchStore.getState().receiveServerSnapshot(res.updates.research);
-        if (res.updates.profile) useProfileStore.getState().receiveServerSnapshot(res.updates.profile);
-      }
+      normalizeAndRouteResponse(res, { reason: 'hire', unit: row.key, amount });
 
       setQuantities((prev) => ({ ...prev, [row.key]: '' }));
       toast(`Hired ${amount} ${row.label.toLowerCase()}`, 'success');
@@ -190,13 +185,7 @@ const HirePanel = () => {
         return;
       }
 
-      if (res.updates) {
-        if (res.updates.economy) useEconomyStore.getState().receiveServerSnapshot(res.updates.economy);
-        if (res.updates.military) useMilitaryStore.getState().receiveServerSnapshot(res.updates.military);
-        if (res.updates.population) usePopulationStore.getState().receiveServerSnapshot(res.updates.population);
-        if (res.updates.research) useResearchStore.getState().receiveServerSnapshot(res.updates.research);
-        if (res.updates.profile) useProfileStore.getState().receiveServerSnapshot(res.updates.profile);
-      }
+      normalizeAndRouteResponse(res, { reason: 'fire', unit: row.key, amount });
 
       setQuantities((prev) => ({ ...prev, [row.key]: '' }));
       toast(`Fired ${amount} ${row.label.toLowerCase()}`, 'success');
