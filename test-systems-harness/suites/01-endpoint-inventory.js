@@ -145,6 +145,29 @@ async function run(report) {
     }
     return `${attuneFile.length} inventory/attunements/synergies routes`;
   });
+
+  await report.run(system, 'worldmap owns map/locations/rivers/scout-visibility-debug cluster', async () => {
+    // World Map, Locations, Rivers, and Scout Visibility Debug split out of
+    // kingdom-gameplay.js into its own file (A2-7, 2026-07-19) — layers of
+    // the same world-exploration/visibility domain: /locations reads
+    // discovered_kingdoms, /world-map renders it gated by seenCells,
+    // /fix-visibility resets the seenCells/currentCells bitmaps, and
+    // /debug/scouts exposes scout_progress that drives seenCells reveals.
+    const all = scanAllRoutes();
+    const wmFile = all.filter((e) => e.file === 'kingdom-worldmap.js');
+    const paths = new Set(wmFile.map((e) => `${e.method} ${e.path}`));
+    for (const need of [
+      'GET /locations',
+      'POST /locations/steal-map',
+      'GET /world-map',
+      'GET /world-river-flow',
+      'POST /fix-visibility',
+      'GET /debug/scouts',
+    ]) {
+      assert(paths.has(need), `kingdom-worldmap.js missing ${need}`);
+    }
+    return `${wmFile.length} world-map/locations/rivers/debug routes`;
+  });
 }
 
 module.exports = { run, name: '01-endpoint-inventory' };

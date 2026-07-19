@@ -33,6 +33,7 @@ const STRICT_FILES = [
   'kingdom-research.js',
   'kingdom-turn.js',
   'kingdom-warfare.js',
+  'kingdom-worldmap.js',
   'auth.js',
   'hero.js',
   'admin.js',

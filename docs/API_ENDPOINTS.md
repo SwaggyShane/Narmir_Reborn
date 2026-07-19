@@ -16,10 +16,10 @@ Auth model:
 > path prefix, composed explicitly in `routes/kingdom.js` (not `index.js`), in this
 > order: `kingdom-build`, `kingdom-warfare`, `kingdom-economy`, `kingdom-research`,
 > `kingdom-profile`, `kingdom-turn`, `kingdom-forge`, `kingdom-prestige`,
-> `kingdom-attunements`, `kingdom-gameplay`, then `kingdom-exploration` mounted
-> last. Express matches the first router that defines a given path+method, so where
-> two files define the same route, the earlier-mounted one wins and the later one
-> is dead code.
+> `kingdom-attunements`, `kingdom-worldmap`, `kingdom-gameplay`, then
+> `kingdom-exploration` mounted last. Express matches the first router that defines
+> a given path+method, so where two files define the same route, the
+> earlier-mounted one wins and the later one is dead code.
 >
 > **Verified 2026-07-19 (live scan of all 7 files, 120 unique routes): zero duplicate
 > method+path pairs.** This doc previously claimed 16 routes were duplicated between
@@ -30,9 +30,10 @@ Auth model:
 > (`routes/kingdom.js`'s `orderedRouters` list defines the real precedence) before
 > deleting anything on precedence grounds.
 >
-> **kingdom-turn.js, kingdom-forge.js, kingdom-prestige.js, and kingdom-attunements.js**
-> were split out of `kingdom-gameplay.js` (A2-3 2026-07-19, A2-4 2026-07-18,
-> A2-5 2026-07-19, A2-6 2026-07-19 respectively) — see their sections below.
+> **kingdom-turn.js, kingdom-forge.js, kingdom-prestige.js, kingdom-attunements.js,
+> and kingdom-worldmap.js** were split out of `kingdom-gameplay.js` (A2-3
+> 2026-07-19, A2-4 2026-07-18, A2-5 2026-07-19, A2-6 2026-07-19, A2-7 2026-07-19
+> respectively) — see their sections below.
 
 ---
 
@@ -194,6 +195,30 @@ file rather than split further.
 
 ---
 
+## World Map, Locations & Rivers
+
+Route file:
+- [routes/kingdom-worldmap.js](../routes/kingdom-worldmap.js)
+
+Key endpoints:
+- `GET /kingdom/locations`
+- `POST /kingdom/locations/steal-map`
+- `GET /kingdom/world-map`
+- `GET /kingdom/world-river-flow`
+- `POST /kingdom/fix-visibility`
+- `GET /kingdom/debug/scouts`
+
+Split out of `kingdom-gameplay.js` (A2-7, 2026-07-19) — layers of the same
+world-exploration/visibility domain: `GET /locations` reads a kingdom's
+`discovered_kingdoms` map, `GET /world-map` renders it gated by `seenCells`
+visibility, `POST /fix-visibility` resets the `seenCells`/`currentCells`
+bitmaps that gate what's visible, and `GET /debug/scouts` exposes
+`scout_progress` (drives `seenCells` reveals). (`GET /world-river-flow`,
+`POST /fix-visibility`, and `GET /debug/scouts` were missing from this doc
+even before the split — added here for the first time.)
+
+---
+
 ## Core Kingdom Gameplay
 
 Route file:
@@ -209,13 +234,10 @@ Key endpoints:
 - `POST /kingdom/library-allocation`
 - `POST /kingdom/options`
 - `GET /kingdom/season`
-- `GET /kingdom/locations`
-- `POST /kingdom/locations/steal-map`
 - `POST /kingdom/hybrid-blueprint/get-buildings`
 - `POST /kingdom/hybrid-blueprint/confirm-assignment`
 - `POST /kingdom/assign-hybrid-blueprint`
 - `GET /kingdom/profile/:name`
-- `GET /kingdom/world-map`
 - `GET /kingdom/lore-and-achievements`
 - `GET /kingdom/resource-nodes`
 - `GET /kingdom/resource-expeditions`

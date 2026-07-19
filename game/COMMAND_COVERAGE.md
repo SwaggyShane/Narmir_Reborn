@@ -188,7 +188,21 @@ unrelated small read-only route kept in the same file rather than split further.
 | direct+txn | `POST /remove-attunement` | Attunements |
 | direct+txn | `POST /activate-synergy-ability` | Synergies |
 
-### `routes/kingdom-gameplay.js` (17 mutating routes)
+### `routes/kingdom-worldmap.js` (2 mutating routes)
+
+Split out of `kingdom-gameplay.js` (A2-7, 2026-07-19) — World Map, Locations,
+Rivers, and Scout Visibility Debug. Bundled as layers of one domain:
+`GET /locations` reads `discovered_kingdoms`, `GET /world-map` renders it gated
+by `seenCells`, `POST /fix-visibility` resets the `seenCells`/`currentCells`
+bitmaps, `GET /debug/scouts` exposes `scout_progress` (drives `seenCells`
+reveals) — the 4 GET routes are out of this doc's mutating-only scope.
+
+| Route | Path | System |
+|---|---|---|
+| direct | `POST /locations/steal-map` | — |
+| direct | `POST /fix-visibility` | debug/one-off |
+
+### `routes/kingdom-gameplay.js` (15 mutating routes)
 
 | Route | Path | System |
 |---|---|---|
@@ -201,14 +215,12 @@ unrelated small read-only route kept in the same file rather than split further.
 | direct | `POST /hybrid-blueprint/get-buildings` | — |
 | direct | `POST /hybrid-blueprint/confirm-assignment` | — |
 | direct | `POST /assign-hybrid-blueprint` | — |
-| direct | `POST /locations/steal-map` | — |
 | direct+txn | `POST /resource-harvest/launch` | — |
 | direct+txn | `POST /scout-area` | — |
 | direct | `POST /resource-upgrade` | — |
 | direct | `POST /portrait` | — |
 | direct | `DELETE /portrait` | — |
 | direct+txn | `POST /expedition/epic-trek` | — |
-| direct | `POST /fix-visibility` | debug/one-off |
 
 ### `routes/kingdom-exploration.js` (10 mutating routes)
 
