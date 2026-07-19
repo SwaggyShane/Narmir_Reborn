@@ -72,7 +72,7 @@ npm run smoke:combat-v2
 | G-1 | Local branch prune — many local branches still show `[origin/X: gone]` (remote deleted, local ref not cleaned up). Confirmed still present as of 2026-07-19 (`git branch -vv`). Needs explicit user go-ahead before pruning (destructive). | **TODO** |
 | G-2 | Worktree inventory; close finished lanes. `git worktree list` currently shows only the main worktree — likely already resolved, re-check before acting. | **DONE, already resolved** (2026-07-19) — re-checked as instructed: `git worktree list` shows only `C:/Users/king_/Narmir_Reborn [main]`, no other worktrees exist. Nothing to close. |
 | G-3 | Ignore agent noise (`logs/`, `terminals/`, smoke logs) in `.gitignore`. | **DONE, already resolved** (2026-07-19) — `.gitignore` already has `logs/`, `*.log`, and `terminals/` entries (including the `systems-viability-*.json` reports this session generated repeatedly, which land in `logs/`). Verified via `git ls-files | grep -iE "\.log$|smoke.*log|terminals/"` — zero tracked files match, confirming nothing slipped through before these rules existed. No action needed. |
-| G-4 | Reconcile local `main` ↔ `origin/main` — **only when the user chooses.** Currently 203 ahead / 8 behind. Not part of any assessment; not a PR. | **TODO** |
+| G-4 | Reconcile local `main` ↔ `origin/main` — **only when the user chooses.** Currently 220 ahead / 8 behind (2026-07-19, updated after this session's ~15 commits). Not part of any assessment; not a PR. | **TODO** |
 
 ### Player-facing reliability
 
