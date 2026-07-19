@@ -213,7 +213,7 @@ POST /api/kingdom/turn  (kingdom-gameplay.js)
 ### Problems
 
 1. Mega-function still in engine; attunement ladder is the obvious extract/profile target.  
-2. Prod latency ~3–4s — **not measured this session**; local `processTurn` compute now measured (A3-3, 2026-07-18) at ~4.84ms steady-state even for the largest local kingdom, which rules out the phase logic itself as the cause and narrows the search to the HTTP/transaction layer (prefetch/postfetch queries, `FOR UPDATE` lock wait, `resolveExpeditions`) — still open, see A3-4.  
+2. Prod latency ~3–4s — historical report from 2026-07-08; not reproduced/reported since. Not an active symptom as of 2026-07-18 — user confirms no recent lag issues. Local `processTurn` compute measured (A3-3, 2026-07-18) at ~4.84ms steady-state even for the largest local kingdom, ruling out the phase logic as a cause if it recurs. A3-4 is a guardrail (what to check first if latency reports return), not an active investigation.  
 3. Fire-and-forget happiness history.  
 4. Research burns full turns via same processTurn.  
 5. Profiling gated to non-production on route.  
@@ -227,7 +227,7 @@ POST /api/kingdom/turn  (kingdom-gameplay.js)
 | A3-1 | Refresh `TURN_PIPELINE.md` to match live comment order above + line span 340–1771. | **DONE** (2026-07-18) — full rewrite; verified real lifecycle against `routes/kingdom-turn.js` (removed a fabricated "Socket.io broadcast" step that had no corresponding code — turn is a plain HTTP response, no `io.emit` anywhere in that path), verified phase map against live `// ──` comments incl. the duplicate "6"/"8d" labels, missing `4a-xiv`, dead tavern-entertainment path, and mislabeled "Happiness Audit Report" comment. |
 | A3-2 | Rename or document `game/turn.js` (not the pipeline). | **TODO** |
 | A3-3 | Local timing capture with profiler; record phase ms especially attunements 4a–4a-xv. | **DONE** (2026-07-18) — 8 direct `processTurn` calls (out-of-band, `db=null` to avoid mutating live history) against kingdom id=1 "Stolice" (turn 132, land 64330, 2258 total buildings — largest in local DB), wrapped in `runWithProfiler`. Real result: steady-state `totalTime` avg 4.84ms (run 1 was a 62.92ms JIT-warmup outlier), all 18 attunements individually measured at 0.09–0.23ms avg each (~2.1ms combined — **not** the 50-200ms the old doc guessed). Full table + methodology in `game/TURN_PIPELINE.md`. Confirms item 1/7 below are stale scares, not real bottlenecks — see item 2 note. |
-| A3-4 | Prod latency investigation (when allowed). | **TODO** |
+| A3-4 | Prod latency guardrail — not an active issue (no recent reports as of 2026-07-18); if it recurs, check HTTP/transaction layer first (A3-1's "What this means" section rules out processTurn compute). | **GUARDRAIL, not active** |
 | A3-5 | Audit fire-and-forget DB writes in processTurn. | **TODO** |
 | A3-6 | Document all 5 `type: 'turn'` call sites and why research double-runs a turn. | **TODO** |
 | A3-7 | Align postfetch + structureUpdates field lists with client domains. | **TODO** |
@@ -388,7 +388,7 @@ A5-1 … A5-8 (see §5)
 
 | ID | Item | Status |
 |----|------|--------|
-| R-1 | Production turn latency (ties A3-4). | **TODO** |
+| R-1 | Production turn latency (ties A3-4) — guardrail only, not an active issue as of 2026-07-18. | **GUARDRAIL, not active** |
 | R-2 | Scout progress on full page reload (ties A4-8). | **TODO** |
 | R-3 | Worldmap smoke (load, markers, fog stride 48 client/server). | **TODO** |
 
