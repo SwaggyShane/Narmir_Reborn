@@ -161,7 +161,20 @@ stays in `kingdom-gameplay.js`.
 | direct | `POST /forge/build-barge` | Forge & Lava |
 | direct+txn | `POST /expedition/lava-draw` | Forge & Lava |
 
-### `routes/kingdom-gameplay.js` (23 mutating routes)
+### `routes/kingdom-prestige.js` (3 mutating routes)
+
+Split out of `kingdom-gameplay.js` (A2-5, 2026-07-19) — Prestige rebirth and Dragon
+Evolution are genuinely coupled, not just adjacent by naming: `GET /evolution` reads
+`prestige_level` as its unlock gate. Bundled into one file for the same reason Forge
+& Lava was (A2-4) — one real system split across two named subsystems.
+
+| Route | Path | System |
+|---|---|---|
+| direct+txn | `POST /rebirth` | Prestige — deliberately not CommandHandler, see policy |
+| direct+txn | `POST /evolution/start` | Dragon Evolution |
+| direct+txn | `POST /evolution/abort` | Dragon Evolution |
+
+### `routes/kingdom-gameplay.js` (20 mutating routes)
 
 | Route | Path | System |
 |---|---|---|
@@ -175,9 +188,6 @@ stays in `kingdom-gameplay.js`.
 | direct | `POST /hybrid-blueprint/confirm-assignment` | — |
 | direct | `POST /assign-hybrid-blueprint` | — |
 | direct | `POST /locations/steal-map` | — |
-| direct+txn | `POST /rebirth` | Prestige — deliberately not CommandHandler, see policy |
-| direct+txn | `POST /evolution/start` | Dragon Evolution |
-| direct+txn | `POST /evolution/abort` | Dragon Evolution |
 | direct+txn | `POST /resource-harvest/launch` | — |
 | direct+txn | `POST /scout-area` | — |
 | direct | `POST /resource-upgrade` | — |

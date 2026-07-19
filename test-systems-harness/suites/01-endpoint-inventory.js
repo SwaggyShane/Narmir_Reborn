@@ -102,6 +102,24 @@ async function run(report) {
     );
     return `${forgeFile.length} forge/lava routes`;
   });
+
+  await report.run(system, 'prestige owns rebirth/evolution cluster', async () => {
+    // Prestige & Dragon Evolution split out of kingdom-gameplay.js into its
+    // own file (A2-5, 2026-07-19) — genuinely coupled, not just adjacent:
+    // GET /evolution reads prestige_level as its unlock gate.
+    const all = scanAllRoutes();
+    const prestigeFile = all.filter((e) => e.file === 'kingdom-prestige.js');
+    const paths = new Set(prestigeFile.map((e) => `${e.method} ${e.path}`));
+    for (const need of [
+      'POST /rebirth',
+      'POST /evolution/start',
+      'POST /evolution/abort',
+      'GET /evolution',
+    ]) {
+      assert(paths.has(need), `kingdom-prestige.js missing ${need}`);
+    }
+    return `${prestigeFile.length} prestige/evolution routes`;
+  });
 }
 
 module.exports = { run, name: '01-endpoint-inventory' };

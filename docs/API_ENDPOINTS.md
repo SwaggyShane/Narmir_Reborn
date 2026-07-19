@@ -15,10 +15,10 @@ Auth model:
 > **Note on route precedence:** Several `/api/kingdom/*` routers are mounted on the same
 > path prefix, composed explicitly in `routes/kingdom.js` (not `index.js`), in this
 > order: `kingdom-build`, `kingdom-warfare`, `kingdom-economy`, `kingdom-research`,
-> `kingdom-profile`, `kingdom-turn`, `kingdom-forge`, `kingdom-gameplay`, then
-> `kingdom-exploration` mounted last. Express matches the first router that defines a
-> given path+method, so where two files define the same route, the earlier-mounted one
-> wins and the later one is dead code.
+> `kingdom-profile`, `kingdom-turn`, `kingdom-forge`, `kingdom-prestige`,
+> `kingdom-gameplay`, then `kingdom-exploration` mounted last. Express matches the
+> first router that defines a given path+method, so where two files define the same
+> route, the earlier-mounted one wins and the later one is dead code.
 >
 > **Verified 2026-07-19 (live scan of all 7 files, 120 unique routes): zero duplicate
 > method+path pairs.** This doc previously claimed 16 routes were duplicated between
@@ -29,8 +29,9 @@ Auth model:
 > (`routes/kingdom.js`'s `orderedRouters` list defines the real precedence) before
 > deleting anything on precedence grounds.
 >
-> **kingdom-turn.js and kingdom-forge.js** were split out of `kingdom-gameplay.js`
-> (A2-3 2026-07-19, A2-4 2026-07-18 respectively) — see their sections below.
+> **kingdom-turn.js, kingdom-forge.js, and kingdom-prestige.js** were split out of
+> `kingdom-gameplay.js` (A2-3 2026-07-19, A2-4 2026-07-18, A2-5 2026-07-19
+> respectively) — see their sections below.
 
 ---
 
@@ -147,6 +148,27 @@ None of these routes go through `CommandHandler`; that's intentional policy
 
 ---
 
+## Prestige & Dragon Evolution
+
+Route file:
+- [routes/kingdom-prestige.js](../routes/kingdom-prestige.js)
+
+Key endpoints:
+- `POST /kingdom/rebirth`
+- `POST /kingdom/evolution/start`
+- `POST /kingdom/evolution/abort`
+- `GET /kingdom/evolution`
+
+Split out of `kingdom-gameplay.js` (A2-5, 2026-07-19) — kingdom rebirth
+(`game/prestige/`) and the Dragon Evolution ritual (`game/evolution/`) are
+genuinely coupled, not just adjacent by naming: `GET /evolution` reads
+`prestige_level` as its unlock gate. Neither goes through `CommandHandler` — see
+`game/COMMAND_COVERAGE.md`'s "Prestige — deliberately not CommandHandler" note.
+(`GET /kingdom/evolution` was missing from this doc even before the split —
+added here for the first time.)
+
+---
+
 ## Core Kingdom Gameplay
 
 Route file:
@@ -169,7 +191,6 @@ Key endpoints:
 - `POST /kingdom/assign-hybrid-blueprint`
 - `GET /kingdom/profile/:name`
 - `GET /kingdom/world-map`
-- `POST /kingdom/rebirth`
 - `GET /kingdom/lore-and-achievements`
 - `GET /kingdom/resource-nodes`
 - `GET /kingdom/resource-expeditions`

@@ -137,7 +137,7 @@ assert.throws(
 );
 
 console.log('news-fail contract: prestige state stands if post-commit news throws');
-// Mirrors routes/kingdom-gameplay.js rebirth: news try/catch after withTransaction.
+// Mirrors routes/kingdom-prestige.js rebirth: news try/catch after withTransaction.
 let kingdomPrestiged = false;
 const payload = prestige.processPrestige(baseKingdom({ level: 500 }));
 assert.ok(payload.updates);
