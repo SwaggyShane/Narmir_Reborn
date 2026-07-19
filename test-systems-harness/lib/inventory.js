@@ -139,6 +139,13 @@ const FILE_MOUNT = {
   'kingdom-gameplay.js': '/api/kingdom',
   'hero.js': '/api/hero',
   'admin.js': '/api/admin',
+  'admin-kingdoms.js': '/api/admin',
+  'admin-ai.js': '/api/admin',
+  'admin-events.js': '/api/admin',
+  'admin-lore.js': '/api/admin',
+  'admin-goals.js': '/api/admin',
+  'admin-config.js': '/api/admin',
+  'admin-audit.js': '/api/admin',
   'admin-actions.js': '/api',
   'discord.js': '/api/discord',
   'alliance.js': '/api/alliance',
@@ -151,6 +158,12 @@ const FILE_MOUNT = {
 };
 
 const ROUTE_RE = /router\.(get|post|put|delete|patch)\(\s*['"`]([^'"`]+)['"`]/gi;
+// dualRoute(router, "method", "canonical", "legacy", ...) — routes/admin.js's
+// helper (see routes/lib/admin-dual-route.js) registers TWO real Express
+// routes per call (canonical kebab-case + legacy snake_case alias). The
+// plain ROUTE_RE above never matches these since the method/path aren't
+// passed as `router.METHOD(...)` literally in the source text.
+const DUAL_ROUTE_RE = /dualRoute\(\s*router\s*,\s*['"`](get|post|put|delete|patch)['"`]\s*,\s*['"`]([^'"`]+)['"`]\s*,\s*['"`]([^'"`]*)['"`]/gi;
 
 function scanRouteFile(filePath) {
   const text = fs.readFileSync(filePath, 'utf8');
@@ -162,6 +175,16 @@ function scanRouteFile(filePath) {
       method: m[1].toUpperCase(),
       path: m[2],
     });
+  }
+  const dualRe = new RegExp(DUAL_ROUTE_RE.source, 'gi');
+  while ((m = dualRe.exec(text)) !== null) {
+    const method = m[1].toUpperCase();
+    const canonical = m[2];
+    const legacy = m[3];
+    endpoints.push({ method, path: canonical });
+    if (legacy && legacy !== canonical) {
+      endpoints.push({ method, path: legacy });
+    }
   }
   return endpoints;
 }

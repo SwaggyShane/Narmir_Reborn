@@ -191,6 +191,52 @@ async function run(report) {
     }
     return `${socialFile.length} news/chat/scouts/portrait/happiness routes`;
   });
+
+  await report.run(system, 'admin split owns its 7 domains (A2-9)', async () => {
+    // routes/admin.js (2363 lines, 68 direct + 16 dualRoute-registered
+    // routes = 84 logical routes) split into 7 domain files (A2-9,
+    // 2026-07-19); admin.js itself became a thin composer mirroring
+    // kingdom.js's orderedRouters pattern. requireAdmin + CSRF are applied
+    // once in the composer, not per sub-file — see routes/admin.js.
+    const all = scanAllRoutes();
+    const byFile = (f) => all.filter((e) => e.file === f);
+    const has = (f, method, p) => byFile(f).some((e) => e.method === method && e.path === p);
+
+    const EXPECTED_COUNTS = {
+      'admin-kingdoms.js': 21,
+      'admin-ai.js': 7,
+      'admin-events.js': 21, // 9 plain + 6 dualRoute pairs (12 registrations)
+      'admin-lore.js': 25, // 5 plain + 10 dualRoute pairs (20 registrations)
+      'admin-goals.js': 4,
+      'admin-config.js': 8,
+      'admin-audit.js': 14,
+    };
+    for (const [file, count] of Object.entries(EXPECTED_COUNTS)) {
+      assert(byFile(file).length === count, `${file}: expected ${count} routes, got ${byFile(file).length}`);
+    }
+
+    const CANARIES = [
+      ['admin-kingdoms.js', 'POST', '/ban'],
+      ['admin-kingdoms.js', 'POST', '/set-kingdom'],
+      ['admin-kingdoms.js', 'GET', '/chat-mods'],
+      ['admin-ai.js', 'POST', '/ai/seed'],
+      ['admin-ai.js', 'GET', '/ai/synopsis'],
+      ['admin-events.js', 'POST', '/wishlist'],
+      ['admin-events.js', 'GET', '/bug_reports'], // legacy dualRoute alias
+      ['admin-lore.js', 'GET', '/lore'],
+      ['admin-lore.js', 'POST', '/random_events'], // legacy dualRoute alias
+      ['admin-goals.js', 'POST', '/goals/edit'],
+      ['admin-config.js', 'POST', '/announce'],
+      ['admin-config.js', 'POST', '/sounds/upload'],
+      ['admin-audit.js', 'POST', '/security-audit-full'],
+      ['admin-audit.js', 'GET', '/audit-history'],
+    ];
+    for (const [file, method, p] of CANARIES) {
+      assert(has(file, method, p), `${file} missing ${method} ${p}`);
+    }
+
+    return `7 files, ${Object.values(EXPECTED_COUNTS).reduce((a, b) => a + b, 0)} routes total`;
+  });
 }
 
 module.exports = { run, name: '01-endpoint-inventory' };

@@ -38,6 +38,13 @@ const STRICT_FILES = [
   'auth.js',
   'hero.js',
   'admin.js',
+  'admin-kingdoms.js',
+  'admin-ai.js',
+  'admin-events.js',
+  'admin-lore.js',
+  'admin-goals.js',
+  'admin-config.js',
+  'admin-audit.js',
 ];
 
 /**
