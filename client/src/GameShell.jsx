@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import clsx from 'clsx';
 import { useActivePanel } from './hooks/useActivePanel.js';
 
@@ -7,31 +7,15 @@ import Topbar from './components/react/Topbar.jsx';
 import ResourceStrip from './components/react/ResourceStrip.jsx';
 import BottomNav from './components/react/BottomNav.jsx';
 
+// StatusPanel stays a static import: it's the default landing panel
+// (useActivePanel.js defaults activePanel to 'status'), so it must render
+// with zero Suspense flash on first paint. Every other panel is lazy-loaded
+// below — only one ever renders at a time via renderPanel()'s switch, so
+// eagerly bundling all 26 (including the three.js-heavy WorldmapPanel,
+// ~533KB/42% of the old bundle) was pure waste for anyone not visiting that
+// specific tab.
 import StatusPanel from './components/react/StatusPanel.jsx';
-import StudiesPanel from './components/react/StudiesPanel.jsx';
-import EconomyPanel from './components/react/EconomyPanel.jsx';
-import BuildPanel from './components/react/BuildPanel.jsx';
-import WarfarePanel from './components/react/WarfarePanel.jsx';
-import GlobalchatPanel from './components/react/GlobalchatPanel.jsx';
-import ResourcesPanel from './components/react/ResourcesPanel.jsx';
-import HappinessPanel from './components/react/HappinessPanel.jsx';
-import HeroesPanel from './components/react/HeroesPanel.jsx';
-import ExplorationPanel from './components/react/ExplorationPanel.jsx';
-import MarketPanel from './components/react/MarketPanel.jsx';
-import RankingsPanel from './components/react/RankingsPanel.jsx';
-import WorldmapPanel from './components/react/WorldmapPanel.jsx';
-import OptionsPanel from './components/react/OptionsPanel.jsx';
-import BountiesPanel from './components/react/BountiesPanel.jsx';
-import AlliancesPanel from './components/react/AlliancesPanel.jsx';
-import MessagesPanel from './components/react/MessagesPanel.jsx';
-import DefensePanel from './components/react/DefensePanel.jsx';
-import HirePanel from './components/react/HirePanel.jsx';
-import TrainingPanel from './components/react/TrainingPanel.jsx';
-import NewsPanel from './components/react/NewsPanel.jsx';
-import GoalsPanel from './components/react/GoalsPanel.jsx';
-import RacesPanel from './components/react/RacesPanel.jsx';
-import ChangelogPanel from './components/react/ChangelogPanel.jsx';
-import TestingPanel from './components/react/TestingPanel.jsx';
+import PanelLoadingFallback from './components/react/PanelLoadingFallback.jsx';
 import AuthModal, { restoreAuthSession } from './components/react/AuthModal.jsx';
 import KingdomProfileModal from './components/react/KingdomProfileModal.jsx';
 import SchoolSelectionController from './components/react/SchoolSelectionController.jsx';
@@ -51,8 +35,33 @@ import KingdomBodyHeader from './components/react/KingdomBodyHeader.jsx';
 import LoreEntryController from './components/react/LoreEntryController.jsx';
 import GenericModalController from './components/react/GenericModalController.jsx';
 import SpyReportModalController from './components/react/SpyReportModalController.jsx';
-import ForumPanel from './components/react/ForumPanel.jsx';
 import { FULL_BLEED_SHELL_PANELS, FIXED_HEIGHT_PANELS } from './utils/panelMeta.js';
+
+const StudiesPanel = lazy(() => import('./components/react/StudiesPanel.jsx'));
+const EconomyPanel = lazy(() => import('./components/react/EconomyPanel.jsx'));
+const BuildPanel = lazy(() => import('./components/react/BuildPanel.jsx'));
+const WarfarePanel = lazy(() => import('./components/react/WarfarePanel.jsx'));
+const GlobalchatPanel = lazy(() => import('./components/react/GlobalchatPanel.jsx'));
+const ResourcesPanel = lazy(() => import('./components/react/ResourcesPanel.jsx'));
+const HappinessPanel = lazy(() => import('./components/react/HappinessPanel.jsx'));
+const HeroesPanel = lazy(() => import('./components/react/HeroesPanel.jsx'));
+const ExplorationPanel = lazy(() => import('./components/react/ExplorationPanel.jsx'));
+const MarketPanel = lazy(() => import('./components/react/MarketPanel.jsx'));
+const RankingsPanel = lazy(() => import('./components/react/RankingsPanel.jsx'));
+const WorldmapPanel = lazy(() => import('./components/react/WorldmapPanel.jsx'));
+const OptionsPanel = lazy(() => import('./components/react/OptionsPanel.jsx'));
+const BountiesPanel = lazy(() => import('./components/react/BountiesPanel.jsx'));
+const AlliancesPanel = lazy(() => import('./components/react/AlliancesPanel.jsx'));
+const MessagesPanel = lazy(() => import('./components/react/MessagesPanel.jsx'));
+const DefensePanel = lazy(() => import('./components/react/DefensePanel.jsx'));
+const HirePanel = lazy(() => import('./components/react/HirePanel.jsx'));
+const TrainingPanel = lazy(() => import('./components/react/TrainingPanel.jsx'));
+const NewsPanel = lazy(() => import('./components/react/NewsPanel.jsx'));
+const GoalsPanel = lazy(() => import('./components/react/GoalsPanel.jsx'));
+const RacesPanel = lazy(() => import('./components/react/RacesPanel.jsx'));
+const ChangelogPanel = lazy(() => import('./components/react/ChangelogPanel.jsx'));
+const TestingPanel = lazy(() => import('./components/react/TestingPanel.jsx'));
+const ForumPanel = lazy(() => import('./components/react/ForumPanel.jsx'));
 
 const GameShell = () => {
   const { activePanel } = useActivePanel();
@@ -172,7 +181,9 @@ const GameShell = () => {
                 isFixedHeightPanel ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'min-h-full overflow-x-hidden',
               )}
             >
-              {renderPanel()}
+              <Suspense fallback={<PanelLoadingFallback />}>
+                {renderPanel()}
+              </Suspense>
             </div>
           </div>
         </ShellColumnFrame>
