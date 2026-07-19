@@ -1,6 +1,6 @@
 # Narmir Reborn API Endpoints
 
-**Last Updated:** 2026-07-19 — route precedence note corrected (real mount order + live duplicate scan, see below)
+**Last Updated:** 2026-07-19 — A2-10: mount-order note refreshed for the full 12-file `kingdom.js` composition (was written when it was 7 files); route precedence confirmed still zero-duplicate after the A2-4→A2-9 splits
 
 This document is a concise route map for the current codebase. When this file and the route files disagree, treat the route files as truth.
 
@@ -13,16 +13,34 @@ Auth model:
 - mutating routes generally require CSRF protection
 
 > **Note on route precedence:** Several `/api/kingdom/*` routers are mounted on the same
-> path prefix, composed explicitly in `routes/kingdom.js` (not `index.js`), in this
-> order: `kingdom-build`, `kingdom-warfare`, `kingdom-economy`, `kingdom-research`,
-> `kingdom-profile`, `kingdom-turn`, `kingdom-forge`, `kingdom-prestige`,
-> `kingdom-attunements`, `kingdom-worldmap`, `kingdom-social`, `kingdom-gameplay`,
-> then `kingdom-exploration` mounted last. Express matches the first router that
-> defines a given path+method, so where two files define the same route, the
-> earlier-mounted one wins and the later one is dead code.
+> path prefix, composed explicitly in `routes/kingdom.js` (not `index.js`) via its
+> `orderedRouters` array — that array, not this doc, is the actual source of truth;
+> if they disagree, trust the code (A2-10). Current order: `kingdom-build`,
+> `kingdom-warfare`, `kingdom-economy`, `kingdom-research`, `kingdom-profile`,
+> `kingdom-turn`, `kingdom-forge`, `kingdom-prestige`, `kingdom-attunements`,
+> `kingdom-worldmap`, `kingdom-social`, `kingdom-gameplay`, then
+> `kingdom-exploration` mounted separately, after the loop. Express matches the
+> first router that defines a given path+method, so where two files define the
+> same route, the earlier-mounted one wins and the later one is dead code.
 >
-> **Verified 2026-07-19 (live scan of all 7 files, 120 unique routes): zero duplicate
-> method+path pairs.** This doc previously claimed 16 routes were duplicated between
+> **Why this order specifically:** `kingdom-build` through `kingdom-profile` predate
+> the A2-series splits and their relative order is inherited, not re-verified here.
+> `kingdom-gameplay` must stay last among the ordered files — it was the original
+> monolith and remains the catch-all for routes that were never assigned their own
+> file (M1-1's original router-order-dependency concern). The six files split out of
+> it since (`turn`, `forge`, `prestige`, `attunements`, `worldmap`, `social`) have
+> **no ordering constraint relative to each other** — each was verified to own
+> disjoint paths at extraction time (A2-3 through A2-8), so their position in the
+> array is extraction order, not a precedence requirement. `kingdom-exploration` is
+> mounted outside the loop, after every other file, for the same reason gameplay
+> must precede it: it's never been checked for path overlaps against the others and
+> historically was the true catch-all before gameplay grew large.
+>
+> **Verified 2026-07-19 (A2-10, live scan of all 12 files in the composer + the
+> separately-mounted kingdom-exploration.js, 120 unique routes): zero duplicate
+> method+path pairs.** (Previous version of this note said "7 files" — stale from
+> before the A2-4→A2-9 splits; the route *count* was still correct, only the file
+> count was wrong.) This doc previously claimed 16 routes were duplicated between
 > `kingdom-build.js` and `kingdom-gameplay.js` plus 1 between `kingdom-build.js` and
 > `kingdom-research.js` (`POST /school-allocation`) — that was already stale by the time
 > it was written; `school-allocation` exists in exactly one place (`kingdom-build.js`).
