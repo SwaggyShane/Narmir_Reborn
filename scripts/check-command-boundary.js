@@ -2,8 +2,9 @@
 /**
  * Architecture Slice A: Command boundary guard.
  *
- * Fails if player-facing kingdom routes (and auth/hero) call engine mutators
- * directly instead of CommandHandler. Allowlisted:
+ * Fails if player-facing kingdom routes (and auth/hero/admin), or
+ * game/sockets.js (A5-4, 2026-07-19 — previously unscanned entirely), call
+ * engine mutators directly instead of CommandHandler. Allowlisted:
  *   - require() of engine only where needed for pure helpers (none expected
  *     after closeout in kingdom-*, auth, hero)
  *   - public.js bootstrap constants (not scanned)
@@ -18,9 +19,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROUTES_DIR = path.join(__dirname, '..', 'routes');
+const ROOT_DIR = path.join(__dirname, '..');
+const ROUTES_DIR = path.join(ROOT_DIR, 'routes');
 
-/** Files that must not call forbidden engine mutators */
+/** Files under routes/ that must not call forbidden engine mutators */
 const STRICT_FILES = [
   'kingdom-attunements.js',
   'kingdom-build.js',
@@ -48,6 +50,18 @@ const STRICT_FILES = [
 ];
 
 /**
+ * Files outside routes/ that must also not call forbidden engine mutators
+ * (A5-4, 2026-07-19) — game/sockets.js used to bypass this check entirely,
+ * calling engine.resolveMilitaryAttack/castSpell/covert* directly. Those
+ * dead socket handlers were removed (A5-5); this scan is what would have
+ * caught the gap in the first place, and now catches any regression.
+ * Paths are relative to the repo root.
+ */
+const STRICT_FILES_ABSOLUTE = [
+  'game/sockets.js',
+];
+
+/**
  * Mutator / turn entry points that belong on CommandHandler.
  * Match on identifier call form after stripping comments roughly.
  */
@@ -55,6 +69,9 @@ const FORBIDDEN = [
   { re: /\bengine\.processTurn\s*\(/, name: 'engine.processTurn' },
   { re: /\bengine\.resolveMilitaryAttack\s*\(/, name: 'engine.resolveMilitaryAttack' },
   { re: /\bengine\.castSpell\s*\(/, name: 'engine.castSpell' },
+  { re: /\bengine\.covertSpy\s*\(/, name: 'engine.covertSpy' },
+  { re: /\bengine\.covertLoot\s*\(/, name: 'engine.covertLoot' },
+  { re: /\bengine\.covertAssassinate\s*\(/, name: 'engine.covertAssassinate' },
   { re: /\bengine\.resolveExpeditions\s*\(/, name: 'engine.resolveExpeditions' },
   { re: /\bengine\.resolveResourceHarvests\s*\(/, name: 'engine.resolveResourceHarvests' },
   { re: /\bengine\.assignRegion\s*\(/, name: 'engine.assignRegion' },
@@ -72,32 +89,40 @@ function stripComments(src) {
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
 }
 
+function scanFile(full, label, failures) {
+  if (!fs.existsSync(full)) {
+    failures.push(`missing file: ${label}`);
+    return;
+  }
+  const raw = fs.readFileSync(full, 'utf8');
+  const code = stripComments(raw);
+  const lines = code.split(/\r?\n/);
+
+  // After closeout: no direct engine require in these files. Match both
+  // require forms — '../game/engine' (from routes/) and './engine' (from
+  // within game/ itself, e.g. game/sockets.js).
+  if (/\brequire\s*\(\s*['"](\.\.\/game\/engine|\.\/engine)['"]\s*\)/.test(code)) {
+    failures.push(`${label}: still requires engine.js (use command-handler)`);
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    for (const { re, name } of FORBIDDEN) {
+      if (re.test(line)) {
+        failures.push(`${label}:${i + 1}: forbidden ${name}`);
+      }
+    }
+  }
+}
+
 function main() {
   const failures = [];
 
   for (const file of STRICT_FILES) {
-    const full = path.join(ROUTES_DIR, file);
-    if (!fs.existsSync(full)) {
-      failures.push(`missing route file: ${file}`);
-      continue;
-    }
-    const raw = fs.readFileSync(full, 'utf8');
-    const code = stripComments(raw);
-    const lines = code.split(/\r?\n/);
-
-    // After closeout: no direct engine require in these files
-    if (/\brequire\s*\(\s*['"]\.\.\/game\/engine['"]\s*\)/.test(code)) {
-      failures.push(`${file}: still requires ../game/engine (use command-handler)`);
-    }
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      for (const { re, name } of FORBIDDEN) {
-        if (re.test(line)) {
-          failures.push(`${file}:${i + 1}: forbidden ${name}`);
-        }
-      }
-    }
+    scanFile(path.join(ROUTES_DIR, file), file, failures);
+  }
+  for (const relPath of STRICT_FILES_ABSOLUTE) {
+    scanFile(path.join(ROOT_DIR, relPath), relPath, failures);
   }
 
   if (failures.length) {
@@ -106,8 +131,9 @@ function main() {
     process.exit(1);
   }
 
+  const total = STRICT_FILES.length + STRICT_FILES_ABSOLUTE.length;
   console.log('check-command-boundary: ok');
-  console.log(`  scanned ${STRICT_FILES.length} route files; no forbidden engine mutators`);
+  console.log(`  scanned ${total} files (${STRICT_FILES.length} routes/, ${STRICT_FILES_ABSOLUTE.length} other); no forbidden engine mutators`);
   process.exit(0);
 }
 
