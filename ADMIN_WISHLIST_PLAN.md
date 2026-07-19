@@ -24,7 +24,7 @@ Evidence also in [ARCHIVAL.md](ARCHIVAL.md) (*Admin wishlist validity audit*).
 
 ## Partial (adjacent systems exist; wishlist intent not fully shipped)
 
-- **Mercenary guilds** — basic merc hire/upkeep/contracts exist (`game/mercenaries.js`); not distinct hireable **factions**.
+- **Mercenary guilds** — basic merc hire/upkeep/contracts exist (`game/lib/gameplay.js`'s `processMercenaries`/`hireMercenaries` — `game/mercenaries.js` was an orphaned pre-refactor duplicate, deleted 2026-07-19); not distinct hireable **factions**.
 - **Artifact hunting** — epic-trek artifacts + dungeon/mountain expeditions exist; not a dedicated high-risk hunt loop.
 - **Dungeons and raids** — regional dungeon/mountain PvE expeditions exist; not multi-kingdom cooperative raids.
 - **Caravans / trade risk** — trade routes + Orc `raid_trade_route` exist; not general physical caravan entities.

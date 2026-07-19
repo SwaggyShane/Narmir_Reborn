@@ -51,8 +51,9 @@ correctly using a dedicated domain module the way Forge/Evolution/Prestige do.
 
 **Dead command types removed as part of this pass:** `process-build-queue` — confirmed zero
 real callers, redundant (build-queue advancement already happens automatically every turn
-inside `processTurn`, `game/construction.js`'s `processBuildQueue(k, events, xpSourcesAccum)`
-call), and **actively broken** if it had ever been called: `handleProcessBuildQueue(kingdom,
+inside `processTurn`, `game/lib/building-research.js`'s `processBuildQueue(k, events, xpSourcesAccum)`
+call — this citation originally said `game/construction.js`, an orphaned pre-refactor duplicate
+deleted 2026-07-19; corrected here), and **actively broken** if it had ever been called: `handleProcessBuildQueue(kingdom,
 db)` called `engine.processBuildQueue(kingdom, db)`, passing the DB adapter where the real
 function signature expects an `events` array — would have thrown a `TypeError` on first use.
 Removed from `COMMAND_TYPES`, its `case`, and its handler method.
