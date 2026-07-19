@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { apiCall } from '../../utils/api';
+import { apiCallAndSync } from '../../utils/api';
 import { fmt } from "../../utils/fmt";
 import { toast } from '../../utils/toast';
-import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
 import { useRace, useGold, usePopulation, useFighters, useRangers, useMages, useClerics, useNinjas, useThieves, useMilitaryEngineers as useEngineers, useBuildCount, useResearchers } from '../../stores';
 
 const UNIT_ROWS = [
@@ -141,20 +140,18 @@ const HirePanel = () => {
     }
 
     try {
-      const res = await apiCall('/api/kingdom/hire', {
+      const res = await apiCallAndSync('/api/kingdom/hire', {
         method: 'POST',
         body: {
           unit: row.key,
           amount,
         },
-      });
+      }, { reason: 'hire', unit: row.key, amount });
 
       if (res.error) {
         toast(res.error, 'error');
         return;
       }
-
-      normalizeAndRouteResponse(res, { reason: 'hire', unit: row.key, amount });
 
       setQuantities((prev) => ({ ...prev, [row.key]: '' }));
       toast(`Hired ${amount} ${row.label.toLowerCase()}`, 'success');
@@ -172,20 +169,18 @@ const HirePanel = () => {
     }
 
     try {
-      const res = await apiCall('/api/kingdom/fire', {
+      const res = await apiCallAndSync('/api/kingdom/fire', {
         method: 'POST',
         body: {
           unit: row.key,
           amount,
         },
-      });
+      }, { reason: 'fire', unit: row.key, amount });
 
       if (res.error) {
         toast(res.error, 'error');
         return;
       }
-
-      normalizeAndRouteResponse(res, { reason: 'fire', unit: row.key, amount });
 
       setQuantities((prev) => ({ ...prev, [row.key]: '' }));
       toast(`Fired ${amount} ${row.label.toLowerCase()}`, 'success');

@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { apiCall } from '../../utils/api.mjs';
+import { apiCall, apiCallAndSync } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import { toast } from '../../utils/toast.js';
-import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
 import ProgressBar from './ProgressBar';
 import HybridBlueprintModal from './HybridBlueprintModal';
 import { AllocationButtons } from './AllocationButtons.jsx';
@@ -636,9 +635,12 @@ const BuildPanel = () => {
     const key = type === 'wm' ? 'ballistae' : type;
     const amount = demolishAmounts[key] || 1;
     if (amount <= 0) return toast('Enter a quantity', 'error');
-    const result = await apiCall('/api/kingdom/demolish', { method: 'POST', body: { building: type, amount } });
+    const result = await apiCallAndSync(
+      '/api/kingdom/demolish',
+      { method: 'POST', body: { building: type, amount } },
+      { reason: 'demolish', building: type, amount },
+    );
     if (result.error) return toast(result.error, 'error');
-    normalizeAndRouteResponse(result, { reason: 'demolish', building: type, amount });
     setDemolishAmounts(prev => ({ ...prev, [key]: 1 }));
     refreshBuildUi();
     toast(result.message || `Demolished ${amount} ${type.replace(/_/g, ' ')}`, 'success');

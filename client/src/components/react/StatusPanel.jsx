@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import clsx from 'clsx';
-import { apiCall } from '../../utils/api';
+import { apiCallAndSync } from '../../utils/api';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { toast as showToast } from '../../utils/toast.js';
-import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
 import { openRaceLore } from '../../utils/openRaceLore.js';
 import RaceLorePortrait from './RaceLorePortrait.jsx';
 import ProgressBar from './ProgressBar';
@@ -186,15 +185,15 @@ const StatusPanel = () => {
     if (Number.isNaN(tax)) return;
 
     try {
-      const result = await apiCall('/api/kingdom/options', {
-        method: 'POST',
-        body: { tax },
-      });
+      const result = await apiCallAndSync(
+        '/api/kingdom/options',
+        { method: 'POST', body: { tax } },
+        { reason: 'options', tax },
+      );
       if (result.error) {
         showToast(result.error, 'error');
         return;
       }
-      normalizeAndRouteResponse(result, { reason: 'options', tax });
       showToast('Tax rate locked', 'success');
     } catch (err) {
       console.error('[tax] lock failed:', err);

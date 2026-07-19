@@ -208,9 +208,6 @@ const ForgeCrucibleSection = () => {
           toast(result.error, 'error');
           return;
         }
-        if (result.flux_barges) {
-          applySnapshot({ flux_barges: result.flux_barges });
-        }
         toast(
           result.message ||
             `Lava draw launched toward (${hex.x}, ${hex.y})`,

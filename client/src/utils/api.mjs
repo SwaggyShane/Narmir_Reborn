@@ -2,6 +2,7 @@
  * Utility for making authenticated API calls with CSRF token protection
  * Provides a consistent pattern across all React components
  */
+import { normalizeAndRouteResponse } from './responseNormalizer.js';
 
 /**
  * Extract CSRF token from browser cookies
@@ -64,7 +65,38 @@ async function apiCall(url, options = {}) {
   }
 }
 
-export { apiCall, getCsrfToken };
+/**
+ * apiCall, then automatically route the response through
+ * normalizeAndRouteResponse if it carries an `updates` object.
+ *
+ * A4-5, 2026-07-19: added after A4-3 found the same bug repeatedly across
+ * unrelated components — a route correctly returns a domain-structured
+ * `updates` object, but the calling component either forgets to route it to
+ * the stores at all, or hand-rolls the routing and gets the shape wrong
+ * (hire, attack, spell, demolish, options, lava-draw all had this exact bug,
+ * independently, before being fixed one at a time). Using this wrapper for
+ * any new call site makes that whole class of bug structurally impossible
+ * to reintroduce, since routing isn't something the caller can forget.
+ *
+ * Existing call sites are not bulk-migrated to this — see A4-3's own
+ * "per-route, not in bulk" lesson. Callers that already need the response's
+ * *other* fields (error, message, report, etc.) still get the full parsed
+ * body back, unchanged; this only adds the routing as a side effect.
+ *
+ * @param {string} url
+ * @param {object} [options] - same as apiCall's options
+ * @param {object} [context] - passed through to normalizeAndRouteResponse (reason, etc.)
+ * @returns {Promise<object>} the same parsed JSON response apiCall would return
+ */
+async function apiCallAndSync(url, options = {}, context = {}) {
+  const result = await apiCall(url, options);
+  if (result && !result.error && result.updates) {
+    normalizeAndRouteResponse(result, context);
+  }
+  return result;
+}
+
+export { apiCall, apiCallAndSync, getCsrfToken };
 
 // Alias for convenience
 export const fetchApi = apiCall;

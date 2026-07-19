@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { toast } from '../../utils/toast.js';
-import { apiCall } from '../../utils/api';
-import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
+import { apiCall, apiCallAndSync } from '../../utils/api';
 import { fmt } from "../../utils/fmt";
 import {
   useKingdomId,
@@ -595,7 +594,7 @@ const WarfarePanel = () => {
     if (cle > (clerics || 0) + (thralls || 0)) return toast('Not enough clerics/thralls', 'error');
     if (eng > (engineers || 0)) return toast('Not enough engineers', 'error');
 
-    const result = await apiCall('/api/kingdom/attack', {
+    const result = await apiCallAndSync('/api/kingdom/attack', {
       method: 'POST',
       body: {
         targetId: attackTarget.id,
@@ -609,7 +608,7 @@ const WarfarePanel = () => {
         clerics: cle,
         engineers: eng,
       },
-    });
+    }, { reason: 'attack', targetId: attackTarget.id });
 
     if (result?.error) {
       toast(result.error, 'error');
@@ -650,8 +649,6 @@ const WarfarePanel = () => {
     if (r.defWmLost > 0) rows.push(['War Machines Slain', fmt(r.defWmLost)]);
     if (r.wallsDestroyed > 0) rows.push(['Walls Destroyed', fmt(r.wallsDestroyed)]);
     if (r.bullyMsg) rows.push(['⚠️ Penalty', r.bullyMsg]);
-
-    normalizeAndRouteResponse(result, { reason: 'attack', targetId: attackTarget?.id });
 
     setBattleReport({
       type: 'Military attack',
@@ -696,19 +693,18 @@ const WarfarePanel = () => {
       toast('Pick a target first.', 'error');
       return null;
     }
-    const data = await apiCall('/api/kingdom/spell', {
+    const data = await apiCallAndSync('/api/kingdom/spell', {
       method: 'POST',
       body: {
         spellId,
         targetId: target?.id ?? null,
         obscure: false,
       },
-    });
+    }, { reason: 'spell', spellId, targetId: target?.id });
     if (data?.error) {
       toast(data.error, 'error');
       return null;
     }
-    normalizeAndRouteResponse(data, { reason: 'spell', spellId, targetId: target?.id });
     if (spellId && target?.id) {
       setLastSpellTarget(spellId, target.id);
     }
@@ -727,7 +723,7 @@ const WarfarePanel = () => {
       return;
     }
     try {
-      const result = await apiCall('/api/kingdom/covert', {
+      const result = await apiCallAndSync('/api/kingdom/covert', {
         method: 'POST',
         body: {
           op,
@@ -737,12 +733,11 @@ const WarfarePanel = () => {
           unitType: op === 'assassinate' ? covertUnitType : undefined,
           bldType: op === 'sabotage' ? covertBldType : undefined,
         },
-      });
+      }, { reason: `covert/${op}`, targetId: covertTarget.id });
       if (result?.error) {
         toast(result.error, 'error');
         return;
       }
-      normalizeAndRouteResponse(result, { reason: `covert/${op}`, targetId: covertTarget.id });
       const message = result?.event || (result?.success ? `${op} succeeded.` : `${op} failed.`);
       toast(message, result?.success ? 'success' : 'error');
     } catch (err) {

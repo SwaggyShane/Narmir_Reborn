@@ -4,7 +4,7 @@
  * POST /api/kingdom/expedition/lava-draw
  * Body: { target_x, target_y, barge_id } — crew fixed server-side (25 eng + 5 mages).
  */
-import { apiCall } from './api.mjs';
+import { apiCallAndSync } from './api.mjs';
 
 /**
  * @param {{ target_x: number, target_y: number, barge_id: number }} params
@@ -20,10 +20,11 @@ export async function submitLavaDraw({ target_x, target_y, barge_id }) {
   if (!Number.isFinite(id) || id < 1) {
     return { error: 'Select a Flux-Barge' };
   }
-  return apiCall('/api/kingdom/expedition/lava-draw', {
-    method: 'POST',
-    body: { target_x: x, target_y: y, barge_id: id },
-  });
+  return apiCallAndSync(
+    '/api/kingdom/expedition/lava-draw',
+    { method: 'POST', body: { target_x: x, target_y: y, barge_id: id } },
+    { reason: 'lava-draw', targetX: x, targetY: y },
+  );
 }
 
 /**
