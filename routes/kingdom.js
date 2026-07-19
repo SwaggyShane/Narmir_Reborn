@@ -20,6 +20,7 @@ module.exports = function (db) {
     { name: 'prestige', factory: require('./kingdom-prestige') },
     { name: 'attunements', factory: require('./kingdom-attunements') },
     { name: 'worldmap', factory: require('./kingdom-worldmap') },
+    { name: 'social', factory: require('./kingdom-social') },
     { name: 'gameplay', factory: require('./kingdom-gameplay') },
   ];
 

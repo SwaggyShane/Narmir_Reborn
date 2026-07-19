@@ -135,6 +135,7 @@ const FILE_MOUNT = {
   'kingdom-prestige.js': '/api/kingdom',
   'kingdom-attunements.js': '/api/kingdom',
   'kingdom-worldmap.js': '/api/kingdom',
+  'kingdom-social.js': '/api/kingdom',
   'kingdom-gameplay.js': '/api/kingdom',
   'hero.js': '/api/hero',
   'admin.js': '/api/admin',

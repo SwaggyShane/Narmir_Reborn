@@ -202,11 +202,24 @@ reveals) — the 4 GET routes are out of this doc's mutating-only scope.
 | direct | `POST /locations/steal-map` | — |
 | direct | `POST /fix-visibility` | debug/one-off |
 
-### `routes/kingdom-gameplay.js` (15 mutating routes)
+### `routes/kingdom-social.js` (3 mutating routes)
+
+Split out of `kingdom-gameplay.js` (A2-8, 2026-07-19) — News, Chat, Scout Status,
+Portrait, and Happiness. Last of the gameplay.js split series — the remainder
+that didn't cluster with anything else; the 5 GET routes (`/scouts`,
+`/chat/global`, `/news/list`, `/happiness-status`, `/happiness-events`) are out
+of this doc's mutating-only scope.
 
 | Route | Path | System |
 |---|---|---|
 | CH:expeditions | `DELETE /news/clear` | (shares the expeditions command for cleanup) |
+| direct | `POST /portrait` | — |
+| direct | `DELETE /portrait` | — |
+
+### `routes/kingdom-gameplay.js` (12 mutating routes)
+
+| Route | Path | System |
+|---|---|---|
 | CH:hire-units | `POST /hire` | — |
 | CH:forge-tools | `POST /smithy/forge-tools` | legacy smithy tools, not Forge & Lava |
 | CH:award-xp | `POST /search` | — |
@@ -218,8 +231,6 @@ reveals) — the 4 GET routes are out of this doc's mutating-only scope.
 | direct+txn | `POST /resource-harvest/launch` | — |
 | direct+txn | `POST /scout-area` | — |
 | direct | `POST /resource-upgrade` | — |
-| direct | `POST /portrait` | — |
-| direct | `DELETE /portrait` | — |
 | direct+txn | `POST /expedition/epic-trek` | — |
 
 ### `routes/kingdom-exploration.js` (10 mutating routes)

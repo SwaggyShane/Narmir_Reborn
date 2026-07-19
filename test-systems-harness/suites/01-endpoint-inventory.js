@@ -168,6 +168,29 @@ async function run(report) {
     }
     return `${wmFile.length} world-map/locations/rivers/debug routes`;
   });
+
+  await report.run(system, 'social owns news/chat/scouts/portrait/happiness cluster', async () => {
+    // News, Chat, Scout Status, Portrait, and Happiness split out of
+    // kingdom-gameplay.js into its own file (A2-8, 2026-07-19) — last of the
+    // gameplay.js split series, the remainder that didn't cluster with
+    // anything else.
+    const all = scanAllRoutes();
+    const socialFile = all.filter((e) => e.file === 'kingdom-social.js');
+    const paths = new Set(socialFile.map((e) => `${e.method} ${e.path}`));
+    for (const need of [
+      'GET /scouts',
+      'GET /chat/global',
+      'GET /news/list',
+      'DELETE /news/clear',
+      'POST /portrait',
+      'DELETE /portrait',
+      'GET /happiness-status',
+      'GET /happiness-events',
+    ]) {
+      assert(paths.has(need), `kingdom-social.js missing ${need}`);
+    }
+    return `${socialFile.length} news/chat/scouts/portrait/happiness routes`;
+  });
 }
 
 module.exports = { run, name: '01-endpoint-inventory' };

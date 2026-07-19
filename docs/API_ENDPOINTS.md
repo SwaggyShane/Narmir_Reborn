@@ -16,9 +16,9 @@ Auth model:
 > path prefix, composed explicitly in `routes/kingdom.js` (not `index.js`), in this
 > order: `kingdom-build`, `kingdom-warfare`, `kingdom-economy`, `kingdom-research`,
 > `kingdom-profile`, `kingdom-turn`, `kingdom-forge`, `kingdom-prestige`,
-> `kingdom-attunements`, `kingdom-worldmap`, `kingdom-gameplay`, then
-> `kingdom-exploration` mounted last. Express matches the first router that defines
-> a given path+method, so where two files define the same route, the
+> `kingdom-attunements`, `kingdom-worldmap`, `kingdom-social`, `kingdom-gameplay`,
+> then `kingdom-exploration` mounted last. Express matches the first router that
+> defines a given path+method, so where two files define the same route, the
 > earlier-mounted one wins and the later one is dead code.
 >
 > **Verified 2026-07-19 (live scan of all 7 files, 120 unique routes): zero duplicate
@@ -31,9 +31,10 @@ Auth model:
 > deleting anything on precedence grounds.
 >
 > **kingdom-turn.js, kingdom-forge.js, kingdom-prestige.js, kingdom-attunements.js,
-> and kingdom-worldmap.js** were split out of `kingdom-gameplay.js` (A2-3
-> 2026-07-19, A2-4 2026-07-18, A2-5 2026-07-19, A2-6 2026-07-19, A2-7 2026-07-19
-> respectively) — see their sections below.
+> kingdom-worldmap.js, and kingdom-social.js** were split out of `kingdom-gameplay.js`
+> (A2-3 2026-07-19, A2-4 2026-07-18, A2-5 2026-07-19, A2-6 2026-07-19, A2-7
+> 2026-07-19, A2-8 2026-07-19 respectively) — see their sections below. This
+> completes the gameplay.js route-split series.
 
 ---
 
@@ -219,15 +220,34 @@ even before the split — added here for the first time.)
 
 ---
 
+## News, Chat, Scouts, Portrait & Happiness
+
+Route file:
+- [routes/kingdom-social.js](../routes/kingdom-social.js)
+
+Key endpoints:
+- `GET /kingdom/scouts`
+- `GET /kingdom/chat/global`
+- `GET /kingdom/news/list`
+- `DELETE /kingdom/news/clear`
+- `POST /kingdom/portrait`
+- `DELETE /kingdom/portrait`
+- `GET /kingdom/happiness-status`
+- `GET /kingdom/happiness-events`
+
+Split out of `kingdom-gameplay.js` (A2-8, 2026-07-19) — the last of the
+gameplay.js route-split series (A2-4 through A2-8): the remainder that didn't
+cluster with anything else. (`GET /kingdom/scouts` was missing from this doc
+even before the split — added here for the first time.)
+
+---
+
 ## Core Kingdom Gameplay
 
 Route file:
 - [routes/kingdom-gameplay.js](../routes/kingdom-gameplay.js)
 
 Key endpoints:
-- `GET /kingdom/chat/global`
-- `GET /kingdom/news/list`
-- `DELETE /kingdom/news/clear`
 - `POST /kingdom/hire`
 - `POST /kingdom/smithy/forge-tools`
 - `POST /kingdom/search`
@@ -246,10 +266,6 @@ Key endpoints:
 - `POST /kingdom/expedition/intercept`
 - `GET /kingdom/expeditions/visible`
 - `POST /kingdom/resource-upgrade`
-- `POST /kingdom/portrait`
-- `DELETE /kingdom/portrait`
-- `GET /kingdom/happiness-status`
-- `GET /kingdom/happiness-events`
 
 `kingdom-gameplay.js` also defines the 16 routes documented under **Building and
 Allocation** above (owned there because `kingdom-build.js` mounts first) — see the
