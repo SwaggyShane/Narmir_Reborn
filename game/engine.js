@@ -2047,16 +2047,18 @@ async function resolveExpeditions(db, k, engine) {
   // Batch update: all completions in one statement
   if (completions.length > 0) {
     const markResult = await db.run(
-      `UPDATE expeditions SET turns_left = 0, rewards_claimed = 1 WHERE id IN (${pgInList(completions.length)}) AND rewards_claimed = 0`,
+      `UPDATE expeditions SET turns_left = 0, rewards_claimed = 1, completed_at = FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER WHERE id IN (${pgInList(completions.length)}) AND rewards_claimed = 0`,
       completions,
     );
     devLog(`[expedition] Batched completion claim: ${markResult.changes} expeditions marked complete`);
   }
 
-  // Batch update: all retry claims in one statement
+  // Batch update: all retry claims in one statement. COALESCE so a retry
+  // (turns_left already 0 from an earlier attempt) doesn't overwrite the
+  // real completion time with "now".
   if (retries.length > 0) {
     const claimResult = await db.run(
-      `UPDATE expeditions SET rewards_claimed = 1 WHERE id IN (${pgInList(retries.length)}) AND rewards_claimed = 0`,
+      `UPDATE expeditions SET rewards_claimed = 1, completed_at = COALESCE(completed_at, FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER) WHERE id IN (${pgInList(retries.length)}) AND rewards_claimed = 0`,
       retries,
     );
     devLog(`[expedition] Batched retry claim: ${claimResult.changes} expeditions claimed`);

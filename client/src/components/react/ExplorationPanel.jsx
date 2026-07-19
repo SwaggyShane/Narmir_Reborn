@@ -14,16 +14,11 @@ import { AllocationButtons } from './AllocationButtons.jsx';
 import { REGION_META } from '../../utils/raceData.js';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
-const EXPEDITION_TURNS = {
-  dungeon: 50,
-  mountain: 100,
-};
 
 const TYPE_META = {
   dungeon: {
     icon: '⚔️',
     label: 'Dungeon raid',
-    badge: '50 turns',
     button: 'Launch raid',
     color: 'var(--red)',
     border: 'var(--red)',
@@ -31,7 +26,6 @@ const TYPE_META = {
   mountain: {
     icon: '🏔️',
     label: "Mountain's Heart",
-    badge: '100 turns',
     button: 'Accept the risk',
     color: '#6b9bd1',
     border: '#6b9bd1',
@@ -230,8 +224,11 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
 
   const availableFood = Number(food || 0);
   const availablePopulation = Number(population || 0);
-  const expeditionTurns = useMemo(() => EXPEDITION_TURNS, []);
-  const mountainFoodCost = Math.ceil(mountainRangers * 0.5 * 100 * 0.75);
+  // Must match the server's formula exactly (routes/kingdom-exploration.js) —
+  // food scales with the selected location's actual distance-based turnCost,
+  // not a fixed baseline; a location further out costs more than a nearby one.
+  const mountainTurnCost = worldLocations.find((l) => String(l.id) === String(mountainLocationId))?.turnCost || 0;
+  const mountainFoodCost = mountainTurnCost > 0 ? Math.ceil(mountainRangers * 0.5 * mountainTurnCost * 0.75) : 0;
 
   const dungeonOptions = useMemo(() => worldLocations.filter((l) => l.type === 'dungeon'), [worldLocations]);
   const mountainOptions = useMemo(() => worldLocations.filter((l) => l.type === 'mountain'), [worldLocations]);
@@ -257,6 +254,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const logInstantEntry = useCallback((icon, title, subtitle, rewards) => {
     const entry = {
       id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      ts: Date.now(),
       icon,
       title,
       subtitle,
@@ -304,13 +302,12 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       return;
     }
 
-    // Dungeon/mountain duration is the selected location's actual distance-based
-    // turnCost, not the flat per-type default — must match the server's formula
-    // (routes/kingdom-exploration.js) or this pre-check can pass while the real
-    // request still gets rejected for insufficient food.
-    const turns = (type === 'dungeon' || type === 'mountain')
-      ? (worldLocations.find((l) => String(l.id) === String(locationId))?.turnCost || 0)
-      : (expeditionTurns[type] || 0);
+    // handleLaunchExpedition is only ever called for 'dungeon'/'mountain' (see
+    // the two call sites below); duration is the selected location's actual
+    // distance-based turnCost — must match the server's formula
+    // (routes/kingdom-exploration.js) or this pre-check can pass while the
+    // real request still gets rejected for insufficient food.
+    const turns = worldLocations.find((l) => String(l.id) === String(locationId))?.turnCost || 0;
     const foodNeeded = Math.ceil(turns * ((rangers * 0.5 + fighters) * 0.75));
     if (availableFood < foodNeeded) {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(`You need ${formatNum(foodNeeded - availableFood)} more food to start the expedition`, 'error');
@@ -344,7 +341,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       console.error('[expedition/start] failed:', err);
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Expedition failed — please try again', 'error');
     }
-  }, [applyResult, availableFighters, availableFood, availableRangers, dungeonFighters, dungeonLocationId, dungeonRangers, expeditionTurns, logInstantEntry, mountainLocationId, mountainRangers, refreshAll, worldLocations]);
+  }, [applyResult, availableFighters, availableFood, availableRangers, dungeonFighters, dungeonLocationId, dungeonRangers, logInstantEntry, mountainLocationId, mountainRangers, refreshAll, worldLocations]);
 
   const clearExpeditionLog = useCallback(async () => {
     try {
@@ -681,7 +678,18 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     const meta = TYPE_META[entry.type] || {};
     const label = meta.label || entry.type;
     const icon = meta.icon || '🧭';
-    const totalTurns = expeditionTurns[entry.type] || Number(entry.turns_left) || 1;
+    // Dungeon/mountain duration is the destination's distance-based turnCost
+    // (routes/kingdom-exploration.js) — it varies per location, so there's no
+    // fixed per-type constant to use as the progress bar's denominator
+    // anymore. The real total is stashed in extra_data at launch.
+    let totalTurns;
+    if (entry.type === 'dungeon' || entry.type === 'mountain') {
+      let extraData = {};
+      try { extraData = JSON.parse(entry.extra_data || '{}'); } catch { /* ignore */ }
+      totalTurns = Number(extraData.turnCost) || Number(entry.turns_left) || 1;
+    } else {
+      totalTurns = Number(entry.turns_left) || 1;
+    }
     const turnsLeft = Math.max(0, Number(entry.turns_left ?? 0));
     const progressPct = totalTurns > 0
       ? Math.min(100, Math.round(((totalTurns - turnsLeft) / totalTurns) * 100))
@@ -740,6 +748,49 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       </div>
     );
   };
+
+  const renderInstantEntry = (entry) => (
+    <div key={entry.id} className="exp-log-entry flex items-start gap-3 border-b border-[var(--border)] py-2 text-[13px]">
+      <span className="flex-shrink-0 text-[18px]">{entry.icon}</span>
+      <div className="min-w-0 flex-1">
+        <div className="font-semibold text-[var(--text)]">{entry.title}</div>
+        <div className="mt-0.5 text-[11px] text-[var(--text3)]">{entry.subtitle}</div>
+        {entry.rewards.length > 0 && (
+          <ul className="mt-2 list-disc pl-5 text-[12px] leading-6 text-[var(--text2)]">
+            {entry.rewards.map((reward, idx) => <li key={`${entry.id}-reward-${idx}`}>{reward}</li>)}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+
+  // One true newest-first feed instead of three fixed blocks (live finds,
+  // then active, then completed) stacked in a row — that ordering meant a
+  // just-arrived "N rewards" completion always rendered below every
+  // mid-journey find, even though it's the most recent event of the bunch.
+  // instantEntries are live (found live, or a launch confirmation);
+  // active/completed come from /expedition/list polling and get a real
+  // timestamp (launch time, or completed_at once the expedition finishes) to
+  // sort by, so everything interleaves by when it actually happened.
+  const logItems = useMemo(() => {
+    const items = [];
+    for (const entry of instantEntries) {
+      items.push({ key: `instant-${entry.id}`, ts: entry.ts || 0, node: renderInstantEntry(entry) });
+    }
+    for (const exp of activeExpeditions) {
+      items.push({ key: `active-${exp.id}`, ts: (Number(exp.created_at) || 0) * 1000, node: renderRow(exp, false) });
+    }
+    for (const exp of completedExpeditions.filter((e) => e.type !== 'land_expansion')) {
+      items.push({
+        key: `done-${exp.id}`,
+        ts: (Number(exp.completed_at || exp.created_at) || 0) * 1000,
+        node: renderRow(exp, true),
+      });
+    }
+    items.sort((a, b) => b.ts - a.ts);
+    return items;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [instantEntries, activeExpeditions, completedExpeditions]);
 
   return (
     <div id="exploration" className="panel">
@@ -1050,9 +1101,6 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               <div className="card border-l-[3px] border-l-[var(--red)]">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div className="card-title !mb-0">⚔️ Dungeon Raid</div>
-                  <span className="rounded-full bg-[rgba(224,92,92,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--red)]">
-                    50 turns
-                  </span>
                 </div>
                 <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
                   Fighters and rangers assault an ancient dungeon. High risk - failure costs fighters.
@@ -1126,9 +1174,6 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               <div className="card border-l-[3px] border-l-[#6b9bd1]">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div className="card-title !mb-0">🏔️ Mountain's Heart</div>
-                  <span className="rounded-full bg-[rgba(107,155,209,0.15)] px-2 py-1 text-[11px] font-semibold text-[#6b9bd1]">
-                    100 turns
-                  </span>
                 </div>
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="name text-[12px]">Target region</span>
@@ -1150,8 +1195,9 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                   Exclusive source of collectible artifacts and elemental fragments.
                 </div>
                 <div className="mb-3 rounded-md border-l-[3px] border-l-[#ffb852] bg-[rgba(255,184,82,0.1)] p-2 text-[11px] text-[var(--text2)]">
-                  ⚠️ <strong>EXTREME RISK:</strong> Rangers face up to 4-8% attrition per turn depending on level.
-                  Level 20+ rangers recommended. Food costs very high for 100-turn expedition.
+                  ⚠️ <strong>EXTREME RISK:</strong> Rangers face up to ~2.75% attrition per turn depending on level
+                  (less for level 20+), compounding heavily over a long journey — most trips lose the majority of
+                  rangers sent. Food costs scale with the selected region's distance.
                 </div>
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="name text-[12px]">Rangers</span>
@@ -1174,7 +1220,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
                 </div>
                 {mountainFoodCost > 0 && (
                   <div className="mb-3 rounded-md border-l-[3px] border-l-[#8b5cf6] bg-[rgba(139,92,246,0.1)] p-2 text-[11px] text-[var(--text2)]">
-                    🍖 <strong>Food required:</strong> {formatNum(mountainFoodCost)} (100 turns at {Math.round(mountainRangers * 0.5)}/turn)
+                    🍖 <strong>Food required:</strong> {formatNum(mountainFoodCost)} ({mountainTurnCost} turns at {Math.round(mountainRangers * 0.5)}/turn)
                   </div>
                 )}
                 <button
@@ -1200,29 +1246,16 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
               </button>
             </div>
             <div id="exploration-log" className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
-              {instantEntries.length === 0 && activeExpeditions.length === 0 && completedExpeditions.length === 0 && (
+              {logItems.length === 0 && (
                 <EmptyState
                   icon="🧭"
                   title="No expeditions yet"
                   description="Send rangers on a scout, deep, dungeon, or mountain expedition to fill this log."
                 />
               )}
-              {instantEntries.map((entry) => (
-                <div key={entry.id} className="exp-log-entry flex items-start gap-3 border-b border-[var(--border)] py-2 text-[13px]">
-                  <span className="flex-shrink-0 text-[18px]">{entry.icon}</span>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-[var(--text)]">{entry.title}</div>
-                    <div className="mt-0.5 text-[11px] text-[var(--text3)]">{entry.subtitle}</div>
-                    {entry.rewards.length > 0 && (
-                      <ul className="mt-2 list-disc pl-5 text-[12px] leading-6 text-[var(--text2)]">
-                        {entry.rewards.map((reward, idx) => <li key={`${entry.id}-reward-${idx}`}>{reward}</li>)}
-                      </ul>
-                    )}
-                  </div>
-                </div>
+              {logItems.map((item) => (
+                <React.Fragment key={item.key}>{item.node}</React.Fragment>
               ))}
-              {activeExpeditions.map((exp) => renderRow(exp, false))}
-              {completedExpeditions.filter((exp) => exp.type !== 'land_expansion').map((exp) => renderRow(exp, true))}
             </div>
           </div>
         </div>

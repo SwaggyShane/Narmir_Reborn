@@ -67,6 +67,11 @@ async function initializeAdditionalColumns(db, getTableColumns, addCol) {
     ['engineers', 'INTEGER NOT NULL DEFAULT 0'],
     ['rangers', 'INTEGER NOT NULL DEFAULT 0'],
     ['fighters', 'INTEGER NOT NULL DEFAULT 0'],
+    // Lets the client sort completed expeditions by when they actually
+    // finished, not just their (unrelated) row id — needed to merge the log's
+    // three sources (live finds, active, completed) into one true
+    // newest-first feed instead of three fixed blocks stacked in a row.
+    ['completed_at', 'INTEGER'],
   ];
   for (const [col, def] of expAdds) {
     if (!eCols.includes(col)) await addCol('expeditions', col, def, eCols);

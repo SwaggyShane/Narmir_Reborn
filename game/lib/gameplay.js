@@ -560,7 +560,7 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
       const boost = rand(1, Math.max(2, Math.floor(5 * exploreBonus)));
       const discLabel = disc.replace("res_", "").replace("_", " ");
       rewards.push({
-        text: `A research scroll found ? ${discLabel} +${boost}%`,
+        text: `A research scroll found — ${discLabel} +${boost}%`,
       });
       updates[disc] = (k[disc] || 0) + boost;
     }
@@ -590,7 +590,7 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
         Math.floor(rangers * 0.15 * exploreBonus),
       );
       rewards.push({
-        text: `Ruins of an abandoned kingdom found ? you claim ${bonus} acres of its former territory`,
+        text: `Ruins of an abandoned kingdom found — you claim ${bonus} acres of its former territory`,
       });
       updates.land = (updates.land || k.land) + bonus;
     }
