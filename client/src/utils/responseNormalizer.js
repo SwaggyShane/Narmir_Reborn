@@ -176,3 +176,32 @@ export function wasStoreUpdated(normalized, storeName) {
   if (!normalized) return false;
   return Object.keys(normalized[storeName] || {}).length > 0;
 }
+
+/**
+ * Apply a FLAT full-kingdom snapshot (e.g. GET /api/kingdom/me's response —
+ * the whole kingdom row at the top level, not wrapped in `updates`) to all 5
+ * stores at once. Every store's own `receiveServerSnapshot` is written
+ * defensively (`if (data?.X !== undefined) state.X = data.X`), so handing
+ * the same flat object to all 5 is safe — each just picks out what it needs.
+ *
+ * A4-7, 2026-07-19: this exact 5-line block was independently duplicated in
+ * AuthModal.jsx (loadKingdom), ExplorationPanel.jsx and HeroesPanel.jsx
+ * (both as a local `syncKingdomData`), and ResourcesPanel.jsx had its own
+ * *broken* copy that called `normalizeAndRouteResponse` instead — which
+ * expects a domain-structured `{updates: {...}}` shape and silently no-ops
+ * on a flat `/kingdom/me` response (no `.updates` key). Consolidating here
+ * removes the duplication and fixes that dead call at the source.
+ *
+ * Do NOT use this for action-result responses (attack, hire, etc.) — those
+ * are domain-structured (`{updates: {economy: {...}, ...}}`) and belong in
+ * normalizeAndRouteResponse instead. This is specifically for the flat,
+ * full-row shape `/kingdom/me`-style endpoints return.
+ */
+export function applyFlatKingdomSnapshot(kingdomData) {
+  if (!kingdomData || Object.keys(kingdomData).length === 0) return;
+  useProfileStore.getState().receiveServerSnapshot(kingdomData);
+  useEconomyStore.getState().receiveServerSnapshot(kingdomData);
+  useMilitaryStore.getState().receiveServerSnapshot(kingdomData);
+  useResearchStore.getState().receiveServerSnapshot(kingdomData);
+  usePopulationStore.getState().receiveServerSnapshot(kingdomData);
+}

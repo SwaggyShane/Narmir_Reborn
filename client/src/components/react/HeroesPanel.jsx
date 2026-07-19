@@ -8,8 +8,9 @@ import { openHeroLore } from '../../utils/openHeroLore.js';
 import { showHeroXpModal } from '../../utils/showHeroXpModal.js';
 import { toast as showToast } from '../../utils/toast.js';
 import { switchTab } from '../../utils/switchTab.js';
+import { applyFlatKingdomSnapshot } from '../../utils/responseNormalizer.js';
 import EmptyState from './EmptyState.jsx';
-import { useBuildCount, useProfileStore, useEconomyStore, useMilitaryStore, useResearchStore, usePopulationStore } from '../../stores';
+import { useBuildCount } from '../../stores';
 
 
 function heroXpForLevelJS(level) {
@@ -25,14 +26,6 @@ const HeroesPanel = () => {
   const [loading, setLoading] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
 
-  const syncKingdomData = useCallback((kingdomData) => {
-    if (!kingdomData || Object.keys(kingdomData).length === 0) return;
-    useProfileStore.getState().receiveServerSnapshot(kingdomData);
-    useEconomyStore.getState().receiveServerSnapshot(kingdomData);
-    useMilitaryStore.getState().receiveServerSnapshot(kingdomData);
-    useResearchStore.getState().receiveServerSnapshot(kingdomData);
-    usePopulationStore.getState().receiveServerSnapshot(kingdomData);
-  }, []);
 
   const loadHeroes = useCallback(async () => {
     setLoading(true);
@@ -52,14 +45,14 @@ const HeroesPanel = () => {
       setHeroes(Array.isArray(heroesRes) ? heroesRes : []);
       setHeroClasses(classesRes || {});
       setAllHeroClasses(allClassesRes || {});
-      syncKingdomData(kingdomRes || {});
+      applyFlatKingdomSnapshot(kingdomRes || {});
     } catch (err) {
       console.error('[heroes] load failed:', err);
       showToast(`Failed to load heroes: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
-  }, [syncKingdomData]);
+  }, []);
 
   useEffect(() => {
     void loadHeroes();
@@ -95,7 +88,7 @@ const HeroesPanel = () => {
       }
 
       const kingdomRes = await apiCall('/api/kingdom/me');
-      if (!kingdomRes?.error) syncKingdomData(kingdomRes || {});
+      if (!kingdomRes?.error) applyFlatKingdomSnapshot(kingdomRes || {});
       setSelectedHeroClass(null);
       setRefreshTick((n) => n + 1);
       showToast(`✨ ${name} has joined your cause!`, 'success');

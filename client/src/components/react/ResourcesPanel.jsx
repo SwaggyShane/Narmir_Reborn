@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
 import { toast } from '../../utils/toast.js';
 import { useActivePanel } from '../../hooks/useActivePanel';
-import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
+import { applyFlatKingdomSnapshot } from '../../utils/responseNormalizer.js';
 import { dispatchExpeditionLogEntry } from '../../utils/expeditionLog.js';
 import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
 import { registerResourcesTab, consumePendingResourcesTab } from '../../utils/resourcesTabs.js';
@@ -156,7 +156,10 @@ const ResourcesPanel = () => {
         // Set kingdom data directly from API response (don't call syncFromState which reads from empty currentResourcesState)
         setKingdom({ ...refreshed, _seq: seq });
 
-        normalizeAndRouteResponse(refreshed, { reason: 'resources-refresh' });
+        // /api/kingdom/me returns the flat kingdom row, not a domain-structured
+        // {updates: {...}} shape — normalizeAndRouteResponse expects the
+        // latter and silently no-ops on this response (A4-7, 2026-07-19).
+        applyFlatKingdomSnapshot(refreshed);
         return refreshed;
       }
       return refreshed;

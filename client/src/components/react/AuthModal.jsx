@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { apiCall } from '../../utils/api.mjs';
 import { getSocket } from '../../socket-client.js';
 import { initSocketHandlers } from '../../hooks/useSocket.js';
-import { useProfileStore, useEconomyStore, useMilitaryStore, useResearchStore, usePopulationStore } from '../../stores';
+import { applyFlatKingdomSnapshot } from '../../utils/responseNormalizer.js';
+import { useProfileStore } from '../../stores';
 
 let authApi = null;
 
@@ -41,11 +42,7 @@ export async function loadKingdom() {
     }
 
     // Update all stores with combined data (single batch update)
-    useProfileStore.getState().receiveServerSnapshot(combinedData);
-    useEconomyStore.getState().receiveServerSnapshot(combinedData);
-    useMilitaryStore.getState().receiveServerSnapshot(combinedData);
-    useResearchStore.getState().receiveServerSnapshot(combinedData);
-    usePopulationStore.getState().receiveServerSnapshot(combinedData);
+    applyFlatKingdomSnapshot(combinedData);
   }
   return kingdom;
 }

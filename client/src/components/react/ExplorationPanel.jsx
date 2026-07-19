@@ -3,11 +3,11 @@ import clsx from 'clsx';
 import { cleanMessageText, toast } from '../../utils/toast.js';
 import { apiCall } from '../../utils/api';
 import { repairMojibake } from '../../utils/repairMojibake';
-import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
+import { normalizeAndRouteResponse, applyFlatKingdomSnapshot } from '../../utils/responseNormalizer.js';
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { useGameMutationEvents } from '../../hooks/useGameState';
-import { useEconomyStore, useProfileStore, useMilitaryStore, useResearchStore, usePopulationStore, useBuildAllocation, useTrainingAllocation, useResourceBuildAllocation } from '../../stores';
+import { useEconomyStore, useProfileStore, useMilitaryStore, usePopulationStore, useBuildAllocation, useTrainingAllocation, useResourceBuildAllocation } from '../../stores';
 import EmptyState from './EmptyState.jsx';
 import HexSelectionModal from './HexSelectionModal.jsx';
 import { AllocationButtons } from './AllocationButtons.jsx';
@@ -94,14 +94,6 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   const population = usePopulationStore((state) => state.population);
   useGameMutationEvents();
 
-  const syncKingdomData = useCallback((kingdomData) => {
-    if (!kingdomData || Object.keys(kingdomData).length === 0) return;
-    useProfileStore.getState().receiveServerSnapshot(kingdomData);
-    useEconomyStore.getState().receiveServerSnapshot(kingdomData);
-    useMilitaryStore.getState().receiveServerSnapshot(kingdomData);
-    useResearchStore.getState().receiveServerSnapshot(kingdomData);
-    usePopulationStore.getState().receiveServerSnapshot(kingdomData);
-  }, []);
   const [inventory, setInventory] = useState({});
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [dungeonRangers, setDungeonRangers] = useState(0);
@@ -165,7 +157,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
     try {
       const data = await apiCall('/api/kingdom/me');
       if (data) {
-        syncKingdomData(data);
+        applyFlatKingdomSnapshot(data);
       }
     } catch (err) {
       console.error('Failed to load profile:', err);
@@ -351,7 +343,7 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
 
       const refreshed = await apiCall('/api/kingdom/me');
       if (refreshed) {
-        applyResult(refreshed, 'expedition-cancel');
+        applyFlatKingdomSnapshot(refreshed);
       }
       setInstantEntries([]);
       await refreshAll();
