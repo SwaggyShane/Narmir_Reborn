@@ -25,6 +25,7 @@ const STRICT_FILES = [
   'kingdom-build.js',
   'kingdom-economy.js',
   'kingdom-exploration.js',
+  'kingdom-forge.js',
   'kingdom-gameplay.js',
   'kingdom-profile.js',
   'kingdom-research.js',

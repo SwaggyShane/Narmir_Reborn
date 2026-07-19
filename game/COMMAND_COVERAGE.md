@@ -135,12 +135,37 @@ of the `direct` rows is separate, follow-on work, not part of this pass.
 |---|---|
 | direct | `POST /description` |
 
-### `routes/kingdom-gameplay.js` (31 mutating routes)
+### `routes/kingdom-turn.js` (1 mutating route)
+
+Split out of `kingdom-gameplay.js` (A2-3, 2026-07-19) — this doc wasn't updated at
+the time; corrected here (A2-4, 2026-07-18).
+
+| Route | Path | System |
+|---|---|---|
+| CH:turn | `POST /turn` | — |
+
+### `routes/kingdom-forge.js` (7 mutating routes)
+
+Split out of `kingdom-gameplay.js` (A2-4, 2026-07-18) — Forge & Lava Industry
+(Toolwright Yard/Engineers Lodge/Forge chain, steel production, Flux-Barge fleet,
+lava-draw expeditions). Distinct from the legacy `/smithy/forge-tools` route, which
+stays in `kingdom-gameplay.js`.
+
+| Route | Path | System |
+|---|---|---|
+| direct | `POST /forge/install-upgrade` | Forge & Lava |
+| direct | `POST /forge/charcoal-allocate` | Forge & Lava |
+| direct | `POST /forge/smelt` | Forge & Lava |
+| direct | `POST /forge/temper` | Forge & Lava |
+| direct | `POST /forge/craft-gear` | Forge & Lava |
+| direct | `POST /forge/build-barge` | Forge & Lava |
+| direct+txn | `POST /expedition/lava-draw` | Forge & Lava |
+
+### `routes/kingdom-gameplay.js` (23 mutating routes)
 
 | Route | Path | System |
 |---|---|---|
 | CH:expeditions | `DELETE /news/clear` | (shares the expeditions command for cleanup) |
-| CH:turn | `POST /turn` | — |
 | CH:hire-units | `POST /hire` | — |
 | CH:forge-tools | `POST /smithy/forge-tools` | legacy smithy tools, not Forge & Lava |
 | CH:award-xp | `POST /search` | — |
@@ -155,12 +180,6 @@ of the `direct` rows is separate, follow-on work, not part of this pass.
 | direct+txn | `POST /evolution/abort` | Dragon Evolution |
 | direct+txn | `POST /resource-harvest/launch` | — |
 | direct+txn | `POST /scout-area` | — |
-| direct | `POST /forge/install-upgrade` | Forge & Lava |
-| direct | `POST /forge/charcoal-allocate` | Forge & Lava |
-| direct | `POST /forge/smelt` | Forge & Lava |
-| direct | `POST /forge/temper` | Forge & Lava |
-| direct | `POST /forge/craft-gear` | Forge & Lava |
-| direct | `POST /forge/build-barge` | Forge & Lava |
 | direct | `POST /resource-upgrade` | — |
 | direct | `POST /attune-fragment` | Attunements |
 | direct+txn | `POST /remove-attunement` | Attunements |
@@ -168,7 +187,6 @@ of the `direct` rows is separate, follow-on work, not part of this pass.
 | direct | `POST /portrait` | — |
 | direct | `DELETE /portrait` | — |
 | direct+txn | `POST /expedition/epic-trek` | — |
-| direct+txn | `POST /expedition/lava-draw` | Forge & Lava |
 | direct | `POST /fix-visibility` | debug/one-off |
 
 ### `routes/kingdom-exploration.js` (10 mutating routes)

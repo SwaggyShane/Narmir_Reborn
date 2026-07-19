@@ -15,9 +15,10 @@ Auth model:
 > **Note on route precedence:** Several `/api/kingdom/*` routers are mounted on the same
 > path prefix, composed explicitly in `routes/kingdom.js` (not `index.js`), in this
 > order: `kingdom-build`, `kingdom-warfare`, `kingdom-economy`, `kingdom-research`,
-> `kingdom-profile`, `kingdom-gameplay`, then `kingdom-exploration` mounted last. Express
-> matches the first router that defines a given path+method, so where two files define
-> the same route, the earlier-mounted one wins and the later one is dead code.
+> `kingdom-profile`, `kingdom-turn`, `kingdom-forge`, `kingdom-gameplay`, then
+> `kingdom-exploration` mounted last. Express matches the first router that defines a
+> given path+method, so where two files define the same route, the earlier-mounted one
+> wins and the later one is dead code.
 >
 > **Verified 2026-07-19 (live scan of all 7 files, 120 unique routes): zero duplicate
 > method+path pairs.** This doc previously claimed 16 routes were duplicated between
@@ -27,6 +28,9 @@ Auth model:
 > Do not assume routes are dead based on an old doc claim — re-run the scan
 > (`routes/kingdom.js`'s `orderedRouters` list defines the real precedence) before
 > deleting anything on precedence grounds.
+>
+> **kingdom-turn.js and kingdom-forge.js** were split out of `kingdom-gameplay.js`
+> (A2-3 2026-07-19, A2-4 2026-07-18 respectively) — see their sections below.
 
 ---
 
@@ -91,6 +95,58 @@ Endpoints:
 
 ---
 
+## Turn
+
+Route file:
+- [routes/kingdom-turn.js](../routes/kingdom-turn.js)
+
+Key endpoints:
+- `POST /kingdom/turn`
+
+Split out of `kingdom-gameplay.js` (A2-3, 2026-07-19) — also exports `runTurn`/
+`loadTurnContext`/`commitTurnResults`/`withTurnLock` for reuse by
+`kingdom-gameplay.js`'s `/smithy/forge-tools` and `/search` (turn-consuming instant
+actions that don't go through the full HTTP `/turn` round trip).
+
+Example:
+
+```bash
+curl -X POST http://localhost:3000/api/kingdom/turn \
+  -H "Authorization: Bearer <token>" \
+  -H "X-CSRF-Token: <csrf>" \
+  -H "Content-Type: application/json" \
+  -d "{}"
+```
+
+---
+
+## Forge & Lava Industry
+
+Route file:
+- [routes/kingdom-forge.js](../routes/kingdom-forge.js)
+
+Key endpoints:
+- `POST /kingdom/forge/install-upgrade`
+- `POST /kingdom/forge/charcoal-allocate`
+- `POST /kingdom/forge/smelt`
+- `POST /kingdom/forge/temper`
+- `POST /kingdom/forge/craft-gear`
+- `POST /kingdom/forge/build-barge`
+- `POST /kingdom/expedition/lava-draw`
+- `GET /kingdom/lava-vent`
+
+Split out of `kingdom-gameplay.js` (A2-4, 2026-07-18) — Toolwright Yard/Engineers
+Lodge/Forge upgrade chain, steel/tempered-steel production, Flux-Barge fleet, and
+lava-draw expeditions/vents that feed the same barge fleet + `lava_stored` economy.
+Distinct from the legacy `/kingdom/smithy/forge-tools` route (hammers/scaffolding),
+which stays in `kingdom-gameplay.js` — see `game/COMMAND_COVERAGE.md`'s
+"legacy smithy tools, not Forge & Lava" note.
+
+None of these routes go through `CommandHandler`; that's intentional policy
+(A5-2, Policy B in `game/COMMAND_COVERAGE.md`) for already-modularized systems.
+
+---
+
 ## Core Kingdom Gameplay
 
 Route file:
@@ -100,7 +156,6 @@ Key endpoints:
 - `GET /kingdom/chat/global`
 - `GET /kingdom/news/list`
 - `DELETE /kingdom/news/clear`
-- `POST /kingdom/turn`
 - `POST /kingdom/hire`
 - `POST /kingdom/smithy/forge-tools`
 - `POST /kingdom/search`
@@ -144,7 +199,7 @@ route precedence note.
 Example:
 
 ```bash
-curl -X POST http://localhost:3000/api/kingdom/turn \
+curl -X POST http://localhost:3000/api/kingdom/hire \
   -H "Authorization: Bearer <token>" \
   -H "X-CSRF-Token: <csrf>" \
   -H "Content-Type: application/json" \

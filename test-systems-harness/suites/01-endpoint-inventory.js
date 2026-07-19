@@ -72,6 +72,36 @@ async function run(report) {
     assert(paths.has('POST /turn'), 'kingdom-turn.js missing POST /turn');
     return `${turnFile.length} turn routes`;
   });
+
+  await report.run(system, 'forge owns forge/lava cluster', async () => {
+    // Forge & Lava Industry split out of kingdom-gameplay.js into its own
+    // file (A2-4, 2026-07-18) — the Toolwright Yard/Engineers Lodge/Forge
+    // upgrade chain, steel production, Flux-Barge fleet, and lava-draw
+    // expeditions/vents that feed the same barge fleet + lava_stored economy.
+    // Distinct from /smithy/forge-tools (legacy smithy, stays in gameplay).
+    const all = scanAllRoutes();
+    const forgeFile = all.filter((e) => e.file === 'kingdom-forge.js');
+    const paths = new Set(forgeFile.map((e) => `${e.method} ${e.path}`));
+    for (const need of [
+      'POST /forge/install-upgrade',
+      'POST /forge/charcoal-allocate',
+      'POST /forge/smelt',
+      'POST /forge/temper',
+      'POST /forge/craft-gear',
+      'POST /forge/build-barge',
+      'POST /expedition/lava-draw',
+      'GET /lava-vent',
+    ]) {
+      assert(paths.has(need), `kingdom-forge.js missing ${need}`);
+    }
+    const gp = all.filter((e) => e.file === 'kingdom-gameplay.js');
+    const gpPaths = new Set(gp.map((e) => `${e.method} ${e.path}`));
+    assert(
+      gpPaths.has('POST /smithy/forge-tools'),
+      'kingdom-gameplay.js should still own legacy /smithy/forge-tools',
+    );
+    return `${forgeFile.length} forge/lava routes`;
+  });
 }
 
 module.exports = { run, name: '01-endpoint-inventory' };
