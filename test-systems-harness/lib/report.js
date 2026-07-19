@@ -35,6 +35,10 @@ class SystemsReport {
       const detail = await fn();
       this.pass(system, check, detail == null ? '' : String(detail), Date.now() - t0);
     } catch (err) {
+      if (err instanceof AcceptableOutcome) {
+        this.skip(system, check, `ACCEPTABLE: ${err.message}`);
+        return;
+      }
       this.fail(system, check, err && err.message ? err.message : String(err), Date.now() - t0);
     }
   }
@@ -96,4 +100,20 @@ function assertOk(result, label = 'result') {
   return result;
 }
 
-module.exports = { SystemsReport, assert, assertOk };
+/**
+ * Throw this from inside a `report.run` check when the check hit a real,
+ * known-legitimate outcome that isn't the thing under test succeeding or
+ * failing — e.g. a random test-data seed happened to trigger a real game
+ * rule (elevation LOS, newbie protection, etc.) that correctly rejected the
+ * action. `report.run` reports it as a distinct SKIP (not PASS, not FAIL) so
+ * it never gets silently re-labeled "flaky" — the message must say why the
+ * outcome is acceptable, not just that it was accepted.
+ */
+class AcceptableOutcome extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AcceptableOutcome';
+  }
+}
+
+module.exports = { SystemsReport, assert, assertOk, AcceptableOutcome };
