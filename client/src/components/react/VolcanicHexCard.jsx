@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
 import { clientLavaDrawGates, submitLavaDraw } from '../../utils/lavaDrawLaunch.js';
+import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
 import {
   useEconomyStore,
   useEngineerLevel,
@@ -168,11 +169,7 @@ const VolcanicHexCard = ({ col, row, x, y, onClose }) => {
         toast(result.error, 'error');
         return;
       }
-      if (result.flux_barges) {
-        useEconomyStore.getState().receiveServerSnapshot({
-          flux_barges: result.flux_barges,
-        });
-      }
+      normalizeAndRouteResponse(result, { reason: 'lava-draw', targetX: col, targetY: row });
       toast(result.message || `Lava draw launched toward (${col}, ${row})`, 'success');
       await loadVent();
     } catch (e) {

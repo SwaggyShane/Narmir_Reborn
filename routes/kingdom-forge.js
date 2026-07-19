@@ -15,6 +15,7 @@ const express = require('express');
 const { requireAuth, requireCsrfToken } = require('./middleware');
 const { getKingdomMapCoords } = require('../game/world-map-coords');
 const { parseTroopLevel } = require('../game/lib/troops');
+const { structureUpdates } = require('./response-structurer');
 
 const router = express.Router();
 
@@ -334,6 +335,18 @@ module.exports = function (db) {
         food_used: result.foodNeeded,
         path_hexes: result.pathHexes.length,
         message: `Lava draw launched to (${Math.round(target_x)}, ${Math.round(target_y)}) — ${result.turnsTotal} turns round trip. All or nothing.`,
+        // Launching deducts engineers/mages/food/turns_stored and marks the
+        // chosen barge busy (flux_barges) directly via SQL above — none of
+        // that reached the client before, so its engineer/mage/food/turns
+        // counts and barge availability went stale until an unrelated
+        // refresh caught up.
+        updates: structureUpdates({
+          engineers: result.updates.engineers,
+          mages: result.updates.mages,
+          food: result.updates.food,
+          turns_stored: result.updates.turns_stored,
+          flux_barges: result.updates.flux_barges,
+        }),
       });
     } catch (err) {
       console.error('[expedition/lava-draw] failed:', err.message);

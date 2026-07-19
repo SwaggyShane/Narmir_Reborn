@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { toast as showToast } from '../../utils/toast.js';
+import { normalizeAndRouteResponse } from '../../utils/responseNormalizer.js';
 import { openRaceLore } from '../../utils/openRaceLore.js';
 import RaceLorePortrait from './RaceLorePortrait.jsx';
 import ProgressBar from './ProgressBar';
@@ -36,7 +37,6 @@ import {
   useResearchers,
   useCustomPortrait,
   useGender,
-  useEconomyStore,
 } from '../../stores';
 
 const RACE_CARD_DATA = {
@@ -194,9 +194,7 @@ const StatusPanel = () => {
         showToast(result.error, 'error');
         return;
       }
-      if (result.tax !== undefined) {
-        useEconomyStore.getState().receiveServerSnapshot({ tax: result.tax });
-      }
+      normalizeAndRouteResponse(result, { reason: 'options', tax });
       showToast('Tax rate locked', 'success');
     } catch (err) {
       console.error('[tax] lock failed:', err);
