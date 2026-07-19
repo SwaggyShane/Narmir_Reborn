@@ -29,6 +29,32 @@ const {
 
 const router = express.Router();
 
+// —— Postfetch column list (A3-7, 2026-07-19) ————————————————————————
+// resolveExpeditions/resolveResourceHarvests (game/engine.js, invoked via
+// commandHandler type:'expeditions') write a *dynamic* set of kingdoms
+// columns directly via raw SQL (filtered against VALID_KINGDOM_COLS), which
+// bypasses the `updates` object the rest of the turn response is built from.
+// This list is a best-effort refresh of the columns that path is actually
+// known to touch, audited against game/lib/gameplay.js's expeditionRewards,
+// game/engine.js's resolveExpeditions/resolveResourceHarvests, and
+// game/lib/achievements.js's checkAchievements (called from inside
+// expeditionRewards, so its writes are reachable here too).
+//
+// This can never be a structural guarantee — a future reward/achievement
+// path could add a new column and this list would silently miss it again.
+// (racial_bonuses_unlocked/scout_progress/library_progress/tower_progress
+// are written inside processTurn's own synchronous body, not via raw SQL,
+// so they're already correct in the returned updates without a postfetch —
+// kept here anyway since re-reading an already-correct value is harmless.)
+const EXPEDITION_TOUCHED_COLS = [
+  'rangers', 'fighters', 'gold', 'mana', 'land', 'scrolls', 'maps',
+  'blueprints_stored', 'troop_levels', 'library_progress', 'tower_progress',
+  'racial_bonuses_unlocked', 'scout_progress',
+  'clerics', 'discovered_kingdoms', 'engineers', 'food', 'iron', 'items',
+  'level', 'population', 'res_spellbook', 'stone', 'wood', 'world_fragments',
+  'xp', 'xp_sources', 'war_machines', 'achievements',
+].join(', ');
+
 // —— Per-player turn processing lock —————————————————————————
 // Prevents client-side race conditions from multiple simultaneous turn requests
 const turnsInProgress = new Map(); // playerId -> Promise
@@ -315,10 +341,13 @@ async function runTurn(db, k) {
   // Refresh fields that resolveExpeditions may have updated via SQL
   console.time(`[turn-${k.id}] refresh-queries`);
   const refreshed = await db.get(
-    "SELECT rangers, fighters, gold, mana, land, scrolls, maps, blueprints_stored, troop_levels, library_progress, tower_progress, racial_bonuses_unlocked, scout_progress FROM kingdoms WHERE id = $1",
+    `SELECT ${EXPEDITION_TOUCHED_COLS} FROM kingdoms WHERE id = $1`,
     [k.id],
   );
-  if (refreshed) Object.assign(finalUpdates, refreshed);
+  if (refreshed) {
+    convertNumericFields(refreshed);
+    Object.assign(finalUpdates, refreshed);
+  }
 
   // Fetch unread news count
   const unread = await db.get(
@@ -432,7 +461,7 @@ module.exports = function (db) {
         // === POSTFETCH (outside transaction) ===
         console.time(`[turn] postfetch`);
         const refreshed = await db.get(
-          "SELECT rangers, fighters, gold, mana, land, scrolls, maps, blueprints_stored, troop_levels, library_progress, tower_progress, racial_bonuses_unlocked, scout_progress FROM kingdoms WHERE id = $1",
+          `SELECT ${EXPEDITION_TOUCHED_COLS} FROM kingdoms WHERE id = $1`,
           [k.id],
         );
         if (refreshed) {

@@ -22,7 +22,7 @@
  *    are intentionally duplicated into more than one domain below, not a mistake.
  */
 
-const troopFields = new Set(['fighters', 'rangers', 'mages', 'clerics', 'thieves', 'ninjas', 'engineers']);
+const troopFields = new Set(['fighters', 'rangers', 'mages', 'clerics', 'thieves', 'ninjas', 'engineers', 'war_machines']);
 
 const militaryFlatFields = new Set([
   'ladders', 'thralls', 'weapons_stockpile', 'armor_stockpile',
@@ -78,6 +78,20 @@ const researchFields = new Set([
 ]);
 
 const populationFields = new Set(['population', 'happiness']);
+
+// Real kingdoms columns that legitimately have no Zustand-store consumer, so
+// they're intentionally dropped here rather than surfacing as an "unmapped"
+// dev warning (A3-7, 2026-07-19 — found via live audit: both fields reach
+// this function through the /turn postfetch, and both were logging as
+// unmapped even though the gap isn't a bug):
+// - achievements: fetched on demand by LoreAndAchievements.jsx via its own
+//   dedicated GET /api/kingdom/lore-and-achievements, never via the turn/
+//   updates → store hydration path.
+// - racial_bonuses_unlocked: player-facing feedback for this is the system
+//   event message pushed when it unlocks (game/engine.js); the flag itself
+//   is server-side bookkeeping (prevents re-triggering) surfaced to humans
+//   only via the admin KingdomEditModal raw field editor.
+const serverInternalOnlyFields = new Set(['achievements', 'racial_bonuses_unlocked']);
 
 /** Every kingdoms column starting with bld_ — dynamic, matches economyStore's own handling. */
 function isBuildingField(key) {
@@ -138,6 +152,9 @@ function structureUpdates(flatUpdates, opts = {}) {
     if (populationFields.has(key)) {
       if (!structured.population) structured.population = {};
       structured.population[key] = value;
+      mapped = true;
+    }
+    if (serverInternalOnlyFields.has(key)) {
       mapped = true;
     }
 
