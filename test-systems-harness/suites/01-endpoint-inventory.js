@@ -120,6 +120,31 @@ async function run(report) {
     }
     return `${prestigeFile.length} prestige/evolution routes`;
   });
+
+  await report.run(system, 'attunements owns inventory/attunements/synergies cluster', async () => {
+    // Inventory + World Fragment Attunements + Synergies split out of
+    // kingdom-gameplay.js into its own file (A2-6, 2026-07-19) — attunements
+    // and synergies share real state (fragment_bonuses), inventory is a
+    // separate small read-only route kept in the same file rather than
+    // split further.
+    const all = scanAllRoutes();
+    const attuneFile = all.filter((e) => e.file === 'kingdom-attunements.js');
+    const paths = new Set(attuneFile.map((e) => `${e.method} ${e.path}`));
+    for (const need of [
+      'GET /inventory',
+      'GET /attunements',
+      'GET /available-attunements',
+      'POST /attune-fragment',
+      'POST /remove-attunement',
+      'GET /contributing-synergies',
+      'GET /synergy-status',
+      'GET /synergy-cooldown',
+      'POST /activate-synergy-ability',
+    ]) {
+      assert(paths.has(need), `kingdom-attunements.js missing ${need}`);
+    }
+    return `${attuneFile.length} inventory/attunements/synergies routes`;
+  });
 }
 
 module.exports = { run, name: '01-endpoint-inventory' };

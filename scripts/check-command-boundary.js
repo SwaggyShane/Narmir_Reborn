@@ -22,6 +22,7 @@ const ROUTES_DIR = path.join(__dirname, '..', 'routes');
 
 /** Files that must not call forbidden engine mutators */
 const STRICT_FILES = [
+  'kingdom-attunements.js',
   'kingdom-build.js',
   'kingdom-economy.js',
   'kingdom-exploration.js',

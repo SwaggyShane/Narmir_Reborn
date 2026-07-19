@@ -174,7 +174,21 @@ Evolution are genuinely coupled, not just adjacent by naming: `GET /evolution` r
 | direct+txn | `POST /evolution/start` | Dragon Evolution |
 | direct+txn | `POST /evolution/abort` | Dragon Evolution |
 
-### `routes/kingdom-gameplay.js` (20 mutating routes)
+### `routes/kingdom-attunements.js` (3 mutating routes)
+
+Split out of `kingdom-gameplay.js` (A2-6, 2026-07-19) — Inventory, World Fragment
+Attunements, and Synergies. Bundled because attunements and synergies share real
+state (a kingdom's `fragment_bonuses` column IS its attunement placements, and
+synergies are derived directly from that same map); inventory is a separate,
+unrelated small read-only route kept in the same file rather than split further.
+
+| Route | Path | System |
+|---|---|---|
+| direct | `POST /attune-fragment` | Attunements |
+| direct+txn | `POST /remove-attunement` | Attunements |
+| direct+txn | `POST /activate-synergy-ability` | Synergies |
+
+### `routes/kingdom-gameplay.js` (17 mutating routes)
 
 | Route | Path | System |
 |---|---|---|
@@ -191,9 +205,6 @@ Evolution are genuinely coupled, not just adjacent by naming: `GET /evolution` r
 | direct+txn | `POST /resource-harvest/launch` | — |
 | direct+txn | `POST /scout-area` | — |
 | direct | `POST /resource-upgrade` | — |
-| direct | `POST /attune-fragment` | Attunements |
-| direct+txn | `POST /remove-attunement` | Attunements |
-| direct+txn | `POST /activate-synergy-ability` | Synergies |
 | direct | `POST /portrait` | — |
 | direct | `DELETE /portrait` | — |
 | direct+txn | `POST /expedition/epic-trek` | — |

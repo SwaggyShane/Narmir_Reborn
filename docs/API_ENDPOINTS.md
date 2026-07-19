@@ -16,9 +16,10 @@ Auth model:
 > path prefix, composed explicitly in `routes/kingdom.js` (not `index.js`), in this
 > order: `kingdom-build`, `kingdom-warfare`, `kingdom-economy`, `kingdom-research`,
 > `kingdom-profile`, `kingdom-turn`, `kingdom-forge`, `kingdom-prestige`,
-> `kingdom-gameplay`, then `kingdom-exploration` mounted last. Express matches the
-> first router that defines a given path+method, so where two files define the same
-> route, the earlier-mounted one wins and the later one is dead code.
+> `kingdom-attunements`, `kingdom-gameplay`, then `kingdom-exploration` mounted
+> last. Express matches the first router that defines a given path+method, so where
+> two files define the same route, the earlier-mounted one wins and the later one
+> is dead code.
 >
 > **Verified 2026-07-19 (live scan of all 7 files, 120 unique routes): zero duplicate
 > method+path pairs.** This doc previously claimed 16 routes were duplicated between
@@ -29,9 +30,9 @@ Auth model:
 > (`routes/kingdom.js`'s `orderedRouters` list defines the real precedence) before
 > deleting anything on precedence grounds.
 >
-> **kingdom-turn.js, kingdom-forge.js, and kingdom-prestige.js** were split out of
-> `kingdom-gameplay.js` (A2-3 2026-07-19, A2-4 2026-07-18, A2-5 2026-07-19
-> respectively) — see their sections below.
+> **kingdom-turn.js, kingdom-forge.js, kingdom-prestige.js, and kingdom-attunements.js**
+> were split out of `kingdom-gameplay.js` (A2-3 2026-07-19, A2-4 2026-07-18,
+> A2-5 2026-07-19, A2-6 2026-07-19 respectively) — see their sections below.
 
 ---
 
@@ -169,6 +170,30 @@ added here for the first time.)
 
 ---
 
+## Inventory, Attunements & Synergies
+
+Route file:
+- [routes/kingdom-attunements.js](../routes/kingdom-attunements.js)
+
+Key endpoints:
+- `GET /kingdom/inventory`
+- `GET /kingdom/attunements`
+- `GET /kingdom/available-attunements`
+- `POST /kingdom/attune-fragment`
+- `POST /kingdom/remove-attunement`
+- `GET /kingdom/contributing-synergies`
+- `GET /kingdom/synergy-status`
+- `GET /kingdom/synergy-cooldown`
+- `POST /kingdom/activate-synergy-ability`
+
+Split out of `kingdom-gameplay.js` (A2-6, 2026-07-19) — attunements and synergies
+are bundled because they share real state (a kingdom's `fragment_bonuses` column
+IS its attunement placements, and synergies are derived directly from that same
+map); inventory is a separate, unrelated small read-only route kept in the same
+file rather than split further.
+
+---
+
 ## Core Kingdom Gameplay
 
 Route file:
@@ -199,15 +224,6 @@ Key endpoints:
 - `POST /kingdom/expedition/intercept`
 - `GET /kingdom/expeditions/visible`
 - `POST /kingdom/resource-upgrade`
-- `GET /kingdom/inventory`
-- `GET /kingdom/attunements`
-- `GET /kingdom/available-attunements`
-- `POST /kingdom/attune-fragment`
-- `POST /kingdom/remove-attunement`
-- `GET /kingdom/contributing-synergies`
-- `GET /kingdom/synergy-status`
-- `GET /kingdom/synergy-cooldown`
-- `POST /kingdom/activate-synergy-ability`
 - `POST /kingdom/portrait`
 - `DELETE /kingdom/portrait`
 - `GET /kingdom/happiness-status`
