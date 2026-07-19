@@ -337,6 +337,30 @@ function measureAttunement(name, fn) {
   return result;
 }
 
+// processTurn is synchronous (cannot await), so revealRingHexes/
+// checkFogDiscoveries are necessarily fire-and-forget (A3-5 audit,
+// 2026-07-19). checkFogDiscoveries is self-healing by design — it re-scans
+// every turn scouts are allocated and skips already-discovered kingdoms, so
+// one failed call is caught by the next. revealRingHexes is NOT: it's gated
+// on scout-progress crossing a NEW ring threshold, a one-time transition
+// derived from the already-persisted scout_progress total — if the write
+// fails on the exact turn a ring completes, that ring's hexes are never
+// revealed again, since the transition never re-fires. A single retry
+// covers the realistic failure mode (a transient connection blip) without
+// changing the trigger frequency or touching the hot per-turn path.
+async function fireAndForgetWithRetry(fn, label) {
+  try {
+    await fn();
+  } catch (err) {
+    console.error(`[engine] ${label} failed, retrying once: ${err.message}`);
+    try {
+      await fn();
+    } catch (retryErr) {
+      console.error(`[engine] ${label} failed on retry, giving up: ${retryErr.message}`);
+    }
+  }
+}
+
 function processTurn(k, db = null) {
   const profiler = getProfiler();
   profiler.start();
@@ -675,8 +699,9 @@ function processTurn(k, db = null) {
         // all despite the kingdom's progress having already passed them.
         if (scoutResult.ring_completed && db && k.id) {
           for (let r = scoutResult.previous_ring + 1; r <= scoutResult.completed_ring_number; r++) {
-            revealRingHexes(db, k.id, { ...k, ...updates }, r).catch(err =>
-              console.error(`[engine] Failed to reveal scout ring ${r}: ${err.message}`)
+            fireAndForgetWithRetry(
+              () => revealRingHexes(db, k.id, { ...k, ...updates }, r),
+              `reveal scout ring ${r} for kingdom ${k.id}`,
             );
           }
         }
@@ -2517,6 +2542,7 @@ async function resolveRegions(db, io) {
 // ── Building demolition (extracted to game/lib/building-research.js) ────────
 
 module.exports = {
+  fireAndForgetWithRetry, // exported for unit testing (A3-5); not part of the game-logic surface
   calculateScore,
   totalHiredUnits,
   getAvailableUnits,
