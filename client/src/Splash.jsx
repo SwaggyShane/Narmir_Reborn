@@ -144,22 +144,14 @@ function RetroSite() {
       <div className="retro-center">
         <header className="retro-top">
           <img
-            src="/retro/bg-top.jpg"
+            src="/retro/bg-top.png"
             alt="Narmir, Land of Magic and Conquest"
             className="retro-top-banner"
           />
         </header>
         <main className="retro-content" style={{
           backgroundImage: 'url(/retro/752296106_1723312728940886_1659173184335563790_n.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed',
         }}>
-          <p>
-            Welcome to Narmir a unique game experience like none other. Narmir is 100% free and
-            playable from your browser.
-          </p>
-
           <div className="retro-applet-wrap">
             <button
               className="retro-play-button"
