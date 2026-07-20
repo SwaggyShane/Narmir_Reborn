@@ -6,6 +6,7 @@ const {
   getPassiveFindChance,
   pickWeightedOutcome,
   rollPassiveScoutFind,
+  rollJunkFind,
   applyPassiveScoutFind,
   processPassiveScoutFinds,
   totalWeight,
@@ -57,18 +58,31 @@ console.log('pickWeightedOutcome: respects weights');
 }
 console.log('rollPassiveScoutFind: allocation 0 → always null');
 
-// ── roll: forced hit + forced first outcome (junk via weight) ───────────────
+// ── roll: forced hit + forced first outcome (rare table, junk excluded) ────
 {
   // chance check: random 0 always passes (0 < chance)
-  // weight pick: random 0 picks first outcome in table (junk)
+  // weight pick: random 0 picks first outcome in table (gold — junk was
+  // moved out of this table entirely, see rollJunkFind below)
   const find = rollPassiveScoutFind(
     { scout_allocation: 1000 },
     { random: sequenceRandom([0, 0]) },
   );
   assert.ok(find, 'expected a find');
-  assert.strictEqual(find.type, 'junk');
+  assert.strictEqual(find.type, 'gold');
 }
-console.log('rollPassiveScoutFind: forced hit yields junk (first weight)');
+console.log('rollPassiveScoutFind: forced hit yields gold (first weight, junk excluded)');
+
+// ── rollJunkFind: independent flat-chance roll ──────────────────────────────
+{
+  assert.strictEqual(rollJunkFind({ random: () => 0 }), true, 'random below chance → junk hit');
+  assert.strictEqual(
+    rollJunkFind({ random: () => PASSIVE_SCOUT_FINDS.JUNK_FIND_CHANCE + 0.01 }),
+    false,
+    'random above chance → no junk',
+  );
+  assert.strictEqual(PASSIVE_SCOUT_FINDS.JUNK_FIND_CHANCE, 0.5, 'junk chance is the intended high flat rate');
+}
+console.log('rollJunkFind: independent flat-chance roll, decoupled from allocation/rare table');
 
 // ── roll: gold outcome ──────────────────────────────────────────────────────
 {
@@ -129,34 +143,49 @@ console.log('applyPassiveScoutFind: junkPrize callback');
 
 // ── processPassiveScoutFinds end-to-end ─────────────────────────────────────
 {
+  // random: () => 0 forces both rollJunkFind (0 < 0.5) AND the rare-table
+  // hit check, but scout_allocation: 0 means getPassiveFindChance is 0, so
+  // the rare roll can never hit regardless of random() — only junk should
+  // land here.
   const kingdom = { scout_allocation: 0, gold: 0 };
   const updates = {};
   const events = [];
-  const none = processPassiveScoutFinds(kingdom, updates, events, { random: () => 0 });
-  assert.strictEqual(none, null);
-  assert.strictEqual(events.length, 0);
+  const junkOnly = processPassiveScoutFinds(kingdom, updates, events, {
+    random: () => 0,
+    junkPrize: () => 'pebble',
+  });
+  assert.strictEqual(junkOnly.length, 1, 'alloc 0 still allows the independent junk roll to hit');
+  assert.strictEqual(junkOnly[0].type, 'junk');
+  assert.strictEqual(events.length, 1);
 
   const kingdom2 = { scout_allocation: 5000, gold: 10 };
   const updates2 = {};
   const events2 = [];
-  // force find (0) then force first outcome junk (0)
-  const find = processPassiveScoutFinds(kingdom2, updates2, events2, {
-    random: sequenceRandom([0, 0]),
+  // random 0 forces junk hit, then rare-roll hit (0 < chance), then first
+  // weighted outcome (gold) — both finds land the same turn, independently.
+  const both = processPassiveScoutFinds(kingdom2, updates2, events2, {
+    random: sequenceRandom([0, 0, 0]),
     junkPrize: () => 'pebble',
   });
-  assert.ok(find);
-  assert.strictEqual(find.type, 'junk');
-  assert.strictEqual(events2.length, 1);
-}
-console.log('processPassiveScoutFinds: alloc 0 no-op; forced path applies');
+  assert.strictEqual(both.length, 2, 'junk and a rare find can both land the same turn');
+  assert.strictEqual(both[0].type, 'junk');
+  assert.strictEqual(both[1].type, 'gold');
+  assert.strictEqual(events2.length, 2);
 
-// ── outcome table covers roadmap categories ─────────────────────────────────
+  // random always above both chances → nothing lands, empty array not null
+  const nothing = processPassiveScoutFinds(kingdom2, {}, [], { random: () => 0.999999 });
+  assert.deepStrictEqual(nothing, []);
+}
+console.log('processPassiveScoutFinds: junk and rare finds roll independently, both can land same turn');
+
+// ── outcome table covers roadmap categories (junk excluded — separate roll) ─
 {
   const types = new Set(PASSIVE_SCOUT_FINDS.OUTCOMES.map((o) => o.type));
-  for (const t of ['junk', 'gold', 'wood', 'stone', 'land', 'mana', 'maps', 'troops', 'kingdom_signal', 'resource_node']) {
+  assert.ok(!types.has('junk'), 'junk must NOT be in the rare-outcomes table — it has its own independent roll');
+  for (const t of ['gold', 'wood', 'stone', 'land', 'mana', 'maps', 'troops', 'kingdom_signal', 'resource_node']) {
     assert.ok(types.has(t), `OUTCOMES must include ${t}`);
   }
 }
-console.log('OUTCOMES table includes gold/wood/land/mana/troops/maps/kingdom/resource_node');
+console.log('OUTCOMES table includes gold/wood/land/mana/troops/maps/kingdom/resource_node, excludes junk');
 
 console.log('\n✅ All passive-scout-finds tests passed!');

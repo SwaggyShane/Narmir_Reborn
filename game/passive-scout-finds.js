@@ -28,12 +28,22 @@ const PASSIVE_SCOUT_FINDS = Object.freeze({
   MIN_SCALE: 0.2,
 
   /**
-   * Weighted outcomes when a find triggers.
+   * Flat per-turn chance of a junk (flavor-only, no economic weight) find,
+   * whenever scout progress was gained this turn. Deliberately independent
+   * of allocation size and of the rare-outcomes roll below — junk is meant
+   * to be a frequent, noticeable drip, not folded into the same low-odds
+   * table as gold/resources/troops (that made it effectively as rare as
+   * everything else, ~1% of turns instead of "high rate").
+   */
+  JUNK_FIND_CHANCE: 0.5,
+
+  /**
+   * Weighted outcomes when a *rare* find triggers (junk excluded — see
+   * JUNK_FIND_CHANCE / rollJunkFind above).
    * weight: relative weight among outcomes
    * resource fields: min/max inclusive integer amounts (rand)
    */
   OUTCOMES: Object.freeze([
-    { type: 'junk', weight: 32 },
     { type: 'gold', weight: 18, min: 15, max: 60 },
     { type: 'wood', weight: 12, min: 8, max: 25 },
     { type: 'stone', weight: 12, min: 8, max: 25 },
@@ -106,8 +116,6 @@ function rollPassiveScoutFind(kingdom, opts = {}) {
   if (!outcome) return null;
 
   switch (outcome.type) {
-    case 'junk':
-      return { type: 'junk' };
     case 'maps':
       return { type: 'maps', amount: outcome.amount || 1 };
     case 'troops':
@@ -135,6 +143,19 @@ function rollPassiveScoutFind(kingdom, opts = {}) {
     default:
       return null;
   }
+}
+
+/**
+ * Independent flat-chance roll for a junk (flavor-only) find. Separate from
+ * rollPassiveScoutFind's rare-outcomes table on purpose — both can hit on
+ * the same turn.
+ * @param {object} [opts]
+ * @param {function(): number} [opts.random]
+ * @returns {boolean}
+ */
+function rollJunkFind(opts = {}) {
+  const random = typeof opts.random === 'function' ? opts.random : Math.random;
+  return random() < PASSIVE_SCOUT_FINDS.JUNK_FIND_CHANCE;
 }
 
 /**
@@ -236,14 +257,27 @@ function applyPassiveScoutFind(kingdom, updates, events, find, opts = {}) {
 }
 
 /**
- * Convenience: roll + apply in one call (engine turn path).
- * @returns {object|null} the find applied, or null
+ * Convenience: roll + apply in one call (engine turn path). Junk and the
+ * rare-outcomes table are rolled independently, so both (or neither) can
+ * land on the same turn.
+ * @returns {Array<object>} finds actually applied this turn (may be empty)
  */
 function processPassiveScoutFinds(kingdom, updates, events, opts = {}) {
-  const find = rollPassiveScoutFind(kingdom, opts);
-  if (!find) return null;
-  applyPassiveScoutFind(kingdom, updates, events, find, opts);
-  return find;
+  const applied = [];
+
+  if (rollJunkFind(opts)) {
+    const junkFind = { type: 'junk' };
+    applyPassiveScoutFind(kingdom, updates, events, junkFind, opts);
+    applied.push(junkFind);
+  }
+
+  const rareFind = rollPassiveScoutFind(kingdom, opts);
+  if (rareFind) {
+    applyPassiveScoutFind(kingdom, updates, events, rareFind, opts);
+    applied.push(rareFind);
+  }
+
+  return applied;
 }
 
 module.exports = {
@@ -251,6 +285,7 @@ module.exports = {
   getPassiveFindChance,
   pickWeightedOutcome,
   rollPassiveScoutFind,
+  rollJunkFind,
   applyPassiveScoutFind,
   processPassiveScoutFinds,
   totalWeight,
