@@ -695,7 +695,7 @@
   }
 
   .portal-header {
-    @apply text-left border-b border-white/5 px-4 py-6 md:px-6 md:py-4;
+    @apply text-left border-b border-white/5 px-4 py-6 lg:px-6 lg:py-4;
   }
 
   .portal-title {
@@ -711,15 +711,13 @@
   }
 
   .portal-main {
-    @apply flex-1 grid w-full items-start min-h-0 gap-4 py-4 px-4;
+    @apply flex-1 grid w-full items-start min-h-0 gap-4 py-4 px-4 lg:gap-6 lg:px-6 lg:py-5;
     grid-template-columns: 1fr;
   }
 
   @media (min-width: 768px) {
     .portal-main {
       grid-template-columns: 1fr 360px;
-      gap: 1.5rem;
-      padding: 1.25rem 1.5rem;
     }
   }
 
@@ -728,7 +726,7 @@
   }
 
   .portal-col-right {
-    @apply flex flex-col gap-4 w-full md:w-auto md:sticky md:top-6 md:pr-6;
+    @apply flex flex-col gap-4 w-full lg:w-auto lg:sticky lg:top-6 lg:pr-6;
   }
 
   .portal-auth-expand {
@@ -741,11 +739,11 @@
   }
 
   .portal-nav-panel {
-    @apply flex flex-row flex-wrap gap-2 rounded-lg border border-white/5 bg-bg2 p-3 md:flex-col;
+    @apply flex flex-row flex-wrap gap-2 rounded-lg border border-white/5 bg-bg2 p-3 lg:flex-col;
   }
 
   .portal-nav-btn {
-    @apply cursor-pointer flex-1 rounded-md border border-transparent bg-transparent px-4 py-2.5 text-center font-sans text-sm font-semibold tracking-wide text-text2 transition-all md:flex-none md:text-left;
+    @apply cursor-pointer flex-1 rounded-md border border-transparent bg-transparent px-4 py-2.5 text-center font-sans text-sm font-semibold tracking-wide text-text2 transition-all lg:flex-none lg:text-left;
   }
 
   .portal-nav-btn:hover {
@@ -758,7 +756,7 @@
   }
 
   .portal-footer {
-    @apply mt-auto flex flex-col gap-3 items-center justify-between border-t border-white/5 px-4 py-4 text-xs text-text3 md:flex-row md:px-6 md:py-5;
+    @apply mt-auto flex flex-col gap-3 items-center justify-between border-t border-white/5 px-4 py-4 text-xs text-text3 lg:flex-row lg:px-6 lg:py-5;
   }
 
   .portal-footer-link {
