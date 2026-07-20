@@ -562,7 +562,10 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
             )}
           </div>
 
-          <div className="hidden xl:flex min-h-0 flex-col gap-4">
+          <div className={clsx(
+            "min-h-0 flex-col gap-4",
+            (selectedNode || selectedLocation || clickedHex || mapCard) ? "flex" : "hidden xl:flex"
+          )}>
             {selectedNode && nodeMeta && (
               <div ref={nodeCardRef} className="card flex-1 min-h-0 overflow-y-auto">
                 <div className="card-title !mb-2">
@@ -696,12 +699,18 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
               );
             })()}
 
-            <div className="card flex flex-1 min-h-0 flex-col overflow-hidden" id="terrain-legend">
+            <div className={clsx(
+              "card flex flex-1 min-h-0 flex-col overflow-hidden",
+              (selectedNode || selectedLocation || clickedHex || mapCard) && "hidden xl:flex"
+            )} id="terrain-legend">
               <div className="card-title !mb-2 shrink-0">Terrain Types</div>
               <TerrainLegend />
             </div>
 
-            <div className="card flex flex-1 min-h-0 flex-col overflow-hidden" id="region-legend">
+            <div className={clsx(
+              "card flex flex-1 min-h-0 flex-col overflow-hidden",
+              (selectedNode || selectedLocation || clickedHex || mapCard) && "hidden xl:flex"
+            )} id="region-legend">
               <div className="card-title !mb-2 shrink-0">Regions</div>
               <RegionLegend
                 kingdoms={kingdoms}
