@@ -323,9 +323,28 @@ function junkPrize(k, updates) {
   );
   const lastId = updates.last_event_id || k.last_event_id;
 
-  let available = JUNK_PRIZES.filter((p) => p.id !== lastId);
-  if (available.length === 0) available = JUNK_PRIZES;
-  const ev = available[Math.floor(Math.random() * available.length)];
+  // Once a kingdom has the 100-rock achievement, suspicious_rock has nothing
+  // left to do — stop it from crowding out other junk in the pool.
+  const achievements = safeJsonParse(updates.achievements || k.achievements, [], "junkPrize:achievements");
+  const rockDone = Array.isArray(achievements) && achievements.includes("suspicious_rocks_100");
+  const pool = rockDone ? JUNK_PRIZES.filter((p) => p.id !== "suspicious_rock") : JUNK_PRIZES;
+
+  let available = pool.filter((p) => p.id !== lastId);
+  if (available.length === 0) available = pool;
+
+  // Weighted pick — most junk defaults to weight 1, but a few (e.g.
+  // suspicious_rock, tied to a real collection achievement) carry a higher
+  // weight so they're not stuck at a uniform 1-in-N chance.
+  const totalWeight = available.reduce((sum, p) => sum + (p.weight || 1), 0);
+  let roll = Math.random() * totalWeight;
+  let ev = available[available.length - 1];
+  for (const p of available) {
+    roll -= (p.weight || 1);
+    if (roll < 0) {
+      ev = p;
+      break;
+    }
+  }
 
   if (ev) {
     if (!eventsCollected.includes(ev.id)) {
@@ -352,9 +371,12 @@ function junkPrize(k, updates) {
     }
     updates.items = JSON.stringify(inventory);
 
-    // Check for 100 suspicious rocks achievement (only trigger once)
+    // Check for 100 suspicious rocks achievement (only trigger once).
+    // existingItem.qty is already the post-increment count from the block
+    // above (or 1, for a brand-new item) — do not add another +1 here, that
+    // double-counted and fired the achievement one pickup early (at 99).
     if (ev.id === "suspicious_rock") {
-      const rockCount = (existingItem?.qty || 0) + 1;
+      const rockCount = existingItem ? existingItem.qty : 1;
       if (rockCount >= 100) {
         let achievements = safeJsonParse(updates.achievements || k.achievements, [], "junkPrize:achievements");
         if (!achievements.includes("suspicious_rocks_100")) {

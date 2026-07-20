@@ -1800,15 +1800,13 @@ async function resolveEpicTrek(db, exp, kingdom) {
       };
     });
 
-    events.push({
-      type: 'system',
-      message: `Your explorers revealed ${pathHexes.length} hexes along the Epic Trek path.`,
+    rewards.push({
+      text: `Your explorers revealed ${pathHexes.length} hexes along the Epic Trek path.`,
     });
   } catch (err) {
     console.error(`[epic-trek] Fog reveal failed for kingdom ${kingdom.id}:`, err.message);
-    events.push({
-      type: 'system',
-      message: `Epic Trek fog reveal encountered an error.`,
+    rewards.push({
+      text: `Epic Trek fog reveal encountered an error.`,
     });
   }
 
@@ -1954,7 +1952,7 @@ const EXPEDITION_VALID_KINGDOM_COLS = new Set([
 // epic-trek and lava-draw keep roughly their old per-turn/per-hex odds.
 const MID_TRAVEL_FIND_CONFIG = {
   mountain: { icon: "🏔️", title: "Mountain expedition", chance: 0.05 },
-  "epic-trek": { icon: "🛤️", title: "Epic Trek", chance: 0.2 },
+  "epic-trek": { icon: "🛤️", title: "Epic Trek", chance: 0.3 },
   "lava-draw": { icon: "🌋", title: "Lava draw", chance: 0.08 },
 };
 
@@ -2320,6 +2318,15 @@ async function resolveExpeditions(db, k, engine) {
       // ONE news line only — rewards go to expedition log, not news feed
       const completionMsg = `${label} expedition returned -- check the Explore tab for rewards.`;
       expeditionEvents.push({ type: "system", message: completionMsg });
+
+      // Notable events accumulated above (achievement unlocks, world-fragment
+      // finds, Throne of Nazdreg, level-ups) were previously built into
+      // `events` but never forwarded anywhere — computed, then silently
+      // discarded every time. Forward them now so their toast/sound actually
+      // fires instead of the player only finding out via the expedition log.
+      if (events.length > 0) {
+        expeditionEvents.push(...events);
+      }
 
       // Throne broadcast only (batch inserts to prevent memory spike)
       if (serverAnnounce) {
