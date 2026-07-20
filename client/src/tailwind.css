@@ -3209,6 +3209,12 @@
     background: #000000;
   }
 
+  @media (max-width: 520px) {
+    .retro-frameset {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   .retro-col {
     background-color: #000000;
     background-repeat: repeat;
@@ -3222,10 +3228,23 @@
     background-image: url('/retro/bg-right.gif');
   }
 
+  @media (max-width: 520px) {
+    .retro-col-left,
+    .retro-col-right {
+      display: none;
+    }
+  }
+
   .retro-nav-spacer {
     width: 140px;
     height: 150px;
     flex-shrink: 0;
+  }
+
+  @media (max-width: 520px) {
+    .retro-nav-spacer {
+      display: none;
+    }
   }
 
   .retro-nav {
@@ -3658,7 +3677,7 @@
   .race-section {
     position: relative;
     z-index: 2;
-    padding: 5rem 2rem 4rem;
+    padding: clamp(1.5rem, 5vw, 5rem) clamp(1rem, 3vw, 2rem) clamp(1.5rem, 4vw, 4rem);
   }
 
   .section-title {
@@ -3673,21 +3692,21 @@
 
   .race-row {
     display: flex;
-    gap: 1.4rem;
+    gap: clamp(0.75rem, 2vw, 1.4rem);
     justify-content: center;
     flex-wrap: wrap;
     padding: 0.5rem;
   }
 
   .race-card {
-    width: 155px;
+    width: clamp(110px, 22vw, 155px);
     display: flex;
     flex-direction: column;
     align-items: center;
     background: rgba(10,10,11,0.72);
     border: 1px solid rgba(240,98,2,0.14);
     border-radius: 8px;
-    padding: 1.3rem 1rem;
+    padding: clamp(0.8rem, 2vw, 1.3rem) clamp(0.7rem, 1.5vw, 1rem);
     text-align: center;
     transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
   }
@@ -3699,11 +3718,11 @@
   }
 
   .race-portrait {
-    width: 78px;
-    height: 78px;
+    width: clamp(56px, 15vw, 78px);
+    height: clamp(56px, 15vw, 78px);
     border-radius: 50%;
     overflow: hidden;
-    margin-bottom: 0.9rem;
+    margin-bottom: clamp(0.6rem, 2vw, 0.9rem);
     border: 2px solid rgba(240,98,2,0.3);
     background: rgba(0,0,0,0.5);
     display: flex;
@@ -3718,7 +3737,7 @@
   }
 
   .race-fallback-emoji {
-    font-size: 2.2rem;
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3728,16 +3747,16 @@
 
   .race-name {
     font-family: 'Cinzel', serif;
-    font-size: 0.88rem;
+    font-size: clamp(0.7rem, 2vw, 0.88rem);
     font-weight: 700;
     color: var(--gold);
-    margin-bottom: 0.35rem;
+    margin-bottom: clamp(0.2rem, 1vw, 0.35rem);
     letter-spacing: 0.06em;
   }
 
   .race-lore {
     font-family: 'Inter', sans-serif;
-    font-size: 0.74rem;
+    font-size: clamp(0.65rem, 1.5vw, 0.74rem);
     color: rgba(248,250,252,0.55);
     line-height: 1.45;
   }
@@ -3745,22 +3764,22 @@
   .features-section {
     position: relative;
     z-index: 2;
-    padding: 4rem 2rem 6rem;
+    padding: clamp(2rem, 4vw, 4rem) clamp(1rem, 3vw, 2rem) clamp(3rem, 5vw, 6rem);
     max-width: 1020px;
     margin: 0 auto;
   }
 
   .feature-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.4rem;
+    grid-template-columns: repeat(auto-fit, minmax(clamp(260px, 100%, 280px), 1fr));
+    gap: clamp(1rem, 2vw, 1.4rem);
   }
 
   .feature-card {
     background: rgba(10,10,11,0.72);
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 8px;
-    padding: 1.8rem;
+    padding: clamp(1.2rem, 3vw, 1.8rem);
     transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
   }
 
@@ -3771,23 +3790,23 @@
   }
 
   .feature-icon {
-    font-size: 2rem;
-    margin-bottom: 1rem;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin-bottom: clamp(0.7rem, 2vw, 1rem);
     display: block;
   }
 
   .feature-title {
     font-family: 'Cinzel', serif;
-    font-size: 1rem;
+    font-size: clamp(0.85rem, 2vw, 1rem);
     font-weight: 700;
     color: var(--gold);
-    margin: 0 0 0.5rem;
+    margin: 0 0 clamp(0.3rem, 1vw, 0.5rem);
     letter-spacing: 0.06em;
   }
 
   .feature-desc {
     font-family: 'Inter', sans-serif;
-    font-size: 0.875rem;
+    font-size: clamp(0.78rem, 1.5vw, 0.875rem);
     color: rgba(248,250,252,0.62);
     margin: 0;
     line-height: 1.65;
@@ -3898,60 +3917,17 @@
       font-size: 0.95rem;
     }
 
-    .race-row {
-      gap: 0.9rem;
-    }
-
-    .race-card {
-      width: 140px;
-      padding: 1rem 0.75rem;
-    }
-
-    .race-portrait {
-      width: 64px;
-      height: 64px;
-    }
-
     .feature-grid {
       grid-template-columns: 1fr;
-    }
-
-    .race-section,
-    .features-section {
-      padding-left: 1rem;
-      padding-right: 1rem;
     }
   }
 
   @media (max-width: 380px) {
-    .race-card {
-      width: 120px;
-    }
-
     .hero-title {
       letter-spacing: 0.1em;
     }
   }
 
-  @media (max-width: 520px) {
-    .retro-frameset {
-      grid-template-columns: 120px minmax(0, 1fr);
-    }
-
-    .retro-col-right {
-      display: none;
-    }
-
-    .retro-nav-spacer {
-      width: 120px;
-      height: 100px;
-    }
-
-    .retro-nav img {
-      width: 110px;
-      height: auto;
-    }
-  }
 }
 
 @layer utilities {

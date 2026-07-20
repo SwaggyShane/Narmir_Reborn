@@ -1261,6 +1261,142 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         e.preventDefault();
       };
 
+      // ─── Touch gesture handlers (1-finger pan, 2-finger pinch zoom, tap select) ───
+
+      let isTouchPanning = false;
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let lastTouchX = 0;
+      let lastTouchY = 0;
+      let touchStartTime = 0;
+      let longPressTimer = null;
+      let initialPinchDistance = 0;
+
+      const getTouchDistance = (touch1, touch2) => {
+        const dx = touch1.clientX - touch2.clientX;
+        const dy = touch1.clientY - touch2.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+      };
+
+      const onTouchStart = (e) => {
+        // Prevent browser default touch behaviors (zoom, scroll) on the canvas
+        if (e.touches.length === 1) {
+          e.preventDefault();
+          isTouchPanning = true;
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          lastTouchX = touchStartX;
+          lastTouchY = touchStartY;
+          touchStartTime = Date.now();
+
+          // Set up long-press timer for showing hex details (500ms)
+          longPressTimer = setTimeout(() => {
+            if (isTouchPanning && containerRef.current) {
+              const rect = containerRef.current.getBoundingClientRect();
+              const touch = e.touches[0];
+              if (touch) {
+                // Simulate a click at the long-press location to show hex details
+                const clickEvent = new MouseEvent('click', {
+                  bubbles: true,
+                  cancelable: true,
+                  clientX: touch.clientX,
+                  clientY: touch.clientY,
+                });
+                containerRef.current.dispatchEvent(clickEvent);
+                longPressTimer = null;
+              }
+            }
+          }, 500);
+        } else if (e.touches.length === 2) {
+          // Two-finger pinch: capture initial distance for zoom
+          e.preventDefault();
+          isTouchPanning = false;
+          if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+          }
+          initialPinchDistance = getTouchDistance(e.touches[0], e.touches[1]);
+        }
+      };
+
+      const onTouchMove = (e) => {
+        if (e.touches.length === 1 && isTouchPanning) {
+          e.preventDefault();
+
+          // Clear long-press timer on movement (means it's a drag, not a hold)
+          if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+          }
+
+          const touch = e.touches[0];
+          const deltaX = touch.clientX - lastTouchX;
+          const deltaY = touch.clientY - lastTouchY;
+          lastTouchX = touch.clientX;
+          lastTouchY = touch.clientY;
+
+          // Apply pan using the same logic as mouse pan
+          if (cameraState.inPerspective) {
+            const pitchRad = (cameraState.pitch * Math.PI) / 180;
+            const horizontalDist = cameraState.distance * Math.cos(pitchRad);
+            const panScale = (horizontalDist * 2.2) / w;
+            cameraState.camX -= deltaX * panScale;
+            cameraState.camY += deltaY * panScale;
+            updatePerspCamera();
+          } else {
+            const frustumWidth = initialFrustumWidth / cameraState.zoomLevel;
+            const panScale = frustumWidth / w;
+            cameraState.camX -= deltaX * panScale;
+            cameraState.camY += deltaY * panScale;
+            updateOrthoCamera();
+          }
+        } else if (e.touches.length === 2) {
+          // Two-finger pinch zoom
+          e.preventDefault();
+          const currentPinchDistance = getTouchDistance(e.touches[0], e.touches[1]);
+          if (initialPinchDistance > 0) {
+            const scaleFactor = currentPinchDistance / initialPinchDistance;
+            if (cameraState.inPerspective) {
+              cameraState.distance = Math.min(Math.max(cameraState.distance / scaleFactor, 50), 2000);
+              updatePerspCamera();
+            } else {
+              cameraState.zoomLevel = Math.min(Math.max(cameraState.zoomLevel / scaleFactor, 0.5), 5.0);
+              updateOrthoCamera();
+            }
+          }
+        }
+      };
+
+      const onTouchEnd = (e) => {
+        if (e.touches.length === 0) {
+          isTouchPanning = false;
+          initialPinchDistance = 0;
+
+          // Clear long-press timer
+          if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+          }
+
+          // Check if this was a tap (< 200ms, minimal movement)
+          const elapsed = Date.now() - touchStartTime;
+          const moveX = Math.abs(lastTouchX - touchStartX);
+          const moveY = Math.abs(lastTouchY - touchStartY);
+          const wasTap = elapsed < 200 && moveX < 10 && moveY < 10;
+
+          if (wasTap && containerRef.current) {
+            // Dispatch a click event at the tap location
+            const clickEvent = new MouseEvent('click', {
+              bubbles: true,
+              cancelable: true,
+              clientX: touchStartX,
+              clientY: touchStartY,
+            });
+            containerRef.current.dispatchEvent(clickEvent);
+          }
+        }
+      };
+
       // Left-click a kingdom marker to open the same interactive card the
       // canvas renderer uses (attack/spell/trade/profile buttons) — 'click'
       // only ever fires for the primary button, so this never conflicts
@@ -1328,6 +1464,15 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         passive: false,
       });
       containerRef.current.addEventListener('click', onContainerClick);
+      containerRef.current.addEventListener('touchstart', onTouchStart, {
+        passive: false,
+      });
+      containerRef.current.addEventListener('touchmove', onTouchMove, {
+        passive: false,
+      });
+      containerRef.current.addEventListener('touchend', onTouchEnd, {
+        passive: false,
+      });
 
       let frame = 0;
       let animationFrameId = null;
@@ -1365,6 +1510,9 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         if (animationFrameId !== null) {
           cancelAnimationFrame(animationFrameId);
         }
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+        }
         window.removeEventListener('resize', handleResize);
         window.removeEventListener('keydown', onKeyDown);
         window.removeEventListener('mousedown', onMouseDown);
@@ -1374,6 +1522,9 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         if (containerRef.current) {
           containerRef.current.removeEventListener('wheel', onMouseWheel);
           containerRef.current.removeEventListener('click', onContainerClick);
+          containerRef.current.removeEventListener('touchstart', onTouchStart);
+          containerRef.current.removeEventListener('touchmove', onTouchMove);
+          containerRef.current.removeEventListener('touchend', onTouchEnd);
           if (renderer.domElement.parentNode === containerRef.current) {
             containerRef.current.removeChild(renderer.domElement);
           }
@@ -1414,6 +1565,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         position: 'relative',
         borderRadius: '12px',
         overflow: 'hidden',
+        touchAction: 'none',
       }}
     />
   );
