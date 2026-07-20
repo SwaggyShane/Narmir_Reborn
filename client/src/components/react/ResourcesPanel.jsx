@@ -95,11 +95,43 @@ const ResourcesPanel = () => {
   const [launching, setLaunching] = useState({});
   const [engineerAllocations, setEngineerAllocations] = useState({});
   const { activePanel } = useActivePanel();
-  currentResourcesState = {};
 
-  const syncFromState = useCallback(() => {
-    const s = getState();
-    setKingdom(s);
+  // currentResourcesState (module-level, read by getState()/getParsedStateProp)
+  // used to be populated by whatever set it externally, but nothing does
+  // anymore — syncFromState() below used to just read it directly, which
+  // meant it always saw {} and every getParsedStateProp() call (build
+  // allocations, build queue, engineer availability, etc.) silently fell
+  // back to empty. refreshKingdom() is the only thing that actually fetches
+  // real data; syncFromState() now calls it and mirrors the result into
+  // currentResourcesState so the getParsedStateProp() helpers stay correct.
+  const refreshKingdom = useCallback(async () => {
+    try {
+      const refreshed = await apiCall('/api/kingdom/me');
+      if (refreshed && !refreshed.error) {
+        let seq = refreshed.resource_sequence || {};
+        if (typeof seq === 'string') {
+          try { seq = JSON.parse(seq); } catch { seq = {}; }
+        }
+        const next = { ...refreshed, _seq: seq };
+        currentResourcesState = next;
+        setKingdom(next);
+
+        // /api/kingdom/me returns the flat kingdom row, not a domain-structured
+        // {updates: {...}} shape — normalizeAndRouteResponse expects the
+        // latter and silently no-ops on this response (A4-7, 2026-07-19).
+        applyFlatKingdomSnapshot(refreshed);
+        return refreshed;
+      }
+      return refreshed;
+    } catch (e) {
+      console.error(e);
+      return { error: e.message };
+    }
+  }, []);
+
+  const syncFromState = useCallback(async () => {
+    const s = await refreshKingdom();
+    if (!s || s.error) return;
 
     const bq = getParsedStateProp('build_queue');
     setBuildingInProgress(prev => {
@@ -125,11 +157,7 @@ const ResourcesPanel = () => {
     const frags = fragIds.map(id => rawItems.find(i => i.id === id) || { id, name: fragDefs[id], qty: 0 });
     const rest = rawItems.filter(i => !fragIds.includes(i.id));
     setItems([...frags, ...rest]);
-
-    let seq = s.resource_sequence || {};
-    if (typeof seq === 'string') { try { seq = JSON.parse(seq); } catch { seq = {}; } }
-    setKingdom(prev => ({...prev, _seq: seq}));
-  }, []);
+  }, [refreshKingdom]);
 
   const loadNodes = async () => {
     try {
@@ -142,31 +170,6 @@ const ResourcesPanel = () => {
       const r = await fetch('/api/kingdom/resource-harvests', { credentials: 'include' });
       if (r.ok) setActiveHarvests(await r.json());
     } catch(e) { console.error(e); }
-  };
-
-  const refreshKingdom = async () => {
-    try {
-      const refreshed = await apiCall('/api/kingdom/me');
-      if (refreshed && !refreshed.error) {
-        // Parse resource_sequence if present
-        let seq = refreshed.resource_sequence || {};
-        if (typeof seq === 'string') {
-          try { seq = JSON.parse(seq); } catch { seq = {}; }
-        }
-        // Set kingdom data directly from API response (don't call syncFromState which reads from empty currentResourcesState)
-        setKingdom({ ...refreshed, _seq: seq });
-
-        // /api/kingdom/me returns the flat kingdom row, not a domain-structured
-        // {updates: {...}} shape — normalizeAndRouteResponse expects the
-        // latter and silently no-ops on this response (A4-7, 2026-07-19).
-        applyFlatKingdomSnapshot(refreshed);
-        return refreshed;
-      }
-      return refreshed;
-    } catch (e) {
-      console.error(e);
-      return { error: e.message };
-    }
   };
 
   useEffect(() => {
