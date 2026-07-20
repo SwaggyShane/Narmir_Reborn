@@ -6,10 +6,28 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  DATABASE_URL: postgresql://postgres:smoke@localhost:5432/narmir_smoke
+  JWT_SECRET: test-ci-secret
+
 jobs:
   quality:
     runs-on: ubuntu-latest
     name: Lint, Test, Build
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: smoke
+          POSTGRES_DB: narmir_smoke
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -27,10 +45,32 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Initialize database schema
+        run: node -e "require('./db/schema').initDb().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })"
+
+      - name: Start app server (for HTTP-level tests)
+        run: |
+          node index.js > server.log 2>&1 &
+          echo $! > server.pid
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/ > /dev/null; then
+              echo "Server ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server failed to start"
+          cat server.log
+          exit 1
+
       - name: Unit tests
         run: npm test
-        env:
-          JWT_SECRET: test-ci-secret
+
+      - name: Stop app server
+        if: always()
+        run: |
+          cat server.log || true
+          kill "$(cat server.pid)" 2>/dev/null || true
 
       - name: Production build
         run: npm run build

@@ -2,7 +2,9 @@
 /**
  * HTTP-level rebirth test against a running server on :3000.
  * Run: node test/prestige-http-rebirth.test.js
- * Requires: server up, DATABASE_URL, JWT_SECRET, prestige_test_bot kingdom from live-db test.
+ * Requires: server up, DATABASE_URL, JWT_SECRET. Creates its own prestige_test_bot
+ * fixture if prestige-live-db.test.js hasn't already (test files run in alphabetical
+ * order, which sorts this file before prestige-live-db.test.js).
  */
 const fs = require('fs');
 const path = require('path');
@@ -24,14 +26,32 @@ const BASE = process.env.PRESTIGE_HTTP_BASE || 'http://localhost:3000';
 
 async function main() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  const r = await pool.query(
+  let r = await pool.query(
     `SELECT p.id as pid, k.id as kid FROM players p
      JOIN kingdoms k ON k.player_id = p.id
      WHERE p.username = 'prestige_test_bot'`,
   );
   if (!r.rows[0]) {
-    console.error('FAIL: run prestige-live-db.test.js first to create prestige_test_bot');
-    process.exit(1);
+    let player = (
+      await pool.query(`SELECT id FROM players WHERE username = $1`, ['prestige_test_bot'])
+    ).rows[0];
+    if (!player) {
+      player = (
+        await pool.query(
+          `INSERT INTO players (username, password, is_admin) VALUES ($1, $2, 0) RETURNING id`,
+          ['prestige_test_bot', 'test_hash_not_for_login'],
+        )
+      ).rows[0];
+    }
+    const k = (
+      await pool.query(
+        `INSERT INTO kingdoms (player_id, name, race, region, level, prestige_level, turn, land, gold, food, mana, population)
+         VALUES ($1, $2, $3, $4, 500, 0, 1000, 9999, 1, 1, 1, 100)
+         RETURNING id`,
+        [player.id, 'PrestigeTestRealm', 'human', 'human'],
+      )
+    ).rows[0];
+    r = { rows: [{ pid: player.id, kid: k.id }] };
   }
   const { pid, kid } = r.rows[0];
   await pool.query(

@@ -3258,10 +3258,17 @@
     min-height: 0;
   }
 
+  .retro-top {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
   .retro-top-banner {
     display: block;
     width: 100%;
     height: auto;
+    max-width: 575px;
   }
 
   .retro-content {
@@ -3273,6 +3280,13 @@
     font-size: 8pt;
     line-height: 1.45;
     padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
   }
 
   .retro-content p {
@@ -3306,6 +3320,32 @@
     height: 75px;
     background: #1a1a1a;
     border: 1px inset #404040;
+  }
+
+  .retro-play-button {
+    display: inline-block;
+    padding: 10px 30px;
+    background: #808080;
+    color: #000;
+    border: 2px outset #c0c0c0;
+    border-right-color: #808080;
+    border-bottom-color: #808080;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+  }
+
+  .retro-play-button:active {
+    border-style: inset;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: #c0c0c0;
+    border-bottom-color: #c0c0c0;
+  }
+
+  .retro-play-button:hover {
+    background: #a0a0a0;
   }
 
   .retro-java-fallback {
@@ -4115,10 +4155,13 @@
 
 /* Glitch active state */
 .retro-wrapper.glitching {
+  transform: translate3d(0, 0, 0);
   animation:
     glitchShake  0.09s infinite,
     glitchFilter 0.18s steps(1) infinite,
     glitchClip   0.22s steps(1) infinite;
+  transform-origin: center center;
+  will-change: transform, filter;
 }
 
 .retro-wrapper.glitching .scanlines {
@@ -4182,16 +4225,16 @@
 
 @keyframes glitchClip {
   0%,  100% { clip-path: inset(0 0 0 0); }
-  9%         { clip-path: inset(20% 0 62% 0); transform: translateX(-7px); }
-  12%        { clip-path: inset(0 0 0 0);     transform: translateX(0); }
-  27%        { clip-path: inset(52% 0 16% 0); transform: translateX(9px); }
-  30%        { clip-path: inset(0 0 0 0);     transform: translateX(0); }
-  47%        { clip-path: inset(6% 0 76% 0);  transform: translateX(-11px); }
-  50%        { clip-path: inset(0 0 0 0);     transform: translateX(0); }
-  63%        { clip-path: inset(67% 0 9% 0);  transform: translateX(7px); }
-  66%        { clip-path: inset(0 0 0 0);     transform: translateX(0); }
-  81%        { clip-path: inset(33% 0 42% 0); transform: translateX(-6px); }
-  84%        { clip-path: inset(0 0 0 0);     transform: translateX(0); }
+  9%         { clip-path: inset(20% 0 62% 0); }
+  12%        { clip-path: inset(0 0 0 0); }
+  27%        { clip-path: inset(52% 0 16% 0); }
+  30%        { clip-path: inset(0 0 0 0); }
+  47%        { clip-path: inset(6% 0 76% 0); }
+  50%        { clip-path: inset(0 0 0 0); }
+  63%        { clip-path: inset(67% 0 9% 0); }
+  66%        { clip-path: inset(0 0 0 0); }
+  81%        { clip-path: inset(33% 0 42% 0); }
+  84%        { clip-path: inset(0 0 0 0); }
 }
 
 @keyframes scanFlicker {
