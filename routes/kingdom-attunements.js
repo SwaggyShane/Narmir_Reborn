@@ -50,6 +50,7 @@ module.exports = function (db) {
       const formatted = {};
       const deprecated = [];
       for (const item of items) {
+        if (!item || typeof item !== 'object') continue;
         if (fragmentIds.has(item.id)) continue;
         if (item.qty && item.qty > 0) {
           if (INVENTORY_ITEMS[item.id]) {
