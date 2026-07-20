@@ -681,8 +681,8 @@ module.exports = function (db) {
         }
 
         await db.run(
-          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), population = GREATEST(0, population - $2), land = land + $3 WHERE id = $4',
-          [totalTurns, reward.populationCost, reward.landsDiscovered, k.id],
+          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), population = GREATEST(0, population - $2), land = land + $3, rangers = GREATEST(0, rangers - $4) WHERE id = $5',
+          [totalTurns, reward.populationCost, reward.landsDiscovered, r, k.id],
         );
 
         await db.run(
@@ -699,6 +699,7 @@ module.exports = function (db) {
           // undefined (0), so it never reflected the kingdom's real prior
           // land total even before the naming was fixed.
           land: (k.land || 0) + reward.landsDiscovered,
+          rangers: Math.max(0, (k.rangers || 0) - r),
         };
 
         return { updates, reward };
