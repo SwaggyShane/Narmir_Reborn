@@ -503,7 +503,7 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
 
         <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
           <div className="card flex min-h-0 flex-col p-2">
-            <div className="mb-2 px-1 shrink-0">
+            <div className="mb-2 px-1 shrink-0 hidden sm:block">
               <MapLayerToggles layers={layers} onToggle={toggleLayer} />
             </div>
             {loading ? (
@@ -520,7 +520,7 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
             ) : null}
             {!loading && !error && (kingdoms.length > 0 || nodes.length > 0) && hexGrid && (
               <div className="flex min-h-0 flex-1 flex-col">
-                <div className="flex gap-2 items-center justify-between mb-2 shrink-0">
+                <div className="flex gap-2 items-center justify-between mb-2 shrink-0 hidden sm:flex">
                   <button
                     className="base-btn px-2 py-1 text-[10px] bg-[var(--red)]"
                     onClick={() => setShowAllKingdoms(!showAllKingdoms)}
@@ -550,7 +550,7 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                     </div>
                   )}
                 </div>
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 px-1 text-[10px] text-[var(--text3)] shrink-0">
+                <div className="mt-2 hidden sm:flex flex-wrap gap-x-4 gap-y-1 px-1 text-[10px] text-[var(--text3)] shrink-0">
                   <span><strong className="text-[var(--text2)]">Left-click</strong> — select kingdoms, nodes, dungeons & mountain hearts</span>
                   <span><strong className="text-[var(--text2)]">Right-click drag</strong> — pan</span>
                   <span><strong className="text-[var(--text2)]">Scroll</strong> — zoom</span>
@@ -562,7 +562,7 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
             )}
           </div>
 
-          <div className="flex min-h-0 flex-col gap-4">
+          <div className="hidden xl:flex min-h-0 flex-col gap-4">
             {selectedNode && nodeMeta && (
               <div ref={nodeCardRef} className="card flex-1 min-h-0 overflow-y-auto">
                 <div className="card-title !mb-2">
