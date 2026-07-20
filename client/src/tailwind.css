@@ -3209,12 +3209,6 @@
     background: #000000;
   }
 
-  @media (max-width: 520px) {
-    .retro-frameset {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-
   .retro-col {
     background-color: #000000;
     background-repeat: repeat;
@@ -3228,13 +3222,6 @@
     background-image: url('/retro/bg-right.gif');
   }
 
-  @media (max-width: 520px) {
-    .retro-col-left,
-    .retro-col-right {
-      display: none;
-    }
-  }
-
   .retro-nav-spacer {
     width: 140px;
     height: 150px;
@@ -3242,6 +3229,15 @@
   }
 
   @media (max-width: 520px) {
+    .retro-frameset {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .retro-col-left,
+    .retro-col-right {
+      display: none;
+    }
+
     .retro-nav-spacer {
       display: none;
     }

@@ -1270,6 +1270,8 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       let lastTouchY = 0;
       let touchStartTime = 0;
       let longPressTimer = null;
+      let longPressX = 0;
+      let longPressY = 0;
       let initialPinchDistance = 0;
 
       const getTouchDistance = (touch1, touch2) => {
@@ -1289,22 +1291,22 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
           lastTouchY = touchStartY;
           touchStartTime = Date.now();
 
+          // Capture position synchronously before setTimeout (avoid event pooling issues)
+          longPressX = touchStartX;
+          longPressY = touchStartY;
+
           // Set up long-press timer for showing hex details (500ms)
           longPressTimer = setTimeout(() => {
             if (isTouchPanning && containerRef.current) {
-              const rect = containerRef.current.getBoundingClientRect();
-              const touch = e.touches[0];
-              if (touch) {
-                // Simulate a click at the long-press location to show hex details
-                const clickEvent = new MouseEvent('click', {
-                  bubbles: true,
-                  cancelable: true,
-                  clientX: touch.clientX,
-                  clientY: touch.clientY,
-                });
-                containerRef.current.dispatchEvent(clickEvent);
-                longPressTimer = null;
-              }
+              // Use captured position, not e.touches (event is pooled)
+              const clickEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                clientX: longPressX,
+                clientY: longPressY,
+              });
+              containerRef.current.dispatchEvent(clickEvent);
+              longPressTimer = null;
             }
           }, 500);
         } else if (e.touches.length === 2) {
