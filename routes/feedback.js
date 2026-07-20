@@ -3,7 +3,7 @@ const { requireAuth } = require('./middleware');
 let Sentry, sentryEnabled;
 try {
   ({ Sentry, sentryEnabled } = require('../instrument'));
-} catch (err) {
+} catch {
   Sentry = null;
   sentryEnabled = false;
 }

@@ -13,7 +13,7 @@ require('./lib/logger').setupFileLogging();
 let Sentry, sentryEnabled;
 try {
   ({ Sentry, sentryEnabled } = require('./instrument'));
-} catch (err) {
+} catch {
   // instrument.js not found; proceed without Sentry
   Sentry = null;
   sentryEnabled = false;
