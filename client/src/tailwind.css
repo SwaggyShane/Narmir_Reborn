@@ -3231,7 +3231,7 @@
 
   @media (max-width: 520px) {
     .retro-frameset {
-      grid-template-columns: 70px minmax(0, 1fr);
+      grid-template-columns: 90px minmax(0, 1fr);
     }
 
     .retro-col-right {
@@ -3244,12 +3244,12 @@
     }
 
     .retro-nav-spacer {
-      width: 70px;
-      height: 80px;
+      width: 90px;
+      height: 100px;
     }
 
     .retro-nav img {
-      width: 60px;
+      width: 85px;
       height: auto;
     }
 
