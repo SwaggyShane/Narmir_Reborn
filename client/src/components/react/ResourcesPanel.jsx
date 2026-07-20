@@ -15,7 +15,7 @@ const tabs = [
   { id: 'stockpiles', label: '📦 Stockpiles' },
   { id: 'buildings', label: '🏭 Buildings' },
   { id: 'nodes', label: '⛏️ Nodes' },
-  { id: 'inventory', label: '🎒 Inventory' },
+  { id: 'inventory', label: '🧬 Fragments' },
 ];
 
 const resourceTypes = [
@@ -155,9 +155,11 @@ const ResourcesPanel = () => {
       earth_fragment: 'Earth Fragment', water_fragment: 'Water Fragment',
       fire_fragment: 'Fire Fragment', air_fragment: 'Air Fragment',
     };
+    // Only the 4 elemental fragments live here now — every other item
+    // (junk, rare resource finds, ultra-rares) moved to the Expedition Finds
+    // panel on the Exploration tab, with real names via /api/kingdom/inventory.
     const frags = fragIds.map(id => rawItems.find(i => i.id === id) || { id, name: fragDefs[id], qty: 0 });
-    const rest = rawItems.filter(i => !fragIds.includes(i.id));
-    setItems([...frags, ...rest]);
+    setItems(frags);
   }, [refreshKingdom]);
 
   const loadNodes = async () => {
@@ -735,8 +737,8 @@ const ResourcesPanel = () => {
 
       {activeTab === 'inventory' && (
         <div className="card">
-          <div className="card-title">Item Inventory</div>
-          {items.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No items found.</div>}
+          <div className="card-title">Fragments</div>
+          {items.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No fragments found.</div>}
           <div className="grid gap-2.5 mt-3 grid-cols-[repeat(auto-fill,minmax(150px,1fr))]">
             {items.map(item => (
               <div key={item.id} className={clsx('p-3 rounded-lg bg-[var(--bg2)] text-center border', (item.qty || 0) > 0 ? 'border-[var(--green)]' : 'border-[var(--border)]')}>
