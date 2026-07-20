@@ -4159,6 +4159,8 @@
     glitchShake  0.09s infinite,
     glitchFilter 0.18s steps(1) infinite,
     glitchClip   0.22s steps(1) infinite;
+  transform-origin: center center;
+  will-change: transform, filter;
 }
 
 .retro-wrapper.glitching .scanlines {
