@@ -734,9 +734,15 @@ module.exports = function (db) {
 
         await applyUpdates(db, k.id, finalUpdates);
 
+        // turns_left=0/rewards_claimed=1: the land reward is already
+        // applied above (synchronous/instant) — this row is a completed
+        // history entry, not a pending one. Inserting it as still-active
+        // (turns_left=1, claimed=0) made it show as "in progress" in the
+        // UI until the next real turn tick resolved it, even though there
+        // was nothing left to resolve.
         await db.run(
-          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-          [k.id, 'land_expansion', totalTurns, r, 0, 0, JSON.stringify({ land: reward.landsDiscovered }), 0],
+          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, rewards, rewards_claimed, completed_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)',
+          [k.id, 'land_expansion', 0, r, 0, 0, JSON.stringify({ land: reward.landsDiscovered }), 1],
         );
 
         // The land-expansion reward itself is already surfaced via the

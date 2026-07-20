@@ -39,21 +39,29 @@ const Topbar = () => {
         ) : null}
 
         {activePanel !== 'forum' ? (
-          <button
-            type="button"
-            className="turn-btn px-2 py-1 text-[11px] sm:px-4 sm:py-1.5 sm:text-sm"
-            onClick={takeTurn}
-            disabled={loading.takeTurn || turnsStored < 1}
-          >
-            <span className="turn-btn__label">
-              {loading.takeTurn ? '…' : (
-                <>
-                  <span className="sm:hidden">Turn</span>
-                  <span className="hidden sm:inline">Take Turn</span>
-                </>
-              )}
+          <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+            <span
+              className="font-mono text-[11px] tabular-nums text-text3 sm:text-xs"
+              title="Turns stored"
+            >
+              {turnsStored}<span className="text-text3/60">/400</span>
             </span>
-          </button>
+            <button
+              type="button"
+              className="turn-btn px-2 py-1 text-[11px] sm:px-4 sm:py-1.5 sm:text-sm"
+              onClick={takeTurn}
+              disabled={loading.takeTurn || turnsStored < 1}
+            >
+              <span className="turn-btn__label">
+                {loading.takeTurn ? '…' : (
+                  <>
+                    <span className="sm:hidden">Turn</span>
+                    <span className="hidden sm:inline">Take Turn</span>
+                  </>
+                )}
+              </span>
+            </button>
+          </div>
         ) : null}
 
         {!isLoggedIn ? (

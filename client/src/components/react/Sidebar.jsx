@@ -9,6 +9,7 @@ import { useShellBadges } from '../../hooks/useShellBadges.js';
 import { NAV_SECTIONS, PANEL_META } from '../../utils/panelMeta.js';
 import ShellColumnFrame from './ShellColumnFrame.jsx';
 import ShellExpeditionIndicator from './ShellExpeditionIndicator.jsx';
+import { showBugReportModal } from './BugReportModal.jsx';
 
 const COLLAPSE_STORAGE_KEY = 'shell-nav-collapsed-v1';
 
@@ -131,6 +132,17 @@ const Sidebar = () => {
       )}
     >
       <div className="scrollbar-none relative z-10 min-h-0 flex-1 overflow-y-auto">
+        <button
+          type="button"
+          onClick={showBugReportModal}
+          className="shell-nav-btn mx-1 mt-1"
+          title="Report a bug"
+        >
+          <span className="shell-nav-btn__content">
+            <span className="shell-nav-btn__icon text-[16.5px] leading-none" aria-hidden="true">🐛</span>
+            <span className="shell-nav-btn__label">Bug Report</span>
+          </span>
+        </button>
         <ShellExpeditionIndicator />
         {NAV_SECTIONS.map((section) => {
           const isCollapsed = !!collapsed[section.id];
