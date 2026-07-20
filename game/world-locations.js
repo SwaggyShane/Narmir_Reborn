@@ -232,6 +232,13 @@ async function markLocationDiscovered(db, locationId, kingdomId) {
        WHERE id = $1 AND NOT (COALESCE(discovered_by_kingdom_ids, '{}') @> ARRAY[$2]::integer[])`,
       [locationId, kingdomId],
     );
+
+    // getAllLocations()/isPubliclyDiscovered() read from the in-memory
+    // locationCache, which loadLocationCache() only populates once at boot
+    // — without this, a location discovered mid-game stays invisible to
+    // /world-map (isPubliclyDiscovered sees the stale pre-discovery object)
+    // until the server happens to restart.
+    await loadLocationCache(db);
   } catch (err) {
     console.error('[world-locations] Failed to mark location discovered:', err.message);
   }

@@ -1844,8 +1844,17 @@ async function resolveEpicTrek(db, exp, kingdom) {
         `UPDATE kingdoms SET ${turnColumn} = $1 WHERE race = $2 AND ${turnColumn} IS NULL`,
         [kingdom.turn || 0, location.region_name],
       );
+      // location.region_name is the internal race key (e.g. "dark_elf",
+      // "high_elf") — there's no server-side race display-name table
+      // (RACE_NAMES is referenced in game/constants-schema.js but never
+      // actually defined), so humanize it generically rather than leaking
+      // the raw snake_case key into player-facing text.
+      const raceLabel = location.region_name
+        .split('_')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
       rewards.push({
-        text: `Your explorers uncovered the ${locType} of ${location.region_name}!`,
+        text: `Your explorers uncovered the ${raceLabel} ${locType}!`,
       });
     }
   } catch (locErr) {
