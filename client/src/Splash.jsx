@@ -149,38 +149,27 @@ function RetroSite() {
             className="retro-top-banner"
           />
         </header>
-        <main className="retro-content">
+        <main className="retro-content" style={{
+          backgroundImage: 'url(/retro/752296106_1723312728940886_1659173184335563790_n.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+        }}>
           <p>
             Welcome to Narmir a unique game experience like none other. Narmir is 100% free and
-            playable from any java capable browser such as Internet Explorer or Netscape.
-          </p>
-          <p>
-            If you have problems loading the game be sure to email us at the link below. Also you
-            might want to check at{' '}
-            <a href="http://www.windowsquest.com/" onClick={blockNav}>windowsquest.com</a>
-            {' '}for help with computer and browser problems.
+            playable from your browser.
           </p>
 
           <div className="retro-applet-wrap">
-            <div className="retro-applet-slot" aria-hidden="true" />
-            <hr className="retro-hr" />
-            <p className="retro-java-fallback">
-              Sorry, you must use a Java capable browser or enable Java in your browser&apos;s
-              options to play Narmir. WebTV users, currently WebTV does NOT support Java and so
-              you won&apos;t be able to play this game, but you might try{' '}
-              <a href="http://www.solariagames.com" onClick={blockNav}>Earth: 2025</a>, one of the most
-              popular games of this genre but requires no more than an HTML browser to play. Another
-              good game is{' '}
-              <a href="http://monarchy.shareplay.com" onClick={blockNav}>Monarchy</a> which is in
-              similar settings to this game.
-            </p>
+            <button
+              className="retro-play-button"
+              onClick={() => window.location.href = '/portal'}
+              aria-label="Play Narmir"
+            >
+              Play Narmir
+            </button>
             <hr className="retro-hr" />
           </div>
-
-          <p className="retro-small-red">
-            If you have any problems or need verification codes please email me at{' '}
-            <a href="mailto:quickz@acs-isp.com" onClick={blockNav}>quickz@acs-isp.com</a>
-          </p>
         </main>
       </div>
 
