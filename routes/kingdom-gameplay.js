@@ -812,7 +812,7 @@ module.exports = function (db) {
   router.get("/lore-and-achievements", requireAuth, async (req, res) => {
     try {
       const k = await db.get(
-        "SELECT race, collected_lore, achievements, population, gold, mana, bld_farms, bld_granaries, bld_barracks, bld_outposts, bld_guard_towers, bld_schools, bld_armories, bld_vaults, bld_smithies, bld_markets, bld_mage_towers, bld_shrines, bld_mausoleums, bld_taverns, bld_libraries, bld_housing, bld_walls, bld_training, bld_castles, bld_woodyard, bld_lumber_camp, bld_sawmill, bld_gravel_pit, bld_blockfield, bld_stone_quarry, bld_open_pit, bld_strip_mine, bld_deep_mine FROM kingdoms WHERE player_id = $1",
+        "SELECT race, collected_lore, collected_events, items, achievements, population, gold, mana, bld_farms, bld_granaries, bld_barracks, bld_outposts, bld_guard_towers, bld_schools, bld_armories, bld_vaults, bld_smithies, bld_markets, bld_mage_towers, bld_shrines, bld_mausoleums, bld_taverns, bld_libraries, bld_housing, bld_walls, bld_training, bld_castles, bld_woodyard, bld_lumber_camp, bld_sawmill, bld_gravel_pit, bld_blockfield, bld_stone_quarry, bld_open_pit, bld_strip_mine, bld_deep_mine FROM kingdoms WHERE player_id = $1",
         [req.player.playerId],
       );
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -894,6 +894,29 @@ module.exports = function (db) {
               label: `${towers}/${libs}/${schools}`,
               sublabel: 'Towers/Libraries/Schools'
             };
+          }
+          case 'suspicious_rocks_100': {
+            let items = safeJsonParse(k.items, [], 'achievements:items');
+            if (!Array.isArray(items)) items = [];
+            const rock = items.find((i) => i && i.id === 'suspicious_rock');
+            const count = Math.min(rock?.qty || 0, 100);
+            return { current: count, target: 100, label: `${count} / 100 Suspicious Rocks` };
+          }
+          case 'collector': {
+            let collectedEvents = safeJsonParse(k.collected_events, [], 'achievements:collected_events');
+            if (!Array.isArray(collectedEvents)) collectedEvents = [];
+            const count = Math.min(collectedEvents.length, 50);
+            return { current: count, target: 50, label: `${count} / 50 curiosities` };
+          }
+          case 'historian': {
+            let collectedLore = safeJsonParse(k.collected_lore, [], 'achievements:collected_lore');
+            if (!Array.isArray(collectedLore)) collectedLore = [];
+            const cats = ['narmir', 'general', k.race];
+            const reachableTotal = cats.reduce((sum, c) => sum + (LORE[c] || []).length, 0);
+            const collectedReachable = collectedLore.filter((id) =>
+              cats.some((c) => (LORE[c] || []).some((l) => l.id === id)),
+            ).length;
+            return { current: collectedReachable, target: reachableTotal || 1, label: `${collectedReachable} / ${reachableTotal} lore entries` };
           }
           default:
             return { current: 0, target: 1, label: 'Unknown' };
