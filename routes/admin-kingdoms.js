@@ -109,7 +109,7 @@ module.exports = function (db) {
     // instead of nine queries per kingdom.
     const races = await db.all("SELECT DISTINCT race FROM kingdoms");
     for (const { race } of races) {
-      await db.run(`${RESET_KINGDOM_SET} WHERE race = $15`, [
+      await db.run(`${RESET_KINGDOM_SET} WHERE race = $16`, [
         ...buildResetValues(race),
         race,
       ]);
@@ -123,6 +123,11 @@ module.exports = function (db) {
     await db.run("DELETE FROM trade_routes");
     await db.run("DELETE FROM bounties");
     await db.run("DELETE FROM spy_reports");
+    // Dungeon/Mountain's Heart discovery is tracked globally (not per-kingdom
+    // — see game/world-locations.js isPubliclyDiscovered), so a fresh world
+    // must also clear it; otherwise locations discovered by kingdoms that
+    // just got wiped stay "publicly discovered" forever.
+    await db.run("UPDATE world_locations SET discovered_by_kingdom_ids = '{}'");
     res.json({ ok: true });
   });
 

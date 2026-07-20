@@ -9,6 +9,7 @@ import { RACE_HOMES } from '../../utils/worldMapBuilder.js';
 import { showMapKingdomCard } from './MapKingdomCard.jsx';
 import { NODE_TYPE_META, getNodeRadius } from '../../utils/worldMapNodeMeta.js';
 import { createSymbolForTerrain } from '../../utils/terrainSymbols.js';
+import { cellIndex } from '../../utils/hex-constants.js';
 
 const TERRAIN_COLORS = {
   plains: '#556b2f',
@@ -28,7 +29,7 @@ function hexToColor(hex) {
   return new THREE.Color(hex);
 }
 
-export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevationData = null, highlightedRace = null, currentKingdomId = null, nodes = [], tradeRoutes = [], expeditions = [], worldLocations = [], layers = {} }) {
+export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevationData = null, highlightedRace = null, currentKingdomId = null, nodes = [], tradeRoutes = [], expeditions = [], worldLocations = [], layers = {}, visibility = null }) {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
@@ -81,7 +82,8 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       const tradeRoutesGroup = new THREE.Group();
       const expeditionsGroup = new THREE.Group();
       const worldLocationsGroup = new THREE.Group();
-      scene.add(kingdomMarkersGroup, terrainSymbolsGroup, resourceNodesGroup, tradeRoutesGroup, expeditionsGroup, worldLocationsGroup);
+      const regionLabelsGroup = new THREE.Group();
+      scene.add(kingdomMarkersGroup, terrainSymbolsGroup, resourceNodesGroup, tradeRoutesGroup, expeditionsGroup, worldLocationsGroup, regionLabelsGroup);
       layerGroupsRef.current = {
         kingdoms: kingdomMarkersGroup,
         terrain: terrainSymbolsGroup,
@@ -89,6 +91,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         routes: tradeRoutesGroup,
         expeditions: expeditionsGroup,
         locations: worldLocationsGroup,
+        regionLabels: regionLabelsGroup,
       };
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, logarithmicDepthBuffer: true });
@@ -258,6 +261,66 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       instances.instanceColor.needsUpdate = true;
       scene.add(instances);
 
+      // Fog of war overlay: thin caps stacked on top of each hex's terrain
+      // height (elevation, per getCellElevation above), covering cells the
+      // player hasn't fully discovered. Mirrors the opacity/color values
+      // from the archived SVG renderer (client/src/_archive/svg-worldmap-2026-07-16/
+      // WorldmapRenderer.jsx) — unseen: near-opaque black, seen-not-current:
+      // dimmed dark blue-gray, current: no overlay. Uses the same stride-48
+      // cellIndex() as the server (client/src/utils/hex-constants.js) and
+      // HexSelectionModal.jsx's proven isHexSeen/isHexCurrent bit-test.
+      const fogGroup = new THREE.Group();
+      if (visibility) {
+        let seenBig = 0n;
+        let currentBig = 0n;
+        try { seenBig = BigInt(visibility.seenCells || '0'); } catch { /* malformed, treat as unseen */ }
+        try { currentBig = BigInt(visibility.currentCells || '0'); } catch { /* malformed, treat as unseen */ }
+
+        const unseenCells = [];
+        const seenOnlyCells = [];
+        hexGrid.cells.forEach((cell) => {
+          const idx = cellIndex(cell.col, cell.row);
+          const isCurrent = idx >= 0 && currentBig !== 0n && (currentBig & (1n << BigInt(idx))) !== 0n;
+          if (isCurrent) return;
+          const isSeen = idx >= 0 && seenBig !== 0n && (seenBig & (1n << BigInt(idx))) !== 0n;
+          (isSeen ? seenOnlyCells : unseenCells).push(cell);
+        });
+
+        const buildFogMesh = (cells, color, opacity) => {
+          if (cells.length === 0) return null;
+          const fogMaterial = new THREE.MeshBasicMaterial({
+            color,
+            transparent: true,
+            opacity,
+            depthWrite: false,
+            side: THREE.FrontSide,
+          });
+          const mesh = new THREE.InstancedMesh(hexPrismGeometry, fogMaterial, cells.length);
+          const fogDummy = new THREE.Object3D();
+          cells.forEach((cell, i) => {
+            const elevation = getCellElevation(cell);
+            // Tall enough to occlude rivers (rendered at elevation + 1.5)
+            // with margin, not just skim the terrain surface.
+            const capHeight = 3;
+            const gap = 0.05;
+            fogDummy.position.set(cell.x, -cell.y, elevation + gap + capHeight / 2);
+            fogDummy.scale.set(1.01, 1.01, capHeight);
+            fogDummy.rotation.set(0, 0, 0);
+            fogDummy.updateMatrix();
+            mesh.setMatrixAt(i, fogDummy.matrix);
+          });
+          mesh.instanceMatrix.needsUpdate = true;
+          mesh.renderOrder = 10;
+          return mesh;
+        };
+
+        const unseenMesh = buildFogMesh(unseenCells, 0x000000, 0.92);
+        const seenMesh = buildFogMesh(seenOnlyCells, 0x0f1423, 0.65);
+        if (unseenMesh) fogGroup.add(unseenMesh);
+        if (seenMesh) fogGroup.add(seenMesh);
+      }
+      scene.add(fogGroup);
+
       // cellMap and cell.race are already built by buildHexGrid() (see
       // worldMapBuilder.js) — reuse them rather than recomputing, so this
       // view can never diverge from the canvas renderer's race assignment.
@@ -389,8 +452,16 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const mergedOutline = mergeGeometries(outlineGeometries);
         outlineGeometries.forEach(g => g.dispose());
         if (mergedOutline) {
-          const outlineMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
-          scene.add(new THREE.Mesh(mergedOutline, outlineMat));
+          // Region borders are a political/orientation layer, always visible
+          // regardless of fog of war (same intent as the region-name labels
+          // below, which use this same depthTest:false + high renderOrder
+          // trick) — otherwise the fog-of-war overlay's taller-than-border
+          // column (added above, for river occlusion) clips them wherever
+          // it's drawn in front.
+          const outlineMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5, depthTest: false, depthWrite: false });
+          const outlineMesh = new THREE.Mesh(mergedOutline, outlineMat);
+          outlineMesh.renderOrder = 998;
+          scene.add(outlineMesh);
         } else {
           console.warn('Border outline geometry merge failed; skipping outline layer.');
         }
@@ -402,8 +473,10 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         if (merged) {
           const raceRegion = REGION_META[race];
           const color = raceRegion ? new THREE.Color(raceRegion.stroke) : new THREE.Color(0xffffff);
-          const mat = new THREE.MeshBasicMaterial({ color });
-          scene.add(new THREE.Mesh(merged, mat));
+          const mat = new THREE.MeshBasicMaterial({ color, transparent: true, depthTest: false, depthWrite: false });
+          const borderMesh = new THREE.Mesh(merged, mat);
+          borderMesh.renderOrder = 998;
+          scene.add(borderMesh);
         } else {
           console.warn(`Border color geometry merge failed for race "${race}"; skipping.`);
         }
@@ -958,7 +1031,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
         const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
         labelMesh.position.set(home.x, -home.y, 80);
         labelMesh.renderOrder = 999;
-        scene.add(labelMesh);
+        regionLabelsGroup.add(labelMesh);
       });
 
       const mapWidth = hexGrid.W;
@@ -1315,7 +1388,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
       cancelled = true;
       if (cleanup) cleanup();
     };
-  }, [hexGrid, elevationData, kingdoms, currentKingdomId, nodes, tradeRoutes, expeditions, worldLocations]);
+  }, [hexGrid, elevationData, kingdoms, currentKingdomId, nodes, tradeRoutes, expeditions, worldLocations, visibility]);
 
   // Layer visibility toggles: intentionally a separate, lightweight effect
   // from the one above — flips .visible on the pre-built groups instead of
@@ -1329,6 +1402,7 @@ export default function WorldmapWebGL({ hexGrid = null, kingdoms = [], elevation
     if (groups.routes) groups.routes.visible = layers.routes !== false;
     if (groups.expeditions) groups.expeditions.visible = layers.expeditions !== false;
     if (groups.locations) groups.locations.visible = layers.locations !== false;
+    if (groups.regionLabels) groups.regionLabels.visible = layers.regionLabels !== false;
   }, [layers]);
 
   return (

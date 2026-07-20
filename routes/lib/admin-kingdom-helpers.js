@@ -7,6 +7,7 @@
 // duplicated, same pattern as routes/lib/kingdom-turn-helpers.js (A2-3).
 
 const commandHandler = require('../../game/command-handler');
+const { DEFAULT_VISIBILITY } = require('../../game/visibility-migration');
 
 const BCRYPT_SALT_ROUNDS = 10;
 
@@ -138,6 +139,7 @@ const buildResetValues = (race) => {
     buildings.bld_training,
     buildings.bld_shrines,
     buildings.bld_housing,
+    JSON.stringify(DEFAULT_VISIBILITY),
   ];
 };
 
@@ -177,10 +179,10 @@ const RESET_KINGDOM_SET = `UPDATE kingdoms SET
     bld_open_pit = 0, bld_strip_mine = 0, bld_deep_mine = 0,
     resource_sequence = '{}'::jsonb, ladders = 0, trade_routes = 0, active_trade_routes = '[]'::jsonb,
     milestones_claimed = '[]'::jsonb, milestone_bonuses = '{}'::jsonb, milestone_title = '',
-    scout_allocation = 0, scout_progress = 0`;
+    scout_allocation = 0, scout_progress = 0, visibility = $15`;
 
 const resetKingdomLogic = async (db, kingdomId, race) => {
-  await db.run(`${RESET_KINGDOM_SET} WHERE id = $15`, [
+  await db.run(`${RESET_KINGDOM_SET} WHERE id = $16`, [
     ...buildResetValues(race),
     kingdomId,
   ]);

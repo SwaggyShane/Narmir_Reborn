@@ -55,6 +55,7 @@ const DEFAULT_LAYERS = {
   routes: true,
   expeditions: true,
   terrain: false,
+  regionLabels: true,
 };
 
 export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions, setWorldLocations, setWorldSeed, setVisibility, setPlayerKingdomId } = {}) {
@@ -179,6 +180,18 @@ function HexLegendPreview({ terrain }) {
       // for a cell's elevation.
       const symbol = createSymbolForTerrain(terrain.type);
       if (symbol) {
+        // This fixed ortho camera (-35..35) comfortably fits every symbol
+        // except mountains, whose central spire+cap runs to local z≈71 —
+        // roughly double volcanic's z≈36 — and pokes past the frame. Rather
+        // than shrink the shared geometry (also used by the full-size map,
+        // where it's proportioned fine against real elevation), clamp only
+        // the legend preview's copy to a height that's known to fit.
+        const box = new THREE.Box3().setFromObject(symbol);
+        const symbolHeight = box.max.z - box.min.z;
+        const maxLegendHeight = 40;
+        if (symbolHeight > maxLegendHeight) {
+          symbol.scale.setScalar(maxLegendHeight / symbolHeight);
+        }
         symbol.position.z = 7;
         scene.add(symbol);
       }
@@ -305,6 +318,7 @@ function MapLayerToggles({ layers, onToggle }) {
     { key: 'routes', label: 'Trade Routes', icon: '🤝' },
     { key: 'expeditions', label: 'Expeditions', icon: '🧭' },
     { key: 'terrain', label: 'Terrain', icon: '🌄' },
+    { key: 'regionLabels', label: 'Region Names', icon: '🏷️' },
   ];
 
   return (
@@ -519,19 +533,19 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                   id="world-map-webgl"
                   className="relative w-full min-h-[300px] flex-1 rounded-[var(--radius-md)] border border-[var(--border)] bg-[#040710]"
                 >
-                  <WorldmapWebGL hexGrid={hexGrid} kingdoms={kingdoms} highlightedRace={highlightedRace} currentKingdomId={playerKingdomId} nodes={nodes} tradeRoutes={tradeRoutes} expeditions={expeditions} worldLocations={worldLocations} layers={layers} />
+                  <WorldmapWebGL hexGrid={hexGrid} kingdoms={kingdoms} highlightedRace={highlightedRace} currentKingdomId={playerKingdomId} nodes={nodes} tradeRoutes={tradeRoutes} expeditions={expeditions} worldLocations={worldLocations} layers={layers} visibility={visibility} />
                   {layers.nodes && nodes.length === 0 && (
                     <div className="pointer-events-none absolute inset-x-0 bottom-14 flex justify-center px-4">
                       <div className="max-w-md rounded-lg border border-[var(--border)] bg-black/70 px-4 py-3 text-center text-[11px] text-[var(--text3)] backdrop-blur-sm">
-                        No resource nodes on the map yet. Scout sites in{' '}
+                        No resource nodes revealed yet. Assign rangers to scout in{' '}
                         <button
                           type="button"
                           className="pointer-events-auto text-[var(--gold)] underline hover:opacity-90"
-                          onClick={(e) => { e.stopPropagation(); switchTab('resources'); }}
+                          onClick={(e) => { e.stopPropagation(); switchTab('exploration'); }}
                         >
-                          Resources
+                          Exploration
                         </button>
-                        {' '}(Scout Node, 500 gold) to plot them here.
+                        {' '}to reveal nodes as your scouting rings expand.
                       </div>
                     </div>
                   )}
