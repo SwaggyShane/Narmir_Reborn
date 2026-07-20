@@ -10,6 +10,8 @@ const { calculateLandExpansionReward } = require('../game/land-expansion');
 const { validateAllocation, getAllocationStatus } = require('../game/scout-allocation');
 const { getAllLocations, getLocationById, isPubliclyDiscovered, markLocationDiscovered } = require('../game/world-locations');
 const { getDistanceToLocation, getLocationTurnCost } = require('../game/location-distance');
+const { getKingdomMapCoords } = require('../game/world-map-coords');
+const { pixelToHex } = require('../game/hex-utils');
 const { structureUpdates } = require('./response-structurer');
 const { applyUpdates, bulkInsertNews } = require('./lib/kingdom-turn-helpers');
 
@@ -446,9 +448,13 @@ module.exports = function (db) {
           targetCol = Math.floor(Number(target_x) || 0);
           targetRow = Math.floor(Number(target_y) || 0);
 
-          const kingdomCol = Math.floor(Number(k.map_x) || 0);
-          const kingdomRow = Math.floor(Number(k.map_y) || 0);
-          const travelTurns = calculateTravelTime(kingdomCol, kingdomRow, targetCol, targetRow);
+          // kingdoms has no map_x/map_y columns — k.map_x/k.map_y are always
+          // undefined, which silently floored to 0, treating every kingdom
+          // as if it lived at hex (0,0) for travel-time purposes. Position
+          // must be derived the same way every other route does it.
+          const homeCoords = getKingdomMapCoords(k);
+          const homeHex = pixelToHex(homeCoords.map_x, homeCoords.map_y);
+          const travelTurns = calculateTravelTime(homeHex.col, homeHex.row, targetCol, targetRow);
           totalTurns = calculateExpeditionDuration(d, travelTurns);
         }
 
@@ -599,9 +605,13 @@ module.exports = function (db) {
           targetCol = Math.floor(Number(target_x) || 0);
           targetRow = Math.floor(Number(target_y) || 0);
 
-          const kingdomCol = Math.floor(Number(k.map_x) || 0);
-          const kingdomRow = Math.floor(Number(k.map_y) || 0);
-          const travelTurns = calculateTravelTime(kingdomCol, kingdomRow, targetCol, targetRow);
+          // kingdoms has no map_x/map_y columns — k.map_x/k.map_y are always
+          // undefined, which silently floored to 0, treating every kingdom
+          // as if it lived at hex (0,0) for travel-time purposes. Position
+          // must be derived the same way every other route does it.
+          const homeCoords = getKingdomMapCoords(k);
+          const homeHex = pixelToHex(homeCoords.map_x, homeCoords.map_y);
+          const travelTurns = calculateTravelTime(homeHex.col, homeHex.row, targetCol, targetRow);
           totalTurns = calculateExpeditionDuration(d, travelTurns);
         }
 

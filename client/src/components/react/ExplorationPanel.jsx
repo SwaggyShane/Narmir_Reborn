@@ -12,6 +12,7 @@ import EmptyState from './EmptyState.jsx';
 import HexSelectionModal from './HexSelectionModal.jsx';
 import { AllocationButtons } from './AllocationButtons.jsx';
 import { REGION_META } from '../../utils/raceData.js';
+import { hexCenter } from '../../utils/hexMap/HexGeometry.ts';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 
@@ -398,9 +399,16 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       // Epic trek still executes immediately
       (async () => {
         try {
+          // hex is {x: col, y: row} from HexSelectionModal (hex grid
+          // coordinates), but the epic-trek route works entirely in pixel
+          // space (getPathHexes/isTargetInBounds compare against the
+          // 1999x1380 pixel map) — sending col/row directly landed every
+          // trek within a few pixels of the map origin (northwest corner)
+          // regardless of which hex was actually clicked.
+          const targetPixel = hexCenter(hex.x, hex.y);
           const result = await apiCall('/api/kingdom/expedition/epic-trek', {
             method: 'POST',
-            body: { target_x: hex.x, target_y: hex.y, rangers },
+            body: { target_x: targetPixel.x, target_y: targetPixel.y, rangers },
           });
 
           if (result.error) {
