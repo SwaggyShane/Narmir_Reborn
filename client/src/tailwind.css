@@ -3522,6 +3522,8 @@
     width: 100%;
     max-width: 380px;
     animation: fadeUp 1s ease-out 0.9s both;
+    position: relative;
+    z-index: 10;
   }
 
   .auth-loading {
@@ -3560,6 +3562,7 @@
     border-radius: 4px;
     box-shadow: 0 0 30px rgba(240,98,2,0.4), 0 4px 16px rgba(0,0,0,0.5);
     transition: box-shadow 0.25s, transform 0.2s;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .continue-btn:hover {
@@ -3865,7 +3868,7 @@
     inset: 0;
     background: #000;
     animation: fadeOverlay 0.5s ease-out forwards;
-    pointer-events: auto;
+    pointer-events: none;
     z-index: 99999;
   }
 
