@@ -3181,6 +3181,15 @@
     background: #000;
   }
 
+  @media (max-width: 768px) {
+    .splash-root {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+  }
+
   html:has(.phase-modern),
   body:has(.phase-modern) {
     overflow-y: auto;
@@ -3201,6 +3210,14 @@
     z-index: 1;
   }
 
+  @media (max-width: 768px) {
+    .retro-wrapper {
+      position: static;
+      width: 100%;
+      height: auto;
+    }
+  }
+
   .retro-frameset {
     display: grid;
     grid-template-columns: 140px minmax(0, 1fr) 140px;
@@ -3208,6 +3225,12 @@
     height: 100%;
     min-height: 100vh;
     background: #000000;
+  }
+
+  @media (max-width: 768px) {
+    .retro-frameset {
+      display: contents;
+    }
   }
 
   .retro-col {
@@ -3229,31 +3252,33 @@
     flex-shrink: 0;
   }
 
-  @media (max-width: 520px) {
-    .retro-frameset {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      height: auto;
-      min-height: auto;
-    }
-
+  @media (max-width: 768px) {
     .retro-col {
-      display: none;
-    }
-
-    .retro-col-right {
-      display: none;
+      display: none !important;
     }
 
     .retro-col-left {
-      display: none;
+      display: none !important;
+    }
+
+    .retro-col-right {
+      display: none !important;
+    }
+
+    .retro-nav {
+      display: none !important;
+    }
+
+    .retro-nav-spacer {
+      display: none !important;
     }
 
     .retro-center {
       width: 100%;
+      max-width: 100%;
       min-width: 0;
-      height: 100vh;
+      height: auto;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
@@ -3270,15 +3295,16 @@
 
     .retro-top-banner {
       width: 100%;
-      max-width: none;
+      max-width: 100%;
       height: auto;
-      min-height: 200px;
-      aspect-ratio: 575 / 140;
+      min-height: 180px;
+      aspect-ratio: auto 140px;
       object-fit: contain;
+      display: block;
     }
 
     .retro-content {
-      display: none;
+      display: none !important;
     }
   }
 
