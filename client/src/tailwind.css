@@ -695,7 +695,7 @@
   }
 
   .portal-header {
-    @apply text-left border-b border-white/5 px-6 py-4 max-[720px]:px-4 max-[720px]:py-6;
+    @apply text-left border-b border-white/5 px-4 py-6 md:px-6 md:py-4;
   }
 
   .portal-title {
@@ -711,12 +711,15 @@
   }
 
   .portal-main {
-    @apply flex-1 grid grid-cols-1 w-full items-start min-h-0 gap-6 py-5 pl-6 pr-0 max-[720px]:p-4;
+    @apply flex-1 grid w-full items-start min-h-0 gap-4 py-4 px-4;
+    grid-template-columns: 1fr;
   }
 
-  @media (min-width: 721px) {
+  @media (min-width: 768px) {
     .portal-main {
       grid-template-columns: 1fr 360px;
+      gap: 1.5rem;
+      padding: 1.25rem 1.5rem;
     }
   }
 
@@ -725,7 +728,7 @@
   }
 
   .portal-col-right {
-    @apply flex flex-col gap-4 sticky top-6 pr-6 max-[720px]:static max-[720px]:order-first max-[720px]:pr-0;
+    @apply flex flex-col gap-4 w-full md:w-auto md:sticky md:top-6 md:pr-6;
   }
 
   .portal-auth-expand {
@@ -738,11 +741,11 @@
   }
 
   .portal-nav-panel {
-    @apply flex flex-col gap-2 rounded-lg border border-white/5 bg-bg2 p-3 max-[720px]:flex-row max-[720px]:flex-wrap;
+    @apply flex flex-row flex-wrap gap-2 rounded-lg border border-white/5 bg-bg2 p-3 md:flex-col;
   }
 
   .portal-nav-btn {
-    @apply cursor-pointer rounded-md border border-transparent bg-transparent px-4 py-2.5 text-left font-sans text-sm font-semibold tracking-wide text-text2 transition-all max-[720px]:flex-1 max-[720px]:text-center;
+    @apply cursor-pointer flex-1 rounded-md border border-transparent bg-transparent px-4 py-2.5 text-center font-sans text-sm font-semibold tracking-wide text-text2 transition-all md:flex-none md:text-left;
   }
 
   .portal-nav-btn:hover {
@@ -755,7 +758,7 @@
   }
 
   .portal-footer {
-    @apply mt-auto flex items-center justify-between border-t border-white/5 px-6 py-5 text-xs text-text3;
+    @apply mt-auto flex flex-col gap-3 items-center justify-between border-t border-white/5 px-4 py-4 text-xs text-text3 md:flex-row md:px-6 md:py-5;
   }
 
   .portal-footer-link {
@@ -3230,16 +3233,26 @@
 
   @media (max-width: 520px) {
     .retro-frameset {
-      grid-template-columns: minmax(0, 1fr);
+      grid-template-columns: 70px minmax(0, 1fr);
     }
 
-    .retro-col-left,
     .retro-col-right {
       display: none;
     }
 
+    .retro-col-left {
+      background-image: none;
+      background-color: #000000;
+    }
+
     .retro-nav-spacer {
-      display: none;
+      width: 70px;
+      height: 80px;
+    }
+
+    .retro-nav img {
+      width: 60px;
+      height: auto;
     }
   }
 
