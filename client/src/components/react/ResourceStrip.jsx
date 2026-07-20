@@ -112,26 +112,33 @@ const HOUSING_CAP_BY_RACE = {
   vampire: 600,
 };
 
+// Client mirror of game/config.js's BUILDING_LAND_COST (keyed by kingdoms
+// column name instead of the short building key) — keep in sync manually,
+// same pattern as game/ARCHITECTURE.md's other canonical/mirror pairs. This
+// had drifted badly out of date (e.g. farms was 1 instead of 10, training
+// was 250 instead of 850), understating used land and overstating the
+// "free" land shown here, which made the real per-turn build-queue land
+// gate (game/lib/building-research.js) look wrong when it wasn't.
 const LAND_COST = {
-  bld_farms: 1,
-  bld_granaries: 2,
-  bld_barracks: 3,
-  bld_outposts: 5,
-  bld_guard_towers: 5,
-  bld_armories: 5,
-  bld_vaults: 10,
-  bld_schools: 10,
-  bld_smithies: 20,
-  bld_markets: 25,
-  bld_shrines: 10,
-  bld_libraries: 20,
-  bld_housing: 2,
-  bld_mausoleums: 25,
-  bld_mage_towers: 75,
-  bld_training: 250,
+  bld_farms: 10,
+  bld_granaries: 15,
+  bld_barracks: 100,
+  bld_outposts: 25,
+  bld_guard_towers: 50,
+  bld_armories: 300,
+  bld_vaults: 300,
+  bld_schools: 125,
+  bld_smithies: 200,
+  bld_markets: 100,
+  bld_shrines: 150,
+  bld_libraries: 25,
+  bld_housing: 25,
+  bld_mausoleums: 150,
+  bld_mage_towers: 250,
+  bld_training: 850,
   bld_castles: 1000,
-  bld_taverns: 5,
-  bld_walls: 3,
+  bld_taverns: 40,
+  bld_walls: 50,
 };
 
 

@@ -154,7 +154,7 @@ module.exports = function (db) {
     try {
       await db.withTransaction(async () => {
         const k = await db.get(
-          'SELECT id, engineers, resource_build_allocation, training_allocation, scout_allocation FROM kingdoms WHERE player_id = $1 FOR UPDATE',
+          'SELECT id, engineers, resource_build_allocation, training_allocation FROM kingdoms WHERE player_id = $1 FOR UPDATE',
           [req.player.playerId],
         );
         if (!k) {
@@ -174,10 +174,9 @@ module.exports = function (db) {
         const trainingAlloc = safeJsonParse(k.training_allocation, {}, 'build-allocation:training_allocation');
         const resourceTotal = Object.values(resourceAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
         const trainingTotal = Object.values(trainingAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
-        const scoutTotal = Math.max(0, parseInt(k.scout_allocation, 10) || 0);
 
-        if (allocValidation.total + resourceTotal + trainingTotal + scoutTotal + engOnExpedition > k.engineers) {
-          const err = new Error(`Not enough available engineers. Allocated: ${allocValidation.total.toLocaleString()} build, ${resourceTotal.toLocaleString()} resource, ${trainingTotal.toLocaleString()} training, ${scoutTotal.toLocaleString()} scout, ${engOnExpedition.toLocaleString()} on expeditions. Total available: ${k.engineers.toLocaleString()}`);
+        if (allocValidation.total + resourceTotal + trainingTotal + engOnExpedition > k.engineers) {
+          const err = new Error(`Not enough available engineers. Allocated: ${allocValidation.total.toLocaleString()} build, ${resourceTotal.toLocaleString()} resource, ${trainingTotal.toLocaleString()} training, ${engOnExpedition.toLocaleString()} on expeditions. Total available: ${k.engineers.toLocaleString()}`);
           err.statusCode = 400;
           throw err;
         }
@@ -223,7 +222,7 @@ module.exports = function (db) {
     try {
       await db.withTransaction(async () => {
         const k = await db.get(
-          'SELECT id, engineers, build_allocation, training_allocation, scout_allocation FROM kingdoms WHERE player_id = $1 FOR UPDATE',
+          'SELECT id, engineers, build_allocation, training_allocation FROM kingdoms WHERE player_id = $1 FOR UPDATE',
           [req.player.playerId],
         );
         if (!k) {
@@ -243,10 +242,9 @@ module.exports = function (db) {
         const trainingAlloc = safeJsonParse(k.training_allocation, {}, 'resource-build-allocation:training_allocation');
         const buildTotal = Object.values(buildAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
         const trainingTotal = Object.values(trainingAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
-        const scoutTotal = Math.max(0, parseInt(k.scout_allocation, 10) || 0);
 
-        if (allocValidation.total + buildTotal + trainingTotal + scoutTotal + engOnExpedition > k.engineers) {
-          const err = new Error(`Not enough available engineers. Allocated: ${allocValidation.total.toLocaleString()} resource, ${buildTotal.toLocaleString()} build, ${trainingTotal.toLocaleString()} training, ${scoutTotal.toLocaleString()} scout, ${engOnExpedition.toLocaleString()} on expeditions. Total available: ${k.engineers.toLocaleString()}`);
+        if (allocValidation.total + buildTotal + trainingTotal + engOnExpedition > k.engineers) {
+          const err = new Error(`Not enough available engineers. Allocated: ${allocValidation.total.toLocaleString()} resource, ${buildTotal.toLocaleString()} build, ${trainingTotal.toLocaleString()} training, ${engOnExpedition.toLocaleString()} on expeditions. Total available: ${k.engineers.toLocaleString()}`);
           err.statusCode = 400;
           throw err;
         }

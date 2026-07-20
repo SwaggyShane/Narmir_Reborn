@@ -109,7 +109,7 @@ module.exports = function (db) {
     // instead of nine queries per kingdom.
     const races = await db.all("SELECT DISTINCT race FROM kingdoms");
     for (const { race } of races) {
-      await db.run(`${RESET_KINGDOM_SET} WHERE race = $16`, [
+      await db.run(`${RESET_KINGDOM_SET} WHERE race = $17`, [
         ...buildResetValues(race),
         race,
       ]);

@@ -124,6 +124,32 @@ const buildResetValues = (race) => {
     rangers = 100;
   }
 
+  // Land must cover what these starting buildings actually cost, same
+  // formula as buildStartingProfile() above (base 1000 + real per-building
+  // BUILDING_LAND_COST) — RESET_KINGDOM_SET previously hardcoded `land =
+  // 504`, disconnected from the buildings it grants alongside it. For a
+  // dwarf (bld_housing:100 alone costs 2500 land) that landed a fresh
+  // reset kingdom at -2800ish land before the player did anything, which
+  // silently blocked construction from turn 0.
+  const landCosts = commandHandler.getConstants().BUILDING_LAND_COST || {};
+  const resetBuildingKeys = {
+    bld_farms: "farms",
+    bld_schools: "schools",
+    bld_barracks: "barracks",
+    bld_armories: "armories",
+    bld_housing: "housing",
+    bld_markets: "markets",
+    bld_smithies: "smithies",
+    bld_mage_towers: "mage_towers",
+    bld_shrines: "shrines",
+    bld_outposts: "outposts",
+    bld_training: "training",
+  };
+  let land = 1000;
+  for (const [dbCol, configKey] of Object.entries(resetBuildingKeys)) {
+    land += (buildings[dbCol] || 0) * (landCosts[configKey] || 0);
+  }
+
   return [
     food,
     fighters,
@@ -140,11 +166,12 @@ const buildResetValues = (race) => {
     buildings.bld_shrines,
     buildings.bld_housing,
     JSON.stringify(DEFAULT_VISIBILITY),
+    land,
   ];
 };
 
 const RESET_KINGDOM_SET = `UPDATE kingdoms SET
-    gold = 10000, mana = 0, land = 504, population = 50000, food = $1, happiness = 100,
+    gold = 10000, mana = 0, land = $16, population = 50000, food = $1, happiness = 100,
     turn = 0, turns_stored = 400,
     fighters = $2, rangers = $3, clerics = 0, mages = 0, thieves = 0, ninjas = 0,
     researchers = 100, engineers = 100, scribes = 0,
@@ -182,7 +209,7 @@ const RESET_KINGDOM_SET = `UPDATE kingdoms SET
     scout_allocation = 0, scout_progress = 0, visibility = $15`;
 
 const resetKingdomLogic = async (db, kingdomId, race) => {
-  await db.run(`${RESET_KINGDOM_SET} WHERE id = $16`, [
+  await db.run(`${RESET_KINGDOM_SET} WHERE id = $17`, [
     ...buildResetValues(race),
     kingdomId,
   ]);
