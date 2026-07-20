@@ -3562,10 +3562,6 @@
     border-radius: 4px;
     box-shadow: 0 0 30px rgba(240,98,2,0.4), 0 4px 16px rgba(0,0,0,0.5);
     transition: box-shadow 0.25s, transform 0.2s;
-    cursor: pointer;
-    border: none;
-    position: relative;
-    z-index: 10;
     -webkit-tap-highlight-color: transparent;
   }
 
