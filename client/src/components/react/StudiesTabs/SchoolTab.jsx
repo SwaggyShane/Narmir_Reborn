@@ -165,31 +165,19 @@ export const SchoolTab = ({
       {/* GENERAL STUDIES SUB-TAB */}
       {activeSchoolSubTab === 'general' && (
         <div>
-          <div className="r-grid-2 mb-3">
-            <div className="card m-0">
-              <div className="card-title !mb-2.5">General Spellbook</div>
-              <div className="trow">
-                <span className="name">Researchers</span>
-                <span className="count" id="st-researchers">0</span>
-              </div>
-              <div className="trow">
-                <span className="name">Capacity</span>
-                <span className="count" id="st-school-cap">0</span>
-              </div>
-              <div className="trow">
-                <span className="name">Spellbook Level</span>
-                <span className="count" id="st-general-spellbook-level">0%</span>
-              </div>
+          <div className="card m-0 mb-3">
+            <div className="card-title !mb-2.5">General Spellbook</div>
+            <div className="trow">
+              <span className="name">Researchers</span>
+              <span className="count" id="st-researchers">0</span>
             </div>
-            <div className="card m-0">
-              <div className="card-title !mb-2.5">School upgrades</div>
-              <UpgradesList
-                category="school"
-                defs={SCHOOL_UPGRADES}
-                owned={parseOwnedUpgrades(studiesData?.school_upgrades)}
-                state={state || {}}
-                onPurchased={(_, nextOwned) => onUpgraded('school', nextOwned)}
-              />
+            <div className="trow">
+              <span className="name">Capacity</span>
+              <span className="count" id="st-school-cap">0</span>
+            </div>
+            <div className="trow">
+              <span className="name">Spellbook Level</span>
+              <span className="count" id="st-general-spellbook-level">0%</span>
             </div>
           </div>
 
@@ -204,6 +192,17 @@ export const SchoolTab = ({
             focus1SelectRef={focus1SelectRef}
             focus2SelectRef={focus2SelectRef}
           />
+
+          <div className="card m-0 mt-3">
+            <div className="card-title !mb-2.5">School upgrades</div>
+            <UpgradesList
+              category="school"
+              defs={SCHOOL_UPGRADES}
+              owned={parseOwnedUpgrades(studiesData?.school_upgrades)}
+              state={state || {}}
+              onPurchased={(_, nextOwned) => onUpgraded('school', nextOwned)}
+            />
+          </div>
         </div>
       )}
 
