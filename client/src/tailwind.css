@@ -4155,6 +4155,7 @@
 
 /* Glitch active state */
 .retro-wrapper.glitching {
+  transform: translate3d(0, 0, 0);
   animation:
     glitchShake  0.09s infinite,
     glitchFilter 0.18s steps(1) infinite,
