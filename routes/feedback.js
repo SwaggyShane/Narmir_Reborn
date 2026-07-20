@@ -1,6 +1,12 @@
 const express = require('express');
 const { requireAuth } = require('./middleware');
-const { sentryEnabled, Sentry } = require('../instrument');
+let Sentry, sentryEnabled;
+try {
+  ({ Sentry, sentryEnabled } = require('../instrument'));
+} catch (err) {
+  Sentry = null;
+  sentryEnabled = false;
+}
 const path = require('path');
 const fs = require('fs');
 const { postBugReportToDiscord } = require('../lib/discord-notify');
