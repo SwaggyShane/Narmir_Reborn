@@ -92,6 +92,11 @@ function generateRegionResources(worldSeed, race) {
       const distRand = seededRandom(seed, race.charCodeAt(0), idx, i, 1);
       const distance = 600 + distRand * (28800 - 600);
 
+      // Deterministic richness (25-100 range, not a flat value — so nodes
+      // actually vary in how worthwhile they are to harvest)
+      const richnessRand = seededRandom(seed, race.charCodeAt(0), idx, i, 5);
+      const richness = Math.round(25 + richnessRand * (100 - 25));
+
       // Deterministic terrain: 75% dominant, 25% other
       const terrainRand = seededRandom(seed, race.charCodeAt(0), idx, i, 2);
       let terrain;
@@ -108,6 +113,7 @@ function generateRegionResources(worldSeed, race) {
         type,
         terrain,
         distance: Math.round(distance),
+        richness,
         raceIndex: idx,
         nodeNumber: i,
       });
@@ -201,7 +207,7 @@ async function initializeWorld(db) {
               `${nodeSpec.type.charAt(0).toUpperCase()}${nodeSpec.type.slice(1)} - ${race}`,
               nodeSpec.type,
               nodeSpec.distance,
-              100, // Default richness
+              nodeSpec.richness,
               coords.x,
               coords.y,
               nodeSpec.terrain,

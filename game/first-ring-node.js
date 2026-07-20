@@ -66,11 +66,17 @@ async function seedFirstRingNode(db, kingdomId, race) {
 
     // World-owned (kingdom_id NULL), same as every other seeded resource
     // node — discoverable by anyone who scouts the hex, not privately
-    // reserved for this kingdom.
+    // reserved for this kingdom. richness=4 is deliberately low relative to
+    // regular world-seeded nodes (randomized 25-100, see
+    // game/world-initialization.js) — this node's purpose is an easy,
+    // modest first find, not a full-value node. resolveResourceHarvests'
+    // formula is population * (richness/100) * harvestTurns * 0.1, so at
+    // richness=4 a 1000-population/10-turn trip yields ~40 (was
+    // richness=1, yielding ~10 — barely worth sending anyone).
     await db.run(
       `INSERT INTO resource_nodes (name, type, distance, richness, map_x, map_y, terrain)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [`${type.charAt(0).toUpperCase()}${type.slice(1)} Discovery`, type, distance, 1, coords.x, coords.y, terrain],
+      [`${type.charAt(0).toUpperCase()}${type.slice(1)} Discovery`, type, distance, 4, coords.x, coords.y, terrain],
     );
   } catch (err) {
     console.error(`[first-ring-node] Failed to seed node for kingdom ${kingdomId}:`, err.message);

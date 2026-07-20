@@ -2388,10 +2388,10 @@ async function resolveExpeditions(db, k, engine) {
 // rangers/fighters (attrition, troop XP, forage-rate formulas), none of
 // which apply to a population-based harvesting party.
 // yield = population * (richness / 100) * harvestTurns * this. richness is
-// stored on a 0-100 scale (currently a flat 100 default for every
-// world-seeded node -- see game/world-initialization.js), so dividing by
-// 100 keeps it a neutral 1.0x factor today while still leaving room to
-// vary node quality later without needing to touch this formula.
+// stored on a 0-100 scale: regular world-seeded nodes are randomized 25-100
+// (game/world-initialization.js), while the guaranteed first-ring node
+// (game/first-ring-node.js) is deliberately low (4) since it's meant as an
+// easy, modest early find rather than a full-value node.
 const HARVEST_YIELD_RATE = 0.1;
 async function resolveResourceHarvests(db, k) {
   const events = [];
