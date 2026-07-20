@@ -115,6 +115,15 @@ module.exports = function (db) {
       ]);
     }
 
+    // Per-kingdom (not per-race, unlike the batched UPDATE above) — each
+    // kingdom's first-ring node sits around its own home hex. Without this,
+    // every kingdom loses its guaranteed first-ring node on a fresh-world
+    // reset (only routes/auth.js's signup path seeds it otherwise).
+    const allKingdoms = await db.all("SELECT id, race FROM kingdoms");
+    for (const k of allKingdoms) {
+      await seedFirstRingNode(db, k.id, k.race);
+    }
+
     await db.run("DELETE FROM expeditions");
     await db.run("DELETE FROM news");
     await db.run("DELETE FROM war_log");

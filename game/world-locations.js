@@ -41,6 +41,17 @@ function seededRandom(worldSeed, regionName, locationType, retryIteration = 0) {
  * @param {number} maxRetries - Max attempts to find valid location (default 10)
  * @returns {object|null} {x, y} or null if unable to generate valid location
  */
+// Full width of the offsetX/offsetY random range below (i.e. each axis
+// lands in [-LOCATION_OFFSET_RANGE/2, LOCATION_OFFSET_RANGE/2)). Kept as a
+// named constant, rather than inlined, so MAX_LOCATION_OFFSET_FROM_HOME
+// (used by seedRegionLocations' staleness check) can never drift out of
+// sync with the actual formula it's validating against.
+const LOCATION_OFFSET_RANGE = 500;
+// Furthest a correctly-seeded location can ever land from its region's
+// home (diagonal of the offset square) — anything farther means it was
+// seeded against a RACE_HOMES value that has since changed underneath it.
+const MAX_LOCATION_OFFSET_FROM_HOME = (LOCATION_OFFSET_RANGE / 2) * Math.SQRT2;
+
 function getRegionLocationCoords(worldSeed, regionName, locationType, maxRetries = 10) {
   const home = RACE_HOMES[regionName];
   if (!home) return null;
@@ -51,9 +62,8 @@ function getRegionLocationCoords(worldSeed, regionName, locationType, maxRetries
     const rand1 = seededRandom(worldSeed, regionName, locationType, attempt * 2);
     const rand2 = seededRandom(worldSeed, regionName, locationType, attempt * 2 + 1);
 
-    // Generate coordinates within ~500px of region home
-    const offsetX = (rand1 - 0.5) * 500;
-    const offsetY = (rand2 - 0.5) * 500;
+    const offsetX = (rand1 - 0.5) * LOCATION_OFFSET_RANGE;
+    const offsetY = (rand2 - 0.5) * LOCATION_OFFSET_RANGE;
     const x = Math.max(0, Math.min(1999, home.x + offsetX));
     const y = Math.max(0, Math.min(1379, home.y + offsetY));
 
@@ -112,11 +122,32 @@ async function seedRegionLocations(db, worldSeed) {
   for (const region of regionNames) {
     for (const type of locationTypes) {
       try {
-        // Check if already exists
-        const existing = await db.get(
-          'SELECT id FROM world_locations WHERE region_name = $1 AND type = $2',
+        let existing = await db.get(
+          'SELECT id, x, y FROM world_locations WHERE region_name = $1 AND type = $2',
           [region, type],
         );
+
+        // Self-heal: a location can only be this far from its OWN region's
+        // home if it was seeded against a RACE_HOMES value that has since
+        // changed (this exact drift happened once already — 2026-07-20,
+        // 14 of 18 locations ended up stranded near stale home positions
+        // after a world-map rework moved RACE_HOMES). Wipe and re-seed
+        // rather than leaving it silently wrong.
+        if (existing) {
+          const home = RACE_HOMES[region];
+          const dx = Number(existing.x) - home.x;
+          const dy = Number(existing.y) - home.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > MAX_LOCATION_OFFSET_FROM_HOME) {
+            console.warn(
+              `[world-locations] ${type} for ${region} is ${dist.toFixed(0)}px from its home ` +
+              `(max possible ${MAX_LOCATION_OFFSET_FROM_HOME.toFixed(0)}px) — RACE_HOMES changed ` +
+              `since this was seeded; re-seeding.`,
+            );
+            await db.run('DELETE FROM world_locations WHERE id = $1', [existing.id]);
+            existing = null;
+          }
+        }
 
         if (!existing) {
           // Generate deterministic coordinates

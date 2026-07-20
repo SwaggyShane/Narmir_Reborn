@@ -8,6 +8,7 @@
 
 const commandHandler = require('../../game/command-handler');
 const { DEFAULT_VISIBILITY } = require('../../game/visibility-migration');
+const { seedFirstRingNode } = require('../../game/first-ring-node');
 
 const BCRYPT_SALT_ROUNDS = 10;
 
@@ -225,6 +226,12 @@ const resetKingdomLogic = async (db, kingdomId, race) => {
   await db.run("DELETE FROM trade_routes WHERE kingdom_id = $1 OR partner_id = $2", [kingdomId, kingdomId]);
   await db.run("DELETE FROM bounties WHERE target_id = $1", [kingdomId]);
   await db.run("DELETE FROM spy_reports WHERE kingdom_id = $1 OR target_id = $2", [kingdomId, kingdomId]);
+
+  // seedFirstRingNode normally only runs once, at kingdom creation
+  // (routes/auth.js) — a reset wipes the kingdom back to a fresh start but
+  // never re-granted this, silently leaving reset kingdoms with no
+  // guaranteed node in their first scout ring.
+  await seedFirstRingNode(db, kingdomId, race);
 };
 
 module.exports = {
