@@ -3231,7 +3231,14 @@
 
   @media (max-width: 520px) {
     .retro-frameset {
-      grid-template-columns: 90px minmax(0, 1fr);
+      display: flex;
+      flex-direction: column;
+      height: auto;
+      min-height: auto;
+    }
+
+    .retro-col {
+      width: 100%;
     }
 
     .retro-col-right {
@@ -3241,24 +3248,44 @@
     .retro-col-left {
       background-image: none;
       background-color: #000000;
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      padding: 8px;
+      align-items: flex-start;
+      order: -1;
+    }
+
+    .retro-nav {
+      display: flex;
+      flex-direction: row;
+      gap: 0;
+      flex-wrap: wrap;
+      align-items: center;
     }
 
     .retro-nav-spacer {
-      width: 90px;
-      height: 100px;
+      display: none;
     }
 
     .retro-nav img {
-      width: 85px;
+      width: 48px;
       height: auto;
     }
 
+    .retro-center {
+      width: 100%;
+      order: 1;
+    }
+
     .retro-content {
-      font-size: 11pt;
+      font-size: 12pt;
+      padding: 12px;
     }
 
     .retro-top-banner {
-      max-width: 90vw;
+      max-width: 100%;
+      width: 100%;
     }
   }
 
