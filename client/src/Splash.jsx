@@ -155,7 +155,6 @@ function RetroSite() {
           <div className="retro-applet-wrap">
             <button
               className="retro-play-button"
-              onClick={() => window.location.href = '/portal'}
               aria-label="Play Narmir"
             >
               Play Narmir
