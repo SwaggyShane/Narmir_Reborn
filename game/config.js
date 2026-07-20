@@ -2232,6 +2232,18 @@ const config = {
     frostbind_amulet: { name: "Frostbind Amulet", desc: "An ornate medallion radiating perpetual numbing cold, worn by the mountain's guardian spirits.", rarity: "ultra_rare" },
     avalanche_heart: { name: "Avalanche Heart", desc: "The crystallized essence of a thousand avalanches, pulsing with the raw power of cascading mountains.", rarity: "ultra_rare" },
     stormcaller_gem: { name: "Stormcaller's Gem", desc: "A radiant gemstone that crackles with captured lightning, said to call down thunder upon command.", rarity: "ultra_rare" },
+    // RARE_RESOURCE_ITEMS (wood/stone/iron production rare finds, game/economy.js)
+    // had no INVENTORY_ITEMS entry, so /inventory silently dropped them the
+    // same way the 26 orphaned JUNK_PRIZES ids were dropped.
+    ancient_oak_shard: { name: "Ancient Oak Shard", desc: "A shard of oak older than the kingdom itself, dense with slow-grown strength.", rarity: "rare" },
+    petrified_heartwood: { name: "Petrified Heartwood", desc: "The stone-hard core of a tree that stopped growing centuries ago.", rarity: "rare" },
+    ironbark_splinter: { name: "Ironbark Splinter", desc: "Bark tough enough to turn an axe blade.", rarity: "rare" },
+    crystalline_core: { name: "Crystalline Core", desc: "A vein of stone that grew into something closer to crystal.", rarity: "rare" },
+    primordial_geode: { name: "Primordial Geode", desc: "Cracked open, it reveals a hollow of ancient, glittering formation.", rarity: "rare" },
+    fossil_remnant: { name: "Fossil Remnant", desc: "The remains of something that predates recorded history.", rarity: "rare" },
+    meteoric_shard: { name: "Meteoric Shard", desc: "Fallen from the sky, still bearing the scars of its descent.", rarity: "rare" },
+    deep_vein_ore: { name: "Deep Vein Ore", desc: "Ore pulled from a seam deeper than any miner's memory.", rarity: "rare" },
+    lodestone_fragment: { name: "Lodestone Fragment", desc: "A magnetized fragment that tugs faintly at anything metal nearby.", rarity: "rare" },
   },
 
   JUNK_PRIZES: [

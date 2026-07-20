@@ -38,14 +38,19 @@ module.exports = function (db) {
       const k = await db.get('SELECT id, items FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
-      const { INVENTORY_ITEMS } = config;
+      const { INVENTORY_ITEMS, ELEMENTAL_FRAGMENTS } = config;
+      const fragmentIds = new Set(ELEMENTAL_FRAGMENTS.map((f) => f.id));
       let items = safeJsonParse(k.items, [], 'inventory:items');
       if (!Array.isArray(items)) items = [];
 
-      // Format inventory with descriptions
+      // Format inventory with descriptions. Elemental fragments (earth/water/
+      // fire/air) live in the Resources panel's Fragments tab, not here —
+      // exclude them explicitly rather than relying on them happening to lack
+      // an INVENTORY_ITEMS entry.
       const formatted = {};
       const deprecated = [];
       for (const item of items) {
+        if (fragmentIds.has(item.id)) continue;
         if (item.qty && item.qty > 0) {
           if (INVENTORY_ITEMS[item.id]) {
             formatted[item.id] = {
@@ -54,11 +59,10 @@ module.exports = function (db) {
               count: item.qty,
               rarity: INVENTORY_ITEMS[item.id].rarity
             };
-          } else if (!(typeof item.name === 'string' && item.name.includes('Fragment'))) {
-            // Log non-fragment deprecated items. item.name/id may be legacy
-            // non-string values from a defunct pre-string-slug item format
-            // (no current writer produces this — see game/lib/items.js) —
-            // tolerate rather than crash.
+          } else {
+            // item.id/name may be a legacy non-string value from a defunct
+            // pre-string-slug item format (no current writer produces this —
+            // see game/lib/items.js) — tolerate rather than crash.
             deprecated.push(`${item.id}x${item.qty}`);
           }
         }
