@@ -10,7 +10,14 @@ if ((process.env.NODE_ENV || '').trim().toLowerCase() === 'production') process.
 // Server logging to secure logs directory (not public) — extracted to lib/logger
 require('./lib/logger').setupFileLogging();
 
-const { Sentry, sentryEnabled } = require('./instrument');
+let Sentry, sentryEnabled;
+try {
+  ({ Sentry, sentryEnabled } = require('./instrument'));
+} catch (err) {
+  // instrument.js not found; proceed without Sentry
+  Sentry = null;
+  sentryEnabled = false;
+}
 const { flushSentry, setupProcessErrorHandlers } = require('./lib/error-handlers');
 const { createGracefulShutdown } = require('./lib/shutdown');
 const bootstrap = require('./lib/bootstrap');
