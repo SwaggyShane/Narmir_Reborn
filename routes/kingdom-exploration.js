@@ -11,6 +11,7 @@ const { validateAllocation, getAllocationStatus } = require('../game/scout-alloc
 const { getAllLocations, getLocationById, isPubliclyDiscovered, markLocationDiscovered } = require('../game/world-locations');
 const { getDistanceToLocation, getLocationTurnCost } = require('../game/location-distance');
 const { structureUpdates } = require('./response-structurer');
+const { applyUpdates, bulkInsertNews } = require('./lib/kingdom-turn-helpers');
 
 const MOJIBAKE_SIGNATURE = /[ÃÂâïðÅ�]/;
 
@@ -360,10 +361,14 @@ module.exports = function (db) {
     const { duration } = req.body;
     const d = ['instant', '5', '25'].includes(duration) ? duration : 'instant';
 
-    // For instant: use hunting reward calc, deduct 1 turn, apply food (no full turn processing)
+    // For instant: run a full turn first (build queue, other pending
+    // expeditions, news) same as /research, then layer the hunting reward
+    // on top — instant actions still spend a real turn, so they should
+    // advance the kingdom like any other turn spend, not silently consume
+    // one with zero news/simulation effect.
     if (d === 'instant') {
       try {
-        const { updates, reward } = await db.withTransaction(async () => {
+        const { finalUpdates, reward } = await db.withTransaction(async () => {
           let k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [req.player.playerId]);
           if (!k) throw new Error('Kingdom not found');
           if (k.turns_stored < 1) throw new Error('No turns available - next +7 turns in 25 minutes');
@@ -376,19 +381,32 @@ module.exports = function (db) {
             throw new Error('Not enough available rangers');
           }
 
+          const { updates: turnUpdates, events } = await commandHandler.handle({ type: 'turn' }, { kingdom: k });
+          turnUpdates.turns_stored = Math.max(0, k.turns_stored - 1);
+
+          const kAfterTurn = { ...k, ...turnUpdates };
           const reward = calculateHuntingReward(r, k.ranger_level || 1, t, k.race, 'instant');
-
-          const newFood = Math.max(0, (k.food || 0) + reward.foodReward);
-          const newTurns = Math.max(0, k.turns_stored - 1);
-
-          await db.run('UPDATE kingdoms SET food = $1, turns_stored = $2 WHERE id = $3', [newFood, newTurns, k.id]);
-
-          return {
-            updates: { food: newFood, turns_stored: newTurns },
-            reward,
+          const finalUpdates = {
+            ...turnUpdates,
+            food: Math.max(0, (kAfterTurn.food || 0) + reward.foodReward),
           };
+
+          await applyUpdates(db, k.id, finalUpdates);
+
+          // The instant reward itself is already surfaced via the response
+          // message/toast — only the full turn's own events (build
+          // completions, etc.) need a news entry, not a redundant one for
+          // the instant action itself.
+          await bulkInsertNews(db, events.map((ev) => ({
+            kingdom_id: k.id,
+            type: ev.type || 'system',
+            message: ev.message,
+            turn_num: finalUpdates.turn || k.turn,
+          })));
+
+          return { finalUpdates, reward };
         });
-        return res.json({ ok: true, updates: structureUpdates(updates), reward, message: `Instant hunt: +${reward.foodReward} food` });
+        return res.json({ ok: true, updates: structureUpdates(finalUpdates), reward, message: `Instant hunt: +${reward.foodReward} food` });
       } catch (err) {
         if (err.message.includes('No turns available')) {
           return res.status(429).json({ error: err.message });
@@ -497,10 +515,12 @@ module.exports = function (db) {
     const { duration } = req.body;
     const d = ['instant', '5', '25'].includes(duration) ? duration : 'instant';
 
-    // For instant: use prospecting reward calc, deduct 1 turn, apply gold (no full turn processing)
+    // For instant: run a full turn first (build queue, other pending
+    // expeditions, news) same as /research, then layer the prospecting
+    // reward on top — see the matching comment in /expedition/hunting.
     if (d === 'instant') {
       try {
-        const { updates, reward } = await db.withTransaction(async () => {
+        const { finalUpdates, reward } = await db.withTransaction(async () => {
           let k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [req.player.playerId]);
           if (!k) throw new Error('Kingdom not found');
           if (k.turns_stored < 1) throw new Error('No turns available - next +7 turns in 25 minutes');
@@ -513,19 +533,32 @@ module.exports = function (db) {
             throw new Error('Not enough available engineers');
           }
 
+          const { updates: turnUpdates, events } = await commandHandler.handle({ type: 'turn' }, { kingdom: k });
+          turnUpdates.turns_stored = Math.max(0, k.turns_stored - 1);
+
+          const kAfterTurn = { ...k, ...turnUpdates };
           const reward = calculateProspectingReward(e, k.engineer_level || 1, t, k.race, 'instant');
-
-          const newGold = Math.max(0, (k.gold || 0) + reward.goldReward);
-          const newTurns = Math.max(0, k.turns_stored - 1);
-
-          await db.run('UPDATE kingdoms SET gold = $1, turns_stored = $2 WHERE id = $3', [newGold, newTurns, k.id]);
-
-          return {
-            updates: { gold: newGold, turns_stored: newTurns },
-            reward,
+          const finalUpdates = {
+            ...turnUpdates,
+            gold: Math.max(0, (kAfterTurn.gold || 0) + reward.goldReward),
           };
+
+          await applyUpdates(db, k.id, finalUpdates);
+
+          // The instant reward itself is already surfaced via the response
+          // message/toast — only the full turn's own events (build
+          // completions, etc.) need a news entry, not a redundant one for
+          // the instant action itself.
+          await bulkInsertNews(db, events.map((ev) => ({
+            kingdom_id: k.id,
+            type: ev.type || 'system',
+            message: ev.message,
+            turn_num: finalUpdates.turn || k.turn,
+          })));
+
+          return { finalUpdates, reward };
         });
-        return res.json({ ok: true, updates: structureUpdates(updates), reward, message: `Instant prospect: +${reward.goldReward} gold` });
+        return res.json({ ok: true, updates: structureUpdates(finalUpdates), reward, message: `Instant prospect: +${reward.goldReward} gold` });
       } catch (err) {
         console.error('[expedition/prospecting-instant] failed:', err.message, err.stack);
         if (err.message.includes('No turns available')) {
@@ -648,7 +681,7 @@ module.exports = function (db) {
     if (r < 1) return res.status(400).json({ error: 'Send at least 1 ranger' });
 
     try {
-      const { updates, reward } = await db.withTransaction(async () => {
+      const { finalUpdates, reward } = await db.withTransaction(async () => {
         const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
           req.player.playerId,
         ]);
@@ -680,34 +713,49 @@ module.exports = function (db) {
           throw error;
         }
 
-        await db.run(
-          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), population = GREATEST(0, population - $2), land = land + $3, rangers = GREATEST(0, rangers - $4) WHERE id = $5',
-          [totalTurns, reward.populationCost, reward.landsDiscovered, r, k.id],
-        );
+        // Run a full turn first (build queue, other pending expeditions,
+        // news) same as /research, then layer land expansion on top — see
+        // the matching comment in /expedition/hunting.
+        const { updates: turnUpdates, events } = await commandHandler.handle({ type: 'turn' }, { kingdom: k });
+        turnUpdates.turns_stored = Math.max(0, k.turns_stored - totalTurns);
+
+        const kAfterTurn = { ...k, ...turnUpdates };
+        const finalUpdates = {
+          ...turnUpdates,
+          population: Math.max(0, (kAfterTurn.population || 0) - reward.populationCost),
+          // `land`, not `lands` — matches the real kingdoms column; the
+          // response previously wrote to a nonexistent `lands` field, which
+          // also always read k.lands as undefined (0), so it never
+          // reflected the kingdom's real prior land total even before the
+          // naming was fixed.
+          land: (kAfterTurn.land || 0) + reward.landsDiscovered,
+          rangers: Math.max(0, (kAfterTurn.rangers || 0) - r),
+        };
+
+        await applyUpdates(db, k.id, finalUpdates);
 
         await db.run(
           'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
           [k.id, 'land_expansion', totalTurns, r, 0, 0, JSON.stringify({ land: reward.landsDiscovered }), 0],
         );
 
-        let updates = {
-          turns_stored: Math.max(0, k.turns_stored - totalTurns),
-          population: Math.max(0, k.population - reward.populationCost),
-          // `land`, not `lands` — matches the real kingdoms column and the
-          // raw SQL increment above; the response previously wrote to a
-          // nonexistent `lands` field, which also always read k.lands as
-          // undefined (0), so it never reflected the kingdom's real prior
-          // land total even before the naming was fixed.
-          land: (k.land || 0) + reward.landsDiscovered,
-          rangers: Math.max(0, (k.rangers || 0) - r),
-        };
+        // The land-expansion reward itself is already surfaced via the
+        // response message/toast — only the full turn's own events (build
+        // completions, etc.) need a news entry, not a redundant one for the
+        // instant action itself.
+        await bulkInsertNews(db, events.map((ev) => ({
+          kingdom_id: k.id,
+          type: ev.type || 'system',
+          message: ev.message,
+          turn_num: finalUpdates.turn || k.turn,
+        })));
 
-        return { updates, reward };
+        return { finalUpdates, reward };
       });
 
       res.json({
         ok: true,
-        updates: structureUpdates(updates),
+        updates: structureUpdates(finalUpdates),
         reward: reward,
         message: `Rangers discovered ${reward.landsDiscovered.toLocaleString()} new lands.`,
       });
