@@ -3,7 +3,6 @@ import { useGameActions } from '../../hooks/useGameActions';
 import { useActivePanel } from '../../hooks/useActivePanel';
 import { usePlayerName, useTurnsStored, useUsername } from '../../stores';
 import { showLoginModal } from './AuthModal.jsx';
-import { showBugReportModal } from './BugReportModal.jsx';
 
 const Topbar = () => {
   const username = useUsername();
@@ -25,19 +24,6 @@ const Topbar = () => {
       </div>
 
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-        {isLoggedIn ? (
-          <button
-            type="button"
-            className="base-btn px-2 py-1 text-xs sm:px-2.5 sm:py-1.5 sm:text-sm"
-            onClick={showBugReportModal}
-            title="Report a bug"
-            aria-label="Report a bug"
-          >
-            <span aria-hidden="true">🐛</span>
-            <span className="hidden min-[480px]:inline">Report</span>
-          </button>
-        ) : null}
-
         {activePanel !== 'forum' ? (
           <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
             <span
