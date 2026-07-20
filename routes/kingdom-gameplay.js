@@ -21,6 +21,7 @@ const { pixelToHex, getHexesInRadius, isFrontier, hexUnitDistance } = require('.
 const { scoutRevealRadius, scoutFoodCostPerHex } = require('../game/scout-economy');
 const { validateRangerAllocation } = require('../game/ranger-allocation');
 const { parseTroopLevel } = require('../game/lib/troops');
+const { getCap } = require('../game/lib/data-transformations');
 
 const router = express.Router();
 
@@ -60,6 +61,32 @@ module.exports = function (db) {
   // to routes/kingdom-turn.js (A2-3, 2026-07-19). runTurn imported above for
   // /smithy/forge-tools and /search below, which still consume a turn's worth
   // of effects without the full /turn HTTP round trip.
+
+  // —— Hire caps ——————————————————————————————————————————————————
+  // Server-computed level caps for the "Max" button in HirePanel.jsx.
+  // Mirroring getCap()/CAPS client-side was rejected — this codebase has
+  // repeatedly drifted stale client-side mirrors of server config this same
+  // session (land-cost table, reset land formula) — so the client fetches
+  // the real numbers instead of recomputing them from a duplicated formula.
+  router.get("/hire-caps", requireAuth, async (req, res) => {
+    const k = await db.get("SELECT level, race FROM kingdoms WHERE player_id = $1", [
+      req.player.playerId,
+    ]);
+    if (!k) return res.status(404).json({ error: "Kingdom not found" });
+
+    // Matches game/lib/gameplay.js's hireUnits level-cap check exactly:
+    // researchers/engineers/scribes have no level cap at all.
+    const LEVEL_CAPPED_UNITS = ["fighters", "rangers", "clerics", "mages", "thieves", "ninjas"];
+    const caps = {};
+    for (const unit of LEVEL_CAPPED_UNITS) {
+      let cap = getCap(unit, k.level || 1);
+      if (k.race === "orc" && unit === "rangers") {
+        cap = Math.floor(cap * 0.5);
+      }
+      caps[unit] = cap;
+    }
+    res.json({ caps, level: k.level || 1 });
+  });
 
   // —— Hire units ————————————————————————————————————————————————
   router.post("/hire", requireAuth, requireCsrfToken, async (req, res) => {

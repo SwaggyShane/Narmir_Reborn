@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { apiCallAndSync } from '../../utils/api';
+import { apiCall, apiCallAndSync } from '../../utils/api';
 import { fmt } from "../../utils/fmt";
 import { toast } from '../../utils/toast';
 import { useRace, useGold, usePopulation, useFighters, useRangers, useMages, useClerics, useNinjas, useThieves, useMilitaryEngineers as useEngineers, useBuildCount, useResearchers } from '../../stores';
@@ -91,6 +91,17 @@ const HirePanel = () => {
   const bldBarracks = useBuildCount('barracks');
   const bldSchools = useBuildCount('schools');
   const [quantities, setQuantities] = useState(initialQuantities);
+  const [levelCaps, setLevelCaps] = useState({});
+
+  useEffect(() => {
+    let cancelled = false;
+    apiCall('/api/kingdom/hire-caps')
+      .then((data) => {
+        if (!cancelled && data && !data.error) setLevelCaps(data.caps || {});
+      })
+      .catch((err) => console.error('[hire-caps] failed:', err));
+    return () => { cancelled = true; };
+  }, []);
 
   const isVampire = race === 'vampire';
   const troopCounts = useMemo(() => ({
@@ -128,9 +139,16 @@ const HirePanel = () => {
       maxByCapacity = Math.max(0, barracksCap - barracksUsed);
     }
 
-    const max = Math.max(0, Math.min(maxByGold, maxByPop, maxByCapacity));
+    // Level cap (server-computed — see /api/kingdom/hire-caps): units not
+    // present here (researchers/scribes/engineers) have no level cap.
+    let maxByLevel = Infinity;
+    if (levelCaps[row.key] !== undefined) {
+      maxByLevel = Math.max(0, levelCaps[row.key] - Number(troopCounts[row.key] || 0));
+    }
+
+    const max = Math.max(0, Math.min(maxByGold, maxByPop, maxByCapacity, maxByLevel));
     setQuantities((prev) => ({ ...prev, [row.key]: String(max) }));
-  }, [freePopulation, isVampire, gold, bldBarracks, fighters, rangers, clerics, thieves, ninjas]);
+  }, [freePopulation, isVampire, gold, bldBarracks, fighters, rangers, clerics, thieves, ninjas, levelCaps, troopCounts]);
 
   const hire = useCallback(async (row) => {
     const amount = Math.max(0, parseInt(quantities[row.key], 10) || 0);
