@@ -4225,16 +4225,16 @@
 
 @keyframes glitchClip {
   0%,  100% { clip-path: inset(0 0 0 0); }
-  9%         { clip-path: inset(20% 0 62% 0); transform: translateX(-7px); }
-  12%        { clip-path: inset(0 0 0 0);     transform: translateX(0); }
-  27%        { clip-path: inset(52% 0 16% 0); transform: translateX(9px); }
-  30%        { clip-path: inset(0 0 0 0);     transform: translateX(0); }
-  47%        { clip-path: inset(6% 0 76% 0);  transform: translateX(-11px); }
-  50%        { clip-path: inset(0 0 0 0);     transform: translateX(0); }
-  63%        { clip-path: inset(67% 0 9% 0);  transform: translateX(7px); }
-  66%        { clip-path: inset(0 0 0 0);     transform: translateX(0); }
-  81%        { clip-path: inset(33% 0 42% 0); transform: translateX(-6px); }
-  84%        { clip-path: inset(0 0 0 0);     transform: translateX(0); }
+  9%         { clip-path: inset(20% 0 62% 0); }
+  12%        { clip-path: inset(0 0 0 0); }
+  27%        { clip-path: inset(52% 0 16% 0); }
+  30%        { clip-path: inset(0 0 0 0); }
+  47%        { clip-path: inset(6% 0 76% 0); }
+  50%        { clip-path: inset(0 0 0 0); }
+  63%        { clip-path: inset(67% 0 9% 0); }
+  66%        { clip-path: inset(0 0 0 0); }
+  81%        { clip-path: inset(33% 0 42% 0); }
+  84%        { clip-path: inset(0 0 0 0); }
 }
 
 @keyframes scanFlicker {
