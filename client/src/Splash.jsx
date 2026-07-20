@@ -154,8 +154,8 @@ function RetroSite() {
         }}>
           <div className="retro-applet-wrap">
             <button
+              type="button"
               className="retro-play-button"
-              aria-label="Play Narmir"
             >
               Play Narmir
             </button>
