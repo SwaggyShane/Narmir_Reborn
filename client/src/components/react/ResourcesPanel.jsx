@@ -7,6 +7,7 @@ import { applyFlatKingdomSnapshot } from '../../utils/responseNormalizer.js';
 import { dispatchExpeditionLogEntry } from '../../utils/expeditionLog.js';
 import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
 import { registerResourcesTab, consumePendingResourcesTab } from '../../utils/resourcesTabs.js';
+import { useGameMutationEvents } from '../../hooks/useGameState';
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
@@ -194,6 +195,27 @@ const ResourcesPanel = () => {
     if (activeTab === 'nodes') { loadNodes(); loadHarvests(); }
     if (activeTab === 'inventory') syncFromState();
   }, [activeTab, syncFromState]);
+
+  // Refresh immediately on relevant server mutations (taking a turn, hunting/
+  // prospecting/land-expansion rewards, harvest completions) instead of
+  // waiting for the next 10s polling tick — same pattern used by
+  // ExplorationPanel/EconomyPanel/MarketPanel via GAME_MUTATION.
+  useGameMutationEvents(
+    useCallback((event) => {
+      if (!event?.reason) return;
+      const reason = String(event.reason);
+      if (
+        reason === 'turn' ||
+        reason === 'hunting' ||
+        reason === 'prospecting' ||
+        reason === 'land-expansion' ||
+        reason === 'kingdom-refresh' ||
+        reason === 'apply-server-updates'
+      ) {
+        void syncFromState();
+      }
+    }, [syncFromState]),
+  );
 
   // Lets switchTab('nodes') (e.g. clicking a harvest in the "Underway" nav
   // indicator) jump straight to this specific sub-tab, mirroring how
