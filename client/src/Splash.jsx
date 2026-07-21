@@ -168,12 +168,7 @@ function RetroSite() {
           backgroundImage: 'url(/retro/752296106_1723312728940886_1659173184335563790_n.jpg)',
         }}>
           <div className="retro-applet-wrap">
-            <button
-              type="button"
-              className="retro-play-button"
-            >
-              Play Narmir
-            </button>
+            <div className="retro-play-button">Play Narmir</div>
             <hr className="retro-hr" />
           </div>
         </main>
@@ -203,17 +198,16 @@ function MobileRetroSite() {
           alt=""
           className="mobile-retro-dragon"
         />
-        <button type="button" className="mobile-retro-play-applet">Play Narmir</button>
+        <div className="mobile-retro-play-applet">Play Narmir</div>
       </div>
       <div className="mobile-retro-nav" aria-label="Retro navigation">
         {MOBILE_NAV_LABELS.map((label, i) => (
-          <button
+          <div
             key={label}
-            type="button"
             className={`mobile-retro-btn${i === 0 ? ' mobile-retro-btn-active' : ''}`}
           >
             {label}
-          </button>
+          </div>
         ))}
       </div>
     </div>
@@ -346,10 +340,11 @@ export default function Splash() {
   // "all messed up" before. Track viewport width directly so resizing/
   // rotating actually switches between them live.
   useEffect(() => {
+    if (phase === 'modern') return;
     const onResize = () => setIsMobile(window.innerWidth <= 767);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, []);
+  }, [phase]);
 
   // Check auth on mount
   useEffect(() => {
