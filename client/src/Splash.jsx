@@ -36,6 +36,21 @@ const RETRO_NAV = [
   { src: '/retro/tradewars.gif', alt: 'Play Tradewars' },
 ];
 
+// Mobile faux-button labels — one per file in public/retro/, same order as
+// RETRO_NAV. First entry (Play Narmir) is the highlighted/active button.
+const MOBILE_NAV_LABELS = [
+  'Play Narmir',
+  'Forums',
+  'Rankings',
+  'Worlds',
+  'Help',
+  'Hosted Sites',
+  'Links',
+  'Windows Quest',
+  'Contact Us',
+  'Play Tradewars',
+];
+
 // Horizontal tear bands — black frameset + gray content (varuh layout)
 const TEAR_GRADIENTS = [
   'linear-gradient(to right, #000000 100%)',
@@ -153,18 +168,48 @@ function RetroSite() {
           backgroundImage: 'url(/retro/752296106_1723312728940886_1659173184335563790_n.jpg)',
         }}>
           <div className="retro-applet-wrap">
-            <button
-              type="button"
-              className="retro-play-button"
-            >
-              Play Narmir
-            </button>
+            <div className="retro-play-button">Play Narmir</div>
             <hr className="retro-hr" />
           </div>
         </main>
       </div>
 
       <aside className="retro-col retro-col-right" aria-hidden="true" />
+    </div>
+  );
+}
+
+// Mobile retro splash — built from scratch, not the desktop frameset shrunk
+// down. Black page, header at top, dragon artwork below it, then the
+// desktop sidebar's thin repeating blue-line texture (matching
+// bg-left.gif/bg-right.gif) as a plain background — not discrete button
+// elements. Faux buttons get placed on top of this next.
+function MobileRetroSite() {
+  return (
+    <div className="mobile-retro">
+      <img
+        src="/retro/bg-top.png"
+        alt="Narmir, Land of Magic and Conquest"
+        className="mobile-retro-banner"
+      />
+      <div className="mobile-retro-dragon-wrap">
+        <img
+          src="/retro/752296106_1723312728940886_1659173184335563790_n.jpg"
+          alt=""
+          className="mobile-retro-dragon"
+        />
+        <div className="mobile-retro-play-applet">Play Narmir</div>
+      </div>
+      <div className="mobile-retro-nav" aria-label="Retro navigation">
+        {MOBILE_NAV_LABELS.map((label, i) => (
+          <div
+            key={label}
+            className={`mobile-retro-btn${i === 0 ? ' mobile-retro-btn-active' : ''}`}
+          >
+            {label}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -285,7 +330,21 @@ export default function Splash() {
   const [showFlash, setShowFlash] = useState(false);
   const [authStatus, setAuthStatus] = useState('loading');
   const [fading, setFading] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= 767 : false
+  );
   const timers = useRef([]);
+
+  // Mobile gets its own from-scratch retro splash (MobileRetroSite), not the
+  // desktop 3-column frameset squeezed down with CSS — that's what was
+  // "all messed up" before. Track viewport width directly so resizing/
+  // rotating actually switches between them live.
+  useEffect(() => {
+    if (phase === 'modern') return;
+    const onResize = () => setIsMobile(window.innerWidth <= 767);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [phase]);
 
   // Check auth on mount
   useEffect(() => {
@@ -345,7 +404,7 @@ export default function Splash() {
           aria-label="Original Narmir site — click or press Enter to reveal Narmir Reborn"
         >
           <div className="scanlines" aria-hidden="true" />
-          <RetroSite />
+          {isMobile ? <MobileRetroSite /> : <RetroSite />}
         </div>
       )}
 
