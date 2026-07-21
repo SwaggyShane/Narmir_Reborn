@@ -169,6 +169,29 @@ function RetroSite() {
   );
 }
 
+// Mobile retro splash — built from scratch, not the desktop frameset shrunk
+// down. Black page, header at top, dragon artwork below it, then the
+// desktop sidebar's thin repeating blue-line texture (matching
+// bg-left.gif/bg-right.gif) as a plain background — not discrete button
+// elements. Faux buttons get placed on top of this next.
+function MobileRetroSite() {
+  return (
+    <div className="mobile-retro">
+      <img
+        src="/retro/bg-top.png"
+        alt="Narmir, Land of Magic and Conquest"
+        className="mobile-retro-banner"
+      />
+      <img
+        src="/retro/752296106_1723312728940886_1659173184335563790_n.jpg"
+        alt=""
+        className="mobile-retro-dragon"
+      />
+      <div className="mobile-retro-nav" aria-label="Retro navigation" />
+    </div>
+  );
+}
+
 function RacePortrait({ race }) {
   const [hasError, setHasError] = useState(false);
   return (
@@ -285,7 +308,20 @@ export default function Splash() {
   const [showFlash, setShowFlash] = useState(false);
   const [authStatus, setAuthStatus] = useState('loading');
   const [fading, setFading] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= 767 : false
+  );
   const timers = useRef([]);
+
+  // Mobile gets its own from-scratch retro splash (MobileRetroSite), not the
+  // desktop 3-column frameset squeezed down with CSS — that's what was
+  // "all messed up" before. Track viewport width directly so resizing/
+  // rotating actually switches between them live.
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 767);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   // Check auth on mount
   useEffect(() => {
@@ -303,6 +339,14 @@ export default function Splash() {
 
   const triggerGlitch = useCallback(() => {
     if (phase !== 'retro') return;
+
+    // No glitch transition on mobile — straight to modern. The
+    // shake/tear/flash sequence is desktop-only for now.
+    if (isMobile) {
+      try { sessionStorage.setItem('narmir_intro_seen', '1'); } catch (e) {}
+      setPhase('modern');
+      return;
+    }
 
     try {
       const skipGlitch = localStorage.getItem('narmir_skip_glitch') === '1';
@@ -325,7 +369,7 @@ export default function Splash() {
     }, 2500));
 
     timers.current.push(setTimeout(() => setShowFlash(false), 2700));
-  }, [phase]);
+  }, [phase, isMobile]);
 
   return (
     <div className={`splash-root phase-${phase}${fading ? ' fading' : ''}`}>
@@ -345,7 +389,7 @@ export default function Splash() {
           aria-label="Original Narmir site — click or press Enter to reveal Narmir Reborn"
         >
           <div className="scanlines" aria-hidden="true" />
-          <RetroSite />
+          {isMobile ? <MobileRetroSite /> : <RetroSite />}
         </div>
       )}
 

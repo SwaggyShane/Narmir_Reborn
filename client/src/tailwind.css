@@ -3952,6 +3952,59 @@
       height: auto;
     }
   }
+
+  /* Mobile retro splash (MobileRetroSite component) — reset to the
+     simplest possible version: black page, header at the top, nothing
+     else. Plain block layout, no grid/absolute-positioning overlay —
+     those fought Tailwind's base preflight resets in ways that were hard
+     to pin down on a real device. Build back up from here deliberately. */
+  .mobile-retro {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    background: #000000 !important;
+  }
+
+  .mobile-retro-banner {
+    display: block !important;
+    flex-shrink: 0 !important;
+    width: 100% !important;
+    max-width: 575px !important;
+    height: auto !important;
+    margin: 0 auto !important;
+  }
+
+  .mobile-retro-dragon {
+    display: block !important;
+    flex-shrink: 0 !important;
+    width: 100% !important;
+    max-width: 575px !important;
+    height: auto !important;
+    margin: 0 auto !important;
+  }
+
+  /* Desktop sidebar's tiled bg-left.gif/bg-right.gif texture, reproduced as
+     a plain repeating-linear-gradient — thin alternating dark/light blue
+     lines, not discrete button elements. Faux buttons get placed on top
+     of this next. Fills the remaining space below the dragon image. */
+  .mobile-retro-nav {
+    flex: 1 1 auto !important;
+    flex-shrink: 0 !important;
+    width: 100% !important;
+    max-width: 575px !important;
+    min-height: 120px !important;
+    margin: 0 auto !important;
+    background: repeating-linear-gradient(
+      180deg,
+      #5f83ec 0,
+      #5f83ec 4px,
+      #2742ad 4px,
+      #2742ad 8px
+    ) !important;
+  }
 }
 
 @layer utilities {
