@@ -3953,58 +3953,6 @@
     }
   }
 
-  /* Mobile retro splash (MobileRetroSite component) — reset to the
-     simplest possible version: black page, header at the top, nothing
-     else. Plain block layout, no grid/absolute-positioning overlay —
-     those fought Tailwind's base preflight resets in ways that were hard
-     to pin down on a real device. Build back up from here deliberately. */
-  .mobile-retro {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-    overflow-y: auto !important;
-    background: #000000 !important;
-  }
-
-  .mobile-retro-banner {
-    display: block !important;
-    flex-shrink: 0 !important;
-    width: 100% !important;
-    max-width: 575px !important;
-    height: auto !important;
-    margin: 0 auto !important;
-  }
-
-  .mobile-retro-dragon {
-    display: block !important;
-    flex-shrink: 0 !important;
-    width: 100% !important;
-    max-width: 575px !important;
-    height: auto !important;
-    margin: 0 auto !important;
-  }
-
-  /* Desktop sidebar's tiled bg-left.gif/bg-right.gif texture, reproduced as
-     a plain repeating-linear-gradient — thin alternating dark/light blue
-     lines, not discrete button elements. Faux buttons get placed on top
-     of this next. Fills the remaining space below the dragon image. */
-  .mobile-retro-nav {
-    flex: 1 1 auto !important;
-    flex-shrink: 0 !important;
-    width: 100% !important;
-    max-width: 575px !important;
-    min-height: 120px !important;
-    margin: 0 auto !important;
-    background: repeating-linear-gradient(
-      180deg,
-      #5f83ec 0,
-      #5f83ec 4px,
-      #2742ad 4px,
-      #2742ad 8px
-    ) !important;
-  }
 }
 
 @layer utilities {
@@ -4376,4 +4324,131 @@
 @keyframes fadeOverlay {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* ── Mobile retro splash (MobileRetroSite component) ──────────────────────
+   Standalone section, deliberately kept separate from the desktop retro
+   frameset rules and the legacy @media (min-width: 768px) block above —
+   built from scratch, not layered onto/into existing desktop CSS.
+   isMobile in Splash.jsx decides when MobileRetroSite mounts; this CSS
+   applies unconditionally whenever those classes are present. */
+
+.mobile-retro {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  overflow-y: auto !important;
+  background: #000000 !important;
+}
+
+.mobile-retro-banner {
+  display: block !important;
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  max-width: 575px !important;
+  height: auto !important;
+  margin: 0 auto !important;
+}
+
+.mobile-retro-dragon {
+  display: block !important;
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  max-width: 575px !important;
+  height: auto !important;
+  margin: 0 !important;
+}
+
+.mobile-retro-dragon-wrap {
+  position: relative !important;
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  max-width: 575px !important;
+  margin: 0 auto !important;
+}
+
+/* Old-applet-style grey button, matching the desktop retro site's
+   .retro-play-button bevel, placed above the central red dragon's head. */
+.mobile-retro-play-applet {
+  position: absolute !important;
+  top: 30% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  display: inline-block !important;
+  padding: 8px 22px !important;
+  background: #808080 !important;
+  color: #000 !important;
+  border: 2px outset #c0c0c0 !important;
+  border-right-color: #808080 !important;
+  border-bottom-color: #808080 !important;
+  font-weight: bold !important;
+  font-size: 13px !important;
+  font-family: 'MS Sans Serif', Arial, sans-serif !important;
+  cursor: pointer !important;
+}
+
+.mobile-retro-play-applet:active {
+  border-style: inset !important;
+  border-top-color: #808080 !important;
+  border-left-color: #808080 !important;
+  border-right-color: #c0c0c0 !important;
+  border-bottom-color: #c0c0c0 !important;
+}
+
+/* Desktop sidebar's tiled bg-left.gif/bg-right.gif texture, reproduced as
+   a plain repeating-linear-gradient — thin alternating dark/light blue
+   lines, not discrete button elements. Faux buttons get placed on top
+   of this next. Fills the remaining space below the dragon image. */
+.mobile-retro-nav {
+  display: grid !important;
+  grid-template-columns: repeat(2, 120px) !important;
+  justify-content: center !important;
+  align-content: start !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  max-width: 575px !important;
+  height: auto !important;
+  padding: 8px 0 !important;
+  margin: 20px auto 0 !important;
+  background: repeating-linear-gradient(
+    180deg,
+    #000031 0,
+    #000031 1px,
+    #000064 1px,
+    #000064 2px,
+    transparent 2px,
+    transparent 4px,
+    #000064 4px,
+    #000064 5px,
+    #000031 5px,
+    #000031 6px,
+    transparent 6px,
+    transparent 9px
+  ) !important;
+}
+
+.mobile-retro-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 120px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 5px !important;
+  background: #0001cf !important;
+  color: #ffffff !important;
+  font-size: 10px !important;
+  font-weight: bold !important;
+  line-height: 1 !important;
+}
+
+.mobile-retro-btn-active {
+  outline: 1px solid rgba(255, 255, 0, 0.6) !important;
+  outline-offset: 1px !important;
+  box-shadow: 0 0 3px 1px rgba(255, 255, 0, 0.3) !important;
 }

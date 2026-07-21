@@ -36,6 +36,21 @@ const RETRO_NAV = [
   { src: '/retro/tradewars.gif', alt: 'Play Tradewars' },
 ];
 
+// Mobile faux-button labels — one per file in public/retro/, same order as
+// RETRO_NAV. First entry (Play Narmir) is the highlighted/active button.
+const MOBILE_NAV_LABELS = [
+  'Play Narmir',
+  'Forums',
+  'Rankings',
+  'Worlds',
+  'Help',
+  'Hosted Sites',
+  'Links',
+  'Windows Quest',
+  'Contact Us',
+  'Play Tradewars',
+];
+
 // Horizontal tear bands — black frameset + gray content (varuh layout)
 const TEAR_GRADIENTS = [
   'linear-gradient(to right, #000000 100%)',
@@ -182,12 +197,25 @@ function MobileRetroSite() {
         alt="Narmir, Land of Magic and Conquest"
         className="mobile-retro-banner"
       />
-      <img
-        src="/retro/752296106_1723312728940886_1659173184335563790_n.jpg"
-        alt=""
-        className="mobile-retro-dragon"
-      />
-      <div className="mobile-retro-nav" aria-label="Retro navigation" />
+      <div className="mobile-retro-dragon-wrap">
+        <img
+          src="/retro/752296106_1723312728940886_1659173184335563790_n.jpg"
+          alt=""
+          className="mobile-retro-dragon"
+        />
+        <button type="button" className="mobile-retro-play-applet">Play Narmir</button>
+      </div>
+      <div className="mobile-retro-nav" aria-label="Retro navigation">
+        {MOBILE_NAV_LABELS.map((label, i) => (
+          <button
+            key={label}
+            type="button"
+            className={`mobile-retro-btn${i === 0 ? ' mobile-retro-btn-active' : ''}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
