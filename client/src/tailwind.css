@@ -1743,52 +1743,6 @@
     color: #cc0000;
   }
 
-  .scanlines {
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      rgba(0, 0, 0, 0.08) 0px,
-      rgba(0, 0, 0, 0.08) 1px,
-      transparent 1px,
-      transparent 3px
-    );
-    pointer-events: none;
-    z-index: 10;
-    opacity: 0;
-    transition: opacity 0.1s;
-  }
-
-  .tear-slice {
-    position: fixed;
-    left: 0;
-    right: 0;
-    pointer-events: none;
-    z-index: 100;
-    opacity: 0;
-  }
-
-  .tear-slice[data-dir="l"].tearing {
-    animation: tearL 0.72s cubic-bezier(0.55, 0, 1, 0.45) both;
-  }
-
-  .tear-slice[data-dir="r"].tearing {
-    animation: tearR 0.72s cubic-bezier(0.55, 0, 1, 0.45) both;
-  }
-
-  .flash-overlay {
-    position: fixed;
-    inset: 0;
-    background: #ffffff;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 500;
-    transition: opacity 0.18s ease-in;
-  }
-
-  .flash-overlay.active {
-    opacity: 1;
-  }
 
 }
 
@@ -1990,6 +1944,57 @@
 }
 
 /* ── Splash page glitch and animation styles ── */
+
+/* .scanlines / .tear-slice / .flash-overlay are rendered for both
+   MobileRetroSite and RetroSite during the glitch transition (not
+   RetroSite-exclusive like the .retro-* group above) -- must be
+   unconditional, not gated behind the desktop-only media query. */
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.08) 0px,
+    rgba(0, 0, 0, 0.08) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.tear-slice {
+  position: fixed;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0;
+}
+
+.tear-slice[data-dir="l"].tearing {
+  animation: tearL 0.72s cubic-bezier(0.55, 0, 1, 0.45) both;
+}
+
+.tear-slice[data-dir="r"].tearing {
+  animation: tearR 0.72s cubic-bezier(0.55, 0, 1, 0.45) both;
+}
+
+.flash-overlay {
+  position: fixed;
+  inset: 0;
+  background: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 500;
+  transition: opacity 0.18s ease-in;
+}
+
+.flash-overlay.active {
+  opacity: 1;
+}
 
 /* Glitch active state */
 .retro-wrapper.glitching {

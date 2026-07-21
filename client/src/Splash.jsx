@@ -368,14 +368,6 @@ export default function Splash() {
   const triggerGlitch = useCallback(() => {
     if (phase !== 'retro') return;
 
-    // No glitch transition on mobile — straight to modern. The
-    // shake/tear/flash sequence is desktop-only for now.
-    if (isMobile) {
-      try { sessionStorage.setItem('narmir_intro_seen', '1'); } catch (e) {}
-      setPhase('modern');
-      return;
-    }
-
     try {
       const skipGlitch = localStorage.getItem('narmir_skip_glitch') === '1';
       if (skipGlitch) {
@@ -397,7 +389,7 @@ export default function Splash() {
     }, 2500));
 
     timers.current.push(setTimeout(() => setShowFlash(false), 2700));
-  }, [phase, isMobile]);
+  }, [phase]);
 
   return (
     <div className={`splash-root phase-${phase}${fading ? ' fading' : ''}`}>
