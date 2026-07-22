@@ -62,7 +62,7 @@ third, non-player path (Policy S) for ticks/jobs. Steps 1–2 and 5–9 are shar
    │
    └─ Policy B (Forge & Lava, Prestige rebirth, Dragon Evolution,
       attunements/synergies, most allocations, market/bank, many
-      build/exploration helpers — ~70 of 83 kingdom+hero mutating routes):
+      build/exploration helpers — 67 of 82 kingdom+hero mutating routes):
       3b. Route calls its own domain module directly
           (game/prestige/, game/evolution/, game/forge-*.js, etc.)
           ↓
@@ -132,12 +132,11 @@ npm test
   `commandHandler.handle({ type: 'turn' }, …)`, not directly.
 - **But the boundary check ≠ full mutator coverage.** It only prevents route files
   from `require('../game/engine')` directly — it says nothing about whether a
-  mutation goes through `CommandHandler` at all. Of ~83 mutating kingdom+hero routes
-  (2026-07-19 count, ~82 per a 2026-07-22 recount — exact re-list pending, see
-  `docs/dev/MUTATOR_POLICY_PLAN.md` M3), only 13 route through `CommandHandler`; the
-  other ~70 mutate via their own domain module + a route-level transaction. Full
-  per-route breakdown and the policy for why that's correct, not a gap:
-  `game/COMMAND_COVERAGE.md`.
+  mutation goes through `CommandHandler` at all. Of 82 mutating kingdom+hero routes
+  (2026-07-22 recount, `docs/dev/MUTATOR_POLICY_PLAN.md` M3 — supersedes the old
+  2026-07-19 "83"), only 15 route through `CommandHandler`; the other 67 mutate via
+  their own domain module + a route-level transaction. Full per-route breakdown and
+  the policy for why that's correct, not a gap: `game/COMMAND_COVERAGE.md`.
 - **Policy A/B/S (see `game/COMMAND_COVERAGE.md`, authoritative for per-route
   classification — this is a summary, not the source of truth):** `CommandHandler`
   (Policy A) owns the classic sim verbs (turn, combat, spell, covert-\*, expeditions,
