@@ -44,6 +44,9 @@ const {
 const {
   runPrelude,
 } = require('./lib/turn-prelude');
+const {
+  runIncomePhase,
+} = require('./lib/turn-income');
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so
@@ -138,7 +141,6 @@ const {
   commodityPrice,
   processResourceYield,
   processFoodEconomy,
-  calculateTradeIncome,
 } = economy;
 
 // Magic domain — castSpell, mage tower / shrine / mausoleum / library
@@ -230,13 +232,6 @@ const {
   levelFromXp,
   awardXp,
 } = xpMod;
-
-// Population domain — housing capacity, population growth. Defined in
-// game/population.js; re-exported below.
-const populationMod = require('./population');
-const {
-  popGrowth,
-} = populationMod;
 
 const {
   RACE_BONUSES,
@@ -401,67 +396,11 @@ function processTurn(k, db = null) {
   const ctx = createTurnContext(k, db);
   // S01: evolution, goals, XP sources, happiness, rebellion
   runPrelude(ctx);
+  // S02: gold, mana, population, food
+  runIncomePhase(ctx);
   const updates = ctx.updates;
   const events = ctx.events;
   let xpSourcesAccum = ctx.xpSourcesAccum;
-
-  // ── 1. Gold income ───────────────────────────────────────────────────────────
-  const income = goldPerTurn(k);
-  const tradeIncome = calculateTradeIncome(k);
-  // Respect gold already set by rebellionCheck (e.g. Treasury Looting) instead of
-  // recomputing from the pre-turn k.gold snapshot and discarding it.
-  const goldBase = updates.gold !== undefined ? updates.gold : k.gold;
-  updates.gold = goldBase + income + tradeIncome;
-  // Net per-turn rate for the client's resource strip (see
-  // routes/response-structurer.js's economyFields whitelist and
-  // client/src/stores/economyStore.js's receiveServerSnapshot).
-  updates.gold_income = income + tradeIncome;
-
-  let incomeMsg = `🪙 Turn ${updates.turn}: +${income.toLocaleString()} gold earned.`;
-  if (tradeIncome > 0) {
-    incomeMsg = `🪙 Turn ${updates.turn}: +${income.toLocaleString()} gold earned (+${tradeIncome.toLocaleString()} from trade routes).`;
-  }
-  events.push({ type: "system", message: incomeMsg });
-
-  // ── 2. Mana regeneration ─────────────────────────────────────────────────────
-  const manaGain = manaPerTurn(k);
-  updates.mana = k.mana + manaGain;
-  // Net per-turn rate for the client's resource strip (see
-  // routes/response-structurer.js's economyFields whitelist and
-  // client/src/stores/economyStore.js's receiveServerSnapshot).
-  updates.mana_regen = manaGain;
-  events.push({
-    type: "system",
-    message: `✨ Mana: +${manaGain.toLocaleString()} restored. Total: ${updates.mana.toLocaleString()}.`,
-  });
-
-  // Mages gain XP when producing mana
-  if (k.mages > 0 && manaGain > 0) {
-    const resMages = awardUnitXp({ ...k, ...updates }, "mages", manaGain);
-    if (resMages) updates.troop_levels = resMages;
-  }
-
-  // ── 3. Population growth ─────────────────────────────────────────────────────
-  const growth = popGrowth(k);
-  // Respect population already set by rebellionCheck (e.g. Unrest) instead of
-  // recomputing from the pre-turn k.population snapshot and discarding it.
-  const populationBase = updates.population !== undefined ? updates.population : k.population;
-  updates.population = Math.max(0, populationBase + growth);
-  if (growth > 0) {
-    events.push({
-      type: "system",
-      message: `👥 Population grew by ${growth.toLocaleString()} to ${updates.population.toLocaleString()}.`,
-    });
-  } else if (growth < 0) {
-    events.push({
-      type: "system",
-      message: `⚠️ Population declined by ${Math.abs(growth).toLocaleString()} to ${updates.population.toLocaleString()} due to low happiness.`,
-    });
-  }
-
-  // ── 4. Food economy — farms, consumption, shortage consequences ──────────────
-  const foodUpdates = processFoodEconomy({ ...k, ...updates }, events);
-  Object.assign(updates, foodUpdates);
 
   // ── 4a. Building attunement special abilities (18 processors — granary,
   // vault, barracks, walls, guard tower, outpost, training, castle,
@@ -1515,10 +1454,11 @@ function processTurn(k, db = null) {
   Object.assign(xpSourcesAccum, turnXp.xp_sources);
 
   // Gold income XP (rate set to 0 — gold no longer drives XP)
+  // Amount is goldPerTurn(k) only (not trade) — same as pre-S02 local `income`.
   const goldXp = awardXp(
     { ...k, xp: totalXp, level: currentLevel, xp_sources: xpSourcesAccum },
     "gold_earned",
-    income,
+    goldPerTurn(k),
   );
   totalXp = goldXp.xp;
   currentLevel = goldXp.level;
