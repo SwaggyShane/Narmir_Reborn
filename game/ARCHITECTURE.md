@@ -23,7 +23,7 @@ Definition of done: player mutators via **CommandHandler**, game sockets via **s
 | Area | Verdict | Evidence |
 |------|---------|----------|
 | Foundation & as-is docs | **COMPLETE** | This file + turn/persistence notes |
-| Decoupling (Command boundary) | **PARTIAL — corrected 2026-07-19** | `game/command-handler.js`; `npm run check:command-boundary` prevents kingdom-\*/auth/hero/admin routes from directly requiring `game/engine`, but does not require mutations to actually go through CommandHandler (most newer systems mutate via their own domain module + route-level transaction instead — real, by-design, not a gap by itself). The actual gap: `game/sockets.js` is not scanned by the boundary check at all and calls `engine.resolveMilitaryAttack`/`engine.castSpell` directly. See `TODO.md` §5 (A5-1..A5-8) for the full mutator-coverage matrix and policy. Events = turn result arrays + Socket.io — **no outbox** |
+| Decoupling (Command boundary) | **PARTIAL by design** — CH required only for Policy A types | `game/command-handler.js`; `npm run check:command-boundary` prevents kingdom-\*/auth/hero/admin routes (and, since A5-4, `game/sockets.js`) from directly requiring `game/engine` or calling its forbidden mutators. It does not require mutations to go through CommandHandler at all — that's intentional: Policy B systems (Forge, Prestige, Evolution, attunements, most allocations) mutate via their own domain module + route-level transaction instead, by policy, not by gap. `game/sockets.js` no longer calls forbidden mutators either (A5-5 deleted the code that did) — no known socket gap remains. Authoritative per-route classification (Policy A/B/S, decision tree, current counts): `game/COMMAND_COVERAGE.md`. Events = turn result arrays + Socket.io — **no outbox** |
 | JSON content-pack “engine” vision | **CUT** | Wrong model for Narmir |
 | P0 honesty (passive scout, trek loot, terrain scout, safeEmit) | **COMPLETE in code** | Live modules on `feature/webgl-worldmap` (local; not production until ship) |
 | Engine extract (S00–S14) | **COMPLETE (local)** | Turn playlist in `turn-pipeline.js`; expeditions/regions in lib; barrel diet docs only |
@@ -39,19 +39,36 @@ npm test
 
 ## Current Data Flow: From Input to Render
 
+There are **two player-mutator paths**, not one — which one a route takes is Policy A vs.
+Policy B (see `game/COMMAND_COVERAGE.md`, authoritative for per-route classification), plus a
+third, non-player path (Policy S) for ticks/jobs. Steps 1–2 and 5–9 are shared; step 3/4 forks.
+
 ```
 1. HTTP Request (Routes)
    ↓
 2. Route Handler (routes/kingdom-*.js, auth, hero, admin)
    validates input, opens transactions as needed
    ↓
-3. CommandHandler.handle({ type }, { kingdom, db, ... })
-   (npm run check:command-boundary enforces no direct engine mutators
-    on kingdom/auth/hero/admin routes)
-   ↓
-4. Simulation (game/engine.js + focused modules)
-   e.g. processTurn, combat, expeditions, passive scout finds, epic trek
-   Returns: { updates, events } (or domain-specific results)
+   ├─ Policy A (classic sim verbs — turn, combat, spell, covert-*, expeditions,
+   │  hire/recruit, build-queue, study/school, purchase-upgrade, score,
+   │  trade-route raid, legacy forge-tools, XP awards):
+   │  3a. CommandHandler.handle({ type }, { kingdom, db, ... })
+   │      (npm run check:command-boundary enforces no direct engine mutators
+   │       on kingdom/auth/hero/admin routes, and on game/sockets.js since A5-4)
+   │      ↓
+   │  4a. Simulation via the CH façade — game/lib/turn-pipeline.js (turn),
+   │      game/lib/combat-wrappers.js, game/magic.js, game/covert.js, etc.
+   │      Returns: { updates, events } (or a small fixed result shape)
+   │
+   └─ Policy B (Forge & Lava, Prestige rebirth, Dragon Evolution,
+      attunements/synergies, most allocations, market/bank, many
+      build/exploration helpers — ~70 of 83 kingdom+hero mutating routes):
+      3b. Route calls its own domain module directly
+          (game/prestige/, game/evolution/, game/forge-*.js, etc.)
+          ↓
+      4b. Domain module owns the mutation, wrapped in db.withTransaction
+          for multi-write flows. CommandHandler is not involved by design —
+          see COMMAND_COVERAGE.md's policy for why (Prestige fence precedent).
    ↓
 5. Database Write (db/schema.js - PgDbAdapter / withTransaction)
    ↓
@@ -64,19 +81,22 @@ npm test
 9. React Re-render (client/src/components/)
 ```
 
+Separately, **Policy S** (regen timer, `resolveRegions` on tick, boot repair, scheduled
+audits) enters at step 5/6 directly — no player HTTP request, no CommandHandler, no route.
+
 ### Step-by-Step Breakdown
 
 **Step 1: HTTP Request**  
 User action hits `/routes/kingdom-*.js` (or auth/hero/admin). Examples: `/turn`, build, train, expedition start.
 
 **Step 2: Route Handler**  
-Validates auth, CSRF, resources, legality. Does **not** call `engine.processTurn` / combat mutators directly. Mutators go through CommandHandler.
+Validates auth, CSRF, resources, legality. Does **not** call `engine.processTurn` / combat mutators directly regardless of which policy it takes.
 
-**Step 3: CommandHandler**  
-`COMMAND_TYPES` registry + `handle()` switch. Thin façade over engine signatures so routes stay stable if simulation internals move. Read helpers: `getConstants()`, `assignRegion()`, `defenseRating()`, etc.
+**Step 3a/4a: CommandHandler (Policy A)**  
+`COMMAND_TYPES` registry + `handle()` switch. Thin façade over simulation signatures so routes stay stable if internals move — after the engine extract (`docs/dev/ENGINE_EXTRACT_PLAN.md`), that simulation mostly lives in `game/lib/turn-pipeline.js` and sibling `game/lib/*` modules, not in `game/engine.js` itself (which is now a 526-line composition root + re-export barrel). Read helpers: `getConstants()`, `assignRegion()`, `defenseRating()`, etc.
 
-**Step 4: Simulation**  
-`processTurn()` remains the large turn pipeline inside engine, but is reached via `commandHandler.handle({ type: 'turn' }, …)`. Focused modules own rewards honesty (e.g. `passive-scout-finds`, `epic-trek-discovery`, `terrain-scout`).
+**Step 3b/4b: Domain module (Policy B)**  
+Route calls a dedicated domain module directly, wrapped in the route's own transaction. Intentional, not a gap — see `game/COMMAND_COVERAGE.md` for the full policy and per-system list.
 
 **Step 5: Database Write**  
 Parameterized queries / transactions. Synchronous request path for turns.
@@ -112,25 +132,34 @@ npm test
   `commandHandler.handle({ type: 'turn' }, …)`, not directly.
 - **But the boundary check ≠ full mutator coverage.** It only prevents route files
   from `require('../game/engine')` directly — it says nothing about whether a
-  mutation goes through `CommandHandler` at all. Of 83 mutating kingdom+hero routes,
-  only 13 route through `CommandHandler`; the other 70 mutate via their own domain
-  module + a route-level transaction. Full per-route breakdown and the policy for
-  why that's correct, not a gap: `game/COMMAND_COVERAGE.md`.
-- **Policy (2026-07-19):** `CommandHandler` owns the classic engine-rooted systems
-  (turn, combat, spell, covert-\*, expeditions, hire/recruit, build-queue,
-  study/school, purchase-upgrade, score, trade-route raid, legacy forge-tools,
-  XP awards). Newer, already-modularized systems (Forge & Lava Industry, Dragon
-  Evolution, Prestige rebirth, attunements/synergies) are policy-sanctioned to
-  mutate via their own dedicated domain module instead — concrete precedent:
-  `handlePrestige()` deliberately throws, directing callers to `POST /rebirth`,
-  because rebirth's atomic wipe transaction doesn't fit `CommandHandler`'s simple
-  `handle(type, payload)` shape. Full reasoning in `game/COMMAND_COVERAGE.md`.
-- **`game/sockets.js` bypasses the boundary check entirely** (`check:command-boundary`
-  doesn't scan it) and calls `engine.resolveMilitaryAttack`/`engine.castSpell`
-  directly — the exact functions HTTP routes are forbidden from calling. This one
-  *is* a real gap, unlike the above (sockets skip `engine.js`'s forbidden-mutator
-  list entirely, rather than correctly using a dedicated domain module). See
-  `TODO.md` A5-4/A5-5.
+  mutation goes through `CommandHandler` at all. Of ~83 mutating kingdom+hero routes
+  (2026-07-19 count, ~82 per a 2026-07-22 recount — exact re-list pending, see
+  `docs/dev/MUTATOR_POLICY_PLAN.md` M3), only 13 route through `CommandHandler`; the
+  other ~70 mutate via their own domain module + a route-level transaction. Full
+  per-route breakdown and the policy for why that's correct, not a gap:
+  `game/COMMAND_COVERAGE.md`.
+- **Policy A/B/S (see `game/COMMAND_COVERAGE.md`, authoritative for per-route
+  classification — this is a summary, not the source of truth):** `CommandHandler`
+  (Policy A) owns the classic sim verbs (turn, combat, spell, covert-\*, expeditions,
+  hire/recruit, build-queue, study/school, purchase-upgrade, score, trade-route raid,
+  legacy forge-tools, XP awards). Newer, already-modularized systems (Forge & Lava
+  Industry, Dragon Evolution, Prestige rebirth, attunements/synergies — Policy B) are
+  policy-sanctioned to mutate via their own dedicated domain module instead —
+  concrete precedent: `handlePrestige()` deliberately throws, directing callers to
+  `POST /rebirth`, because rebirth's atomic wipe transaction doesn't fit
+  `CommandHandler`'s simple `handle(type, payload)` shape. Non-player ticks/jobs
+  (regen timer, region-tick resolution, boot repair) are Policy S — no route, no CH.
+- **`game/sockets.js` no longer bypasses the boundary check, and no longer calls
+  forbidden mutators.** This section previously described a real gap here (sockets
+  skipping `engine.js`'s forbidden-mutator list and calling
+  `engine.resolveMilitaryAttack`/`engine.castSpell` directly) — that was accurate
+  through 2026-07-19 but is stale now: A5-4 (same day) added `game/sockets.js` to
+  `check:command-boundary`'s scan list, and A5-5 (same day) deleted the socket
+  attack/spell/covert handlers outright (the shipped client never emitted those
+  socket events, so nothing depended on them) rather than migrating them. Verified
+  2026-07-22: zero forbidden calls remain in `game/sockets.js`, and it's included in
+  `check:command-boundary`'s "1 other" scanned-file count. No known socket gap
+  remains. See `TODO.md` A5-4/A5-5 for the original fix.
 - Routes reach into `game/*.js` with no abstraction beyond the above.
 
 **Engine ↔ Database**

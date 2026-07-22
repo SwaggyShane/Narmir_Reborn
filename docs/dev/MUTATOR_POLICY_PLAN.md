@@ -242,7 +242,7 @@ No code migrations in this plan unless a follow-up campaign is approved.
 |----|--------|--------|
 | M0 | Recon | **DONE (local)** |
 | M1 | Policy rewrite | **DONE (local)** |
-| M2 | Architecture honesty | **TODO** |
+| M2 | Architecture honesty | **DONE (local)** |
 | M3 | Matrix refresh | **TODO** |
 | M4 | Agent checklist | **TODO** |
 | M5 | Optional automation | **TODO** |
