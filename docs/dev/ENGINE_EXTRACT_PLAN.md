@@ -475,7 +475,7 @@ handleTurn(kingdom, db) {
 | S04 | Lore / free buildings | DONE (local) |
 | S05 | Upkeep / flavor | DONE (local) |
 | S06 | Research | DONE (local) |
-| S07 | Queues | TODO |
+| S07 | Queues | DONE (local) |
 | S08 | Training / XP | TODO |
 | S09 | Finalize | TODO |
 | S10 | Pipeline | TODO |
