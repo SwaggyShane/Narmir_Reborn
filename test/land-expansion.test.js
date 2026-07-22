@@ -10,12 +10,15 @@
 //    reduced yield for kingdoms that already owned land.
 // 2. After adding a farms-only floor (bld_farms x workersNeeded), a
 //    SECOND land-expansion left population at 8,334 with every farm
-//    unmanned, because the floor never accounted for hired units:
-//    farmProduction computes freePop = population - totalHiredUnits(k)
-//    before assigning farm workers, and this kingdom had ~43,100 hired
-//    units (mostly rangers) against only 8,334 population. Population
-//    was technically above the farms-only floor (6,000) the whole time --
-//    the floor itself was just missing a term.
+//    unmanned, above the farms-only floor (6,000) the whole time. Looked
+//    like the floor needed totalHiredUnits(k) added in -- but the real
+//    root cause was that farmProduction (and marketIncomeFull and
+//    processResourceYield) separately subtracted totalHiredUnits(k) from
+//    population AGAIN before assigning workers, even though hireUnits()
+//    already deducts population at hire time (confirmed against both the
+//    hire and fire routes). Fixed at the source in game/economy.js; the
+//    floor here correctly stays farms-only. See test/economy.test.js
+//    Test 7b for the fix itself.
 //
 // Run: node test/land-expansion.test.js
 
@@ -57,8 +60,22 @@ function main() {
   }
   console.log('✓ minPopulationToStaffFarms: 0 with no farms');
 
-  // 4b. Regression: the floor must include hired units, not just farm
-  //     count -- reproduces the exact second production incident.
+  // 4b. Regression: the floor must stay farms-only and must NOT include
+  //     hired units. A second production incident on the same kingdom
+  //     initially looked like the floor needed totalHiredUnits(k) added
+  //     in (population sat above the farms-only floor of 6,000 while every
+  //     farm still showed 0 manned) -- but the real root cause was that
+  //     farmProduction itself (game/economy.js) separately subtracted
+  //     totalHiredUnits(k) from population AGAIN before assigning farm
+  //     workers, even though hireUnits() already deducts population at
+  //     hire time (a citizen becomes a soldier and leaves the population
+  //     count for good -- confirmed against both the hire and fire
+  //     routes: firing N units adds N back to population). That's
+  //     double-counting the same troops twice, not a missing floor term.
+  //     Fixed at the source in farmProduction/marketIncomeFull/
+  //     processResourceYield (see test/economy.test.js Test 7b) --
+  //     population alone is already the correct free-labor figure, so the
+  //     floor here stays farms * workersNeeded, unchanged.
   {
     const k = {
       race: 'dwarf',
@@ -68,20 +85,11 @@ function main() {
       engineers: 5000,
       researchers: 100,
     };
-    const farmsOnly = 1000 * farmWorkersNeeded(k); // 6000 -- the old, buggy floor
     const floor = minPopulationToStaffFarms(k);
-    assert.strictEqual(floor, 43100 + 6000, 'floor must be totalHiredUnits + farms-only reserve');
-    assert.ok(floor > farmsOnly, 'floor must exceed the farms-only figure once hired units are large');
-
-    // The actual failure mode: population sat above the OLD floor while
-    // every farm was still unmanned (freePop clamped to 0).
-    const population = 8334;
-    const freePop = Math.max(0, population - (k.rangers + k.engineers + k.researchers));
-    assert.strictEqual(freePop, 0, 'reproduces freePop=0 despite population > old farms-only floor');
-    assert.ok(population > farmsOnly, 'population (8334) was indeed above the old, insufficient floor (6000)');
-    assert.ok(population < floor, 'population (8334) is correctly below the fixed, sufficient floor');
+    assert.strictEqual(floor, 1000 * farmWorkersNeeded(k), 'floor must stay farms-only, not include hired units');
+    assert.strictEqual(floor, 6000);
   }
-  console.log('✓ minPopulationToStaffFarms: includes hired units (large army starves farms otherwise)');
+  console.log('✓ minPopulationToStaffFarms: stays farms-only (hired units are not the floor\'s concern)');
 
   // 5. The reported incident, reproduced: with the floor applied, population
   //    never drops below what's needed to staff farms, even with a wildly

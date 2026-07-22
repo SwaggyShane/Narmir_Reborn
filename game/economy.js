@@ -114,17 +114,19 @@ function farmWorkersNeeded(k) {
 }
 
 /**
- * Population reserve needed so farms actually get staffed, given the
- * kingdom's CURRENT hired units. Not the live per-turn "how many are
- * actually worked right now" figure — that's farmProduction's workedFarms.
+ * Population reserve needed so farms actually get staffed.
  *
- * Includes totalHiredUnits(k) because farmProduction computes
- * freePop = population - totalHiredUnits(k) before assigning farm workers —
- * a first version of this function returned only farms * workersNeeded and
- * missed that, so a kingdom with a large hired army could sit above the
- * "floor" while freePop was still 0 and every farm sat unmanned. Found
- * live in production (2026-07-22): 43,100 hired units vs. 8,334 population
- * left 0 manned farms despite population being above the farms-only floor.
+ * hireUnits() already deducts population at hire time (a citizen becomes
+ * a soldier and permanently leaves the population count) — so `population`
+ * on its own is already the civilian labor pool, net of every hired unit.
+ * It must NOT have totalHiredUnits(k) subtracted again here. An earlier
+ * version of this function, and of farmProduction below, did exactly
+ * that — double-counting the same troops twice: once when they were
+ * hired, once again when computing free labor. Found live in production
+ * (2026-07-22): population sat correctly above the farms-only floor, but
+ * every farm still showed 0 manned, because farmProduction's own freePop
+ * calc separately subtracted ~43,100 hired units from population a
+ * second time.
  *
  * Vampires staff farms with thralls, not population, so this is 0 for them
  * regardless of farm count.
@@ -132,7 +134,7 @@ function farmWorkersNeeded(k) {
 function minPopulationToStaffFarms(k) {
   const farms = k.bld_farms || 0;
   if (!farms || k.race === "vampire") return 0;
-  return totalHiredUnits(k) + farms * farmWorkersNeeded(k);
+  return farms * farmWorkersNeeded(k);
 }
 
 function farmProduction(k) {
@@ -146,12 +148,14 @@ function farmProduction(k) {
   );
   const workersNeeded = farmWorkersNeeded(k);
 
+  // Population is already net of hired units (hireUnits deducts it at hire
+  // time) -- do not subtract totalHiredUnits(k) again here. See
+  // minPopulationToStaffFarms's doc comment for the full story.
   let workedFarms = 0;
   if (race === "vampire") {
     workedFarms = Math.min(farms, Math.floor((k.thralls || 0) / workersNeeded));
   } else {
-    const freePop = Math.max(0, (k.population || 0) - totalHiredUnits(k));
-    workedFarms = Math.min(farms, Math.floor(freePop / workersNeeded));
+    workedFarms = Math.min(farms, Math.floor((k.population || 0) / workersNeeded));
   }
 
   let baseYield = workedFarms * 150 * (FARM_YIELD_MULT[race] || 1.0);
@@ -223,8 +227,10 @@ function marketIncomeFull(k) {
   }
   mult *= getDragonHoardEconMult(k);
 
-  const freePop = Math.max(0, (k.population || 0) - totalHiredUnits(k));
-  const workedMarkets = Math.min(markets, Math.floor(freePop / 5));
+  // Population is already net of hired units (see
+  // minPopulationToStaffFarms's doc comment) -- do not subtract
+  // totalHiredUnits(k) again here.
+  const workedMarkets = Math.min(markets, Math.floor((k.population || 0) / 5));
   const tradeRoutes = Math.min(k.maps, markets);
   // High Consul's Silver Tongue: diplomacy bonus boosts trade route income
   let income =
@@ -269,8 +275,10 @@ function processResourceYield(k, events) {
   items = initItemsArray(items);
   let itemsChanged = false;
 
-  const hiredUnits = totalHiredUnits(k);
-  const freePopulation = Math.max(0, k.population - hiredUnits);
+  // Population is already net of hired units (see
+  // minPopulationToStaffFarms's doc comment in this file) -- do not
+  // subtract totalHiredUnits(k) again here.
+  const freePopulation = k.population || 0;
 
   let woodGained = 0;
   let stoneGained = 0;
