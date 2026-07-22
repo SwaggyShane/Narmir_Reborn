@@ -7,6 +7,7 @@ const { applyKingdomUpdates } = require('../db/schema');
 const { calculateHuntingReward } = require('../game/hunting-economy');
 const { calculateProspectingReward } = require('../game/prospecting-economy');
 const { calculateLandExpansionReward } = require('../game/land-expansion');
+const { minPopulationToStaffFarms } = require('../game/economy');
 const { validateAllocation, getAllocationStatus } = require('../game/scout-allocation');
 const { getAllLocations, getLocationById, isPubliclyDiscovered, markLocationDiscovered } = require('../game/world-locations');
 const { getDistanceToLocation, getLocationTurnCost } = require('../game/location-distance');
@@ -715,7 +716,13 @@ module.exports = function (db) {
         // Get home hex terrain for modifier (query grid terrain)
         // For now, use grassland as default. In future, could query hex grid.
         const homeHexTerrain = 'grassland';
-        const reward = calculateLandExpansionReward(r, k.ranger_level || 1, homeHexTerrain, k.race, k.population, k.lands || 0);
+        // `k.land`, not `k.lands` — the real kingdoms column (see the
+        // matching `land:`/`lands` note below). Reading the nonexistent
+        // plural column meant currentLands was always 0, so the
+        // diminishing-returns curve never actually reduced yield for
+        // kingdoms that already owned land.
+        const populationFloor = minPopulationToStaffFarms(k);
+        const reward = calculateLandExpansionReward(r, k.ranger_level || 1, homeHexTerrain, k.race, k.population, k.land || 0, populationFloor);
 
         if (reward.landsDiscovered === 0) {
           const error = new Error('No land discovered (insufficient population or rangers)');

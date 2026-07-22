@@ -93,6 +93,39 @@ function foodBalance(k) {
   return farmProduction(k) - foodConsumption(k);
 }
 
+/**
+ * Population (or thralls, for vampires) needed per worked farm, after the
+ * iron_plows upgrade discount. Shared by farmProduction (live per-turn
+ * yield) and minPopulationToStaffFarms (the structural staffing floor used
+ * to gate population-spending actions like land expansion).
+ */
+function farmWorkersNeeded(k) {
+  const race = k.race || "human";
+  const upgrades = safeJsonParse(
+    k.farm_upgrades,
+    {},
+    "farmWorkersNeeded:farm_upgrades",
+  );
+  let workersNeeded = FARM_WORKERS_PER[race] || 10;
+  if (upgrades.iron_plows) {
+    workersNeeded = Math.max(1, workersNeeded - 2);
+  }
+  return workersNeeded;
+}
+
+/**
+ * Structural population reserve needed to staff every built farm at once
+ * (not the live per-turn "how many are actually worked right now" figure —
+ * that's farmProduction's workedFarms, which also competes with hired
+ * units for the same free-population pool). Vampires staff farms with
+ * thralls, not population, so this is 0 for them regardless of farm count.
+ */
+function minPopulationToStaffFarms(k) {
+  const farms = k.bld_farms || 0;
+  if (!farms || k.race === "vampire") return 0;
+  return farms * farmWorkersNeeded(k);
+}
+
 function farmProduction(k) {
   const farms = k.bld_farms;
   if (!farms) return 0;
@@ -102,11 +135,7 @@ function farmProduction(k) {
     {},
     "farmProduction:farm_upgrades",
   );
-  let workersNeeded = FARM_WORKERS_PER[race] || 10;
-
-  if (upgrades.iron_plows) {
-    workersNeeded = Math.max(1, workersNeeded - 2);
-  }
+  const workersNeeded = farmWorkersNeeded(k);
 
   let workedFarms = 0;
   if (race === "vampire") {
@@ -607,6 +636,8 @@ module.exports = {
   goldPerTurn,
   foodBalance,
   farmProduction,
+  farmWorkersNeeded,
+  minPopulationToStaffFarms,
   foodConsumption,
   marketIncomeFull,
   tavernEntertainmentBonus,

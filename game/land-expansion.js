@@ -3,10 +3,12 @@
 const config = require('./config');
 
 /**
- * Land expansion economy formulas (locked 2026-07-04).
+ * Land expansion economy formulas (locked 2026-07-04; population floor
+ * added 2026-07-22 after a live incident — see TODO.md/ARCHIVAL.md).
  * Turns: None (instant action)
  * Reward: Land discovery (X,Y subsections within hexes)
- * Cost: 100 population per land discovered
+ * Cost: 100 population per land discovered, never spent below the caller's
+ *       populationFloor (e.g. farm-staffing reserve)
  * Formula: lands = (ranger_count / 10) × level_multiplier × race_modifier × terrain_modifier
  *          population_cost = lands_discovered × 100
  *
@@ -83,9 +85,17 @@ function calculatePopulationCost(landsDiscovered) {
 /**
  * Full land expansion calculation: land reward, population cost.
  * Instant action (no turn cost). Applies exponential diminishing returns.
+ *
+ * @param {number} populationFloor - Population that must remain untouched
+ *   (e.g. what's needed to staff built farms — see
+ *   game/economy.js's minPopulationToStaffFarms). Only availablePopulation
+ *   above this floor can be spent on land discovery. Defaults to 0 for
+ *   callers that don't pass one (kingdom has no farms, or a caller that
+ *   deliberately wants the old no-floor behavior).
+ *
  * Returns { turns, populationCost, landsDiscovered }.
  */
-function calculateLandExpansionReward(rangerCount, rangerLevel, terrain, race, availablePopulation, currentLands) {
+function calculateLandExpansionReward(rangerCount, rangerLevel, terrain, race, availablePopulation, currentLands, populationFloor = 0) {
   const baseReward = landExpansionBaseReward(rangerCount, rangerLevel);
   const withTerrain = applyTerrainModifier(baseReward, terrain);
   const withRace = applyRaceModifier(withTerrain, race);
@@ -94,8 +104,11 @@ function calculateLandExpansionReward(rangerCount, rangerLevel, terrain, race, a
   const currentLandsCount = Math.max(0, Math.floor(Number(currentLands) || 0));
   let landsToDiscover = applyDiminishingReturns(withRace, currentLandsCount);
 
-  // Clamp to available population
-  const maxAffordable = Math.floor(availablePopulation / config.LAND_EXPANSION_CONSTANTS.POPULATION_COST_PER_LAND);
+  // Clamp to available population, minus whatever must stay reserved
+  // (e.g. to keep farms staffed) — never spend below the floor.
+  const floor = Math.max(0, Math.floor(Number(populationFloor) || 0));
+  const spendablePopulation = Math.max(0, availablePopulation - floor);
+  const maxAffordable = Math.floor(spendablePopulation / config.LAND_EXPANSION_CONSTANTS.POPULATION_COST_PER_LAND);
   landsToDiscover = Math.min(landsToDiscover, maxAffordable);
 
   return {
