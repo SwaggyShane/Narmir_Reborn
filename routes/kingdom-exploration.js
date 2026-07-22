@@ -739,7 +739,20 @@ module.exports = function (db) {
           // reflected the kingdom's real prior land total even before the
           // naming was fixed.
           land: (kAfterTurn.land || 0) + reward.landsDiscovered,
-          rangers: Math.max(0, (kAfterTurn.rangers || 0) - r),
+          // Do NOT deduct rangers here. game/land-expansion.js's own design
+          // doc is explicit: "Cost: 100 population per land discovered" --
+          // rangers are only a scaling input to the formula (lands =
+          // ranger_count / 10 x modifiers), the same role they play in the
+          // sibling instant hunting/prospecting routes, neither of which
+          // deducts rangers/engineers for their instant variant. A prior
+          // commit (b1a0e320) added this deduction believing "every other
+          // expedition type" did the same on launch -- true only for
+          // multi-turn hunting/prospecting, where sent units are committed
+          // to a tracked expedition and returned on resolution. Land
+          // expansion has no such resolution path (it's synchronous/instant,
+          // never inserted as a pending turns_left>0 row) -- rangers sent
+          // here were destroyed permanently with no return, unlike every
+          // other route that ever removes them from `rangers`.
         };
 
         await applyUpdates(db, k.id, finalUpdates);
