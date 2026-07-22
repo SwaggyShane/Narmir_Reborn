@@ -471,7 +471,7 @@ handleTurn(kingdom, db) {
 | S00 | Turn context | DONE (local) |
 | S01 | Prelude | DONE (local) |
 | S02 | Income | DONE (local) |
-| S03 | Production / scout | TODO |
+| S03 | Production / scout | DONE (local) |
 | S04 | Lore / free buildings | TODO |
 | S05 | Upkeep / flavor | TODO |
 | S06 | Research | TODO |
