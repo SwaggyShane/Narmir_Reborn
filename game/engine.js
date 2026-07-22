@@ -46,6 +46,9 @@ const {
 const {
   runProductionPhase,
 } = require('./lib/turn-production');
+const {
+  runLoreAndBuildings,
+} = require('./lib/turn-lore-buildings');
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so
@@ -410,94 +413,8 @@ function processTurn(k, db = null) {
   // S03: resources, mercs, maps, active events, scout (after attunements)
   runProductionPhase(ctx, { measureAttunement, fireAndForgetWithRetry });
 
-  // ── 5. Lore Events ────────────────────────────────────────────────────────────
-  // 0.1% chance ~ 24000 turns needed for 24 drops
-  if (Math.random() < 0.001) {
-    // config.LORE_EVENTS is refreshed from the lore_entries table at boot
-    // (seeded from game/lore.js); falls back to the static book before then.
-    const LORE = config.LORE_EVENTS;
-    const cats = ["narmir", "general", k.race];
-    const cat = cats[Math.floor(Math.random() * cats.length)];
-    const raceLore = LORE[cat] || [];
-    if (raceLore.length > 0) {
-      const loreCollected = ensureArray(
-        updates.collected_lore || k.collected_lore,
-        []
-      );
-      const lastId = updates.last_lore_id || k.last_lore_id;
-
-      let available = raceLore.filter((l) => l.id !== lastId);
-      if (available.length === 0) available = raceLore;
-      const ev = available[Math.floor(Math.random() * available.length)];
-      if (ev) {
-        if (!loreCollected.includes(ev.id)) {
-          loreCollected.push(ev.id);
-          updates.collected_lore = safeJsonStringify(loreCollected);
-
-          // Historian unlocks when the kingdom's reachable pool is complete
-          // (narmir + general + own race — other races' lore can't drop here)
-          const reachableTotal = cats.reduce(
-            (sum, c) => sum + (LORE[c] || []).length,
-            0,
-          );
-          const collectedReachable = loreCollected.filter((id) =>
-            cats.some((c) => (LORE[c] || []).some((l) => l.id === id)),
-          ).length;
-          if (collectedReachable >= reachableTotal) {
-            updates._historian_unlocked = true;
-          }
-        }
-        updates.last_lore_id = ev.id;
-        events.push({
-          type: "system",
-          message: `📜 HISTORY: ${ev.msg || ev.content || ev}`,
-        });
-      }
-    }
-  }
-
-  // ── 5b. Building completion ───────────────────────────────────────────────────
-  // build_queue pre-healed by healKingdomForTurn (M1-3)
-  let buildQueue = ensureObject(k.build_queue, {});
-  let buildQueueChanged = false;
-  const completedBuildings = [];
-
-  for (const [queueId, buildJob] of Object.entries(buildQueue)) {
-    buildJob.turns_remaining--;
-
-    if (buildJob.turns_remaining <= 0) {
-      completedBuildings.push(buildJob);
-      delete buildQueue[queueId];
-      buildQueueChanged = true;
-
-      // Increment building count
-      if (!updates[buildJob.building]) {
-        updates[buildJob.building] = (k[buildJob.building] || 0) + 1;
-      } else {
-        updates[buildJob.building]++;
-      }
-
-      // Award engineer XP (preserve existing troop_levels)
-      const xpGain = Math.ceil(buildJob.turns_needed / 100);
-      const mergedK = { ...k, ...updates };
-      const newTroopLevels = awardUnitXp(mergedK, "engineers", xpGain);
-      if (newTroopLevels) updates.troop_levels = newTroopLevels;
-
-      // Apply engineer level progression
-      awardEngineerXp(mergedK, xpGain);
-      updates.engineer_level = mergedK.engineer_level;
-      updates.engineer_xp = mergedK.engineer_xp;
-
-      events.push({
-        type: "system",
-        message: `✅ Construction complete: ${buildJob.building.replace(/_/g, " ")}! Engineers gained ${xpGain} XP.`,
-      });
-    }
-  }
-
-  if (buildQueueChanged) {
-    updates.build_queue = safeJsonStringify(buildQueue);
-  }
+  // S04: lore drops + free build-queue completions
+  runLoreAndBuildings(ctx);
 
   // ── 6. Troop upkeep ───────────────────────────────────────────────────────────
   // Researchers, engineers, scribes are exempt if housed in their buildings.

@@ -472,7 +472,7 @@ handleTurn(kingdom, db) {
 | S01 | Prelude | DONE (local) |
 | S02 | Income | DONE (local) |
 | S03 | Production / scout | DONE (local) |
-| S04 | Lore / free buildings | TODO |
+| S04 | Lore / free buildings | DONE (local) |
 | S05 | Upkeep / flavor | TODO |
 | S06 | Research | TODO |
 | S07 | Queues | TODO |
