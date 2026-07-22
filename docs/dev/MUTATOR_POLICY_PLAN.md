@@ -241,7 +241,7 @@ No code migrations in this plan unless a follow-up campaign is approved.
 | ID | Slice | Status |
 |----|--------|--------|
 | M0 | Recon | **DONE (local)** |
-| M1 | Policy rewrite | **TODO** |
+| M1 | Policy rewrite | **DONE (local)** |
 | M2 | Architecture honesty | **TODO** |
 | M3 | Matrix refresh | **TODO** |
 | M4 | Agent checklist | **TODO** |
