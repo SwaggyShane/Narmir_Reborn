@@ -14,6 +14,7 @@
     "check:encoding": "node scripts/check-text-encoding.js",
     "validate:game-tables": "node scripts/validate-game-tables.js",
     "check:command-boundary": "node scripts/check-command-boundary.js",
+    "print:mutator-matrix": "node scripts/print-mutator-matrix.js",
     "architecture:accept": "node scripts/architecture-acceptance.js",
     "repair:json": "node scripts/repair-json-rows.js",
     "test:systems": "node test-systems-harness/run-all.js",

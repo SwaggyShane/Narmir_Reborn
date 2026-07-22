@@ -13,6 +13,15 @@ were re-derived, including one real misclassification found and fixed (`DELETE /
 was labeled `CH:expeditions` with no such call anywhere in its body). Re-run the
 classification if routes change; do not hand-edit the tables without re-verifying.
 
+**How to re-generate (M5-A, `scripts/print-mutator-matrix.js`):** `npm run print:mutator-matrix`
+prints every mutating route per file with a best-effort CH-call detection (brace-depth-matched
+route body, not a naive grep — still flags routes with a *secondary* internal `handle()` call,
+like `/expedition/hunting`'s turn-consumption, as `CH:turn`, which is correct but not the
+route's primary classification). **Print-only, not a source of truth** — a human still decides
+Policy A/B/S and writes the result here. Confirmed during M5 development to reproduce M3's 82
+total route count exactly, plus catch 3 real secondary `CH:turn` calls M3's manual 5-route spot
+check had missed (now reflected in the `kingdom-exploration.js` table below).
+
 **Where simulation code lives ≠ which façade routes use.** `CommandHandler` is a route-facing
 façade for classic sim verbs — it does not require that logic sit in `game/engine.js`. After
 the engine extract (`docs/dev/ENGINE_EXTRACT_PLAN.md`, complete 2026-07-22), the turn pipeline
@@ -341,9 +350,9 @@ of this doc's mutating-only scope.
 | Route | Path |
 |---|---|
 | CH:expeditions | `POST /expedition/start` |
-| direct+txn | `POST /expedition/hunting` |
-| direct+txn | `POST /expedition/prospecting` |
-| direct+txn | `POST /expedition/land-expansion` |
+| direct+txn | `POST /expedition/hunting` (also fires `CH:turn` internally — instant expedition consumes a stored turn, same pattern as `/research`) |
+| direct+txn | `POST /expedition/prospecting` (also fires `CH:turn` internally, same reason) |
+| direct+txn | `POST /expedition/land-expansion` (also fires `CH:turn` internally, same reason) |
 | direct | `POST /expedition/acknowledge` |
 | direct | `POST /goals/claim` |
 | direct | `POST /expedition/cancel` |

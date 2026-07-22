@@ -245,7 +245,7 @@ No code migrations in this plan unless a follow-up campaign is approved.
 | M2 | Architecture honesty | **DONE (local)** |
 | M3 | Matrix refresh | **DONE (local)** |
 | M4 | Agent checklist | **DONE (local)** |
-| M5 | Optional automation | **TODO** |
+| M5 | Optional automation | **DONE (local)** — D5-A only, D5-B already covered by existing test/command-handler.test.js |
 | M6 | Gray-area log | **TODO** |
 
 ---
