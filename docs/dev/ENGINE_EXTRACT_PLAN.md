@@ -476,7 +476,7 @@ handleTurn(kingdom, db) {
 | S05 | Upkeep / flavor | DONE (local) |
 | S06 | Research | DONE (local) |
 | S07 | Queues | DONE (local) |
-| S08 | Training / XP | TODO |
+| S08 | Training / XP | DONE (local) |
 | S09 | Finalize | TODO |
 | S10 | Pipeline | TODO |
 | S11 | Expeditions | TODO |
