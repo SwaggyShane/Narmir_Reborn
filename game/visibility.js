@@ -62,7 +62,6 @@ function serializeVisibility({ seenCells, currentCells, version }) {
 function getInitialVisibility(kingdom) {
   const { map_x, map_y } = getKingdomMapCoords(kingdom);
   const hex = pixelToHex(map_x, map_y);
-  console.log(`[K${kingdom?.id}-VIS] getKingdomMapCoords(race=${kingdom?.race}) -> (${map_x}, ${map_y}) -> hex (${hex.col}, ${hex.row})`);
   const bitmap = encodeCellSet([cellIndex(hex.col, hex.row)]);
   return { seenCells: bitmap, currentCells: bitmap, version: DEFAULT_VISIBILITY.version };
 }
