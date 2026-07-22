@@ -243,6 +243,7 @@ See `/game/ARCHITECTURE.md` for detailed patterns and import rules.
 - **TODO.md** — Live active work (empty when idle)
 - **ARCHIVAL.md** — Completed features (historical record)
 - **game/ARCHITECTURE.md** — Live architecture + verified status
+- **game/COMMAND_COVERAGE.md** — Adding a new mutating route? Start here — Policy A (CommandHandler) vs. Policy B (domain module + route transaction) vs. Policy S (ticks), with a checklist and the current per-route matrix
 - **ADMIN_WISHLIST_PLAN.md** — Low-priority optional backlog
 - **RAILWAY_SECRETS.md** — Production secrets management
 

@@ -21,6 +21,30 @@ resolution in `game/lib/expedition-resolution.js`, and region resolution in
 `game/lib/region-resolution.js`. `game/engine.js` itself is now a 526-line composition root +
 re-export barrel, not where the logic runs.
 
+## New mutating endpoint? Check this first
+
+```text
+[ ] Fits handle(type, payload) -> { updates, events } without owning a multi-table TX?
+      -> Policy A: add to COMMAND_TYPES + a case in command-handler.js's handle()
+[ ] Multi-table atomic wipe / long domain TX / already-modular domain (Forge, Prestige,
+    Evolution, attunements-shaped)?
+      -> Policy B: dedicated domain module, called directly from the route, wrapped in
+         db.withTransaction for multi-write flows. List it in the coverage matrix below.
+[ ] Server tick / regen / boot repair / no player HTTP at all?
+      -> Policy S: no route, no CommandHandler. See Policy S below.
+[ ] Route or socket handler about to call a forbidden engine.* mutator directly?
+      -> Never. npm run check:command-boundary enforces this on routes/ and game/sockets.js.
+[ ] Client needs a store update from this response?
+      -> structureUpdates() / apiCallAndSync() on the client side -- separate track
+         (docs/dev/MUTATOR_POLICY_PLAN.md SS9), not re-litigated per-route here.
+[ ] Genuinely unsure which policy fits?
+      -> Default to Policy B if a domain module already exists for this system, else
+         raise it for a human/agent decision -- do not guess and move on.
+```
+
+Full policy definitions, decision-tree rationale, and the Prestige-fence precedent for why
+Policy B isn't "just use CommandHandler for everything": below.
+
 ## Policy: A / B / S
 
 Three shapes, not one rule. Classify by what the mutator *is*, not by habit.

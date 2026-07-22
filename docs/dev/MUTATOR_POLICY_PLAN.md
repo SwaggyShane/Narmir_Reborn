@@ -244,7 +244,7 @@ No code migrations in this plan unless a follow-up campaign is approved.
 | M1 | Policy rewrite | **DONE (local)** |
 | M2 | Architecture honesty | **DONE (local)** |
 | M3 | Matrix refresh | **DONE (local)** |
-| M4 | Agent checklist | **TODO** |
+| M4 | Agent checklist | **DONE (local)** |
 | M5 | Optional automation | **TODO** |
 | M6 | Gray-area log | **TODO** |
 
