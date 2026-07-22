@@ -2,14 +2,20 @@
 // Unit tests for game/land-expansion.js and game/economy.js's
 // minPopulationToStaffFarms/farmWorkersNeeded (2026-07-22).
 //
-// Motivated by a live production incident: sending 47,000 rangers on an
-// instant land-expansion mission spent population down to 78 (from
-// 101,278), with no floor at all. Two real bugs found while investigating:
-// 1. The route read k.lands (plural, nonexistent column) instead of
-//    k.land, so currentLands was always 0 -- diminishing returns never
+// Motivated by two live production incidents on the same kingdom:
+// 1. Sending 47,000 rangers on an instant land-expansion mission spent
+//    population down to 78 (from 101,278), with no floor at all. Also
+//    found: the route read k.lands (plural, nonexistent column) instead
+//    of k.land, so currentLands was always 0 -- diminishing returns never
 //    reduced yield for kingdoms that already owned land.
-// 2. There was no independent floor on population spend at all, only a
-//    clamp to "whatever population currently exists".
+// 2. After adding a farms-only floor (bld_farms x workersNeeded), a
+//    SECOND land-expansion left population at 8,334 with every farm
+//    unmanned, because the floor never accounted for hired units:
+//    farmProduction computes freePop = population - totalHiredUnits(k)
+//    before assigning farm workers, and this kingdom had ~43,100 hired
+//    units (mostly rangers) against only 8,334 population. Population
+//    was technically above the farms-only floor (6,000) the whole time --
+//    the floor itself was just missing a term.
 //
 // Run: node test/land-expansion.test.js
 
@@ -50,6 +56,32 @@ function main() {
     assert.strictEqual(minPopulationToStaffFarms({ race: 'human' }), 0, 'missing bld_farms treated as 0');
   }
   console.log('✓ minPopulationToStaffFarms: 0 with no farms');
+
+  // 4b. Regression: the floor must include hired units, not just farm
+  //     count -- reproduces the exact second production incident.
+  {
+    const k = {
+      race: 'dwarf',
+      bld_farms: 1000,
+      farm_upgrades: JSON.stringify({ iron_plows: true }),
+      rangers: 38000,
+      engineers: 5000,
+      researchers: 100,
+    };
+    const farmsOnly = 1000 * farmWorkersNeeded(k); // 6000 -- the old, buggy floor
+    const floor = minPopulationToStaffFarms(k);
+    assert.strictEqual(floor, 43100 + 6000, 'floor must be totalHiredUnits + farms-only reserve');
+    assert.ok(floor > farmsOnly, 'floor must exceed the farms-only figure once hired units are large');
+
+    // The actual failure mode: population sat above the OLD floor while
+    // every farm was still unmanned (freePop clamped to 0).
+    const population = 8334;
+    const freePop = Math.max(0, population - (k.rangers + k.engineers + k.researchers));
+    assert.strictEqual(freePop, 0, 'reproduces freePop=0 despite population > old farms-only floor');
+    assert.ok(population > farmsOnly, 'population (8334) was indeed above the old, insufficient floor (6000)');
+    assert.ok(population < floor, 'population (8334) is correctly below the fixed, sufficient floor');
+  }
+  console.log('✓ minPopulationToStaffFarms: includes hired units (large army starves farms otherwise)');
 
   // 5. The reported incident, reproduced: with the floor applied, population
   //    never drops below what's needed to staff farms, even with a wildly
