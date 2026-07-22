@@ -480,7 +480,7 @@ handleTurn(kingdom, db) {
 | S09 | Finalize | DONE (local) |
 | S10 | Pipeline | DONE (local) |
 | S11 | Expeditions | DONE (local) |
-| S12 | Regions | TODO |
+| S12 | Regions | DONE (local) |
 | S13 | Helpers | TODO |
 | S14 | Export diet | TODO |
 
