@@ -114,16 +114,25 @@ function farmWorkersNeeded(k) {
 }
 
 /**
- * Structural population reserve needed to staff every built farm at once
- * (not the live per-turn "how many are actually worked right now" figure —
- * that's farmProduction's workedFarms, which also competes with hired
- * units for the same free-population pool). Vampires staff farms with
- * thralls, not population, so this is 0 for them regardless of farm count.
+ * Population reserve needed so farms actually get staffed, given the
+ * kingdom's CURRENT hired units. Not the live per-turn "how many are
+ * actually worked right now" figure — that's farmProduction's workedFarms.
+ *
+ * Includes totalHiredUnits(k) because farmProduction computes
+ * freePop = population - totalHiredUnits(k) before assigning farm workers —
+ * a first version of this function returned only farms * workersNeeded and
+ * missed that, so a kingdom with a large hired army could sit above the
+ * "floor" while freePop was still 0 and every farm sat unmanned. Found
+ * live in production (2026-07-22): 43,100 hired units vs. 8,334 population
+ * left 0 manned farms despite population being above the farms-only floor.
+ *
+ * Vampires staff farms with thralls, not population, so this is 0 for them
+ * regardless of farm count.
  */
 function minPopulationToStaffFarms(k) {
   const farms = k.bld_farms || 0;
   if (!farms || k.race === "vampire") return 0;
-  return farms * farmWorkersNeeded(k);
+  return totalHiredUnits(k) + farms * farmWorkersNeeded(k);
 }
 
 function farmProduction(k) {
