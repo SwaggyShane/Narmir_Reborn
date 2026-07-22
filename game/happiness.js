@@ -119,9 +119,9 @@ function calculateHappiness(k) {
     if (activeHousingSpecial?.name === 'Goliath Dwellings') {
       overcrowdMult *= 0.2;
     }
-    overcrowdingComponent = -Math.max(
-      0,
-      Math.floor(Math.max(0, ((k.population || 0) - overcrowdingThreshold) * 0.018 * overcrowdMult))
+    overcrowdingComponent = Math.max(
+      -30,
+      -Math.floor(Math.max(0, ((k.population || 0) - overcrowdingThreshold) * 0.018 * overcrowdMult))
     );
     happiness += overcrowdingComponent;
   }
