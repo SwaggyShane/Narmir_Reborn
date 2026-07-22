@@ -101,7 +101,12 @@ const populationFields = new Set(['population', 'happiness']);
 //   from the attack/spell/etc. routes — reachable through their responses.
 //   GoalsPanel.jsx fetches goal progress on demand via its own dedicated
 //   GET /api/kingdom/goals, never via the turn/updates path.
-const serverInternalOnlyFields = new Set(['achievements', 'racial_bonuses_unlocked', 'active_effects', 'goals']);
+// - active_event (2026-07-22): temporary per-turn buff/debuff multiplier
+//   tracker with turns_remaining, ticked down in game/lib/turn-production.js
+//   and reachable through the turn response. Zero client consumers anywhere
+//   (checked client/src, including admin) — unlike active_effects, it isn't
+//   even surfaced in an admin tool today. Server-side bookkeeping only.
+const serverInternalOnlyFields = new Set(['achievements', 'racial_bonuses_unlocked', 'active_effects', 'goals', 'active_event']);
 
 /** Every kingdoms column starting with bld_ — dynamic, matches economyStore's own handling. */
 function isBuildingField(key) {

@@ -41,6 +41,19 @@ function main() {
   }
   console.log('✓ achievements/racial_bonuses_unlocked dropped silently (known server-internal fields)');
 
+  // 2b. active_event (2026-07-22) — same category, found live via a real
+  //     server log warning after a POST /turn call, zero client consumers.
+  {
+    const warnings = [];
+    const origWarn = console.warn;
+    console.warn = (...args) => warnings.push(args.join(' '));
+    structureUpdates({ active_event: '{}' }, { warnUnmapped: true });
+    console.warn = origWarn;
+    assert.strictEqual(warnings.length, 0,
+      'active_event must not trigger the unmapped-key warning');
+  }
+  console.log('✓ active_event dropped silently (server-internal turn-buff tracker, no client consumer)');
+
   // 3. A genuinely new/unknown key still warns — the warning mechanism
   //    itself must still work for real gaps (this is the whole point of
   //    A4-10's loud-on-purpose design).
