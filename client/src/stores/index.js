@@ -140,6 +140,14 @@ export {
 } from './uiStore';
 
 export {
+  // Exploration Log Store
+  useExplorationLogStore,
+  useInstantEntries,
+  useAddInstantEntry,
+  useClearInstantEntries,
+} from './explorationLogStore';
+
+export {
   // Profile Store
   useProfileStore,
   usePlayerName,

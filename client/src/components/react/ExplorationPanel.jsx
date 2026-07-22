@@ -7,7 +7,7 @@ import { normalizeAndRouteResponse, applyFlatKingdomSnapshot } from '../../utils
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { useGameMutationEvents } from '../../hooks/useGameState';
-import { useEconomyStore, useProfileStore, useMilitaryStore, usePopulationStore, useBuildAllocation, useTrainingAllocation, useResourceBuildAllocation } from '../../stores';
+import { useEconomyStore, useProfileStore, useMilitaryStore, usePopulationStore, useBuildAllocation, useTrainingAllocation, useResourceBuildAllocation, useInstantEntries, useAddInstantEntry, useClearInstantEntries } from '../../stores';
 import EmptyState from './EmptyState.jsx';
 import HexSelectionModal from './HexSelectionModal.jsx';
 import { AllocationButtons } from './AllocationButtons.jsx';
@@ -112,7 +112,12 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
   // Fog of War Phase 3: area hex scout (separate from old expedition scout types)
   const [activeExpeditions, setActiveExpeditions] = useState([]);
   const [completedExpeditions, setCompletedExpeditions] = useState([]);
-  const [instantEntries, setInstantEntries] = useState([]);
+  // Lives in a Zustand store, not useState here — GameShell fully unmounts
+  // this panel on every switch away, which was wiping the log on every
+  // navigation. See stores/explorationLogStore.js.
+  const instantEntries = useInstantEntries();
+  const addInstantEntry = useAddInstantEntry();
+  const clearInstantEntries = useClearInstantEntries();
   // Phase 1: Turn-based resource gathering with durations
   const [huntingRangers, setHuntingRangers] = useState(0);
   const [huntingTerrain, setHuntingTerrain] = useState('forest');
@@ -262,8 +267,8 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       rewards: Array.isArray(rewards) ? rewards : [],
       kind: 'instant',
     };
-    setInstantEntries((prev) => [entry, ...prev].slice(0, 50));
-  }, []);
+    addInstantEntry(entry);
+  }, [addInstantEntry]);
 
   const handleExpeditionLogEntry = useCallback((detail) => {
     const { icon, title, subtitle } = detail || {};
@@ -356,14 +361,14 @@ const ExplorationPanel = ({ selectedHex = null, onClearSelectedHex = null } = {}
       if (refreshed) {
         applyFlatKingdomSnapshot(refreshed);
       }
-      setInstantEntries([]);
+      clearInstantEntries();
       await refreshAll();
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Expedition log cleared', 'success');
     } catch (err) {
       console.error('[expedition/clear-all] failed:', err);
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to clear expedition log', 'error');
     }
-  }, [applyResult, refreshAll]);
+  }, [applyResult, clearInstantEntries, refreshAll]);
 
   // Handler for opening hex selection modal for resource gathering
   const openHexModal = useCallback((type, duration) => {
