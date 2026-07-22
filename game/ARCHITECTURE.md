@@ -1,17 +1,20 @@
 # Game Architecture: Current State (Narmir-shaped)
 
 **Purpose:** Describes how the game works **today** on the live runtime path.  
-**Date:** 2026-07-19  
-**Status:** As-is after CommandHandler boundary + safeEmit closeout (local `main`). Coupling section corrected 2026-07-19 — see below and `TODO.md` §5 for the honest state of mutator-boundary coverage (boundary check ≠ full coverage; `game/sockets.js` bypasses it entirely).
+**Date:** 2026-07-22  
+**Status:** As-is after CommandHandler boundary + safeEmit closeout + **engine extract S00–S14** (local `main`). Coupling section corrected 2026-07-19 — see below and `TODO.md` §5 for the honest state of mutator-boundary coverage (boundary check ≠ full coverage).
 
 Narmir’s architecture is **not** a generic RPG JSON content engine. It is a
 PostgreSQL multiplayer kingdom sim with:
 
 - **Routes** for HTTP validation and transactions  
 - **`game/command-handler.js`** as the player mutator boundary  
-- **`game/engine.js`** (and focused modules) as simulation  
+- **`game/lib/turn-pipeline.js`** as the turn playlist; **`game/engine.js`** as composition root + compatibility barrel  
+- Focused domain modules under `game/` and `game/lib/` for simulation  
 - **`safeEmit`** for Socket.io payloads  
 - **Live game tables** validated by `npm run validate:game-tables`
+
+**Engine export diet:** Prefer canonical modules for new code (see comment above `module.exports` in `game/engine.js`). Full extract plan: `docs/dev/ENGINE_EXTRACT_PLAN.md`.
 
 ## Verified status (replaces retired `ARCHITECTURE_ROADMAP.md`)
 
@@ -23,7 +26,8 @@ Definition of done: player mutators via **CommandHandler**, game sockets via **s
 | Decoupling (Command boundary) | **PARTIAL — corrected 2026-07-19** | `game/command-handler.js`; `npm run check:command-boundary` prevents kingdom-\*/auth/hero/admin routes from directly requiring `game/engine`, but does not require mutations to actually go through CommandHandler (most newer systems mutate via their own domain module + route-level transaction instead — real, by-design, not a gap by itself). The actual gap: `game/sockets.js` is not scanned by the boundary check at all and calls `engine.resolveMilitaryAttack`/`engine.castSpell` directly. See `TODO.md` §5 (A5-1..A5-8) for the full mutator-coverage matrix and policy. Events = turn result arrays + Socket.io — **no outbox** |
 | JSON content-pack “engine” vision | **CUT** | Wrong model for Narmir |
 | P0 honesty (passive scout, trek loot, terrain scout, safeEmit) | **COMPLETE in code** | Live modules on `feature/webgl-worldmap` (local; not production until ship) |
-| Post-complete debt | Open / deferred | Large `engine.js`; optional balance tuning |
+| Engine extract (S00–S14) | **COMPLETE (local)** | Turn playlist in `turn-pipeline.js`; expeditions/regions in lib; barrel diet docs only |
+| Post-complete debt | Open / deferred | Optional balance tuning; barrel shrink over time |
 
 ```bash
 npm run check:command-boundary

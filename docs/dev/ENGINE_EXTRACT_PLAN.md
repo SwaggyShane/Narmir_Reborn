@@ -1,8 +1,8 @@
 # Engine.js Surgical Extract Plan
 
-**Status:** Ready to implement  
+**Status:** **COMPLETE (local)** — S00–S14 landed on local `main`  
 **Date:** 2026-07-22  
-**Scope:** **LOCAL ONLY** — no `git push`, no origin, no PRs, no remote review until the **entire** campaign (S00–S14) is complete **and** verified on the local dev/test stack.  
+**Scope:** **LOCAL ONLY** — no `git push` until user-confirmed local testing of the full campaign.  
 **Campaign track:** **A** (turn purity first) — locked  
 **Baseline:** `game/engine.js` ≈ **2724** total lines (≈2495 non-blank).  
 `processTurn` starts at the live `function processTurn` marker (currently ~391). Non-turn bulk: `resolveEpicTrek`, `resolveExpeditions`, `resolveResourceHarvests`, `resolveRegions`, plus re-export barrel.
@@ -482,7 +482,7 @@ handleTurn(kingdom, db) {
 | S11 | Expeditions | DONE (local) |
 | S12 | Regions | DONE (local) |
 | S13 | Helpers | DONE (local) |
-| S14 | Export diet | TODO |
+| S14 | Export diet | DONE (local) |
 
 ---
 

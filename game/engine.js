@@ -335,6 +335,22 @@ const { resolveRegions } = require('./lib/region-resolution');
 
 // ── Building demolition (extracted to game/lib/building-research.js) ────────
 
+// ── Public barrel (export diet — prefer canonical modules for new code) ─────
+// engine.js remains the compatibility barrel for tests/harnesses/commandHandler.
+// Prefer requiring the canonical home for NEW code:
+//   processTurn / turn phases → game/lib/turn-pipeline.js (+ turn-*.js)
+//   resolveExpeditions / epic trek / harvests → game/lib/expedition-resolution.js
+//   resolveRegions → game/lib/region-resolution.js
+//   fireAndForgetWithRetry → game/lib/fire-and-forget.js
+//   runBuildingAttunements → game/lib/turn-attunements.js
+//   combat → game/lib/combat-wrappers.js / game/combat.js
+//   magic/spells → game/magic.js
+//   economy helpers → game/economy.js
+//   troops / XP → game/lib/troops.js / game/xp.js
+//   prestige → game/prestige/
+// Do NOT delete this barrel without migrating all require('../game/engine') sites.
+// See docs/dev/ENGINE_EXTRACT_PLAN.md (S14) and game/ARCHITECTURE.md.
+
 module.exports = {
   fireAndForgetWithRetry, // exported for unit testing (A3-5); not part of the game-logic surface
   runBuildingAttunements, // exported for unit testing (A3-8); not part of the game-logic surface
