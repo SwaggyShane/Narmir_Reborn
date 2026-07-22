@@ -52,13 +52,13 @@ npm run build       # compile React client (Vite)
 npm run bot         # start Discord bot separately
 ```
 
-**Smoke and test scripts:**
+**Test and quality scripts:**
 
 ```bash
-npm run smoke:combat-v2        # Advanced combat adapter smoke test
-npm run scenario:combat-v2     # Advanced combat scenario runner
-npm run route-smoke:combat-v2  # Advanced combat route persistence smoke
-npm run sweep:combat-v2-broad  # Advanced combat broad balance sweep
+npm test                     # Server unit tests
+npm run test:components      # React component tests (Vitest)
+npm run test:systems         # Systems viability harness
+npm run lint                 # ESLint
 ```
 
 ---
@@ -154,7 +154,6 @@ narmir-server/
 │   │   └── components/react/     # React panel components (34 panels)
 │   ├── admin.html                # React admin entry (Vite)
 │   └── src/admin/                # React admin panels
-├── test-combat-harness/          # Combat verification scripts
 └── tools/security-auditor/       # Security audit tooling
 ```
 

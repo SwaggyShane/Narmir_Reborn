@@ -29,11 +29,6 @@ npm start                # Start production server using dist/
 npm run lint             # Run ESLint on all .js files (except client tests)
 npm test                 # Run server tests (Node scripts/run-tests.js)
 npm run test:components  # Run React component tests (Vitest)
-
-# Game-specific testing
-npm run smoke:combat-v2      # Smoke test for advanced combat system
-npm run scenario:combat-v2   # Run combat scenario tests
-npm run route-smoke:combat-v2 # Test route persistence for combat
 ```
 
 ### Local Database Setup
@@ -199,11 +194,10 @@ See `/game/ARCHITECTURE.md` for detailed patterns and import rules.
 ### Workflow Steps
 
 1. Make code changes on feature branch
-2. Run quality checks (lint → smoke → sanity):
+2. Run quality checks:
    ```bash
    npm run lint
    npm test
-   npm run smoke:combat-v2  # if combat-related
    ```
    - If any error: fix it and retest. Do not push with failing tests.
 3. Stage and commit: `git add <files>` → `git commit -m "..."`
@@ -265,13 +259,12 @@ See `/game/ARCHITECTURE.md` for detailed patterns and import rules.
 
 ### When to Test
 - **Always before push:** `npm run lint && npm test`
-- **Combat-related changes:** `npm run smoke:combat-v2` or `npm run scenario:combat-v2`
 - **Route/API changes:** `npm test` includes route persistence tests
 
 ### Test Organization
-- **Server tests:** `/test-combat-harness/`, `scripts/run-tests.js`
+- **Server tests:** `scripts/run-tests.js`
 - **React tests:** Vitest in `/client/src/**/*.test.jsx`
-- **Smoke tests:** Combat harness (`v2-*.js` files)
+- **Systems harness:** `/test-systems-harness/` (`npm run test:systems`)
 
 ---
 

@@ -7,8 +7,6 @@ This is complementary to:
 | Suite | Purpose |
 |-------|---------|
 | `npm test` | Unit / characterization tests in `test/*.test.js` |
-| `npm run smoke:combat-v2` | Combat V2 pure smoke |
-| `npm run route-smoke:combat-v2` | Combat V2 DB persistence |
 | **`npm run test:systems`** | **All systems: inventory + engine + DB** |
 | `npm run test:systems:http` | Above + live HTTP against a running server |
 

@@ -28,7 +28,6 @@ Optional, recommended for anything touching routes:
 
 ```bash
 npm run test:systems
-npm run smoke:combat-v2
 ```
 
 ---
