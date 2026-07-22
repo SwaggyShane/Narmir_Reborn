@@ -447,6 +447,7 @@ handleTurn(kingdom, db) {
 | Parallel agents | One extract branch at a time |
 | Require cycles | Top-level requires; shared pure bits → `lib/` |
 | S11 `engine` arg | Narrow to `{ io }` with adapter re-export |
+| Local `main` drifts from `origin/main` for the campaign's duration | Not a code smell — an accepted, deliberate tradeoff of the LOCAL ONLY constraint. This has happened before independent of this campaign (`TODO.md` G-4: 220 ahead / 8 behind, 2026-07-19, still unreconciled, user-gated). Railway deploys from `origin/main` only, so production is unaffected while local diverges — but check the live count at campaign start and before any eventual push, don't rely on a remembered number: `git rev-list --left-right --count origin/main...main`. Reconcile only when the user chooses, same rule as G-4. |
 
 ---
 
@@ -469,7 +470,7 @@ handleTurn(kingdom, db) {
 | ID | Slice | Status |
 |----|--------|--------|
 | S00 | Turn context | DONE (local) |
-| S01 | Prelude | TODO |
+| S01 | Prelude | DONE (local) |
 | S02 | Income | TODO |
 | S03 | Production / scout | TODO |
 | S04 | Lore / free buildings | TODO |
@@ -535,5 +536,6 @@ extract(engine): S14 document engine export diet and stop new barrel usage
 | Optional dual path on S00 (“wire or not”) | **Reject soft option** | S00 **must** wire init |
 | Barrel CI gate | **Defer** | S14 docs only; no new tooling unless free |
 | Encoding / prose nits | **Concur** | Cleaned in rewrite |
+| Local↔origin divergence during LOCAL ONLY campaign (echoes `TODO.md` G-4) | **Concur — real process risk, not a smell** | Added to Risks table; check live ahead/behind at campaign boundaries; reconcile only when user chooses |
 
 Implementation starts with S00 when requested.
