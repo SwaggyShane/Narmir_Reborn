@@ -150,6 +150,40 @@ console.log('Testing economy.js\n');
   console.log(`Test 7: marketIncomeFull scales with markets ✓ (m5=${m5})`);
 }
 
+// Test 7b: regression -- farmProduction/marketIncomeFull/processResourceYield
+// must NOT subtract totalHiredUnits(k) from population a second time.
+// hireUnits() already deducts population at hire time (a citizen becomes
+// a soldier and leaves the population count); population alone is already
+// the free civilian labor pool. A prior version double-subtracted hired
+// units here too, so any kingdom with a large army relative to population
+// silently got 0 manned farms/markets/resource buildings even with a
+// healthy population. Found live in production 2026-07-22: 95,265
+// population, ~43,100 hired rangers/engineers/researchers -- farms must
+// still be fully staffed.
+{
+  const bigArmy = makeKingdom({
+    population: 95265,
+    bld_farms: 1000,
+    rangers: 38000,
+    engineers: 5000,
+    researchers: 100,
+  });
+  // 1000 farms x 10 workers/farm (human, no iron_plows) = 10,000 needed;
+  // 95,265 population easily covers that regardless of the 43,100 troops.
+  const farmYield = economy.farmProduction(bigArmy);
+  assert.ok(farmYield > 0, 'farms must produce despite a large hired army');
+  assert.equal(
+    economy.minPopulationToStaffFarms(bigArmy),
+    1000 * 10,
+    'the floor itself must not include hired units either',
+  );
+
+  const bigArmyMarkets = makeKingdom({ population: 95265, bld_markets: 5, rangers: 90000, maps: 0 });
+  assert.ok(economy.marketIncomeFull(bigArmyMarkets) > 0, 'markets must produce despite a large hired army');
+
+  console.log(`Test 7b: farms/markets staffed by raw population, not double-counted against hired units ✓ (farmYield=${farmYield})`);
+}
+
 // Test 8: tavernEntertainmentBonus baseline = 10/tavern
 {
   assert.equal(economy.tavernEntertainmentBonus(makeKingdom()), 0);
