@@ -183,6 +183,17 @@ test('non-complete job only decrements turns_remaining in place', () => {
   assert.strictEqual(ctx.updates.bld_markets, undefined);
 });
 
+test('count-style build_queue (processBuildQueue format) does not throw', () => {
+  // Live queues are { woodyard: 1 } counts — not job objects. Regression:
+  // "Cannot create property 'turns_remaining' on number '1'" crashed turns.
+  const k = baseKingdom({
+    build_queue: JSON.stringify({ woodyard: 1, bld_farms: 2 }),
+  });
+  const ctx = runThroughLore(k);
+  assert.strictEqual(ctx.updates.build_queue, undefined);
+  assert.strictEqual(ctx.k.build_queue.woodyard, 1);
+});
+
 test('lore path with forced Math.random may drop history event', () => {
   const orig = Math.random;
   // Force lore roll: first call < 0.001, then category pick, then event pick

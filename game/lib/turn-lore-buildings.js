@@ -66,14 +66,26 @@ function runLoreAndBuildings(ctx) {
     }
   }
 
-  // ── 5b. Building completion ───────────────────────────────────────────────────
+  // ── 5b. Building completion (legacy per-job queue objects only) ───────────────
+  // Live construction uses processBuildQueue (section 8 / turn-queues): build_queue
+  // values are *counts* per building key, e.g. { woodyard: 1 }, not job objects.
+  // Mutating turns_remaining on a number throws:
+  //   "Cannot create property 'turns_remaining' on number '1'"
+  // Only process entries that are plain job objects with turns_remaining.
   // build_queue pre-healed by healKingdomForTurn (M1-3)
   let buildQueue = ensureObject(k.build_queue, {});
   let buildQueueChanged = false;
   const completedBuildings = [];
 
   for (const [queueId, buildJob] of Object.entries(buildQueue)) {
-    buildJob.turns_remaining--;
+    if (!buildJob || typeof buildJob !== 'object' || Array.isArray(buildJob)) {
+      continue; // count-style queue entry owned by processBuildQueue
+    }
+    if (buildJob.turns_remaining === undefined && buildJob.turns_needed === undefined) {
+      continue;
+    }
+
+    buildJob.turns_remaining = (Number(buildJob.turns_remaining) || 1) - 1;
 
     if (buildJob.turns_remaining <= 0) {
       completedBuildings.push(buildJob);
@@ -88,7 +100,7 @@ function runLoreAndBuildings(ctx) {
       }
 
       // Award engineer XP (preserve existing troop_levels)
-      const xpGain = Math.ceil(buildJob.turns_needed / 100);
+      const xpGain = Math.ceil((buildJob.turns_needed || 0) / 100);
       const mergedK = { ...k, ...updates };
       const newTroopLevels = awardUnitXp(mergedK, 'engineers', xpGain);
       if (newTroopLevels) updates.troop_levels = newTroopLevels;
@@ -100,7 +112,7 @@ function runLoreAndBuildings(ctx) {
 
       events.push({
         type: 'system',
-        message: `✅ Construction complete: ${buildJob.building.replace(/_/g, ' ')}! Engineers gained ${xpGain} XP.`,
+        message: `✅ Construction complete: ${String(buildJob.building || queueId).replace(/_/g, ' ')}! Engineers gained ${xpGain} XP.`,
       });
     }
   }

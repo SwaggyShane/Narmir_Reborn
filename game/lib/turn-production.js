@@ -59,8 +59,15 @@ function runProductionPhase(ctx, helpers) {
   );
   let changed = false;
   for (const key of Object.keys(activeEv2)) {
-    activeEv2[key].turns_remaining = (activeEv2[key].turns_remaining || 1) - 1;
-    if (activeEv2[key].turns_remaining <= 0) {
+    const entry = activeEv2[key];
+    // Defensive: only tick structured events ({ mult, turns_remaining })
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      delete activeEv2[key];
+      changed = true;
+      continue;
+    }
+    entry.turns_remaining = (Number(entry.turns_remaining) || 1) - 1;
+    if (entry.turns_remaining <= 0) {
       delete activeEv2[key];
     }
     changed = true;
