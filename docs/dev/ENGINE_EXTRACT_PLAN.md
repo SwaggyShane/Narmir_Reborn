@@ -473,7 +473,7 @@ handleTurn(kingdom, db) {
 | S02 | Income | DONE (local) |
 | S03 | Production / scout | DONE (local) |
 | S04 | Lore / free buildings | DONE (local) |
-| S05 | Upkeep / flavor | TODO |
+| S05 | Upkeep / flavor | DONE (local) |
 | S06 | Research | TODO |
 | S07 | Queues | TODO |
 | S08 | Training / XP | TODO |
