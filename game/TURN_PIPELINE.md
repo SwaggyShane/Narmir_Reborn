@@ -2,9 +2,9 @@
 
 **Purpose:** Document the exact sequence of operations during a single turn, including real measured timing and state mutation points.
 
-**Date:** 2026-07-18 (rewrite — previous version dated 2026-07-08 had a wrong line reference, a fabricated phase list, and "Estimated time" ranges that were never actually measured; see "What changed" at the bottom).
+**Date:** 2026-07-22 (S10 module map update). Prior rewrite 2026-07-18.
 
-**Status:** Living reference. Line numbers verified against `game/engine.js` on this date via brace-depth matching and `grep -n "^  // ──"`. Confirm against the file before trusting exact line numbers if it has since changed.
+**Status:** Living reference. After the engine extract campaign (S00–S10), `processTurn` is a short playlist in `game/lib/turn-pipeline.js` (wired from `engine.processTurn`). Do not trust old line numbers in this file; use the module map below.
 
 **Verification rule this doc follows:** every number below is either (a) measured directly from a live call into `processTurn`, with methodology shown, or (b) explicitly marked as not individually instrumented. No estimates are presented as measurements.
 
@@ -51,50 +51,27 @@ Client: apiCall('/api/kingdom/turn') → applyResult(data,'turn') →
 
 ---
 
-## `processTurn()` — real phase map
+## `processTurn()` — module map (S10, 2026-07-22)
 
-`processTurn(k, db = null)` in `game/engine.js`, **lines 340–1771 (1432 lines)**, confirmed by brace-depth matching. `resolveEpicTrek` (1811) and `resolveExpeditions` (1945) are separate functions called later in `commitTurnResults`/expedition resolution — they are **not** part of `processTurn` and are out of scope for this doc.
+Entry: `engine.processTurn(k, db)` → `game/lib/turn-pipeline.js` `processTurn(k, db, helpers)`.
 
-Marker map (from the code's own `// ── N. Name ──` comments, `grep -n "^  // ──" game/engine.js`, lines 340–1771 only):
+Order is fixed. Pre-merge `k` vs `{...k,...updates}` semantics live inside each phase module.
 
-| Line | Phase | Notes |
-|---|---|---|
-| 340–441 | *(unlabeled pre-phase)* | JSON healing (345–360), Dragon evolution ritual tick (368–379), `progressGoal` (381), `calculateHappiness` (389–390), fragment happiness penalty decay (392–403), happiness history record — **fire-and-forget `.catch()`, not awaited** (405–410), happiness news event (412–437), `rebellionCheck` (440) |
-| 442 | 1. Gold income | |
-| 460 | 2. Mana regeneration | |
-| 478 | 3. Population growth | |
-| 496 | 4. Food economy | farms, consumption, shortage |
-| 500–602 | 4a – 4a-xv | 18 attunement sub-blocks (granary → housing). **Individually measured — see below.** Note: the sequence jumps `4a-xiii` → `4a-xv`; there is no `4a-xiv` in the live comments. |
-| 608 | 4b. Resource production | wood/stone/iron |
-| 612 | 4c. Tavern entertainment bonus | comment says "Disabled" — dead/inactive path |
-| 623 | 4c. Mercenary upkeep and expiry | duplicate "4c" label in the source comments |
-| 627 | 4d. Location maps in progress | |
-| 631 | 4e. Active event tick-down | |
-| 646 | 4e-i. Scout ring progression | may fire async DB reveal calls, not awaited. **Individually measured — see below.** |
-| 710 | 5. Lore Events | |
-| 756 | 5b. Building completion | |
-| 799 | 6. Troop upkeep | |
-| 872 | 6. Low Tax Event (flavor bonus) | duplicate "6" label in the source comments |
-| 900 | 6b. Happiness Threshold Events | |
-| 1063 | 7. Auto-research | per-discipline allocation |
-| 1277 | 7b. Mage research | |
-| 1410 | 8. Build queue | |
-| 1415 | 8a. Forge charcoal pit (A3) | |
-| 1432 | 8a2. Flux-Barge build queue (A4) | |
-| 1449 | 8b. Library | |
-| 1453 | 8d. Legacy trade_routes INT income | first of three "8d" labels, out of order |
-| 1493 | 8d. Defence — defense tiers | second "8d" |
-| 1497 | 8c. Mage tower research | out of alphanumeric sequence |
-| 1501 | 8d. Shrines | third "8d" |
-| 1510 | 8e. Active effects tick-down | |
-| 1514 | 9. Training fields | |
-| 1588 | 9b. Racial passive bonuses | |
-| 1640 | *(unlabeled)* XP awards this turn | |
-| 1670 | *(unlabeled)* Milestone check | |
-| 1688 | *(unlabeled)* Racial bonus unlock check | |
-| 1736 | *(mislabeled "Happiness Audit Report")* | Actual content: temp-field cleanup, expired-synergy-effect removal, `profiler.end()`, dev budget-warning logs, `resetDevProfiler()`, final `return` at 1770 |
+| Step | Module | Function | Notes |
+|------|--------|----------|--------|
+| Init | `game/lib/turn-context.js` | `createTurnContext` | JSON heal + seed updates/events |
+| Prelude | `game/lib/turn-prelude.js` | `runPrelude` | Evolution, goals, happiness, rebellion |
+| Income | `game/lib/turn-income.js` | `runIncomePhase` | Gold, mana, pop, food |
+| Attunements | `game/engine.js` | `runBuildingAttunements` | Still on engine until S13; injected into pipeline |
+| Production | `game/lib/turn-production.js` | `runProductionPhase` | Resources, mercs, maps, scout (+ fire-and-forget helpers) |
+| Lore / free builds | `game/lib/turn-lore-buildings.js` | `runLoreAndBuildings` | Lore drop + 5b queue completion |
+| Upkeep / flavor | `game/lib/turn-upkeep-flavor.js` | `runUpkeepAndFlavor` | Troop upkeep, low tax, happiness thresholds |
+| Research | `game/lib/turn-research.js` | `runResearchPhase` | Auto-research + mage research |
+| Queues | `game/lib/turn-queues.js` | `runQueuesPhase` | Build queue, forge ticks, library/tower/shrine/effects |
+| Training / XP | `game/lib/turn-training-xp.js` | `runTrainingAndXpPhase` | Training, racials, XP, milestones |
+| Finalize | `game/lib/turn-finalize.js` | `finalizeTurn` | EOT gold, achievements, profiler end |
 
-The duplicate/missing/mislabeled comment markers above are a pre-existing cosmetic inconsistency in `game/engine.js`'s own comments (not introduced by this doc), not a functional bug — noted here for accuracy rather than fixed, since renaming labels in the highest-risk file in the codebase is out of scope for a documentation pass.
+`resolveEpicTrek` / `resolveExpeditions` / `resolveResourceHarvests` / `resolveRegions` remain on `game/engine.js` (or later S11–S12 extracts) and are **not** part of `processTurn`.
 
 ---
 

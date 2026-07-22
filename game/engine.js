@@ -14,7 +14,7 @@ const {
 } = require('./happiness');
 
 const { checkFogDiscoveries } = require("./kingdom-fog-discovery");
-const { safeJsonParse, safeJsonStringify, clearParseCache, roll } = require('../utils/helpers');
+const { safeJsonParse, safeJsonStringify, roll } = require('../utils/helpers');
 const { EPOCH_NOW } = require('../lib/db-sql');
 const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
 const { getProfiler } = require('./profiling');
@@ -30,36 +30,7 @@ const {
   XP_SOURCES_DEFAULT,
   getXpSources
 } = require('./lib/healing');
-const {
-  createTurnContext,
-} = require('./lib/turn-context');
-const {
-  runPrelude,
-} = require('./lib/turn-prelude');
-const {
-  runIncomePhase,
-} = require('./lib/turn-income');
-const {
-  runProductionPhase,
-} = require('./lib/turn-production');
-const {
-  runLoreAndBuildings,
-} = require('./lib/turn-lore-buildings');
-const {
-  runUpkeepAndFlavor,
-} = require('./lib/turn-upkeep-flavor');
-const {
-  runResearchPhase,
-} = require('./lib/turn-research');
-const {
-  runQueuesPhase,
-} = require('./lib/turn-queues');
-const {
-  runTrainingAndXpPhase,
-} = require('./lib/turn-training-xp');
-const {
-  finalizeTurn,
-} = require('./lib/turn-finalize');
+const turnPipeline = require('./lib/turn-pipeline');
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so
@@ -393,44 +364,13 @@ async function fireAndForgetWithRetry(fn, label) {
   }
 }
 
+// S10: phase playlist lives in game/lib/turn-pipeline.js
 function processTurn(k, db = null) {
-  const profiler = getProfiler();
-  profiler.start();
-  clearParseCache();
-
-  // S00: heal JSON columns + seed updates/events (canonical: game/lib/turn-context.js)
-  const ctx = createTurnContext(k, db);
-  // S01: evolution, goals, XP sources, happiness, rebellion
-  runPrelude(ctx);
-  // S02: gold, mana, population, food
-  runIncomePhase(ctx);
-
-  // ── 4a. Building attunement special abilities (18 processors — granary,
-  // vault, barracks, walls, guard tower, outpost, training, castle,
-  // mausoleum, library, mage tower, smithy, market, shrine, tavern, school,
-  // farm, housing — run via runBuildingAttunements, see A3-8) ──────────────
-  runBuildingAttunements(k, ctx.updates, ctx.events);
-
-  // S03: resources, mercs, maps, active events, scout (after attunements)
-  runProductionPhase(ctx, { measureAttunement, fireAndForgetWithRetry });
-
-  // S04: lore drops + free build-queue completions
-  runLoreAndBuildings(ctx);
-
-  // S05: troop upkeep, low-tax flavor, happiness threshold events
-  runUpkeepAndFlavor(ctx);
-
-  // S06: auto-research + mage research
-  runResearchPhase(ctx);
-
-  // S07: build queue, forge ticks, library/trade/defense/tower/shrine/effects
-  runQueuesPhase(ctx);
-
-  // S08: training, racial passives, XP, milestones, racial unlock
-  runTrainingAndXpPhase(ctx);
-
-  // S09: EOT gold summary, achievements, cleanup, profiler
-  return finalizeTurn(ctx, profiler);
+  return turnPipeline.processTurn(k, db, {
+    measureAttunement,
+    fireAndForgetWithRetry,
+    runBuildingAttunements,
+  });
 }
 
 // ── Level-based caps ──────────────────────────────────────────────────────────

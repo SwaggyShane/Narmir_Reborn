@@ -478,7 +478,7 @@ handleTurn(kingdom, db) {
 | S07 | Queues | DONE (local) |
 | S08 | Training / XP | DONE (local) |
 | S09 | Finalize | DONE (local) |
-| S10 | Pipeline | TODO |
+| S10 | Pipeline | DONE (local) |
 | S11 | Expeditions | TODO |
 | S12 | Regions | TODO |
 | S13 | Helpers | TODO |
