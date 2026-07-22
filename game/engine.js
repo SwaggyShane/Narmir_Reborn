@@ -12,8 +12,6 @@ const {
   getHappinessRiseCap,
 } = require('./happiness');
 
-const { getProfiler } = require('./profiling');
-
 // Healing (M1-3): centralized defensive repair for double-/nested-stringified JSON columns.
 // Imported from canonical location in game/lib so it can be unit tested independently
 // and reused by other turn-adjacent modules.
@@ -26,6 +24,10 @@ const {
   getXpSources
 } = require('./lib/healing');
 const turnPipeline = require('./lib/turn-pipeline');
+const { fireAndForgetWithRetry } = require('./lib/fire-and-forget');
+const {
+  runBuildingAttunements,
+} = require('./lib/turn-attunements');
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so
@@ -272,81 +274,13 @@ const SCAFFOLDING_BONUS_BUILDINGS = new Set(SCAFF_BONUS);
 
 // ── Gameplay (purchaseUpgrade extracted to game/lib/gameplay.js) ──
 
-// Measure attunement function execution time for profiling
-function measureAttunement(name, fn) {
-  const start = performance.now();
-  const result = fn();
-  const duration = performance.now() - start;
-  const profiler = getProfiler();
-  profiler.recordAttunementCall(name, duration);
-  return result;
-}
-
-// ── Building attunement processors, run in this exact order every turn ──────
-// (A3-8, 2026-07-19: extracted from 18 near-identical inline blocks in
-// processTurn — each was `measureAttunement(name, () => fn({...k, ...updates},
-// events))` followed by `Object.assign(updates, result)`. Order is
-// significant and preserved exactly: each processor sees {...k, ...updates}
-// freshly merged with every prior processor's updates already applied.)
-const BUILDING_ATTUNEMENT_PROCESSORS = [
-  ['processGranaryAttunements', processGranaryAttunements],
-  ['processVaultAttunements', processVaultAttunements],
-  ['processBarracksAttunements', processBarracksAttunements],
-  ['processWallsAttunements', processWallsAttunements],
-  ['processGuardTowerAttunements', processGuardTowerAttunements],
-  ['processOutpostAttunements', processOutpostAttunements],
-  ['processTrainingAttunements', processTrainingAttunements],
-  ['processCastleAttunements', processCastleAttunements],
-  ['processMausoleumAttunements', processMausoleumAttunements],
-  ['processLibraryAttunements', processLibraryAttunements],
-  ['processMageTowerAttunements', processMageTowerAttunements],
-  ['processSmithyAttunements', processSmithyAttunements],
-  ['processMarketAttunements', processMarketAttunements],
-  ['processShrineAttunements', processShrineAttunements],
-  ['processTavernAttunements', processTavernAttunements],
-  ['processSchoolAttunements', processSchoolAttunements],
-  ['processFarmAttunements', processFarmAttunements],
-  ['processHousingAttunements', processHousingAttunements],
-];
-
-function runBuildingAttunements(k, updates, events) {
-  for (const [name, fn] of BUILDING_ATTUNEMENT_PROCESSORS) {
-    const result = measureAttunement(name, () => fn({ ...k, ...updates }, events));
-    Object.assign(updates, result);
-  }
-}
-
-// processTurn is synchronous (cannot await), so revealRingHexes/
-// checkFogDiscoveries are necessarily fire-and-forget (A3-5 audit,
-// 2026-07-19). checkFogDiscoveries is self-healing by design — it re-scans
-// every turn scouts are allocated and skips already-discovered kingdoms, so
-// one failed call is caught by the next. revealRingHexes is NOT: it's gated
-// on scout-progress crossing a NEW ring threshold, a one-time transition
-// derived from the already-persisted scout_progress total — if the write
-// fails on the exact turn a ring completes, that ring's hexes are never
-// revealed again, since the transition never re-fires. A single retry
-// covers the realistic failure mode (a transient connection blip) without
-// changing the trigger frequency or touching the hot per-turn path.
-async function fireAndForgetWithRetry(fn, label) {
-  try {
-    await fn();
-  } catch (err) {
-    console.error(`[engine] ${label} failed, retrying once: ${err.message}`);
-    try {
-      await fn();
-    } catch (retryErr) {
-      console.error(`[engine] ${label} failed on retry, giving up: ${retryErr.message}`);
-    }
-  }
-}
+// S13: attunement runner + fire-and-forget live in game/lib/turn-attunements.js
+// and game/lib/fire-and-forget.js (re-exported below for tests).
 
 // S10: phase playlist lives in game/lib/turn-pipeline.js
+// S10: phase playlist lives in game/lib/turn-pipeline.js
 function processTurn(k, db = null) {
-  return turnPipeline.processTurn(k, db, {
-    measureAttunement,
-    fireAndForgetWithRetry,
-    runBuildingAttunements,
-  });
+  return turnPipeline.processTurn(k, db);
 }
 
 // ── Level-based caps ──────────────────────────────────────────────────────────

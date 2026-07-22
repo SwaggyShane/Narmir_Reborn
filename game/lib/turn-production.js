@@ -18,13 +18,16 @@ const { checkFogDiscoveries } = require('../kingdom-fog-discovery');
 
 /**
  * @param {import('./turn-context').TurnContext} ctx
- * @param {{ measureAttunement: Function, fireAndForgetWithRetry: Function }} helpers
- *   Helpers stay on engine until S13 (avoid engine ↔ lib require cycles).
+ * @param {{ measureAttunement: Function, fireAndForgetWithRetry: Function }} [helpers]
+ *   Optional inject for tests; defaults to lib modules (S13).
  * @returns {void}
  */
 function runProductionPhase(ctx, helpers) {
   const { k, db, updates, events } = ctx;
-  const { measureAttunement, fireAndForgetWithRetry } = helpers;
+  const measureAttunement = (helpers && helpers.measureAttunement)
+    || require('./turn-attunements').measureAttunement;
+  const fireAndForgetWithRetry = (helpers && helpers.fireAndForgetWithRetry)
+    || require('./fire-and-forget').fireAndForgetWithRetry;
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);

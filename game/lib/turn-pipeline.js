@@ -1,7 +1,5 @@
 // game/lib/turn-pipeline.js
-// processTurn phase playlist (engine extract plan S10).
-// Helpers that still live on engine (attunement runner, fire-and-forget) are
-// injected so this module does not require('./engine') (cycle).
+// processTurn phase playlist (engine extract plan S10/S13).
 
 'use strict';
 
@@ -10,6 +8,9 @@ const { getProfiler } = require('../profiling');
 const { createTurnContext } = require('./turn-context');
 const { runPrelude } = require('./turn-prelude');
 const { runIncomePhase } = require('./turn-income');
+const { runBuildingAttunements } = require('./turn-attunements');
+const { measureAttunement } = require('./turn-attunements');
+const { fireAndForgetWithRetry } = require('./fire-and-forget');
 const { runProductionPhase } = require('./turn-production');
 const { runLoreAndBuildings } = require('./turn-lore-buildings');
 const { runUpkeepAndFlavor } = require('./turn-upkeep-flavor');
@@ -20,15 +21,10 @@ const { finalizeTurn } = require('./turn-finalize');
 
 /**
  * @param {object} k
- * @param {object|null} db
- * @param {{
- *   measureAttunement: Function,
- *   fireAndForgetWithRetry: Function,
- *   runBuildingAttunements: Function,
- * }} helpers
+ * @param {object|null} [db=null]
  * @returns {{ updates: object, events: object[], _profileReport: object }}
  */
-function processTurn(k, db, helpers) {
+function processTurn(k, db = null) {
   const profiler = getProfiler();
   profiler.start();
   clearParseCache();
@@ -36,10 +32,10 @@ function processTurn(k, db, helpers) {
   const ctx = createTurnContext(k, db);
   runPrelude(ctx);
   runIncomePhase(ctx);
-  helpers.runBuildingAttunements(k, ctx.updates, ctx.events);
+  runBuildingAttunements(k, ctx.updates, ctx.events);
   runProductionPhase(ctx, {
-    measureAttunement: helpers.measureAttunement,
-    fireAndForgetWithRetry: helpers.fireAndForgetWithRetry,
+    measureAttunement,
+    fireAndForgetWithRetry,
   });
   runLoreAndBuildings(ctx);
   runUpkeepAndFlavor(ctx);

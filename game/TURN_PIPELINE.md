@@ -62,7 +62,7 @@ Order is fixed. Pre-merge `k` vs `{...k,...updates}` semantics live inside each 
 | Init | `game/lib/turn-context.js` | `createTurnContext` | JSON heal + seed updates/events |
 | Prelude | `game/lib/turn-prelude.js` | `runPrelude` | Evolution, goals, happiness, rebellion |
 | Income | `game/lib/turn-income.js` | `runIncomePhase` | Gold, mana, pop, food |
-| Attunements | `game/engine.js` | `runBuildingAttunements` | Still on engine until S13; injected into pipeline |
+| Attunements | `game/lib/turn-attunements.js` | `runBuildingAttunements` | S13; engine re-exports for tests |
 | Production | `game/lib/turn-production.js` | `runProductionPhase` | Resources, mercs, maps, scout (+ fire-and-forget helpers) |
 | Lore / free builds | `game/lib/turn-lore-buildings.js` | `runLoreAndBuildings` | Lore drop + 5b queue completion |
 | Upkeep / flavor | `game/lib/turn-upkeep-flavor.js` | `runUpkeepAndFlavor` | Troop upkeep, low tax, happiness thresholds |
