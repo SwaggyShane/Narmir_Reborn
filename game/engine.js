@@ -39,6 +39,9 @@ const {
   XP_SOURCES_DEFAULT,
   getXpSources
 } = require('./lib/healing');
+const {
+  createTurnContext,
+} = require('./lib/turn-context');
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so
@@ -393,28 +396,10 @@ function processTurn(k, db = null) {
   profiler.start();
   clearParseCache();
 
-  // M1-3: Run centralized healing on input to recover from nested-stringified JSON columns.
-  // healKingdomForTurn + cleanNestedJson are the single source for this defensive logic.
-  // Expanded to cover the majority of JSON columns parsed during turn processing.
-  const healed = healKingdomForTurn(k || {});
-  // Apply healed (object/array) values for JSON fields. This makes subsequent
-  // safeJsonParse(k.xxx) calls see pre-healed data (safeJsonParse on object is cheap copy).
-  const JSON_FIELDS = [
-    'troop_levels', 'xp_sources', 'build_queue',
-    'active_effects', 'active_event', 'collected_lore',
-    'school_upgrades', 'research_focus', 'research_progress', 'milestone_bonuses',
-    'bank_deposits', 'training_allocation', 'research_allocation', 'mage_research_progress',
-    'racial_bonuses_unlocked', 'discovered_kingdoms', 'location_maps_wip'
-  ];
-  for (const f of JSON_FIELDS) {
-    if (healed[f] !== undefined) k[f] = healed[f];
-  }
-
-  const events = [];
-  const updates = {
-    turn: k.turn + 1,
-    updated_at: Math.floor(Date.now() / 1000),
-  };
+  // S00: heal JSON columns + seed updates/events (canonical: game/lib/turn-context.js)
+  const ctx = createTurnContext(k, db);
+  const updates = ctx.updates;
+  const events = ctx.events;
 
   // Dragon ritual tick (castle fail / complete / decrement)
   {
