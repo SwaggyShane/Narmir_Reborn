@@ -379,6 +379,20 @@ separate follow-on work, not folded in here). Counted, not classified:
 | `routes/forum.js` | 13 | Topic/reply/moderation — same as above, likely Policy B, not verified |
 | `routes/admin*.js` | 47 | Admin tooling — plausibly its own category (**Other**, per policy doc §4.4) rather than forced into A/B; not verified |
 
+## Gray-area disposition log (M6)
+
+Routes that look Policy-A-shaped (single mutator against self or a target, simple result) but
+are implemented `direct`. **Log only — no migration decided or performed here.** Not an
+exhaustive re-litigation of all 67 domain-module routes; these two stood out on read-through
+during M3/M6, not from a systematic second pass.
+
+| Route | Why it looks gray | Disposition |
+|---|---|---|
+| `POST /fire` (`kingdom-warfare.js`) | Dismisses units — the direct structural inverse of `POST /hire`, which **is** `CH:hire-units`. Single-kingdom self-mutation, simple result shape, no multi-table TX apparent. | **Needs investigation** — no code change here; worth a human/agent look at whether the asymmetry is intentional (e.g. fire has simpler validation than hire) or just missed when hire was migrated |
+| `POST /locations/steal-map` (`kingdom-worldmap.js`) | Structurally near-identical to `covert-loot`/`covert-spy` (targets another kingdom, random success chance, single result) — but covert ops are all `CH:covert-*` and this isn't. | **Needs investigation** — same reasoning; not obviously wrong, just inconsistent with the covert-ops precedent |
+
+Both **kept as Policy B for now** — see plan §3/Non-goals: this pass doesn't force migrations.
+
 ## Summary
 
 - **82** mutating routes across `kingdom-*` + `hero` (2026-07-22, M3 — every `router.post/put/

@@ -2,7 +2,7 @@
 
 **Purpose:** Make Policy A (CommandHandler) vs Policy B (domain module + route transaction) obvious, honest in architecture docs, and cheap to re-verify — without forcing every mutator through CommandHandler.
 
-**Status:** Plan only — not started.  
+**Status:** **COMPLETE (local)** — M0–M6 landed on local `main`.  
 **Date:** 2026-07-22  
 **Related:** `game/COMMAND_COVERAGE.md` (existing matrix + A5-2 policy), `game/ARCHITECTURE.md`, `scripts/check-command-boundary.js`, `game/command-handler.js`.  
 **Sibling campaign:** Engine extract (`docs/dev/ENGINE_EXTRACT_PLAN.md`) is complete (local); this plan does **not** re-open engine slicing.
@@ -246,7 +246,7 @@ No code migrations in this plan unless a follow-up campaign is approved.
 | M3 | Matrix refresh | **DONE (local)** |
 | M4 | Agent checklist | **DONE (local)** |
 | M5 | Optional automation | **DONE (local)** — D5-A only, D5-B already covered by existing test/command-handler.test.js |
-| M6 | Gray-area log | **TODO** |
+| M6 | Gray-area log | **DONE (local)** |
 
 ---
 
