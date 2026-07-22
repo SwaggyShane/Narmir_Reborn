@@ -19,11 +19,7 @@
     "repair:json": "node scripts/repair-json-rows.js",
     "test:systems": "node test-systems-harness/run-all.js",
     "test:systems:http": "node test-systems-harness/run-all.js --http",
-    "inventory:endpoints": "node test-systems-harness/lib/inventory.js",
-    "load-test": "node tools/load-tester/load-test.js",
-    "load-test:websocket": "node tools/load-tester/websocket-tester.js",
-    "load-test:tokens": "node scripts/generate-load-test-tokens.js",
-    "load-test:seed": "node scripts/setup-load-test-accounts.js"
+    "inventory:endpoints": "node test-systems-harness/lib/inventory.js"
   },
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24",
@@ -72,7 +68,6 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "artillery": "^2.0.33",
     "eslint": "^10.2.1",
     "globals": "^15.0.0",
     "jsdom": "^29.1.1",

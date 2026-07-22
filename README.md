@@ -77,7 +77,6 @@ npm run lint                 # ESLint
 
 ### For Operations & Troubleshooting
 - **[docs/ops/ALERT_RUNBOOK.md](docs/ops/ALERT_RUNBOOK.md)** — On-call alert response guide
-- **[docs/ops/BACKUP_RESTORE_RUNBOOK.md](docs/ops/BACKUP_RESTORE_RUNBOOK.md)** — Backup and restore procedures
 
 ### For Technical Reference
 - **[docs/API_ENDPOINTS.md](docs/API_ENDPOINTS.md)** — Complete API reference (900+ lines with examples)
@@ -247,7 +246,6 @@ Core production docs:
 - [docs/ops/DEPLOYMENT_CHECKLIST.md](docs/ops/DEPLOYMENT_CHECKLIST.md) — deployment readiness and rollout checks
 - [RAILWAY_SECRETS.md](RAILWAY_SECRETS.md) — Railway environment and secret setup
 - [docs/ops/HTTPS_ENFORCEMENT.md](docs/ops/HTTPS_ENFORCEMENT.md) — TLS, HSTS, and secure-cookie notes
-- [docs/ops/BACKUP_RESTORE_RUNBOOK.md](docs/ops/BACKUP_RESTORE_RUNBOOK.md) — backup and restore procedures
 - [docs/ops/RATE_LIMITING_GUIDE.md](docs/ops/RATE_LIMITING_GUIDE.md) — rate-limit configuration notes
 - [docs/ops/MONITORING_ALERTING_GUIDE.md](docs/ops/MONITORING_ALERTING_GUIDE.md) — monitoring and alerting setup
 - [docs/ops/LOAD_TEST_EXECUTION_GUIDE.md](docs/ops/LOAD_TEST_EXECUTION_GUIDE.md) — how to re-run load tests

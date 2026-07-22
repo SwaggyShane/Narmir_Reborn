@@ -35,7 +35,7 @@
 
 ### Backup Verification
 
-- [ ] Production database backed up recently: `pg_dump ... | gzip` (see BACKUP_RESTORE_RUNBOOK.md)
+- [ ] Production database backed up recently: `pg_dump ... | gzip`
 - [ ] Backup file tested (can restore to test DB)
 - [ ] Backup stored in secure location (not Git, not public)
 - [ ] Restore procedure documented and tested
@@ -381,7 +381,6 @@ Once all checks pass:
 
 **Related:**
 - `RAILWAY_SECRETS.md` — Detailed secret configuration guide
-- `BACKUP_RESTORE_RUNBOOK.md` — Database backup/restore procedures
 - `RATE_LIMITING_GUIDE.md` — Rate limiting configuration details
 - `SUPPORT_RUNBOOK.md` — Support procedures if users report issues post-deploy
 
