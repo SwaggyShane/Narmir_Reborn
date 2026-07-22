@@ -4,12 +4,12 @@
  * Ensures event payloads are JSON-safe before emit (no Date/BigInt/function/circular).
  * On failure: log, optionally STRICT throw, else best-effort sanitize + emit.
  *
- * Uses assertSerializable from command-handler (shared contract).
+ * Uses assertSerializable from game/lib/assert-serializable.js (leaf shared contract).
  */
 
 'use strict';
 
-const { assertSerializable } = require('./command-handler');
+const { assertSerializable } = require('./lib/assert-serializable');
 
 /**
  * Deep-walk to replace Date/BigInt before JSON (Date.toJSON otherwise becomes ISO strings).
