@@ -625,7 +625,8 @@ const ResourcesPanel = () => {
                 // is queued and waiting on it — that's the normal, expected
                 // state now that conversion costs repeat per unit built.
                 const actType = getActiveBuild(rtype.key);
-                const disab = (!!actType && actType.stage === bld.stage) || !!buildingInProgress[rtype.key] || atCap;
+                const noEngineersFree = getAvailableEngineers() <= 0;
+                const disab = (!!actType && actType.stage === bld.stage) || !!buildingInProgress[rtype.key] || atCap || noEngineersFree;
 
                 return (
                   <div key={bld.key} className="card" style={getCardStyle(bld, rtype.key)}>
@@ -716,6 +717,11 @@ const ResourcesPanel = () => {
                             {atCap && (
                               <div className="text-[11px] text-[var(--red)] font-semibold">
                                 Cap Reached
+                              </div>
+                            )}
+                            {!atCap && noEngineersFree && (
+                              <div className="text-[11px] text-[var(--text3)]">
+                                No engineers available
                               </div>
                             )}
                             {bld.stage === 2 && !s2Un && (
