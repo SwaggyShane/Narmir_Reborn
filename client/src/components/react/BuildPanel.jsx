@@ -1147,7 +1147,7 @@ const BuildPanel = () => {
 
           <div className="rounded-lg bg-bg4 px-3 py-3 mb-3">
             <div className="text-[12px] text-text2 font-semibold mb-3.5 text-center">
-              Purchase tools <span className="text-text3 font-normal">— instant gold purchase | requires at least 1 smithy</span>
+              Purchase tools <span className="text-text3 font-normal">— instant gold purchase</span>
             </div>
             <div className="flex flex-col gap-6 sm:flex-row sm:justify-center">
               <div className="text-center sm:flex-1">
