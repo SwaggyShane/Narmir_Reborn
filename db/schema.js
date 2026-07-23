@@ -809,6 +809,25 @@ async function initDb(options = {}) {
     }
   }
 
+  // Node harvests now send engineers instead of population — rename the
+  // column so it stops being misleading (values already stored will just
+  // be reinterpreted as engineer counts going forward; no backfill needed
+  // since in-flight harvests read/write whatever column currently exists).
+  const harvestEngineersMigration = '006_rename_harvest_population_sent_to_engineers_sent';
+  const existingHarvestEngineersMigration = await _db.get('SELECT id FROM migrations WHERE name = $1', [harvestEngineersMigration]);
+  if (!existingHarvestEngineersMigration) {
+    try {
+      const harvestCols = await getTableColumns('resource_harvests');
+      if (harvestCols.includes('population_sent') && !harvestCols.includes('engineers_sent')) {
+        await _db.run(`ALTER TABLE resource_harvests RENAME COLUMN population_sent TO engineers_sent`);
+      }
+      await _db.run('INSERT INTO migrations (name) VALUES ($1)', [harvestEngineersMigration]);
+      console.log('[db] Migration 006_rename_harvest_population_sent_to_engineers_sent applied');
+    } catch (err) {
+      console.warn('[db] Migration skipped (column may already be renamed):', err.message);
+    }
+  }
+
   // Trade offers table
 
   // market prices seeding now in init-data

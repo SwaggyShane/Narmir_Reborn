@@ -43,7 +43,7 @@ const NUMERIC_FIELDS = [
   // Heroes
   'hp', 'max_hp',
   // Expeditions / resource nodes / trade routes
-  'turns_left', 'population_sent', 'distance', 'richness', 'stability',
+  'turns_left', 'engineers_sent', 'distance', 'richness', 'stability',
   'food_taken', 'arrive_at', 'depart_at', 'harvest_ends_at', 'return_at',
   // Misc / admin goals
   'count', 'wall_hp', 'prize_multiplier',

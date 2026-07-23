@@ -1035,18 +1035,21 @@ module.exports = function (db) {
     }
   });
 
-  // POST /resource-harvest/launch — send population to harvest a revealed node.
-  // Travel turns are fixed by distance; harvest turns are player-chosen
-  // (higher turns = higher yield). Food for the whole engagement (travel
-  // there + harvest + travel back) is deducted upfront, matching how
-  // dungeon/mountain/epic-trek expeditions already charge food up front.
+  // POST /resource-harvest/launch — send engineers to harvest a revealed
+  // node. Travel turns are fixed by distance; harvest turns are
+  // player-chosen (higher turns = higher yield). Food for the whole
+  // engagement (travel there + harvest + travel back) is deducted upfront,
+  // matching how dungeon/mountain/epic-trek expeditions already charge food
+  // up front. Engineers are unavailable for other work for the round trip
+  // and return automatically when the harvest resolves (resolveResourceHarvests),
+  // same mechanic as the population model this replaced.
   router.post('/resource-harvest/launch', requireAuth, requireCsrfToken, async (req, res) => {
     try {
-      const { nodeId, population, harvestTurns } = req.body;
-      const pop = parseInt(population, 10);
+      const { nodeId, engineers, harvestTurns } = req.body;
+      const eng = parseInt(engineers, 10);
       const hTurns = parseInt(harvestTurns, 10);
-      if (!nodeId || !Number.isInteger(pop) || pop < 1) {
-        return res.status(400).json({ error: 'nodeId and a positive population are required' });
+      if (!nodeId || !Number.isInteger(eng) || eng < 1) {
+        return res.status(400).json({ error: 'nodeId and a positive engineers count are required' });
       }
       if (!Number.isInteger(hTurns) || hTurns < 1) {
         return res.status(400).json({ error: 'harvestTurns must be a positive integer' });
@@ -1070,43 +1073,39 @@ module.exports = function (db) {
       const totalTurns = travelTurns + hTurns;
 
       const onHarvest = await db.get(
-        "SELECT COALESCE(SUM(population_sent), 0) as total FROM resource_harvests WHERE kingdom_id = $1 AND turns_left > 0",
+        "SELECT COALESCE(SUM(engineers_sent), 0) as total FROM resource_harvests WHERE kingdom_id = $1 AND turns_left > 0",
         [k.id],
       );
-      // k.population is already net of every hired unit — hireUnits()
-      // decrements population directly at hire time (game/lib/gameplay.js).
-      // Subtracting totalHiredUnits(k) again here double-counts the same
-      // troops a second time, same bug already found and fixed in
-      // farmProduction/minPopulationToStaffFarms (see that comment,
-      // 2026-07-22) but missed here — for any kingdom with substantial
-      // troop counts this zeroed out free population regardless of the
-      // real number.
-      const freePop = Math.max(0, (k.population || 0) - Number(onHarvest.total));
-      if (pop > freePop) {
-        return res.status(400).json({ error: `Only ${freePop.toLocaleString()} free population available.` });
+      // getAvailableUnits already nets out build_allocation/
+      // resource_build_allocation/training_allocation — resource_harvests
+      // is a separate pool it doesn't know about, so still subtract
+      // engineers already on another harvest on top of that.
+      const freeEng = Math.max(0, commandHandler.getAvailableUnits(k, 'engineers') - Number(onHarvest.total));
+      if (eng > freeEng) {
+        return res.status(400).json({ error: `Only ${freeEng.toLocaleString()} free engineers available.` });
       }
 
-      const FOOD_PER_POP_PER_TURN = 0.5; // matches the Mountain's Heart expedition's away-from-home food rate
-      const foodNeeded = Math.ceil(pop * totalTurns * FOOD_PER_POP_PER_TURN);
+      const FOOD_PER_UNIT_PER_TURN = 0.5; // matches the Mountain's Heart expedition's away-from-home food rate
+      const foodNeeded = Math.ceil(eng * totalTurns * FOOD_PER_UNIT_PER_TURN);
       if (k.food < foodNeeded) {
         return res.status(400).json({ error: `Requires ${foodNeeded.toLocaleString()} food for the journey (you have ${Math.floor(k.food).toLocaleString()}).` });
       }
 
       await db.withTransaction(async () => {
         const deduct = await db.run(
-          'UPDATE kingdoms SET food = GREATEST(0, food - $1), population = GREATEST(0, population - $2) WHERE id = $3 AND food >= $4 AND population >= $5',
-          [foodNeeded, pop, k.id, foodNeeded, pop],
+          'UPDATE kingdoms SET food = GREATEST(0, food - $1), engineers = GREATEST(0, engineers - $2) WHERE id = $3 AND food >= $4 AND engineers >= $5',
+          [foodNeeded, eng, k.id, foodNeeded, eng],
         );
         if (deduct.changes === 0) {
-          const err = new Error('Insufficient food or population (concurrent change).');
+          const err = new Error('Insufficient food or engineers (concurrent change).');
           err.statusCode = 400;
           throw err;
         }
         await db.run(
           `INSERT INTO resource_harvests
-             (kingdom_id, node_id, population_sent, travel_turns, harvest_turns, turns_left, food_taken, resource_type, richness)
+             (kingdom_id, node_id, engineers_sent, travel_turns, harvest_turns, turns_left, food_taken, resource_type, richness)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [k.id, nodeId, pop, travelTurns, hTurns, totalTurns, foodNeeded, node.type, node.richness],
+          [k.id, nodeId, eng, travelTurns, hTurns, totalTurns, foodNeeded, node.type, node.richness],
         );
       });
 

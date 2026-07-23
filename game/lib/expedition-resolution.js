@@ -684,8 +684,8 @@ async function resolveExpeditions(db, k, deps = {}) {
 // harvest duration, ticking down by 1 per turn. Deliberately isolated from
 // resolveExpeditions/expeditionRewards above -- those are built around
 // rangers/fighters (attrition, troop XP, forage-rate formulas), none of
-// which apply to a population-based harvesting party.
-// yield = population * (richness / 100) * harvestTurns * this. richness is
+// which apply to an engineer-based harvesting party.
+// yield = engineers * (richness / 100) * harvestTurns * this. richness is
 // stored on a 0-100 scale: regular world-seeded nodes are randomized 25-100
 // (game/world-initialization.js), while the guaranteed first-ring node
 // (game/first-ring-node.js) is deliberately low (4) since it's meant as an
@@ -705,12 +705,12 @@ async function resolveResourceHarvests(db, k) {
       continue;
     }
 
-    const yieldAmount = Math.round(h.population_sent * (h.richness / 100) * h.harvest_turns * HARVEST_YIELD_RATE);
+    const yieldAmount = Math.round(h.engineers_sent * (h.richness / 100) * h.harvest_turns * HARVEST_YIELD_RATE);
     const col = ["wood", "stone", "iron", "gold"].includes(h.resource_type) ? h.resource_type : "wood";
 
     await db.run(
-      `UPDATE kingdoms SET ${col} = ${col} + $1, population = population + $2 WHERE id = $3`,
-      [yieldAmount, h.population_sent, k.id],
+      `UPDATE kingdoms SET ${col} = ${col} + $1, engineers = engineers + $2 WHERE id = $3`,
+      [yieldAmount, h.engineers_sent, k.id],
     );
     await db.run(
       "UPDATE resource_harvests SET turns_left = 0, yield_amount = $1, rewards_claimed = 1 WHERE id = $2",

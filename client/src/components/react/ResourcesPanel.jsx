@@ -379,21 +379,35 @@ const ResourcesPanel = () => {
     return isFinite(result) && result > 0 ? result : '∞';
   };
 
-  const launchHarvest = async (node) => {
-    const pop = harvestPop[node.id] || 0;
+  const FOOD_PER_ENGINEER_PER_TURN = 0.5; // matches routes/kingdom-gameplay.js's resource-harvest/launch
+
+  // Total round-trip turns for a node once harvest turns are chosen —
+  // shared by the food math, the Max calc, and the nag message.
+  const harvestTotalTurns = (node) => (Number(node.travel_turns) || 0) + (harvestTurns[node.id] || 0);
+  const harvestFoodNeeded = (node, eng) => Math.ceil(eng * harvestTotalTurns(node) * FOOD_PER_ENGINEER_PER_TURN);
+  const harvestMaxEngineers = (node) => {
     const turns = harvestTurns[node.id] || 0;
-    if (pop < 1 || turns < 1) return;
+    if (turns < 1) return 0;
+    const total = harvestTotalTurns(node);
+    const byFood = total > 0 ? Math.floor((kingdom.food || 0) / (total * FOOD_PER_ENGINEER_PER_TURN)) : 0;
+    return Math.max(0, Math.min(getAvailableEngineers(), byFood));
+  };
+
+  const launchHarvest = async (node) => {
+    const eng = harvestPop[node.id] || 0;
+    const turns = harvestTurns[node.id] || 0;
+    if (eng < 1 || turns < 1) return;
     setLaunching(p => ({...p, [node.id]: true}));
     try {
       const data = await apiCall('/api/kingdom/resource-harvest/launch', {
         method: 'POST',
-        body: { nodeId: node.id, population: pop, harvestTurns: turns }
+        body: { nodeId: node.id, engineers: eng, harvestTurns: turns }
       });
       if (data.ok) {
         await loadHarvests();
         const typeEmoji = { wood: '🪵', stone: '🪨', iron: '🔗', gold: '💰' };
         const icon = typeEmoji[node.type] || '⛏️';
-        dispatchExpeditionLogEntry(icon, `Harvesting party departed to ${node.name}`, `${pop.toLocaleString()} civilians - ${data.totalTurns} turns total (${data.travelTurns} travel) - ${data.foodTaken.toLocaleString()} food taken`);
+        dispatchExpeditionLogEntry(icon, `Harvesting party departed to ${node.name}`, `${eng.toLocaleString()} engineers - ${data.totalTurns} turns total (${data.travelTurns} travel) - ${data.foodTaken.toLocaleString()} food taken`);
         await refreshKingdom();
         emitAppEvent(AppEvent.WORLDMAP_REFRESH);
       } else { if(toast) toast('Failed: ' + (data.error || 'Unknown'), 'error'); }
@@ -753,10 +767,15 @@ const ResourcesPanel = () => {
               <button onClick={loadNodes} className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--bg2)] text-[var(--text3)] cursor-pointer text-[11px]">Refresh</button>
             </div>
             <div className='text-xs text-[var(--text3)] my-1.5 mb-2.5'>
-              Scout hexes to reveal nodes. Sending population costs 1.5 turns per hex to travel there and back, plus however many turns you choose to harvest — more harvest turns means more resources, but the party needs enough food to last the whole trip.
+              Scout hexes to reveal nodes. Choose harvest turns first — travel (1.5 turns/hex, there and back) plus your chosen harvest turns determines both the yield and how many engineers you can afford to send.
             </div>
             {nodes.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No nodes revealed yet. Scout nearby hexes to find them.</div>}
-            {nodes.map(node => (
+            {nodes.map(node => {
+              const turnsEntered = (harvestTurns[node.id] || 0) >= 1;
+              const engVal = harvestPop[node.id] || 0;
+              const foodNeeded = turnsEntered && engVal > 0 ? harvestFoodNeeded(node, engVal) : 0;
+              const overFood = foodNeeded > (kingdom.food || 0);
+              return (
               <div key={node.id} className="mt-2.5 p-2.5 rounded-lg bg-[var(--bg2)] border border-[var(--border)]">
                 <div className='flex justify-between items-start flex-wrap gap-2'>
                   <div>
@@ -766,26 +785,38 @@ const ResourcesPanel = () => {
                       &nbsp;&middot;&nbsp; {node.travel_turns} turns travel (there &amp; back)
                     </div>
                   </div>
-                  <div className='flex items-center gap-1.5 flex-wrap'>
-                    <input type="number" min="1" placeholder="Pop"
-                      value={harvestPop[node.id] || ''} onChange={(e) => setHarvestPop(p => ({...p, [node.id]: parseInt(e.target.value, 10) || 0}))}
-                      className="w-[80px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />
-                    <button onClick={() => setHarvestPop(p => ({...p, [node.id]: freePop}))}
-                      className="px-2.5 py-1 rounded border-2 border-[var(--green)] bg-transparent text-[var(--green)] cursor-pointer text-[11px] font-bold">
-                      Max
-                    </button>
-                    <input type="number" min="1" placeholder="Harvest turns"
-                      value={harvestTurns[node.id] || ''} onChange={(e) => setHarvestTurns(p => ({...p, [node.id]: parseInt(e.target.value, 10) || 0}))}
-                      className="w-[110px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />
-                    <button onClick={() => launchHarvest(node)}
-                      disabled={hasActiveHarvest(node.id) || (harvestPop[node.id] || 0) < 1 || (harvestTurns[node.id] || 0) < 1 || launching[node.id]}
-                      className={clsx('px-2.5 py-[5px] rounded border-none cursor-pointer text-[12px] font-semibold text-white', hasActiveHarvest(node.id) ? 'bg-[var(--text3)] cursor-not-allowed' : 'bg-[#3b82f6]')}>
-                      {hasActiveHarvest(node.id) ? 'Active' : launching[node.id] ? '...' : 'Send'}
-                    </button>
+                  <div className='flex flex-col items-end gap-1'>
+                    <div className='flex items-center gap-1.5 flex-wrap'>
+                      <input type="number" min="1" placeholder="Harvest turns"
+                        value={harvestTurns[node.id] || ''} onChange={(e) => setHarvestTurns(p => ({...p, [node.id]: parseInt(e.target.value, 10) || 0}))}
+                        className={clsx(
+                          'w-[110px] px-1.5 py-1 rounded border bg-[var(--bg)] text-[var(--text)] text-[12px] text-center',
+                          turnsEntered ? 'border-[var(--border)]' : 'border-2 border-yellow-400',
+                        )} />
+                      <input type="number" min="1" placeholder="Eng" disabled={!turnsEntered}
+                        value={harvestPop[node.id] || ''} onChange={(e) => setHarvestPop(p => ({...p, [node.id]: parseInt(e.target.value, 10) || 0}))}
+                        className="w-[80px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center disabled:opacity-40 disabled:cursor-not-allowed" />
+                      <button onClick={() => setHarvestPop(p => ({...p, [node.id]: harvestMaxEngineers(node)}))}
+                        disabled={!turnsEntered}
+                        className="px-2.5 py-1 rounded border-2 border-[var(--green)] bg-transparent text-[var(--green)] cursor-pointer text-[11px] font-bold disabled:opacity-40 disabled:cursor-not-allowed disabled:border-[var(--border)] disabled:text-[var(--text3)]">
+                        Max
+                      </button>
+                      <button onClick={() => launchHarvest(node)}
+                        disabled={!turnsEntered || hasActiveHarvest(node.id) || engVal < 1 || (harvestTurns[node.id] || 0) < 1 || launching[node.id] || overFood}
+                        className={clsx('px-2.5 py-[5px] rounded border-none cursor-pointer text-[12px] font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed', hasActiveHarvest(node.id) ? 'bg-[var(--text3)] cursor-not-allowed' : 'bg-[#3b82f6]')}>
+                        {hasActiveHarvest(node.id) ? 'Active' : launching[node.id] ? '...' : 'Send'}
+                      </button>
+                    </div>
+                    {overFood && (
+                      <div className='text-[11px] text-[var(--red)]'>
+                        You need {fmt(foodNeeded)} food (have {fmt(Math.floor(kingdom.food || 0))}).
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

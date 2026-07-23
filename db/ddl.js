@@ -603,7 +603,7 @@ const coreSchema = `
       id SERIAL PRIMARY KEY,
       kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
       node_id INTEGER NOT NULL REFERENCES resource_nodes(id),
-      population_sent INTEGER NOT NULL,
+      engineers_sent INTEGER NOT NULL,
       travel_turns INTEGER NOT NULL,
       harvest_turns INTEGER NOT NULL,
       turns_left INTEGER NOT NULL,
