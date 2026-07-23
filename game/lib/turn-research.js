@@ -6,7 +6,7 @@
 
 const fragmentBonusManager = require('../fragment-bonus-manager');
 const { getCap } = require('./data-transformations');
-const { ensureObject } = require('./healing');
+const { ensureObject, ensureArray } = require('./healing');
 const { raceBonus } = require('./race-bonus');
 const { awardTroopXp } = require('./troops');
 const { awardXp } = require('../xp');
@@ -98,7 +98,7 @@ function runResearchPhase(ctx) {
     ];
 
     // Research focus — single or dual discipline
-    let focus = ensureObject(
+    let focus = ensureArray(
       k.research_focus,
       []
     );
