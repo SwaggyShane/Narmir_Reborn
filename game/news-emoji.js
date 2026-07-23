@@ -34,7 +34,7 @@ const NEWS_EMOJI_RULES = Object.freeze([
   { pattern: /^End of Turn \d+/i, emoji: "💰" },
   { pattern: /^Net Gold:/i, emoji: "💰" },
   { pattern: /^Geared Self-Construction:/i, emoji: "⚙️" },
-  { pattern: /^Actively constructing:/i, emoji: "🏗️" },
+  { pattern: /^Under construction:/i, emoji: "🏗️" },
   { pattern: /^Mage research advanced:/i, emoji: "✨" },
   { pattern: /^The Mage Tower has completed:/i, emoji: "✨" },
   { pattern: /^Mage Tower Est:/i, emoji: "📜" },

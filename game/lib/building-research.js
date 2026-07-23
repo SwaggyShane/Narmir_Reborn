@@ -557,7 +557,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
     }
 
     if (!updates._build_estimates) updates._build_estimates = [];
-    if (workDone > 0) {
+    if (workDone > 0 && progress[building] !== undefined) {
       const pending = queue[building] || 0;
       const label = building.replace(/_/g, " ");
 
@@ -568,15 +568,17 @@ function processBuildQueue(k, events, xpSourcesAccum) {
         const resParts = [];
         if (goldPerUnit > 0) resParts.push(`${(goldPerUnit * count).toLocaleString()} gc`);
         if (landPerUnit > 0) resParts.push(`${(landPerUnit * count).toLocaleString()} land`);
-        return resParts.length > 0 ? ` (Using ${resParts.join(" & ")})` : "";
+        return resParts.length > 0 ? ` (${resParts.join(", ")})` : "";
       };
 
       if (workDone >= cost) {
         const nextTurn = Math.floor((progress[building] + workDone) / cost);
         const totalCount = pending + (nextTurn > 0 ? nextTurn : 0);
-        updates._build_estimates.push(
-          `${totalCount} ${label} concluding [~${nextTurn} next turn]${buildResStr(totalCount)}`,
-        );
+        if (totalCount > 0) {
+          updates._build_estimates.push(
+            `${totalCount} ${label} finishing next turn${buildResStr(totalCount)}`,
+          );
+        }
       } else {
         const turnsLeft = Math.ceil(
           (cost - Math.max(0, progress[building])) / workDone,
@@ -584,7 +586,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
         const pct = Math.floor((Math.max(0, progress[building]) / cost) * 100);
         const count = pending || 1;
         updates._build_estimates.push(
-          `${count} ${label} [${pct}% done, ~${turnsLeft} turns left]${buildResStr(count)}`,
+          `${count} ${label} — ${pct}% done, ~${turnsLeft} turn${turnsLeft === 1 ? "" : "s"} left${buildResStr(count)}`,
         );
       }
     }
@@ -672,7 +674,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
       finalMsg += `Completed: ${completedItems.join(", ")}. `;
     }
     if (updates._build_estimates && updates._build_estimates.length > 0) {
-        finalMsg += `Actively constructing: ${updates._build_estimates.join(" - ")}. `;
+        finalMsg += `Under construction: ${updates._build_estimates.join("; ")}. `;
     }
     if (constructionNotes.length > 0) {
       finalMsg += constructionNotes.join(" ") + " ";
@@ -688,7 +690,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
   } else if (activeBuildings.size > 0) {
     let finalMsg = "";
     if (updates._build_estimates && updates._build_estimates.length > 0) {
-        finalMsg += `Actively constructing: ${updates._build_estimates.join(" - ")}. `;
+        finalMsg += `Under construction: ${updates._build_estimates.join("; ")}. `;
     } else if (constructionNotes.length === 0) {
       if (totalEngineersWorked > 0) {
         finalMsg += `Engineers making progress on ${activeBuildings.size} building type${activeBuildings.size > 1 ? "s" : ""}. `;

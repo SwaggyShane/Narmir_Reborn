@@ -66,6 +66,7 @@ export function useGameActions() {
       // No need to manually update here
 
       let completedBuildingsMsg = '';
+      const constructionPauses = [];
       if (Array.isArray(data.events)) {
         const newsEvents = data.events.filter(ev => ev && !ev.skipNews);
         emitAppEvent(AppEvent.NEWS_ITEMS, newsEvents);
@@ -77,12 +78,18 @@ export function useGameActions() {
             const periodIdx = endPart.indexOf('.');
             completedBuildingsMsg = periodIdx !== -1 ? endPart.substring(0, periodIdx) : endPart;
           }
+          const pauseMatches = msg.matchAll(/⚠️\s*([^.]*?paused[^.]*?)\./g);
+          for (const m of pauseMatches) constructionPauses.push(m[1].trim());
           if (msg.includes('ACHIEVEMENT UNLOCKED')) playAchievementSound();
           // Emit scout progression to expedition log
           if (ev?.expeditionLogEntry) {
             emitAppEvent(AppEvent.EXPEDITION_LOG_ENTRY, ev.expeditionLogEntry);
           }
         }
+      }
+
+      if (constructionPauses.length > 0) {
+        toast(constructionPauses.join('\n'), 'warning');
       }
 
       const state = useProfileStore.getState();

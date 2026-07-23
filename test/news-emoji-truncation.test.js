@@ -5,7 +5,7 @@
 // couldn't be cleanly stripped. The bug: it returned the *shifted probe* as
 // the message TEXT, not just used it to pick an emoji — so any legitimate
 // multi-sentence message whose first sentence has no matching rule (e.g.
-// "Completed: X. Actively constructing: Y.") got silently truncated down to
+// "Completed: X. Under construction: Y.") got silently truncated down to
 // just the second sentence. This is why players stopped seeing "Completed:"
 // toasts: the client's useGameActions.js looks for the literal substring
 // "Completed: " in the turn event message, which the server had already
@@ -24,17 +24,17 @@ const { decorateNewsMessage, formatNewsMessage } = require('../game/news-emoji.j
 // Test 1: a "Completed: X." sentence followed by a recognized "Actively
 // constructing:" sentence must not be truncated.
 {
-  const raw = '🏗️ Completed: 4 farms. Actively constructing: 4 farms concluding [~4 next turn] (Using 200 gc & 40 land).';
+  const raw = '🏗️ Completed: 4 farms. Under construction: 4 farms finishing next turn (200 gc, 40 land).';
   const text = decorateNewsMessage(raw, (x) => x);
   assert.ok(text.startsWith('Completed: 4 farms.'), `expected text to start with "Completed: 4 farms.", got: "${text}"`);
-  assert.ok(text.includes('Actively constructing:'), `expected the rest of the message to survive too: "${text}"`);
+  assert.ok(text.includes('Under construction:'), `expected the rest of the message to survive too: "${text}"`);
   console.log('Test 1: "Completed:" prefix survives when followed by a recognized sentence ✓');
 }
 
 // Test 2: emoji is still correctly picked from the recognized sentence even
 // though the text itself is preserved in full.
 {
-  const raw = '🏗️ Completed: 4 farms. Actively constructing: 4 farms concluding [~4 next turn] (Using 200 gc & 40 land).';
+  const raw = '🏗️ Completed: 4 farms. Under construction: 4 farms finishing next turn (200 gc, 40 land).';
   const { emoji, text } = formatNewsMessage(raw, (x) => x);
   assert.strictEqual(emoji, '🏗️', `expected the construction emoji to be recovered, got: "${emoji}"`);
   assert.ok(text.startsWith('Completed: 4 farms.'), 'emoji recovery must not truncate the text');

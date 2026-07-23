@@ -169,7 +169,7 @@ async function commitTurnResults(db, k, updates, incomingEvents) {
     if (
       existing &&
       !ev.message.includes("Troop upkeep") &&
-      !ev.message.includes("Actively constructing") &&
+      !ev.message.includes("Under construction") &&
       !ev.message.includes("Library Est:") &&
       !ev.message.includes("Construction complete:")
     )
