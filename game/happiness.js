@@ -21,7 +21,7 @@ function getHappinessRiseCap(k) {
   const taxRate = Number(k.tax ?? 42);
   const taxDrag = taxRate > 42 ? Math.min(3, Math.floor((taxRate - 42) / 20)) : 0;
   const raw = 2 + taverns * 0.7 + entertainment / 200 - taxDrag;
-  return Math.max(1, Math.min(15, raw));
+  return Math.round(Math.max(1, Math.min(15, raw)) * 10) / 10;
 }
 
 function calculateHappiness(k) {
