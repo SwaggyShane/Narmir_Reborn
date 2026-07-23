@@ -167,16 +167,23 @@ function queueBuildings(k, orders) {
   let totalWoodCost = 0;
   let totalStoneCost = 0;
   let totalIronCost = 0;
+  // Resource-chain buildings (lumber_camp/sawmill and stone/iron
+  // equivalents) consume their lower-tier "ingredient" buildings the moment
+  // you START building them — not on completion. 3 woodyards → begin 1
+  // lumber camp (woodyards destroyed immediately, land refunded
+  // immediately); 5 lumber camps → begin 1 sawmill, same way. This is an
+  // upfront entry cost, like gold/land for a normal building, not something
+  // checked mid-construction — so once queued, a resource-chain build can
+  // never get stuck waiting on ingredients partway through.
+  const rbConsumption = {}; // col -> { amount, landPerUnit }
 
   for (const [key, n] of Object.entries(processedOrders)) {
     const rbCfg = RESOURCE_BUILDING_CONFIG[key];
     if (!rbCfg) continue;
 
     // Only one build slot per STAGE, not per type — stage 1 must stay
-    // queueable while stage 2/3 is in progress and waiting on it (the
-    // resource-conversion cost repeats per unit now, not once ever), so a
-    // wood-family-wide lock here would deadlock lumber_camp/sawmill against
-    // the very woodyards they need.
+    // queueable while stage 2/3 is in progress, since it's the perpetual
+    // ingredient supply for them, not a one-time prerequisite.
     for (const [qKey, qCount] of Object.entries(queue)) {
       if (qCount <= 0) continue;
       const qRbCfg = RESOURCE_BUILDING_CONFIG[qKey];
@@ -210,26 +217,33 @@ function queueBuildings(k, orders) {
       }
       const s2Built = k[s2Col] || 0;
       const s2Queued = queue[config.RESOURCE_STAGE2_BUILDINGS[rbCfg.type]] || 0;
-      const s1Current = k[s1Col] || 0;
-      if (s2Built + s2Queued === 0 && s1Current < 3) {
-         return { error: `You need 3 ${s1Col.replace('bld_', '').replace(/_/g, ' ')} built to start building ${key.replace(/_/g, ' ')}.` };
-      }
       if (s2Built + s2Queued + n > 5) {
         return { error: `${key.replace(/_/g, ' ')} cap reached (max 5).` };
+      }
+      // Woodyards are a ONE-TIME gate per batch, not a per-camp cost: only
+      // the first lumber_camp built after the count resets to 0 requires
+      // (and consumes) 3 woodyards. Once any exist in this batch, more can
+      // be queued up to the cap of 5 with no further woodyard cost.
+      if (s2Built + s2Queued === 0) {
+        const s1Current = k[s1Col] || 0;
+        if (s1Current < 3) {
+          return { error: `Need 3 ${s1Col.replace('bld_', '').replace(/_/g, ' ')} built to start building ${key.replace(/_/g, ' ')} (have ${s1Current}).` };
+        }
+        rbConsumption[s1Col] = { amount: (rbConsumption[s1Col]?.amount || 0) + 3, landPerUnit: 1 };
       }
     } else if (rbCfg.stage === 3) {
       if (seq.s3_paid_at_bracket <= -1) {
         return { error: `You must purchase the Stage 3 ${rbCfg.type} upgrade before building ${key.replace(/_/g, ' ')}.` };
       }
-      const s3Built = k[s3Col] || 0;
-      const s3Queued = queue[config.RESOURCE_STAGE3_BUILDINGS[rbCfg.type]] || 0;
-      const s2Current = k[s2Col] || 0;
-      if (s3Built + s3Queued === 0 && s2Current < 5) {
-         return { error: `You need 5 ${s2Col.replace('bld_', '').replace(/_/g, ' ')} built to start building ${key.replace(/_/g, ' ')}.` };
-      }
       if (s3Current + n > s3Cap) {
         return { error: `${key.replace(/_/g, ' ')} cap reached for your level (max ${s3Cap}).` };
       }
+      const needed = n * 5;
+      const s2Current = k[s2Col] || 0;
+      if (s2Current < needed) {
+        return { error: `Need ${needed} ${s2Col.replace('bld_', '').replace(/_/g, ' ')} built to start ${n} ${key.replace(/_/g, ' ')} (have ${s2Current}).` };
+      }
+      rbConsumption[s2Col] = { amount: (rbConsumption[s2Col]?.amount || 0) + needed, landPerUnit: 3 };
     }
 
     totalWoodCost += (BUILDING_WOOD_COST[key] || 0) * n;
@@ -258,6 +272,20 @@ function queueBuildings(k, orders) {
   if (totalWoodCost > 0)  queueUpdates.wood  = Math.max(0, k.wood - totalWoodCost);
   if (totalStoneCost > 0) queueUpdates.stone = Math.max(0, k.stone - totalStoneCost);
   if (totalIronCost > 0)  queueUpdates.iron  = Math.max(0, k.iron - totalIronCost);
+
+  // A queued building's OWN land cost is never subtracted from k.land
+  // directly — freeLand above is always recomputed virtually from built+
+  // queued counts, same as every other building in this function. Only the
+  // consumed lower-tier buildings' land gets credited back explicitly here,
+  // matching the existing convention in demolishBuilding().
+  let rbLandRefund = 0;
+  for (const [col, { amount, landPerUnit }] of Object.entries(rbConsumption)) {
+    queueUpdates[col] = Math.max(0, (k[col] || 0) - amount);
+    rbLandRefund += amount * landPerUnit;
+  }
+  if (rbLandRefund > 0) {
+    queueUpdates.land = (k.land || 0) + rbLandRefund;
+  }
 
   return {
     updates: queueUpdates,
@@ -407,38 +435,11 @@ function processBuildQueue(k, events, xpSourcesAccum) {
         let canAdd = Math.max(0, Math.min(completed, capSpace));
 
         // Resource-chain buildings (lumber_camp/sawmill and stone/iron
-        // equivalents) each individually convert lower-tier buildings —
-        // every stage-2 unit costs 3 stage-1 buildings, every stage-3 unit
-        // costs 5 stage-2 buildings. This must gate `canAdd` down to what's
-        // actually affordable and run for EVERY unit built, not just the
-        // first one ever (old stage-2 logic) or once per 10-level bracket
-        // (old stage-3 logic) — those were a mismatch with the intended
-        // "conversion cycle repeats per building" design.
-        const rbCfg = RESOURCE_BUILDING_CONFIG[building];
-        let rbConsumedCol = null;
-        let rbConsumedAmount = 0;
-        if (rbCfg && canAdd > 0 && (rbCfg.stage === 2 || rbCfg.stage === 3)) {
-          const lowerCol = rbCfg.stage === 2
-            ? config.RESOURCE_STAGE1_COL[rbCfg.type]
-            : config.RESOURCE_STAGE2_COL[rbCfg.type];
-          const perUnit = rbCfg.stage === 2 ? 3 : 5;
-          if (lowerCol) {
-            const lowerCurrent = updates[lowerCol] !== undefined ? updates[lowerCol] : (k[lowerCol] || 0);
-            const affordable = Math.floor(lowerCurrent / perUnit);
-            const affordableAdd = Math.min(canAdd, affordable);
-            if (affordableAdd < canAdd) {
-              constructionNotes.push(
-                `⚠️ ${building.replace(/_/g, ' ')} limited to ${affordableAdd} — needs ${perUnit} ${lowerCol.replace('bld_', '')} per unit.`,
-              );
-            }
-            canAdd = affordableAdd;
-            if (canAdd > 0) {
-              rbConsumedCol = lowerCol;
-              rbConsumedAmount = canAdd * perUnit;
-            }
-          }
-        }
-
+        // equivalents) pay their lower-tier ingredient cost up front, at
+        // queueBuildings() time when the order is first submitted — not
+        // here at completion. By the time a resource-chain build reaches
+        // 100% effort, its cost has already been paid; nothing left to
+        // gate or consume.
         if (!RESOURCE_BUILDING_CONFIG[building] && canAdd > 0) {
           const goldPerUnit = BUILDING_GOLD_COST[building] ?? 100;
           const landPerUnit = BUILDING_LAND_COST[building] || 0;
@@ -534,16 +535,6 @@ function processBuildQueue(k, events, xpSourcesAccum) {
             const consume = Math.min(canAdd, scaffoldingLeft);
             scaffoldingLeft -= consume;
             scaffoldingUsed += consume;
-          }
-
-          if (rbConsumedCol && rbConsumedAmount > 0) {
-            const landPerConsumed = rbCfg.stage === 3 ? 3 : 1;
-            const lowerCurrent = updates[rbConsumedCol] !== undefined ? updates[rbConsumedCol] : (k[rbConsumedCol] || 0);
-            updates[rbConsumedCol] = lowerCurrent - rbConsumedAmount;
-            updates.land = (updates.land !== undefined ? updates.land : k.land) + (rbConsumedAmount * landPerConsumed);
-            constructionNotes.push(
-              `🔄 ${rbConsumedAmount} ${rbConsumedCol.replace('bld_', '')} converted into ${canAdd} ${building.replace(/_/g, ' ')}.`,
-            );
           }
         }
       }
