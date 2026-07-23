@@ -88,7 +88,6 @@ const ResourcesPanel = () => {
   const [kingdom, setKingdom] = useState({});
   const [items, setItems] = useState([]);
   const [buildingInProgress, setBuildingInProgress] = useState({});
-  const [reassigning, setReassigning] = useState({});
 
   const [nodes, setNodes] = useState([]);
   const [activeHarvests, setActiveHarvests] = useState([]);
@@ -441,39 +440,6 @@ const ResourcesPanel = () => {
       if(toast) toast('Error: ' + e.message, 'error');
     }
   };
-  // For a building that's already queued (isAct): unlike startBuild, this
-  // only updates resource_build_allocation — it must not re-queue another
-  // order. Exists because an already-active build previously had no way to
-  // (re)assign engineers at all if its allocation was ever 0, e.g. the
-  // initial startBuild allocation call failing while the queue call
-  // succeeded — leaving it permanently stuck at "0 engineers assigned".
-  const assignEngineersToActive = async (bld) => {
-    const engineers = parseInt(engineerAllocations[bld.key] ?? '', 10);
-    if (!Number.isFinite(engineers) || engineers < 0) return toast('Enter a valid engineer count.', 'error');
-    const current = getBuildEngineers(bld.key);
-    const avail = getAvailableEngineers() + current;
-    if (engineers > avail) return toast(`Only ${avail.toLocaleString()} engineers available.`, 'error');
-    setReassigning(p => ({...p, [bld.key]: true}));
-    try {
-      const newAlloc = { ...getParsedStateProp('resource_build_allocation'), [bld.key]: engineers };
-      const d2 = await apiCall('/api/kingdom/resource-build-allocation', {
-        method: 'POST',
-        body: { allocation: newAlloc }
-      });
-      if (d2.error || d2.ok === false) {
-        return toast('Failed to assign engineers: ' + (d2.error || 'Unknown'), 'error');
-      }
-      const s = getState();
-      if (s) s.resource_build_allocation = newAlloc;
-      toast(`${engineers.toLocaleString()} engineers assigned to ${bld.label}.`, 'success');
-      syncFromState();
-      await refreshKingdom();
-    } catch(e) {
-      toast('Error: ' + e.message, 'error');
-    } finally {
-      setReassigning(p => ({...p, [bld.key]: false}));
-    }
-  };
   const purchaseUpgrade = async (type, stage) => {
     try {
       const data = await apiCall('/api/kingdom/resource-upgrade', {
@@ -703,22 +669,7 @@ const ResourcesPanel = () => {
 
                       <div className="flex flex-col gap-1.5 items-end ml-auto">
                         {isAct ? (
-                          <React.Fragment>
-                            <div className='flex items-center gap-1.5'>
-                              <input type="number" min="0" value={engineerAllocations[bld.key] ?? getBuildEngineers(bld.key)} onChange={(e) => setEngineerAllocations((prev) => ({ ...prev, [bld.key]: e.target.value }))} placeholder="Eng"
-                                disabled={!!reassigning[bld.key]}
-                                className="w-[70px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />
-                              <button onClick={() => setEngineerAllocations((prev) => ({ ...prev, [bld.key]: getAvailableEngineers() + getBuildEngineers(bld.key) }))} disabled={!!reassigning[bld.key]}
-                                className={clsx('px-2.5 py-1 rounded border-2 border-[var(--green)] bg-transparent text-[var(--green)] cursor-pointer text-[11px] font-bold', reassigning[bld.key] && 'opacity-40 cursor-not-allowed')}>
-                                Max
-                              </button>
-                              <button onClick={() => assignEngineersToActive(bld)} disabled={!!reassigning[bld.key]}
-                                className={clsx('px-3 py-1.5 rounded border-none cursor-pointer text-[12px] font-semibold bg-[var(--green)] text-black', reassigning[bld.key] && 'opacity-40 cursor-not-allowed')}>
-                                Assign
-                              </button>
-                            </div>
-                            <div className="text-[11px] text-[var(--text3)] text-right">{fmt(getBuildEngineers(bld.key))} engineers assigned</div>
-                          </React.Fragment>
+                          <div className="text-[11px] text-[var(--text3)] text-right">{fmt(getBuildEngineers(bld.key))} engineers assigned</div>
                         ) : (
                           <React.Fragment>
                             <div className='flex items-center gap-1.5'>
