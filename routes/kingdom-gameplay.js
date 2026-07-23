@@ -7,7 +7,7 @@ const { validateTroopAmount } = require('../utils/numeric-validation');
 const fragmentBonusManager = require("../game/fragment-bonus-manager");
 const { applyKingdomUpdates } = require('../db/schema');
 const { structureUpdates } = require('./response-structurer');
-const { runTurn } = require('./kingdom-turn');
+const { runTurn, withTurnLock } = require('./kingdom-turn');
 const {
   getRandomKingdom,
   applyUpdates,
@@ -163,53 +163,61 @@ module.exports = function (db) {
   // —— Forge tools - costs 1 turn + gold for scaffolding ————————————
   router.post("/smithy/forge-tools", requireAuth, requireCsrfToken, async (req, res) => {
     const { toolType, quantity } = req.body;
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    if (k.turns_stored < 1)
-      return res.status(429).json({ error: "No turns available" });
-    const smithies = k.bld_smithies;
-    if (smithies === 0)
-      return res.status(400).json({ error: "Need at least 1 smithy" });
-    // Validate caps and cost before running turn
-    if (toolType === "hammers") {
-      const cap = smithies * 25;
-      if (k.hammers_stored >= cap)
-        return res
-          .status(400)
-          .json({ error: `Hammer storage full (${cap}/${cap})` });
-    } else if (toolType === "scaffolding") {
-      const cap = smithies * 10;
-      if (k.scaffolding_stored >= cap)
-        return res
-          .status(400)
-          .json({ error: `Scaffolding storage full (${cap}/${cap})` });
-      if (k.gold < 2500)
-        return res
-          .status(400)
-          .json({ error: "Need 2,500 gold to make scaffolding" });
-    }
+    // withTurnLock serializes this against every other instant-turn action
+    // (search, /turn itself) for this player — without it, concurrent
+    // requests each read the same pre-turn snapshot and each fully re-run
+    // processTurn (double gold income, double troop upkeep, duplicated
+    // "Under construction"/"Troop upkeep" news, etc.) since runTurn() has
+    // no row lock of its own, unlike the dedicated /turn route.
     try {
-      const { updates, events } = await runTurn(db, k);
-      const kAfterTurn = { ...k, ...updates };
-      const toolResult = await commandHandler.handle(
-        {
-          type: 'forge-tools',
-          toolType,
-          quantity: Number(quantity) || 1,
-        },
-        { kingdom: kAfterTurn },
-      );
-      if (toolResult.error)
-        return res.status(400).json({ error: toolResult.error });
-      await applyUpdates(db, k.id, toolResult.updates);
-      const finalUpdates = { ...updates, ...toolResult.updates };
-      res.json({
-        ok: true,
-        updates: finalUpdates,
-        events,
-        turns_stored: finalUpdates.turns_stored,
+      await withTurnLock(req.player.playerId, async () => {
+        const k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1", [
+          req.player.playerId,
+        ]);
+        if (!k) return res.status(404).json({ error: "Kingdom not found" });
+        if (k.turns_stored < 1)
+          return res.status(429).json({ error: "No turns available" });
+        const smithies = k.bld_smithies;
+        if (smithies === 0)
+          return res.status(400).json({ error: "Need at least 1 smithy" });
+        // Validate caps and cost before running turn
+        if (toolType === "hammers") {
+          const cap = smithies * 25;
+          if (k.hammers_stored >= cap)
+            return res
+              .status(400)
+              .json({ error: `Hammer storage full (${cap}/${cap})` });
+        } else if (toolType === "scaffolding") {
+          const cap = smithies * 10;
+          if (k.scaffolding_stored >= cap)
+            return res
+              .status(400)
+              .json({ error: `Scaffolding storage full (${cap}/${cap})` });
+          if (k.gold < 2500)
+            return res
+              .status(400)
+              .json({ error: "Need 2,500 gold to make scaffolding" });
+        }
+        const { updates, events } = await runTurn(db, k);
+        const kAfterTurn = { ...k, ...updates };
+        const toolResult = await commandHandler.handle(
+          {
+            type: 'forge-tools',
+            toolType,
+            quantity: Number(quantity) || 1,
+          },
+          { kingdom: kAfterTurn },
+        );
+        if (toolResult.error)
+          return res.status(400).json({ error: toolResult.error });
+        await applyUpdates(db, k.id, toolResult.updates);
+        const finalUpdates = { ...updates, ...toolResult.updates };
+        res.json({
+          ok: true,
+          updates: finalUpdates,
+          events,
+          turns_stored: finalUpdates.turns_stored,
+        });
       });
     } catch (err) {
       console.error("[smithy/forge-tools] failed:", err.message);
@@ -224,22 +232,29 @@ module.exports = function (db) {
   // â"€â"€ Trade Routes â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.post("/search", requireAuth, requireCsrfToken, async (req, res) => {
     const { type, rangers } = req.body;
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    if (k.turns_stored < 1)
-      return res.status(429).json({ error: "No turns available" });
-
-    const r = Number(rangers) || 0;
-    if (r <= 0)
-      return res.status(400).json({ error: "Send at least some rangers" });
-    if (r > commandHandler.getAvailableUnits(k, "rangers"))
-      return res.status(400).json({
-        error: "Not enough available rangers (some may be in training)",
-      });
-
+    // withTurnLock serializes this against every other instant-turn action
+    // (forge-tools, /turn itself) for this player — see the comment on
+    // /smithy/forge-tools for why: runTurn() has no row lock of its own, so
+    // concurrent requests would each re-run a full turn from the same stale
+    // snapshot (duplicated gold/upkeep/construction news, as seen in
+    // production — turn 457 got 3-4x "Troop upkeep"/"Under construction").
     try {
+      await withTurnLock(req.player.playerId, async () => {
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1", [
+        req.player.playerId,
+      ]);
+      if (!k) return res.status(404).json({ error: "Kingdom not found" });
+      if (k.turns_stored < 1)
+        return res.status(429).json({ error: "No turns available" });
+
+      const r = Number(rangers) || 0;
+      if (r <= 0)
+        return res.status(400).json({ error: "Send at least some rangers" });
+      if (r > commandHandler.getAvailableUnits(k, "rangers"))
+        return res.status(400).json({
+          error: "Not enough available rangers (some may be in training)",
+        });
+
       const { updates, events } = await runTurn(db, k);
       const kAfterTurn = { ...k, ...updates };
       const tacticsMult = 1 + (kAfterTurn.res_military || 0) / 1000;
@@ -401,6 +416,7 @@ module.exports = function (db) {
         updates,
         events: [...events, { type: "system", message: searchMessage }],
         turns_stored: updates.turns_stored,
+      });
       });
     } catch (err) {
       console.error("[search] failed:", err.message);
