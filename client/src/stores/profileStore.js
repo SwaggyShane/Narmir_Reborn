@@ -66,6 +66,9 @@ export const useProfileStore = create(
       first_mountain_found_turn: null,
       fog_of_war_disabled: false,
 
+      // Spell buffs/debuffs: { effectName: { turns_left, ... } }
+      active_effects: {},
+
       // ===== ACTIONS =====
 
       /**
@@ -112,6 +115,15 @@ export const useProfileStore = create(
         if (data?.first_dungeon_found_turn !== undefined) state.first_dungeon_found_turn = data.first_dungeon_found_turn;
         if (data?.first_mountain_found_turn !== undefined) state.first_mountain_found_turn = data.first_mountain_found_turn;
         if (data?.fog_of_war_disabled !== undefined) state.fog_of_war_disabled = data.fog_of_war_disabled;
+        if (data?.active_effects !== undefined) {
+          let effects = data.active_effects;
+          if (typeof effects === 'string') {
+            try { effects = JSON.parse(effects || '{}'); } catch { effects = {}; }
+          }
+          state.active_effects = (effects && typeof effects === 'object' && !Array.isArray(effects))
+            ? effects
+            : {};
+        }
       }),
 
       /**
@@ -243,3 +255,5 @@ export const useXpSources = () => useProfileStore((state) => state.xp_sources);
 export const useMilestoneBonuses = () => useProfileStore((state) => state.milestone_bonuses);
 
 export const useMilestoneTitle = () => useProfileStore((state) => state.milestone_title || 'Fledgling');
+
+export const useActiveEffects = () => useProfileStore((state) => state.active_effects || {});

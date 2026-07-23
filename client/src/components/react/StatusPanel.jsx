@@ -37,6 +37,7 @@ import {
   useResearchers,
   useCustomPortrait,
   useGender,
+  useActiveEffects,
 } from '../../stores';
 
 const RACE_CARD_DATA = {
@@ -163,6 +164,17 @@ const StatusPanel = () => {
   const researchers = useResearchers();
   const customPortrait = useCustomPortrait();
   const gender = useGender();
+  const activeEffects = useActiveEffects();
+  const activeEffectEntries = useMemo(() => {
+    if (!activeEffects || typeof activeEffects !== 'object') return [];
+    return Object.entries(activeEffects).filter(([, v]) => {
+      if (v == null) return false;
+      if (typeof v === 'object' && (v.turns_left ?? v.turns_remaining) !== undefined) {
+        return (Number(v.turns_left ?? v.turns_remaining) || 0) > 0;
+      }
+      return true;
+    });
+  }, [activeEffects]);
   const mana = useMana();
   const resEconomy = useResEconomy();
   const resWeapons = useResWeapons();
@@ -308,6 +320,31 @@ const StatusPanel = () => {
           <strong className="text-gold">Enter a rate then press Lock to save.</strong>
         </div>
       </div>
+
+      {activeEffectEntries.length > 0 ? (
+        <div className={clsx(STATUS_CARD_CLASS, 'mb-3')}>
+          <div className="card-title">Active effects</div>
+          <div className="flex flex-col gap-1.5">
+            {activeEffectEntries.map(([name, detail]) => {
+              const turns = typeof detail === 'object'
+                ? (detail.turns_left ?? detail.turns_remaining ?? null)
+                : null;
+              const label = String(name).replace(/_/g, ' ');
+              return (
+                <div
+                  key={name}
+                  className="flex items-center justify-between gap-2 border-b border-white/5 py-1 text-[12.5px]"
+                >
+                  <span className="text-text capitalize">{label}</span>
+                  <span className="text-text3 shrink-0">
+                    {turns != null ? `${Number(turns)} turn${Number(turns) === 1 ? '' : 's'} left` : 'active'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       <div className="status-grid w-full flex-1 gap-3 sm:gap-4 lg:gap-3 lg:[grid-auto-rows:minmax(auto,1fr)] lg:[align-content:start]" id="status-grid">
         <div className={STATUS_CARD_CLASS}>

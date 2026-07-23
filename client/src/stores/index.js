@@ -181,6 +181,7 @@ export {
   useXpSources,
   useMilestoneBonuses,
   useMilestoneTitle,
+  useActiveEffects,
 } from './profileStore';
 
 /**

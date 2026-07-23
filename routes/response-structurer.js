@@ -39,6 +39,8 @@ const profileFields = new Set([
   'engineer_level', 'engineer_xp',
   'milestone_bonuses', 'milestone_title', 'milestones_claimed',
   'scout_allocation', 'first_dungeon_found_turn', 'first_mountain_found_turn',
+  // Spell buffs/debuffs — Status panel + profileStore (2026-07-23)
+  'active_effects',
 ]);
 
 const economyFields = new Set([
@@ -91,22 +93,14 @@ const populationFields = new Set(['population', 'happiness']);
 //   event message pushed when it unlocks (game/engine.js); the flag itself
 //   is server-side bookkeeping (prevents re-triggering) surfaced to humans
 //   only via the admin KingdomEditModal raw field editor.
-// - active_effects (A4-3, 2026-07-19): active spell buffs/debuffs, written by
-//   game/magic.js's casterUpdates and reachable through POST /kingdom/spell's
-//   response. No Zustand store currently reads it — its only client
-//   consumers are admin-only (KingdomWidgets.jsx, KingdomEditModal.jsx).
-//   Surfacing active effects in the player UI would be a real feature, not
-//   a normalizer wiring fix, so it's excluded here rather than invented.
 // - goals (A4-6, 2026-07-19): written by game/goals.js's progressGoal, called
 //   from the attack/spell/etc. routes — reachable through their responses.
 //   GoalsPanel.jsx fetches goal progress on demand via its own dedicated
 //   GET /api/kingdom/goals, never via the turn/updates path.
-// - active_event (2026-07-22): temporary per-turn buff/debuff multiplier
-//   tracker with turns_remaining, ticked down in game/lib/turn-production.js
-//   and reachable through the turn response. Zero client consumers anywhere
-//   (checked client/src, including admin) — unlike active_effects, it isn't
-//   even surfaced in an admin tool today. Server-side bookkeeping only.
-const serverInternalOnlyFields = new Set(['achievements', 'racial_bonuses_unlocked', 'active_effects', 'goals', 'active_event']);
+// active_effects (2026-07-23): now routed to profileStore + Status panel.
+// active_event remains server-side flavor-event bookkeeping (mult + turns_remaining);
+// not shown in player UI — leave internal until a dedicated event card exists.
+const serverInternalOnlyFields = new Set(['achievements', 'racial_bonuses_unlocked', 'goals', 'active_event']);
 
 /** Every kingdoms column starting with bld_ — dynamic, matches economyStore's own handling. */
 function isBuildingField(key) {
