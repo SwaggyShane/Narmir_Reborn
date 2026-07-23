@@ -172,11 +172,16 @@ function queueBuildings(k, orders) {
     const rbCfg = RESOURCE_BUILDING_CONFIG[key];
     if (!rbCfg) continue;
 
+    // Only one build slot per STAGE, not per type — stage 1 must stay
+    // queueable while stage 2/3 is in progress and waiting on it (the
+    // resource-conversion cost repeats per unit now, not once ever), so a
+    // wood-family-wide lock here would deadlock lumber_camp/sawmill against
+    // the very woodyards they need.
     for (const [qKey, qCount] of Object.entries(queue)) {
       if (qCount <= 0) continue;
       const qRbCfg = RESOURCE_BUILDING_CONFIG[qKey];
-      if (qRbCfg && qRbCfg.type === rbCfg.type) {
-        return { error: `A ${rbCfg.type} building (${qKey.replace(/_/g, ' ')}) is already in progress. Only one ${rbCfg.type} build slot is allowed at a time.` };
+      if (qRbCfg && qRbCfg.type === rbCfg.type && qRbCfg.stage === rbCfg.stage) {
+        return { error: `A ${rbCfg.type} building (${qKey.replace(/_/g, ' ')}) is already in progress. Only one ${qKey.replace(/_/g, ' ')} build slot is allowed at a time.` };
       }
     }
 
@@ -195,10 +200,6 @@ function queueBuildings(k, orders) {
       const s1Current = k[s1Col] || 0;
       if (s1Current + n > 3) {
         return { error: `${key.replace(/_/g, ' ')} cap reached (max 3).` };
-      }
-      const s2Current = (k[s2Col] || 0) + (queue[config.RESOURCE_STAGE2_BUILDINGS[rbCfg.type]] || 0);
-      if (s2Current > 0) {
-        return { error: `${key.replace(/_/g, ' ')} is locked — you already have Stage 2 ${rbCfg.type} buildings in progress or built.` };
       }
     } else if (rbCfg.stage === 2) {
       if (s3Current >= s3Cap) {
