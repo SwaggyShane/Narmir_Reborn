@@ -118,7 +118,7 @@ export const LibraryCraftList = ({
           ? blockedReason(key, discoveredKingdoms, worldFragments, maps)
           : null;
         return (
-          <div key={key} className="flex items-center gap-2 py-1.5 border-b border-[var(--border)]">
+          <div key={key} className="flex items-center gap-2 py-1.5 border-b border-[var(--border)] even:bg-white/[0.03]">
             <div className="flex-1">
               <div className="text-[13px] text-[var(--text)] font-semibold">{item.label}</div>
               <div className="text-[11px] text-[var(--text3)]">

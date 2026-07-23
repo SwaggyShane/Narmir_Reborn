@@ -148,7 +148,7 @@ export const TowerCraftList = ({
         const pct = progressPercent(progress, item.key, item.turns);
         const needsBlank = item.key !== 'blank_scroll' && (draft[item.key] || 0) > 0 && blankScrollsAvailable < 1;
         return (
-          <div key={item.key} className="flex items-center gap-2 py-1.5 border-b border-[var(--border)]">
+          <div key={item.key} className="flex items-center gap-2 py-1.5 border-b border-[var(--border)] even:bg-white/[0.03]">
             <div className="flex-1">
               <div className="text-[13px] text-[var(--text)] font-semibold">{item.label}</div>
               <div className="text-[11px] text-[var(--text3)]">
