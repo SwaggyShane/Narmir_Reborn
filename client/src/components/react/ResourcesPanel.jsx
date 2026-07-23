@@ -241,19 +241,20 @@ const ResourcesPanel = () => {
   const isAtCap = (bld) => {
     if (!kingdom.level) return false;
     const type = bld.type;
-    const s2Col = { wood: 'bld_lumber_camp', stone: 'bld_blockfield', iron: 'bld_strip_mine' }[type];
     const s3Col = { wood: 'bld_sawmill', stone: 'bld_stone_quarry', iron: 'bld_deep_mine' }[type];
 
     const bq = getParsedStateProp('build_queue') || {};
-    const s2Current = (kingdom[s2Col] || 0) + (bq[s2Col.replace('bld_', '')] || 0);
     const s3Current = kingdom[s3Col] || 0;
     const s3Cap = Math.floor(((kingdom.level || 1) - 1) / 10) + 1;
 
     if (s3Current >= s3Cap) return true;
     if (bld.stage === 1) {
+      // No "already have a lumber_camp, lock woodyard forever" gate here —
+      // the resource chain now consumes 3 woodyards per lumber_camp EVERY
+      // time (game/lib/building-research.js), not just once ever, so
+      // players need to keep rebuilding stage-1 to keep feeding stage-2/3.
       const built = (kingdom['bld_' + bld.key] || 0) + (bq[bld.key] || 0);
       if (built >= 3) return true;
-      if (s2Current > 0) return true;
     }
     if (bld.stage === 2) {
       const built = (kingdom['bld_' + bld.key] || 0) + (bq[bld.key] || 0);
