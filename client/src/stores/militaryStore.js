@@ -85,8 +85,31 @@ export const useMilitaryStore = create(
           if (data.troops) {
             Object.assign(state.troops, data.troops);
           }
-          if (data.injuredTroops) {
-            Object.assign(state.injuredTroops, data.injuredTroops);
+          // Flat kingdom bootstrap / structureUpdates may send snake_case
+          // injured_troops as Combat V2 JSON ({ fighters: [{hp,max_hp},...] })
+          // or a pre-counted map. Prefer explicit injuredTroops, then JSON.
+          const rawInjured = data.injuredTroops !== undefined
+            ? data.injuredTroops
+            : data.injured_troops;
+          if (rawInjured !== undefined && rawInjured !== null) {
+            let parsed = rawInjured;
+            if (typeof parsed === 'string') {
+              try { parsed = JSON.parse(parsed || '{}'); } catch { parsed = {}; }
+            }
+            const counts = {
+              fighters: 0, rangers: 0, mages: 0, clerics: 0,
+              ninjas: 0, thieves: 0, engineers: 0, war_machines: 0, thralls: 0,
+            };
+            if (parsed && typeof parsed === 'object') {
+              Object.entries(parsed).forEach(([unitType, val]) => {
+                if (Array.isArray(val)) {
+                  counts[unitType] = val.filter((t) => t && (t.hp || 0) > 0).length;
+                } else if (typeof val === 'number') {
+                  counts[unitType] = Math.max(0, val);
+                }
+              });
+            }
+            Object.assign(state.injuredTroops, counts);
           }
           if (data.ladders !== undefined) {
             state.ladders = data.ladders;

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react'; // useMemo: race card + injured totals
 import clsx from 'clsx';
 import { apiCallAndSync } from '../../utils/api';
 import { repairMojibake } from '../../utils/repairMojibake';
@@ -20,6 +20,7 @@ import {
   useWarMachines,
   useLadders,
   useThralls,
+  useInjuredTroops,
   useWeaponsStockpile,
   useArmorStockpile,
   useResEconomy,
@@ -151,6 +152,11 @@ const StatusPanel = () => {
   const warMachines = useWarMachines();
   const ladders = useLadders();
   const thralls = useThralls();
+  const injuredTroops = useInjuredTroops();
+  const injuredTotal = useMemo(() => {
+    if (!injuredTroops || typeof injuredTroops !== 'object') return 0;
+    return Object.values(injuredTroops).reduce((s, n) => s + (Number(n) || 0), 0);
+  }, [injuredTroops]);
   const weaponsStockpile = useWeaponsStockpile();
   const armorStockpile = useArmorStockpile();
   const scribes = useScribes();
@@ -314,6 +320,11 @@ const StatusPanel = () => {
               🏰 Citadel
             </span>
           </div>
+          {injuredTotal > 0 ? (
+            <div className="mb-2 text-[11px] text-amber-200/90">
+              🩹 {injuredTotal.toLocaleString()} wounded recovering (heal each turn; not deployable)
+            </div>
+          ) : null}
           <div className="status-unit-table min-w-0 max-w-full overflow-x-auto">
           <div className="min-w-[280px]">
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 py-1 px-0 border-b border-strong">

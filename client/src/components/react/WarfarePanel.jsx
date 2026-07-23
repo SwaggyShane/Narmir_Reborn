@@ -22,6 +22,7 @@ import {
   useThralls,
   useWeaponsStockpile,
   useTroopLevels,
+  useInjuredTroops,
   useResWeapons,
   useResMilitary,
   useResAttackMagic,
@@ -241,6 +242,11 @@ const WarfarePanel = () => {
   const thralls = useThralls();
   const weaponsStockpile = useWeaponsStockpile();
   const troopLevels = useTroopLevels();
+  const injuredTroops = useInjuredTroops();
+  const injuredTotal = useMemo(() => {
+    if (!injuredTroops || typeof injuredTroops !== 'object') return 0;
+    return Object.values(injuredTroops).reduce((s, n) => s + (Number(n) || 0), 0);
+  }, [injuredTroops]);
   const resWeapons = useResWeapons();
   const resMilitary = useResMilitary();
   const resAttackMagic = useResAttackMagic();
@@ -937,6 +943,15 @@ const WarfarePanel = () => {
 
         <div className="card" id="atk-panel-w">
           <div className="card-title mb-3">Warfare: Army Selection</div>
+          {injuredTotal > 0 ? (
+            <div className="mb-3 rounded border border-amber-700/40 bg-amber-950/30 px-2.5 py-2 text-[12px] text-amber-100/90">
+              🩹 <strong>{fmt(injuredTotal)}</strong> wounded recovering (not deployable)
+              {Object.entries(injuredTroops || {})
+                .filter(([, n]) => (Number(n) || 0) > 0)
+                .map(([t, n]) => ` · ${t}: ${fmt(n)}`)
+                .join('')}
+            </div>
+          ) : null}
           <div className="flex flex-col gap-1.5 mb-5">
             <div className="trow">
               <span className="name text-[13px] font-bold">

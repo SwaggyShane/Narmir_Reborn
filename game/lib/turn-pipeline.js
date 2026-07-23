@@ -17,6 +17,7 @@ const { runUpkeepAndFlavor } = require('./turn-upkeep-flavor');
 const { runResearchPhase } = require('./turn-research');
 const { runQueuesPhase } = require('./turn-queues');
 const { runTrainingAndXpPhase } = require('./turn-training-xp');
+const { processInjuredTroopsTurn } = require('./injury-recovery');
 const { finalizeTurn } = require('./turn-finalize');
 
 /**
@@ -42,6 +43,9 @@ function processTurn(k, db = null) {
   runResearchPhase(ctx);
   runQueuesPhase(ctx);
   runTrainingAndXpPhase(ctx);
+  // Injury recovery after training so cleric XP/levels from this turn apply
+  // next turn; still runs every turn with a non-empty injured_troops pool.
+  processInjuredTroopsTurn(ctx.k, ctx.updates, ctx.events);
   return finalizeTurn(ctx, profiler);
 }
 

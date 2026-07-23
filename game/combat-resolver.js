@@ -1,17 +1,7 @@
 /**
- * 🔴 CRITICAL: DO NOT DELETE OR MOVE THIS FILE 🔴
- *
- * Combat Resolver v2 - Comprehensive combat execution
- * Handles individual troop HP, walls, ladders, ninjas, thieves, clerics, war machines
- *
- * STATUS: Complete but intentionally NOT integrated. Marked for future integration.
- * IMPORTANCE: This is a major system overhaul that must be done correctly.
- * All other work must be completed before integration begins.
- * See plan: /root/.claude/plans/combat-redesign-integration.md
- *
- * TODO: Replace engine.js combat with executeCombat() from this file.
- * See combat-new.js header for full integration checklist.
- * Status: Complete but unintegrated — never wired into the active game loop.
+ * Combat Resolver v2 — live military combat path (via game/lib/combat-wrappers.js).
+ * Individual troop HP, walls, ladders, ninjas, thieves, clerics, war machines.
+ * Injury healing runs each processTurn via game/lib/injury-recovery.js.
  */
 
 const config = require('./config');
@@ -238,11 +228,15 @@ function executeCombat(_db, attacker, defender, combatType, targetFocus, _engine
     }
   }
 
-  // Store injured troops in updates
+  // Store injured troops in updates (drop dead entries — already removed from healthy counts)
   clearBattleMarkers(attackerInjured);
   clearBattleMarkers(defenderInjured);
-  result.attackerUpdates.injured_troops = combatCalc.serializeInjuredTroops(attackerInjured);
-  result.defenderUpdates.injured_troops = combatCalc.serializeInjuredTroops(defenderInjured);
+  result.attackerUpdates.injured_troops = combatCalc.serializeInjuredTroops(
+    combatCalc.cleanupDeadTroops(attackerInjured),
+  );
+  result.defenderUpdates.injured_troops = combatCalc.serializeInjuredTroops(
+    combatCalc.cleanupDeadTroops(defenderInjured),
+  );
 
   // Calculate total alive troops for summary
   result.report.attackerLiving = getTotalLivingTroops(attacker, attackerInjured);

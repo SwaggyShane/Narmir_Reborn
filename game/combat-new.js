@@ -1,22 +1,7 @@
 /**
- * 🔴 CRITICAL: DO NOT DELETE OR MOVE THIS FILE 🔴
- *
- * Combat System v2 - Individual Trooper HP & Injury States
- * Rework with individual troop tracking, injuries, walls, ladders
- *
- * STATUS: Complete but intentionally NOT integrated. Marked for future integration.
- * IMPORTANCE: This is a major system overhaul that must be done correctly.
- * All other work must be completed before integration begins.
- * See plan: /root/.claude/plans/combat-redesign-integration.md
- *
- * TODO: Wire this into engine.js to replace the current percentage-based combat.
- * Integration points needed:
- *   - Add `injured_troops` JSON column to kingdoms table (DB migration required)
- *   - Replace processAttack/processRaid/processSiege calls in engine.js with
- *     combat-resolver.js executeCombat()
- *   - Handle injury healing each turn (processTurn loop)
- *   - Surface injury state to frontend (StatusPanel, WarfarePanel)
- * Status: Complete but unintegrated — never wired into the active game loop.
+ * Combat System v2 — individual trooper HP, injury states, walls, ladders.
+ * Live path: combat-wrappers → combat-resolver → this module.
+ * Turn recovery: game/lib/injury-recovery.js (processTurn playlist).
  */
 
 // ── TROOP BASE STATS ──────────────────────────────────────────────────────
