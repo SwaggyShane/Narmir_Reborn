@@ -327,9 +327,23 @@ const ResourcesPanel = () => {
       const blds = buildingsByType(rtypeKey);
       const s1 = blds.find(b => b.stage === 1);
       const s2 = blds.find(b => b.stage === 2);
+      // Stage 2's own progress toward ITS cap drives focus, not stage 1's
+      // cap — the woodyard cost is a one-time gate per batch (consumed the
+      // moment the batch's first lumber_camp starts), so once any lumber
+      // camps exist, focus must stay on stage 2 until IT caps out, not
+      // bounce back to stage 1 just because woodyard sits at 0 (already
+      // spent, not "needs attention").
       let activeStage = 1;
-      if (s1 && isAtCap(s1)) activeStage = 2;
-      if (s2 && isAtCap(s2) && isAtCap(s1)) activeStage = 3;
+      if (s2) {
+        const s2Built = kingdom['bld_' + s2.key] || 0;
+        if (isAtCap(s2)) {
+          activeStage = 3;
+        } else if (s2Built > 0) {
+          activeStage = 2;
+        } else if (s1 && isAtCap(s1)) {
+          activeStage = 2;
+        }
+      }
       if (bld.stage !== activeStage) {
         return { ...base, opacity: 0.4, filter: 'grayscale(100%)' };
       }
@@ -717,11 +731,6 @@ const ResourcesPanel = () => {
                             {atCap && (
                               <div className="text-[11px] text-[var(--red)] font-semibold">
                                 Cap Reached
-                              </div>
-                            )}
-                            {!atCap && noEngineersFree && (
-                              <div className="text-[11px] text-[var(--text3)]">
-                                No engineers available
                               </div>
                             )}
                             {bld.stage === 2 && !s2Un && (
