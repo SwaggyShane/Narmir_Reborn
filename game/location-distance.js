@@ -36,14 +36,24 @@ function getDistanceToLocation(kingdom, location) {
  * Calculate turn cost to reach a location.
  * Dungeon: 50 + (distance × 1.5)
  * Mountain: 100 + (distance × 1.5)
+ * Divided by race expedition_speed when provided (higher = faster / fewer turns).
  * @param {string} locationType - 'dungeon' or 'mountain'
  * @param {number} distanceInHexes - Distance in hex units
+ * @param {string} [race] - optional kingdom race for RACE_BONUSES.expedition_speed
  * @returns {number} Total turn cost
  */
-function getLocationTurnCost(locationType, distanceInHexes) {
+function getLocationTurnCost(locationType, distanceInHexes, race) {
   const baseCost = locationType === 'mountain' ? 100 : 50;
   const distanceCost = Math.ceil(distanceInHexes * 1.5);
-  return baseCost + distanceCost;
+  let cost = baseCost + distanceCost;
+  if (race) {
+    try {
+      const { RACE_BONUSES } = require('./config');
+      const speed = Number(RACE_BONUSES[race]?.expedition_speed) || 1;
+      if (speed > 0 && speed !== 1) cost = cost / speed;
+    } catch { /* config optional for pure distance callers */ }
+  }
+  return Math.max(1, Math.ceil(cost));
 }
 
 module.exports = {

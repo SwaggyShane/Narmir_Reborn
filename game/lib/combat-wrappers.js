@@ -12,6 +12,27 @@ const combatResolverV2 = require('../combat-resolver');
 const { getFlag } = require('../feature-flags');
 const { hasElevationGrid, getElevationGrid } = require('../world-elevation-cache');
 const { getKingdomElevationLevel } = require('../world-elevation');
+const { getTerrainAt, hasHexGrid } = require('../world-hex-grid-cache');
+const { getKingdomMapCoords } = require('../world-map-coords');
+const { pixelToHex } = require('../hex-utils');
+
+/** Attach live map terrain to a kingdom for combat modifiers (defaults plains). */
+function attachKingdomTerrain(kingdom) {
+  if (!kingdom) return kingdom;
+  if (kingdom.terrain) return kingdom;
+  if (!hasHexGrid()) {
+    kingdom.terrain = 'plains';
+    return kingdom;
+  }
+  try {
+    const { map_x, map_y } = getKingdomMapCoords(kingdom);
+    const { col, row } = pixelToHex(map_x, map_y);
+    kingdom.terrain = getTerrainAt(col, row) || 'plains';
+  } catch {
+    kingdom.terrain = 'plains';
+  }
+  return kingdom;
+}
 
 // Import constants from config
 const xpMod = require('../xp');
@@ -45,6 +66,10 @@ function resolveMilitaryAttackV2Adapter(
     attacker.elevation_level = getKingdomElevationLevel(attacker, grid);
     defender.elevation_level = getKingdomElevationLevel(defender, grid);
   }
+
+  // Hex-grid terrain (not a kingdoms column) — powers combatAtk/combatDef mods.
+  attachKingdomTerrain(attacker);
+  attachKingdomTerrain(defender);
 
   const combatIsNight =
     typeof attacker.__combatIsNight === "boolean"

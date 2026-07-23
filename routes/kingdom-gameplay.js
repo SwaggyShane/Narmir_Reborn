@@ -1423,9 +1423,11 @@ module.exports = function (db) {
         // did nothing regardless of the flag's value.
         const { getFlag } = require('../game/feature-flags');
         const { hasElevationGrid, getElevationGrid } = require('../game/world-elevation-cache');
+        const raceSpeed = Number(require('../game/config').RACE_BONUSES?.[k.race]?.expedition_speed) || 1;
         const turnsNeeded = getEpicTrekTurns(map_x, map_y, target_x, target_y, {
           getFlag,
           elevationGrid: hasElevationGrid() ? getElevationGrid() : null,
+          raceSpeed,
         });
 
         if (k.turns_stored < turnsNeeded) {

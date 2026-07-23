@@ -66,6 +66,9 @@ const EPIC_TREK_DISCOVERY = Object.freeze({
     desert: 'gold',
     coast: 'food',
     lake: 'food',
+    // Climate-band biomes (hex grid south band + mixed patches)
+    volcanic: 'iron',
+    tundra: 'stone',
   }),
 });
 
@@ -231,8 +234,8 @@ function rollLocationDiscovery(hexCol, hexRow, kingdom) {
 
 /**
  * Small per-hex chance to find the resource a biome should naturally hold —
- * see EPIC_TREK_DISCOVERY.BIOME_RESOURCES for the terrain map. Swamp,
- * tundra, volcanic, and ocean have no biome-resource chance for now.
+ * see EPIC_TREK_DISCOVERY.BIOME_RESOURCES for the terrain map. Swamp and
+ * ocean have no primary material entry (swamp uses SWAMP_LOOT_OUTCOMES).
  * @param {number} hexCol
  * @param {number} hexRow
  * @param {string|null} terrain

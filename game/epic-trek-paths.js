@@ -60,15 +60,15 @@ function getPathHexes(startX, startY, targetX, targetY) {
  * Calculate turn cost for Epic Trek to target.
  * Cost = 1.5 turns per hex distance (EPIC_TREK_TURNS_PER_HEX from config).
  *
- * Phase 3B TODO: Apply elevation movement penalties via calculateMovementCost()
- * Currently requires elevation_grid lookup for each hex along path.
- * Would add 1.3x-1.5x multiplier for high-elevation routes.
+ * When FEATURE_ELEVATION_MOVEMENT is on and elevationGrid is provided,
+ * averages calculateMovementCost() across consecutive path hexes (full path,
+ * not start/end only).
  *
  * @param {number} startX - Kingdom X
  * @param {number} startY - Kingdom Y
  * @param {number} targetX - Target X
  * @param {number} targetY - Target Y
- * @param {object} opts - Optional {elevationGrid, getFlag}
+ * @param {object} opts - Optional {elevationGrid, getFlag, raceSpeed}
  * @returns {number} Turn cost (ceiling)
  */
 function getEpicTrekTurns(startX, startY, targetX, targetY, opts = {}) {
@@ -76,19 +76,35 @@ function getEpicTrekTurns(startX, startY, targetX, targetY, opts = {}) {
   const EPIC_TREK_TURNS_PER_HEX = 1.5; // Locked constant
   let cost = distance * EPIC_TREK_TURNS_PER_HEX;
 
-  // Phase 3B: Apply elevation penalties if enabled and elevation data available
   if (opts.getFlag?.('FEATURE_ELEVATION_MOVEMENT') && opts.elevationGrid) {
     const { calculateMovementCost } = require('./world-elevation');
     const pathHexes = getPathHexes(startX, startY, targetX, targetY);
-
-    // Simple approximation: use start/end elevation delta
-    const startElev = opts.elevationGrid[`${pathHexes[0].col},${pathHexes[0].row}`] || 0;
-    const endElev = opts.elevationGrid[`${pathHexes[pathHexes.length - 1].col},${pathHexes[pathHexes.length - 1].row}`] || 0;
-    const movementMult = calculateMovementCost(startElev, endElev, { FEATURE_ELEVATION_MOVEMENT: true });
-    cost *= movementMult;
+    const grid = opts.elevationGrid;
+    if (pathHexes.length >= 2) {
+      let sum = 0;
+      let segments = 0;
+      for (let i = 0; i < pathHexes.length - 1; i++) {
+        const a = pathHexes[i];
+        const b = pathHexes[i + 1];
+        const fromElev = grid[`${a.col},${a.row}`] || 0;
+        const toElev = grid[`${b.col},${b.row}`] || 0;
+        sum += calculateMovementCost(fromElev, toElev, { FEATURE_ELEVATION_MOVEMENT: true });
+        segments++;
+      }
+      cost *= segments > 0 ? sum / segments : 1;
+    } else if (pathHexes.length === 1) {
+      const elev = grid[`${pathHexes[0].col},${pathHexes[0].row}`] || 0;
+      cost *= calculateMovementCost(elev, elev, { FEATURE_ELEVATION_MOVEMENT: true });
+    }
   }
 
-  return Math.ceil(cost);
+  // Race expedition_speed: higher = fewer turns (e.g. wood_elf ~1.67 ≈ −40% time)
+  const raceSpeed = Number(opts.raceSpeed) || 1;
+  if (raceSpeed > 0 && raceSpeed !== 1) {
+    cost /= raceSpeed;
+  }
+
+  return Math.max(1, Math.ceil(cost));
 }
 
 /**

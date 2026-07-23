@@ -26,8 +26,10 @@ const RACE_TO_TERRAIN = {
   ogre: 'mountains',
 };
 
-// All available biomes (excluding restricted ones: tundra, coast, volcano)
-const ALL_BIOMES = ['plains', 'forest', 'mountains', 'hills', 'swamp', 'desert'];
+// Mixed biomes placed inside race regions (climate bands tundra/ocean/volcanic
+// are still applied by latitude in world-hex-grid.js; volcanic is also allowed
+// as a rare interior patch for resource-node terrain variety).
+const ALL_BIOMES = ['plains', 'forest', 'mountains', 'hills', 'swamp', 'desert', 'volcanic'];
 
 // What resource is most common in each terrain
 const TERRAIN_RESOURCES = {
@@ -37,6 +39,7 @@ const TERRAIN_RESOURCES = {
   hills: 'stone',
   swamp: 'stone',
   desert: 'iron',
+  volcanic: 'iron',
 };
 
 const MAP_WIDTH = 1999;
