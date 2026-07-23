@@ -144,6 +144,14 @@ export const LibraryCraftList = ({
               disabled={locked || saving}
               onChange={(e) => setItem(key, e.target.value)}
             />
+            <button
+              type="button"
+              className="base-btn text-[10px] px-2 py-1"
+              disabled={locked || saving}
+              onClick={() => setItem(key, maxScribes - (totalAllocated - (draft[key] || 0)))}
+            >
+              Max
+            </button>
           </div>
         );
       })}

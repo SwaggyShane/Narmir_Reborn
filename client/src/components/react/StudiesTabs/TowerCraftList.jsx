@@ -169,6 +169,14 @@ export const TowerCraftList = ({
               disabled={saving}
               onChange={(e) => setItem(item.key, e.target.value)}
             />
+            <button
+              type="button"
+              className="base-btn text-[10px] px-2 py-1"
+              disabled={saving}
+              onClick={() => setItem(item.key, maxMages - (totalAllocated - (draft[item.key] || 0)))}
+            >
+              Max
+            </button>
           </div>
         );
       })}
