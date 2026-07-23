@@ -28,6 +28,35 @@ class PgDbAdapter {
     this.activeTxns = new Map();
   }
 
+  // Runs fn() with the AsyncLocalStorage transaction context cleared, so
+  // every db.get/all/run/withTransaction call fn() makes (using this SAME
+  // db instance) resolves as if no transaction were active — for genuinely
+  // fire-and-forget operations launched from inside a transaction (e.g.
+  // processTurn's revealRingHexes/checkFogDiscoveries calls, which can't be
+  // awaited because processTurn is synchronous).
+  //
+  // A plain "use this.pool instead of store.client" wrapper is NOT enough
+  // here: transactionStorage.getStore() is checked by *ambient async
+  // context*, not by which db object you called .get()/.run() on, so a
+  // function that internally calls db.withTransaction() (e.g.
+  // revealRingHexes -> updateKingdomVisibility) would still see the outer
+  // transaction's store as active and take the nested-SAVEPOINT path on the
+  // SAME shared client — exactly the race this exists to prevent. Only
+  // actually exiting the ALS context stops that.
+  //
+  // Without this, a fire-and-forget call launched while the surrounding
+  // transaction's context is active resolves store.client to the SAME
+  // checked-out client the surrounding transaction is still using, and two
+  // overlapping client.query() calls on one client is a real correctness
+  // bug (silently interleaved/lost results) — not just the "deprecated"
+  // warning pg logs for it. Detached callers must accept that their write
+  // can commit independently, in any order relative to the surrounding
+  // transaction — fine for self-healing, idempotent-ish writes like these,
+  // wrong for anything that must be atomic with it.
+  runDetached(fn) {
+    return transactionStorage.exit(fn);
+  }
+
   async get(sql, params) {
     const store = transactionStorage.getStore();
     const isStoreActive = store && !store.released;

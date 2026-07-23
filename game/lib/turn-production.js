@@ -105,10 +105,18 @@ function runProductionPhase(ctx, helpers) {
         // region's dungeon/mountain location) would never get revealed at
         // all despite the kingdom's progress having already passed them.
         if (scoutResult.ring_completed && db && k.id) {
+          // runDetached(): this fire-and-forget call is launched from
+          // inside processTurn's synchronous flow, which cannot await it —
+          // without exiting the transaction context, it would resolve to
+          // the SAME pg client the surrounding transaction is still using,
+          // racing applyUpdates' write for that client (see db/schema.js
+          // runDetached() comment).
           for (let r = scoutResult.previous_ring + 1; r <= scoutResult.completed_ring_number; r++) {
+            const ring = r;
+            const runReveal = () => revealRingHexes(db, k.id, { ...k, ...updates }, ring);
             fireAndForgetWithRetry(
-              () => revealRingHexes(db, k.id, { ...k, ...updates }, r),
-              `reveal scout ring ${r} for kingdom ${k.id}`,
+              () => (db.runDetached ? db.runDetached(runReveal) : runReveal()),
+              `reveal scout ring ${ring} for kingdom ${k.id}`,
             );
           }
         }
@@ -120,7 +128,10 @@ function runProductionPhase(ctx, helpers) {
         // uncovered (DISABLE_FOG_OF_WAR test bypass) needs this to keep
         // firing rather than only at the moment a new ring is first reached.
         if (db && k.id) {
-          checkFogDiscoveries(db, k.id).catch(err =>
+          // Same runDetached() reasoning as revealRingHexes above — this
+          // .catch()-only call is never awaited by processTurn either.
+          const runFogCheck = () => checkFogDiscoveries(db, k.id);
+          (db.runDetached ? db.runDetached(runFogCheck) : runFogCheck()).catch(err =>
             console.error(`[engine] Fog discovery check failed for kingdom ${k.id}: ${err.message}`)
           );
         }
