@@ -32,6 +32,8 @@ import {
   useBuildingCounts,
   useForgeFlags,
   useNextForgeUpgrade,
+  useResourceBuildAllocation,
+  useTrainingAllocation,
 } from '../../stores';
 
 /** costs mirror server config */
@@ -228,6 +230,8 @@ const BuildPanel = () => {
   const builtLand = useBuiltLand();
   const landAvailable = useLandAvailable();
   const buildAllocationRaw = useBuildAllocation();
+  const resourceBuildAllocationRaw = useResourceBuildAllocation();
+  const trainingAllocationRaw = useTrainingAllocation();
   const gold = useGold();
   const wood = useWood();
   const stone = useStone();
@@ -252,10 +256,38 @@ const BuildPanel = () => {
     }
     return buildAllocationRaw || {};
   }, [buildAllocationRaw]);
-  const allocatedEngineers = useMemo(
-    () => Object.values(engineerAllocations).reduce((sum, val) => sum + Number(val || 0), 0),
-    [engineerAllocations]
-  );
+  const resourceBuildAllocation = useMemo(() => {
+    if (typeof resourceBuildAllocationRaw === 'string') {
+      try {
+        return JSON.parse(resourceBuildAllocationRaw || '{}');
+      } catch {
+        return {};
+      }
+    }
+    return resourceBuildAllocationRaw || {};
+  }, [resourceBuildAllocationRaw]);
+  const trainingAllocation = useMemo(() => {
+    if (typeof trainingAllocationRaw === 'string') {
+      try {
+        return JSON.parse(trainingAllocationRaw || '{}');
+      } catch {
+        return {};
+      }
+    }
+    return trainingAllocationRaw || {};
+  }, [trainingAllocationRaw]);
+  // Mirrors the server's canonical engineer accounting (game/lib/troops.js
+  // getAvailableUnits): engineers can be committed via the main build queue
+  // (engineerAllocations, seeded from buildAllocation), the wood/stone/iron
+  // resource-building chain, or troop training — all three draw from the
+  // same engineer pool, so all three must count against "assigned" here or
+  // this summary understates commitments and overstates what's free to use.
+  const allocatedEngineers = useMemo(() => {
+    const mainQueue = Object.values(engineerAllocations).reduce((sum, val) => sum + Number(val || 0), 0);
+    const resourceQueue = Object.values(resourceBuildAllocation).reduce((sum, val) => sum + Number(val || 0), 0);
+    const training = Number(trainingAllocation.engineers || 0);
+    return mainQueue + resourceQueue + training;
+  }, [engineerAllocations, resourceBuildAllocation, trainingAllocation]);
   const buildProgressRaw = useBuildProgress();
   const buildProgress = useMemo(() => {
     if (typeof buildProgressRaw === 'string') {
@@ -531,9 +563,10 @@ const BuildPanel = () => {
     updateSmithyDisplay();
   }, [buildUiTick, hammersStored, scaffoldingStored, blueprintsStored, gold, buildingCounts]);
   const setMaxValue = (buildingId) => {
-    const allocated = getAllocatedEngineers();
     const current = getBuildFieldValue(buildingId);
-    const available = totalEngineers - allocated + current;
+    // allocatedEngineers already includes this field's own current value
+    // (via engineerAllocations), so add it back once to get the true ceiling.
+    const available = totalEngineers - allocatedEngineers + current;
     setBuildFieldValue(buildingId, Math.max(0, available));
     refreshBuildUi();
   };
@@ -544,8 +577,11 @@ const BuildPanel = () => {
     const visibleFields = getVisibleBuildFields();
     const count = visibleFields.length;
     if (count === 0) return;
-    const each = Math.floor(totalEngineers / count);
-    const rem = totalEngineers - each * count;
+    const mainQueueAllocated = getAllocatedEngineers();
+    const otherPoolsAllocated = Math.max(0, allocatedEngineers - mainQueueAllocated);
+    const freeForMainQueue = Math.max(0, totalEngineers - otherPoolsAllocated);
+    const each = Math.floor(freeForMainQueue / count);
+    const rem = freeForMainQueue - each * count;
     visibleFields.forEach((key, i) => {
       setBuildFieldValue(key, each + (i < rem ? 1 : 0));
     });

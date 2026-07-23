@@ -275,11 +275,16 @@ const ResourcesPanel = () => {
 
   const getAvailableEngineers = () => {
     if (!kingdom) return 0;
+    // Mirrors the server's canonical engineer accounting (game/lib/troops.js
+    // getAvailableUnits): build queue, resource-building chain, and troop
+    // training all draw from the same engineer pool.
     const buildAlloc = getParsedStateProp('build_allocation');
     const resourceAlloc = getParsedStateProp('resource_build_allocation');
+    const trainingAlloc = getParsedStateProp('training_allocation');
     const buildEngaged = Object.values(buildAlloc).reduce((sum, n) => sum + (Number(n) || 0), 0);
     const resourceEngaged = Object.values(resourceAlloc).reduce((sum, n) => sum + (Number(n) || 0), 0);
-    return Math.max(0, (kingdom.engineers || 0) - buildEngaged - resourceEngaged);
+    const trainingEngaged = Number(trainingAlloc.engineers || 0);
+    return Math.max(0, (kingdom.engineers || 0) - buildEngaged - resourceEngaged - trainingEngaged);
   };
 
   const getActiveBuild = (type) => {
