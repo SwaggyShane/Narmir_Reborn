@@ -90,8 +90,25 @@ console.log('Testing half-wire terrain / race / elevation paths\n');
     getFlag,
     elevationGrid: climbGrid,
   });
-  assert.ok(flat > base, 'elevation path costs more than no-elevation baseline');
-  assert.ok(climb >= flat, 'climbing path >= flat elevation path');
+  // Flat/level segments: no 1.3× tax (calculateMovementCost returns 1.0)
+  assert.strictEqual(flat, base, 'flat elevation path matches no-elevation baseline');
+  assert.ok(climb > flat, 'climbing path costs more than flat elevation path');
+
+  const { calculateMovementCost } = require('../game/world-elevation');
+  assert.strictEqual(
+    calculateMovementCost(50, 50, { FEATURE_ELEVATION_MOVEMENT: true }),
+    1.0,
+    'zero elev change → 1.0',
+  );
+  assert.strictEqual(
+    calculateMovementCost(50, 40, { FEATURE_ELEVATION_MOVEMENT: true }),
+    1.0,
+    'downhill → 1.0',
+  );
+  assert.ok(
+    calculateMovementCost(10, 40, { FEATURE_ELEVATION_MOVEMENT: true }) >= 1.3,
+    'uphill applies base 1.3+',
+  );
 
   const wood = getEpicTrekTurns(startX, startY, targetX, targetY, {
     raceSpeed: config.RACE_BONUSES.wood_elf.expedition_speed,

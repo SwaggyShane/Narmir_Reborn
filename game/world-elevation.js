@@ -122,18 +122,19 @@ function calculateElevationBonus(attackerElev, defenderElev, featureFlags = {}) 
 }
 
 /**
- * Phase 3: Calculate movement cost modifier based on elevation
- * Returns movement cost multiplier (1.0 = normal, 1.3 = 30% slower)
+ * Phase 3: Calculate movement cost modifier based on elevation.
+ * Flat or downhill: 1.0 (no penalty).
+ * Uphill: 1.3 base + 0.05 per 10 elevation units climbed.
+ * Returns multiplier (1.0 = normal, >1 = slower).
  */
 function calculateMovementCost(fromElev, toElev, featureFlags = {}) {
   if (!featureFlags.FEATURE_ELEVATION_MOVEMENT) return 1.0;
 
   const elevChange = Math.max(0, (toElev || 0) - (fromElev || 0));
-  const fatigueCost = Math.floor(elevChange / 10); // 1 point per 10 units uphill
+  if (elevChange <= 0) return 1.0;
 
-  // Base mountain penalty (-30%)
-  const basePenalty = 1.3; // 30% slower
-  return basePenalty + (fatigueCost * 0.05); // Fatigue adds 5% per point
+  const fatigueCost = Math.floor(elevChange / 10); // 1 point per 10 units uphill
+  return 1.3 + fatigueCost * 0.05;
 }
 
 /**
