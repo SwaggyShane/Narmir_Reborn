@@ -168,7 +168,11 @@ module.exports = function (db) {
           'SELECT SUM(engineers) as engineers_in_expeditions FROM expeditions WHERE kingdom_id = $1 AND turns_left > 0',
           [k.id],
         );
-        const engOnExpedition = activeExpeditions[0]?.engineers_in_expeditions || 0;
+        // SUM() returns a bigint, which node-pg hands back as a string (e.g.
+        // '0') to avoid precision loss — a non-empty string is truthy, so
+        // `|| 0` never catches the zero case and `+` below silently falls
+        // back to string concatenation instead of addition.
+        const engOnExpedition = Number(activeExpeditions[0]?.engineers_in_expeditions || 0);
 
         const resourceAlloc = safeJsonParse(k.resource_build_allocation, {}, 'build-allocation:resource_build_allocation');
         const trainingAlloc = safeJsonParse(k.training_allocation, {}, 'build-allocation:training_allocation');
@@ -236,7 +240,11 @@ module.exports = function (db) {
           'SELECT SUM(engineers) as engineers_in_expeditions FROM expeditions WHERE kingdom_id = $1 AND turns_left > 0',
           [k.id],
         );
-        const engOnExpedition = activeExpeditions[0]?.engineers_in_expeditions || 0;
+        // SUM() returns a bigint, which node-pg hands back as a string (e.g.
+        // '0') to avoid precision loss — a non-empty string is truthy, so
+        // `|| 0` never catches the zero case and `+` below silently falls
+        // back to string concatenation instead of addition.
+        const engOnExpedition = Number(activeExpeditions[0]?.engineers_in_expeditions || 0);
 
         const buildAlloc = safeJsonParse(k.build_allocation, {}, 'resource-build-allocation:build_allocation');
         const trainingAlloc = safeJsonParse(k.training_allocation, {}, 'resource-build-allocation:training_allocation');
