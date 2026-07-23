@@ -235,21 +235,11 @@ function hireUnits(k, unit, amount) {
   if (!validUnits.includes(unit)) return { error: "Invalid unit type" };
   if (amount <= 0) return { error: "Amount must be positive" };
 
-  // School cap — researchers need schools (100 per school)
-  if (unit === "researchers") {
-    const schoolCap = k.bld_schools * 100;
-    const currentResearchers = k.researchers;
-    if (schoolCap === 0)
-      return { error: "You need at least 1 school to hire researchers" };
-    if (currentResearchers >= schoolCap)
-      return {
-        error: `School capacity full — ${schoolCap.toLocaleString()} researchers max with ${k.bld_schools} school${k.bld_schools > 1 ? "s" : ""} (100 per school)`,
-      };
-    if (currentResearchers + amount > schoolCap)
-      return {
-        error: `Only room for ${(schoolCap - currentResearchers).toLocaleString()} more researchers — build more schools (100 per school)`,
-      };
-  }
+  // Researchers have no hard hiring cap tied to schools — school capacity
+  // only determines how many are HOUSED for free (turn-upkeep-flavor.js);
+  // overflow beyond that just pays normal upkeep like any other troop,
+  // same as engineers/scribes below. A hard block here would contradict
+  // that overflow-pays-upkeep design, not enforce it.
 
   // Barracks cap — military troops need barracks (500 per barracks)
   const BARRACKS_TROOPS = [
