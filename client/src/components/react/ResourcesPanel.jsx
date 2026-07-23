@@ -466,8 +466,15 @@ const ResourcesPanel = () => {
   const getPopData = () => {
     const s = kingdom || {};
     const hiredUnits = (s.fighters||0)+(s.rangers||0)+(s.clerics||0)+(s.mages||0)+(s.thieves||0)+(s.ninjas||0)+(s.researchers||0)+(s.engineers||0)+(s.thralls||0);
-    const freePop = Math.max(0, (s.population||0) - hiredUnits);
-    return { pop: s.population || 0, hired: hiredUnits, freePop };
+    // population is already net of every hired unit — hireUnits() decrements
+    // it directly at hire time (game/lib/gameplay.js). Subtracting hired
+    // counts again here double-counted the same troops a second time, same
+    // bug as the node-harvest server endpoint (routes/kingdom-gameplay.js),
+    // just on the display side — this made "Free population" read
+    // artificially low (or 0) for any kingdom with substantial troops.
+    // hiredUnits itself is kept only for the informational "Hired units"
+    // stat below, not for computing freePop.
+    return { pop: s.population || 0, hired: hiredUnits, freePop: Math.max(0, s.population || 0) };
   };
   const { pop, hired, freePop } = getPopData();
 
@@ -763,6 +770,10 @@ const ResourcesPanel = () => {
                     <input type="number" min="1" placeholder="Pop"
                       value={harvestPop[node.id] || ''} onChange={(e) => setHarvestPop(p => ({...p, [node.id]: parseInt(e.target.value, 10) || 0}))}
                       className="w-[80px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />
+                    <button onClick={() => setHarvestPop(p => ({...p, [node.id]: freePop}))}
+                      className="px-2.5 py-1 rounded border-2 border-[var(--green)] bg-transparent text-[var(--green)] cursor-pointer text-[11px] font-bold">
+                      Max
+                    </button>
                     <input type="number" min="1" placeholder="Harvest turns"
                       value={harvestTurns[node.id] || ''} onChange={(e) => setHarvestTurns(p => ({...p, [node.id]: parseInt(e.target.value, 10) || 0}))}
                       className="w-[110px] px-1.5 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-[12px] text-center" />

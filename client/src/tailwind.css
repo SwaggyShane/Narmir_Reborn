@@ -169,6 +169,13 @@
     @apply border-b-0;
   }
 
+  /* Zebra striping so rows in a multi-row list are easy to track across —
+     a relative white overlay (not a fixed color) so it reads correctly in
+     both light and dark theme. */
+  .trow:nth-child(even) {
+    @apply bg-white/[0.03];
+  }
+
   .trow .name {
     @apply flex-1 min-w-20 text-text text-base font-semibold;
   }

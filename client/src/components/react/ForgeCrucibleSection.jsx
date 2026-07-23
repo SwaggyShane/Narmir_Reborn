@@ -275,6 +275,14 @@ const ForgeCrucibleSection = () => {
           <button
             type="button"
             disabled={busy || engineerLevel < 50}
+            className="rounded-lg border border-white/20 px-3 py-1.5 text-[12px] font-semibold text-text disabled:opacity-40"
+            onClick={() => setTemperBatches(String(Math.max(1, Math.min(steel, Math.floor(lava / TEMPER.lava)))))}
+          >
+            Max
+          </button>
+          <button
+            type="button"
+            disabled={busy || engineerLevel < 50}
             className="rounded-lg border border-orange-500/40 bg-orange-500/10 px-3 py-1.5 text-[12px] font-semibold text-orange-200 disabled:opacity-40"
             onClick={doTemper}
           >
@@ -303,6 +311,14 @@ const ForgeCrucibleSection = () => {
               value={gearQty}
               onChange={(e) => setGearQty(e.target.value)}
             />
+            <button
+              type="button"
+              disabled={busy || engineerLevel < 50}
+              className="rounded-lg border border-white/20 px-3 py-1.5 text-[12px] font-semibold text-text disabled:opacity-40"
+              onClick={() => setGearQty(String(Math.max(1, Math.floor(tempered / TEMPERED_WEAPONS.tempered_steel))))}
+            >
+              Max
+            </button>
             <button
               type="button"
               disabled={busy || engineerLevel < 50}

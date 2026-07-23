@@ -737,6 +737,12 @@ const BuildPanel = () => {
                 min="1"
                 placeholder="1"
               />
+              <button
+                className="base-btn bld-control-btn text-[10px]"
+                onClick={() => setDemolishAmounts(prev => ({ ...prev, [b.id]: Math.max(1, getBuildCount(b.id)) }))}
+              >
+                Max
+              </button>
               <button className="base-btn bld-control-btn text-[10px] bg-[var(--red)] text-white" onClick={() => demolishB(b.id)}>🗑️</button>
             </div>
           )}

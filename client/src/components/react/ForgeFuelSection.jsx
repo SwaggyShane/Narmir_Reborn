@@ -81,6 +81,14 @@ const ForgeFuelSection = () => {
         <button
           type="button"
           disabled={busy}
+          className="rounded-lg border border-white/20 px-3 py-1.5 text-[12px] font-semibold text-text disabled:opacity-40"
+          onClick={() => setWoodInput(String(wood || 0))}
+        >
+          Max
+        </button>
+        <button
+          type="button"
+          disabled={busy}
           className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-[12px] font-semibold text-amber-200 disabled:opacity-40"
           onClick={saveAllocation}
         >

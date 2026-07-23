@@ -1123,6 +1123,8 @@ const WarfarePanel = () => {
               onChange={(e) => setCovertUnits(e.target.value)}
               placeholder="Qty"
             />
+            <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setCovertUnits(String(thieves))}>MAX THIEVES</button>
+            <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setCovertUnits(String(ninjas))}>MAX NINJAS</button>
             <span className="text-[11px] text-[var(--text3)]">(thieves for Spy/Loot, ninjas for Assassinate/Sabotage)</span>
           </div>
           <div className="flex flex-col gap-2">

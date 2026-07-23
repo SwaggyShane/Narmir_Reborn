@@ -155,16 +155,21 @@ const BountiesPanel = () => {
 
               <div className="mb-4">
                 <label className="mb-1 block text-[11px] text-[var(--text3)]">REWARD (GOLD)</label>
-                <input
-                  type="number"
-                  className="input text-right w-full"
-                  id="bounty-amount"
-                  min="1000"
-                  step="1000"
-                  placeholder="Qty"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    className="input text-right w-full"
+                    id="bounty-amount"
+                    min="1000"
+                    step="1000"
+                    placeholder="Qty"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                  />
+                  <button type="button" className="base-btn shrink-0" onClick={() => setAmount(String(gold || 0))}>
+                    Max
+                  </button>
+                </div>
               </div>
 
               <button

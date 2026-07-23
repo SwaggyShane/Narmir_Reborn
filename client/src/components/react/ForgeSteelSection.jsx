@@ -137,6 +137,14 @@ const ForgeSteelSection = () => {
           <button
             type="button"
             disabled={busy}
+            className="rounded-lg border border-white/20 px-3 py-1.5 text-[12px] font-semibold text-text disabled:opacity-40"
+            onClick={() => setBatches(String(Math.max(1, Math.min(Math.floor(iron / SMELT.iron), Math.floor(coal / SMELT.coal)))))}
+          >
+            Max
+          </button>
+          <button
+            type="button"
+            disabled={busy}
             className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-[12px] font-semibold text-amber-200 disabled:opacity-40"
             onClick={doSmelt}
           >
@@ -163,6 +171,14 @@ const ForgeSteelSection = () => {
             value={gearQty}
             onChange={(e) => setGearQty(e.target.value)}
           />
+          <button
+            type="button"
+            disabled={busy}
+            className="rounded-lg border border-white/20 px-3 py-1.5 text-[12px] font-semibold text-text disabled:opacity-40"
+            onClick={() => setGearQty(String(Math.max(1, Math.floor(steel / STEEL_WEAPONS.steel))))}
+          >
+            Max
+          </button>
           <button
             type="button"
             disabled={busy}

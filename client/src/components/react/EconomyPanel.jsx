@@ -746,6 +746,7 @@ const EconomyPanel = () => {
               </div>
               <div className="mb-3 flex gap-2">
                 <input type="number" className="input flex-1" placeholder="Amount" min="1" value={bankAmount} onChange={(e) => setBankAmount(e.target.value)} />
+                <button type="button" className="base-btn shrink-0" onClick={() => setBankAmount(String(gold || 0))}>Max</button>
                 <select className="input flex-1" value={bankTermIndex} onChange={(e) => setBankTermIndex(e.target.value)}>
                   <option value="0">10 Turns (2% yield)</option>
                   <option value="1">25 Turns (7% yield)</option>

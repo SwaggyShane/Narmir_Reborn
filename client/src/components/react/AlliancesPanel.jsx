@@ -8,6 +8,7 @@ import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { loadKingdom } from './AuthModal.jsx';
 import { useActivePanel } from '../../hooks/useActivePanel.js';
+import { useGold } from '../../stores/index.js';
 import {
   getSocket,
   loadAllianceChatHistory,
@@ -71,6 +72,7 @@ const AlliancesPanel = () => {
   const [newAllianceName, setNewAllianceName] = useState('');
 
   const [depositAmount, setDepositAmount] = useState('');
+  const gold = useGold();
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
@@ -550,6 +552,14 @@ const AlliancesPanel = () => {
                     value={depositAmount}
                     onChange={(e) => setDepositAmount(e.target.value)}
                   />
+                  <button
+                    type="button"
+                    className="base-btn shrink-0"
+                    onClick={() => setDepositAmount(String(gold || 0))}
+                    disabled={busy}
+                  >
+                    Max
+                  </button>
                   <button
                     type="button"
                     className="base-btn variant-gold shrink-0 bg-gold text-black"
