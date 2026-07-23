@@ -310,7 +310,11 @@ const ResourcesPanel = () => {
   const getCardStyle = (bld, rtypeKey) => {
     const base = { marginBottom: '10px', transition: 'all 0.3s' };
     const active = getActiveBuild(rtypeKey);
-    if (active && active.stage !== bld.stage) {
+    // Stage 1 must stay clickable even while a higher stage is queued and
+    // waiting on it — that's the normal state now that conversion costs
+    // repeat per unit, not a one-time cost. Only grey out OTHER stages
+    // relative to whichever one is actually active.
+    if (active && active.stage !== bld.stage && bld.stage !== 1) {
       return { ...base, opacity: 0.4, filter: 'grayscale(100%)', pointerEvents: 'none' };
     }
     if (!active && buildingInProgress[rtypeKey]) {
@@ -379,7 +383,11 @@ const ResourcesPanel = () => {
   };
   const startBuild = async (bld) => {
     const type = BUILDING_CONFIG[bld.key]?.type;
-    if (buildingInProgress[type] || getActiveBuild(type)) return;
+    // Only bail if THIS stage already has an active build — a different
+    // stage being queued (e.g. lumber_camp waiting on stage-1 woodyards)
+    // must not block starting a woodyard build.
+    const activeOfType = getActiveBuild(type);
+    if (buildingInProgress[type] || (activeOfType && activeOfType.stage === bld.stage)) return;
     const engineers = parseInt(engineerAllocations[bld.key] || '0', 10) || 0;
     if (engineers < 1) return toast('Assign at least 1 engineer to start this build.', 'error');
     const avail = getAvailableEngineers();
@@ -609,8 +617,15 @@ const ResourcesPanel = () => {
                 const isAct = isBuildingActive(bld.key);
                 const s2Un = isUpgradeUnlocked(rtype.key, 2);
                 const s3Un = isUpgradeUnlocked(rtype.key, 3);
+                // getActiveBuild finds the first queued building of ANY stage
+                // in this resource type — only disable a stage's own
+                // controls when IT is that active build (isAct handles
+                // that), not whenever a different stage has one queued.
+                // Stage 1 in particular must stay buildable while stage 2/3
+                // is queued and waiting on it — that's the normal, expected
+                // state now that conversion costs repeat per unit built.
                 const actType = getActiveBuild(rtype.key);
-                const disab = !!actType || !!buildingInProgress[rtype.key] || atCap;
+                const disab = (!!actType && actType.stage === bld.stage) || !!buildingInProgress[rtype.key] || atCap;
 
                 return (
                   <div key={bld.key} className="card" style={getCardStyle(bld, rtype.key)}>
