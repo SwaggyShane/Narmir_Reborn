@@ -15,11 +15,21 @@ const LEGENDARY_NAMES = {
   dark_elf: { ninjas: "Void Assassins" },
   dwarf: { engineers: "Runic Siege-Masters" },
   dire_wolf: { fighters: "Fenris Alphas" },
+  ogre: { fighters: "Ogre Warlords" },
+};
+
+// Racial special unit display names (always on, not prestige-gated)
+const RACIAL_UNIT_NAMES = {
+  ogre: { fighters: "Ogre Warriors" },
+  wood_elf: { rangers: "Pathfinders" },
 };
 
 function getUnitName(race, unit, prestigeLevel = 0) {
   if (prestigeLevel > 0 && LEGENDARY_NAMES[race]?.[unit]) {
     return `🌟 ${LEGENDARY_NAMES[race][unit]}`;
+  }
+  if (RACIAL_UNIT_NAMES[race]?.[unit]) {
+    return RACIAL_UNIT_NAMES[race][unit];
   }
   const labels = {
     fighters: "Fighters",
@@ -140,6 +150,10 @@ function racialUnitBonus(k, unit) {
   if (race === "human" && unit === "clerics") return { auraHeal: true };
   if (race === "vampire" && unit === "thieves")
     return { infiltratorMastery: true };
+  if (race === "ogre" && unit === "fighters")
+    return { ogreWarriorDamage: 1.25 };
+  if (race === "wood_elf" && unit === "rangers")
+    return { pathfinderExpansion: true };
   return {};
 }
 
@@ -234,6 +248,7 @@ function getAvailableUnits(k, unit) {
 
 module.exports = {
   LEGENDARY_NAMES,
+  RACIAL_UNIT_NAMES,
   getUnitName,
   troopXpForLevel,
   parseTroopLevel,

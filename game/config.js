@@ -144,8 +144,14 @@ const config = {
       stone_yield: 0.8,
       iron_yield: 0.75,
       resource_build: 0.9,
-      expedition_speed: 1.2,
+      // ~−40% expedition completion time (turns / 1.67)
+      expedition_speed: 1.67,
       rare_find: 1.3,
+      // +75% land discovered on land-expansion missions
+      land_expansion_modifier: 1.75,
+      // −40% expedition food/supply cost (applied where foodNeeded is computed)
+      expedition_cost: 0.6,
+      military: 0.75, // weaker in direct combat (card: −25% troop damage)
       food_storage: 1.2, // Forest caches, natural preservation
     },
     ogre: {
@@ -170,13 +176,13 @@ const config = {
   // Based on extensive testing to achieve ~50% balance across all races
   RACE_COMBAT_MODIFIERS: {
     orc: 1.08,
-    ogre: 1.15,
+    ogre: 1.25, // Ogre Warriors — enhanced melee pressure
     dwarf: 0.90,
     dark_elf: 0.92,
     human: 1.0,
     dire_wolf: 1.0,
     vampire: 1.0,
-    wood_elf: 1.0,
+    wood_elf: 0.75, // card: combat troops deal 25% less damage
     high_elf: 1.0,
   },
 
@@ -281,6 +287,9 @@ const config = {
     },
     orc: { fighters: 1.6, clerics: 1.2 },
     vampire: { thieves: 1.2, clerics: 2.0 },
+    // Ogre Warriors: +25% fighter combat scaling via troop race path
+    ogre: { fighters: 1.25 },
+    wood_elf: { rangers: 1.3 },
   },
 
   WALL_STRENGTH_MULT: {
@@ -1981,6 +1990,8 @@ const config = {
     human: "clerics",
     orc: "fighters",
     vampire: "clerics",
+    ogre: "fighters",
+    wood_elf: "rangers",
   },
 
   RACIAL_BONUSES_DEFS: {

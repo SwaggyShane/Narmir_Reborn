@@ -69,7 +69,7 @@ module.exports = function (db) {
             type: loc.type,
             region: loc.region_name,
             distance: Math.round(distance * 10) / 10,
-            turnCost: getLocationTurnCost(loc.type, distance),
+            turnCost: getLocationTurnCost(loc.type, distance, k?.race),
           };
         });
 
@@ -156,14 +156,15 @@ module.exports = function (db) {
           // travel+exploration duration (turns_left), not an upfront
           // turns_stored toll.
           const distance = getDistanceToLocation(k, location);
-          const turnCost = getLocationTurnCost(type, distance);
+          const turnCost = getLocationTurnCost(type, distance, k.race);
 
           // Food supplies the troops for the whole real journey, so it scales
           // with turnCost (actual duration) rather than a fixed baseline —
           // matches how scout/deep tie food to their own EXP_TURNS[type].
           const foodMult = commandHandler.foodConsumptionMult(k.race);
           const foodPerTurn = (r * 0.5 + f * 1.0) * foodMult;
-          const foodNeeded = Math.ceil(turnCost * foodPerTurn * 0.75);
+          const expCostMult = Number(config.RACE_BONUSES?.[k.race]?.expedition_cost) || 1;
+          const foodNeeded = Math.ceil(turnCost * foodPerTurn * 0.75 * expCostMult);
           if (k.food < foodNeeded) {
             const error = new Error(`${type.charAt(0).toUpperCase() + type.slice(1)} expedition requires ${foodNeeded.toLocaleString()} food (you have ${k.food.toLocaleString()}).`);
             error.statusCode = 400;
@@ -256,7 +257,7 @@ module.exports = function (db) {
       return res.status(400).json({ error: 'Mountain expedition requires at least 10,000 rangers' });
 
     try {
-      const { k, updates, foodNeeded } = await db.withTransaction(async () => {
+      const { k, updates, foodNeeded, expTurns } = await db.withTransaction(async () => {
         const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
           req.player.playerId,
         ]);
@@ -292,7 +293,10 @@ module.exports = function (db) {
 
         const foodMult = commandHandler.foodConsumptionMult(k.race);
         const foodPerTurn = (r * 0.5 + f * 1.0) * foodMult;
-        const foodNeeded = Math.ceil(EXP_TURNS[type] * foodPerTurn * 0.75);
+        const expCostMult = Number(config.RACE_BONUSES?.[k.race]?.expedition_cost) || 1;
+        const raceSpeed = Number(config.RACE_BONUSES?.[k.race]?.expedition_speed) || 1;
+        const expTurns = Math.max(1, Math.ceil(EXP_TURNS[type] / Math.max(0.01, raceSpeed)));
+        const foodNeeded = Math.ceil(expTurns * foodPerTurn * 0.75 * expCostMult);
         if (k.food < foodNeeded) {
           const error = new Error(`${type.charAt(0).toUpperCase() + type.slice(1)} expedition requires ${foodNeeded.toLocaleString()} food (you have ${k.food.toLocaleString()}).`);
           error.statusCode = 400;
@@ -306,7 +310,7 @@ module.exports = function (db) {
 
         await db.run(
           'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken) VALUES ($1, $2, $3, $4, $5, $6)',
-          [k.id, type, EXP_TURNS[type], r, f, foodNeeded],
+          [k.id, type, expTurns, r, f, foodNeeded],
         );
 
         let updates = { rangers: Math.max(0, k.rangers - r), fighters: Math.max(0, k.fighters - f), food: Math.max(0, k.food - foodNeeded) };
@@ -315,7 +319,7 @@ module.exports = function (db) {
           await db.run('UPDATE kingdoms SET goals = $1 WHERE id = $2', [updates.goals, k.id]);
         }
 
-        return { k, updates, foodNeeded };
+        return { k, updates, foodNeeded, expTurns };
       });
 
       const updatedK = await db.get('SELECT * FROM kingdoms WHERE id = $1', [k.id]);
@@ -330,19 +334,20 @@ module.exports = function (db) {
 
       const label = { scout: 'Scout', deep: 'Deep', dungeon: 'Dungeon', mountain: 'Mountain' }[type];
       const troops = `${r.toLocaleString()} rangers${f > 0 ? ', ' + f.toLocaleString() + ' fighters' : ''}`;
+      const turnsMsg = typeof expTurns === 'number' ? expTurns : EXP_TURNS[type];
 
       let message = repairMojibake(
-        `${label} expedition launched -- ${troops} deployed for ${EXP_TURNS[type]} turns. ${foodNeeded.toLocaleString()} food taken for the journey.`,
+        `${label} expedition launched -- ${troops} deployed for ${turnsMsg} turns. ${foodNeeded.toLocaleString()} food taken for the journey.`,
       );
       if (type === 'mountain') {
         message = repairMojibake(
-          `MOUNTAIN EXPEDITION LAUNCHED! ${r.toLocaleString()} rangers venture into the peaks for 100 turns. Avalanches, extreme attrition, and danger await. Go big or go home.`,
+          `MOUNTAIN EXPEDITION LAUNCHED! ${r.toLocaleString()} rangers venture into the peaks for ${turnsMsg} turns. Avalanches, extreme attrition, and danger await. Go big or go home.`,
         );
       }
 
       res.json({
         ok: true,
-        turns_left: EXP_TURNS[type],
+        turns_left: turnsMsg,
         turns_stored: k.turns_stored,
         updates: structureUpdates(updates),
         events: expeditionEvents,
