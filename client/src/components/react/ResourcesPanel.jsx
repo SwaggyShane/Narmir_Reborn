@@ -310,12 +310,18 @@ const ResourcesPanel = () => {
   const getCardStyle = (bld, rtypeKey) => {
     const base = { marginBottom: '10px', transition: 'all 0.3s' };
     const active = getActiveBuild(rtypeKey);
-    // Stage 1 must stay clickable even while a higher stage is queued and
+    // Stage 1 must stay CLICKABLE even while a higher stage is queued and
     // waiting on it — that's the normal state now that conversion costs
-    // repeat per unit, not a one-time cost. Only grey out OTHER stages
-    // relative to whichever one is actually active.
+    // repeat per unit, not a one-time cost — so it never gets
+    // pointerEvents:'none' the way other inactive stages do. But it should
+    // still visually grey out like anything else when there's genuinely
+    // nothing to do there (no free engineers), rather than looking
+    // identical to a stage that's actually awaiting action.
     if (active && active.stage !== bld.stage && bld.stage !== 1) {
       return { ...base, opacity: 0.4, filter: 'grayscale(100%)', pointerEvents: 'none' };
+    }
+    if (active && active.stage !== bld.stage && bld.stage === 1 && getAvailableEngineers() <= 0) {
+      return { ...base, opacity: 0.4, filter: 'grayscale(100%)' };
     }
     if (!active && buildingInProgress[rtypeKey]) {
       const bq = getParsedStateProp('build_queue');
