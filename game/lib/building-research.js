@@ -405,6 +405,39 @@ function processBuildQueue(k, events, xpSourcesAccum) {
         const capBlocked = completed > 0 && capSpace <= 0;
         let canAdd = Math.max(0, Math.min(completed, capSpace));
 
+        // Resource-chain buildings (lumber_camp/sawmill and stone/iron
+        // equivalents) each individually convert lower-tier buildings —
+        // every stage-2 unit costs 3 stage-1 buildings, every stage-3 unit
+        // costs 5 stage-2 buildings. This must gate `canAdd` down to what's
+        // actually affordable and run for EVERY unit built, not just the
+        // first one ever (old stage-2 logic) or once per 10-level bracket
+        // (old stage-3 logic) — those were a mismatch with the intended
+        // "conversion cycle repeats per building" design.
+        const rbCfg = RESOURCE_BUILDING_CONFIG[building];
+        let rbConsumedCol = null;
+        let rbConsumedAmount = 0;
+        if (rbCfg && canAdd > 0 && (rbCfg.stage === 2 || rbCfg.stage === 3)) {
+          const lowerCol = rbCfg.stage === 2
+            ? config.RESOURCE_STAGE1_COL[rbCfg.type]
+            : config.RESOURCE_STAGE2_COL[rbCfg.type];
+          const perUnit = rbCfg.stage === 2 ? 3 : 5;
+          if (lowerCol) {
+            const lowerCurrent = updates[lowerCol] !== undefined ? updates[lowerCol] : (k[lowerCol] || 0);
+            const affordable = Math.floor(lowerCurrent / perUnit);
+            const affordableAdd = Math.min(canAdd, affordable);
+            if (affordableAdd < canAdd) {
+              constructionNotes.push(
+                `⚠️ ${building.replace(/_/g, ' ')} limited to ${affordableAdd} — needs ${perUnit} ${lowerCol.replace('bld_', '')} per unit.`,
+              );
+            }
+            canAdd = affordableAdd;
+            if (canAdd > 0) {
+              rbConsumedCol = lowerCol;
+              rbConsumedAmount = canAdd * perUnit;
+            }
+          }
+        }
+
         if (!RESOURCE_BUILDING_CONFIG[building] && canAdd > 0) {
           const goldPerUnit = BUILDING_GOLD_COST[building] ?? 100;
           const landPerUnit = BUILDING_LAND_COST[building] || 0;
@@ -502,42 +535,14 @@ function processBuildQueue(k, events, xpSourcesAccum) {
             scaffoldingUsed += consume;
           }
 
-          const rbCfg = RESOURCE_BUILDING_CONFIG[building];
-          if (rbCfg) {
-            const level = k.level || 1;
-            const currentBracket = Math.floor((level - 1) / 10);
-            const resSeq = safeJsonParse(k.resource_sequence, {}, 'processBuildQueue:resource_sequence');
-            const typeSeq = resSeq[rbCfg.type] || { s2_paid_at_bracket: -1, s3_paid_at_bracket: -1, last_s3_bracket: -1 };
-
-            if (rbCfg.stage === 2) {
-              const prevCount = (k[col] !== undefined ? k[col] : 0);
-              if (prevCount === 0 && canAdd >= 1) {
-                const s1Col = config.RESOURCE_STAGE1_COL[rbCfg.type];
-                if (s1Col) {
-                  const s1Current = updates[s1Col] !== undefined ? updates[s1Col] : (k[s1Col] || 0);
-                  const toConsume = Math.min(s1Current, 3);
-                  updates[s1Col] = s1Current - toConsume;
-                  updates.land = (updates.land !== undefined ? updates.land : k.land) + toConsume;
-                  constructionNotes.push(`🔄 3 ${s1Col.replace('bld_', '')} converted into ${building.replace(/_/g, ' ')}.`);
-                }
-              }
-            } else if (rbCfg.stage === 3) {
-              const newS3Count = current + canAdd;
-              if (newS3Count > 0 && typeSeq.last_s3_bracket !== currentBracket) {
-                const s2Col = config.RESOURCE_STAGE2_COL[rbCfg.type];
-                if (s2Col) {
-                  const s2Current = updates[s2Col] !== undefined ? updates[s2Col] : (k[s2Col] || 0);
-                  const toConsume = Math.min(s2Current, 5);
-                  updates[s2Col] = s2Current - toConsume;
-                  updates.land = (updates.land !== undefined ? updates.land : k.land) + (toConsume * 3);
-                  const updatedSeq = safeJsonParse(updates.resource_sequence || k.resource_sequence, {}, 'processBuildQueue:resource_sequence_update');
-                  if (!updatedSeq[rbCfg.type]) updatedSeq[rbCfg.type] = { s2_paid_at_bracket: -1, s3_paid_at_bracket: -1, last_s3_bracket: -1 };
-                  updatedSeq[rbCfg.type].last_s3_bracket = currentBracket;
-                  updates.resource_sequence = JSON.stringify(updatedSeq);
-                  constructionNotes.push(`🔄 5 ${s2Col.replace('bld_', '')} consumed. ${building.replace(/_/g, ' ')} bracket locked.`);
-                }
-              }
-            }
+          if (rbConsumedCol && rbConsumedAmount > 0) {
+            const landPerConsumed = rbCfg.stage === 3 ? 3 : 1;
+            const lowerCurrent = updates[rbConsumedCol] !== undefined ? updates[rbConsumedCol] : (k[rbConsumedCol] || 0);
+            updates[rbConsumedCol] = lowerCurrent - rbConsumedAmount;
+            updates.land = (updates.land !== undefined ? updates.land : k.land) + (rbConsumedAmount * landPerConsumed);
+            constructionNotes.push(
+              `🔄 ${rbConsumedAmount} ${rbConsumedCol.replace('bld_', '')} converted into ${canAdd} ${building.replace(/_/g, ' ')}.`,
+            );
           }
         }
       }
