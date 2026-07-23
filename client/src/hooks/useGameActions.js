@@ -88,6 +88,9 @@ export function useGameActions() {
         }
       }
 
+      if (completedBuildingsMsg) {
+        toast(`🏗️ Completed: ${completedBuildingsMsg}!`, 'success');
+      }
       if (constructionPauses.length > 0) {
         toast(constructionPauses.join('\n'), 'warning');
       }
@@ -97,16 +100,13 @@ export function useGameActions() {
       const turnsLeft = state?.turns_stored ?? data.updates?.turns_stored ?? 0;
       const currentTurn = state?.turn ?? data.updates?.turn;
       const turnStatus = `Turn ${currentTurn || '?'} - ${turnsLeft} turns left`;
-      const buildStatus = completedBuildingsMsg
-        ? `Completed: ${completedBuildingsMsg}!`
-        : '';
 
       if ((economyState?.food ?? 0) < 1000) {
-        toast(`Warning: Food levels are dangerously low!\n${buildStatus ? `${buildStatus}\n` : ''}${turnStatus}`, 'warning');
+        toast(`Warning: Food levels are dangerously low!\n${turnStatus}`, 'warning');
       } else if ((economyState?.gold ?? 0) < 1000) {
-        toast(`Warning: Gold reserves are almost empty!\n${buildStatus ? `${buildStatus}\n` : ''}${turnStatus}`, 'warning');
+        toast(`Warning: Gold reserves are almost empty!\n${turnStatus}`, 'warning');
       } else {
-        toast(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, 'success');
+        toast(turnStatus, 'success');
       }
       return data;
     } catch (err) {
