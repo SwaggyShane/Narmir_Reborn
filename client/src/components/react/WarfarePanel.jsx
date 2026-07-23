@@ -40,6 +40,7 @@ import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { playGameSound } from '../../utils/audio.js';
 import { registerShowBattleReport } from '../../utils/showBattleReport.js';
 import BattleReportModal from './BattleReportModal.jsx';
+import { useGameMutationEvents } from '../../hooks/useGameState';
 import SpellCastingModal from './SpellCastingModal.jsx';
 
 // Mirrors the accepted values in routes/kingdom-warfare.js's POST /covert
@@ -440,7 +441,7 @@ const WarfarePanel = () => {
     };
   }, []);
 
-  useEffect(() => {
+  const refreshActiveTabData = useCallback((force) => {
     if (activeTab === 'attack') {
       refreshAttackTargets();
     } else if (activeTab === 'wreports') {
@@ -448,10 +449,29 @@ const WarfarePanel = () => {
     } else if (activeTab === 'wintel') {
       loadSpyReports();
       loadAllianceIntel();
-    } else if ((activeTab === 'wspells' || activeTab === 'wcovert') && targets.length === 0) {
+    } else if ((activeTab === 'wspells' || activeTab === 'wcovert') && (force || targets.length === 0)) {
       refreshAttackTargets();
     }
   }, [activeTab, loadAllianceIntel, loadSpyReports, loadWarLog, refreshAttackTargets, targets.length]);
+
+  useEffect(() => {
+    refreshActiveTabData(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  // Refresh whatever the current tab shows on real game-state changes (new
+  // turn, being attacked, etc.) instead of only on tab switch — targets'
+  // power estimates, war reports, and spy intel all go stale as turns pass
+  // while sitting on the same tab.
+  useGameMutationEvents(
+    useCallback((event) => {
+      if (!event?.reason) return;
+      const reason = String(event.reason);
+      if (reason === 'turn' || reason === 'kingdom-refresh' || reason === 'apply-server-updates') {
+        refreshActiveTabData(true);
+      }
+    }, [refreshActiveTabData]),
+  );
 
   // Resolve a pending target from targetFromRankings() (map card / kingdom
   // profile / rankings row Attack/Spell/Covert buttons) once the target list

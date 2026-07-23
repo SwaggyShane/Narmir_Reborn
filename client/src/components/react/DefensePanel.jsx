@@ -151,7 +151,12 @@ const DefensePanel = () => {
   }, [gold, wood, stone, iron, refreshDefense]);
 
   useGameMutationEvents(useCallback((event) => {
-    if (String(event?.reason || '') === 'economy-upgrade') {
+    // Only listened for 'economy-upgrade' before — defense rating/wall/
+    // tower/outpost power all change as turns pass (construction
+    // completing, war machines assigned, etc.), not just on an upgrade
+    // purchase, so this sat stale on every turn taken while viewing it.
+    const reason = String(event?.reason || '');
+    if (['economy-upgrade', 'turn', 'kingdom-refresh', 'apply-server-updates'].includes(reason)) {
       refreshDefense();
     }
   }, [refreshDefense]));

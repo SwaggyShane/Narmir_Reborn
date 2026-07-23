@@ -69,7 +69,13 @@ const StudiesPanel = () => {
   }, [schoolOfMagic, resEconomy, resWeapons, resArmor, fetchStudiesData]);
 
   useGameMutationEvents(useCallback((event) => {
-    if (String(event?.reason || '') === 'economy-upgrade') {
+    // Only listened for 'economy-upgrade' before — research/library/tower
+    // crafting progress is directly turn-driven, so this sat stale on
+    // every turn taken while viewing the panel (the dependency-based
+    // refetch above only covers a handful of specific res_* fields, not
+    // library/tower crafting progress or every discipline).
+    const reason = String(event?.reason || '');
+    if (['economy-upgrade', 'turn', 'kingdom-refresh', 'apply-server-updates'].includes(reason)) {
       fetchStudiesData();
     }
   }, [fetchStudiesData]));

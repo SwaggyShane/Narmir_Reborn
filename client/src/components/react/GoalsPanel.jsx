@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
+import { useGameMutationEvents } from '../../hooks/useGameState';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 
@@ -33,6 +34,18 @@ const GoalsPanel = () => {
       clearInterval(refreshTimer);
     };
   }, [fetchGoals]);
+
+  // Goal progress is directly turn-driven (population, buildings, etc.) —
+  // refresh instantly on a real turn instead of waiting up to 2 minutes.
+  useGameMutationEvents(
+    useCallback((event) => {
+      if (!event?.reason) return;
+      const reason = String(event.reason);
+      if (reason === 'turn' || reason === 'kingdom-refresh' || reason === 'apply-server-updates') {
+        void fetchGoals();
+      }
+    }, [fetchGoals]),
+  );
 
   const claimGoal = async (groupId, goalId) => {
     try {

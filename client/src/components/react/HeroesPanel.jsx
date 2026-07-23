@@ -11,6 +11,7 @@ import { switchTab } from '../../utils/switchTab.js';
 import { applyFlatKingdomSnapshot } from '../../utils/responseNormalizer.js';
 import EmptyState from './EmptyState.jsx';
 import { useBuildCount } from '../../stores';
+import { useGameMutationEvents } from '../../hooks/useGameState';
 
 
 function heroXpForLevelJS(level) {
@@ -57,6 +58,19 @@ const HeroesPanel = () => {
   useEffect(() => {
     void loadHeroes();
   }, [loadHeroes, refreshTick]);
+
+  // Heroes gain XP/level every turn (awardHeroXp in commitTurnResults) —
+  // without this, the panel only ever refreshed on mount or a manual
+  // Refresh click, so levels sat stale while turns actually advanced them.
+  useGameMutationEvents(
+    useCallback((event) => {
+      if (!event?.reason) return;
+      const reason = String(event.reason);
+      if (reason === 'turn' || reason === 'kingdom-refresh' || reason === 'apply-server-updates') {
+        void loadHeroes();
+      }
+    }, [loadHeroes]),
+  );
 
   const recruitableClasses = useMemo(() => Object.entries(heroClasses || {}), [heroClasses]);
 

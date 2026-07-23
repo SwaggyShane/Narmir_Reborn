@@ -161,11 +161,18 @@ const EconomyPanel = () => {
     const reason = String(event?.reason || '');
     if (['turn', 'economy-upgrade', 'hire-mercs', 'bank-deposit', 'kingdom-refresh', 'mutation'].includes(reason)) {
       loadEconData();
+      // loadTradeRoutes was never wired into this listener at all — trade
+      // route income accrues per turn, so it sat stale while sitting on
+      // that tab. Only refetch while it's actually the visible tab, same
+      // lazy-load gating the mount effect above already uses.
+      if (reason === 'turn' && activeTab === 'trade-routes') {
+        loadTradeRoutes();
+      }
     }
     if (['accept-trade', 'decline-trade'].includes(reason)) {
       loadTradeOffers();
     }
-  }, [loadEconData, loadTradeOffers]));
+  }, [loadEconData, loadTradeOffers, loadTradeRoutes, activeTab]));
 
   const handleLockTax = useCallback(async () => {
     const tax = Number(taxValue);

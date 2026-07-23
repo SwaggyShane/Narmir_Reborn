@@ -4,6 +4,7 @@ import { fmt } from "../../utils/fmt";
 import { toast } from '../../utils/toast.js';
 import { registerSetBountyTarget } from '../../utils/bountyTarget.js';
 import { useRankingsCache, useKingdomId, useGold } from '../../stores';
+import { useGameMutationEvents } from '../../hooks/useGameState';
 
 const REFRESH_INTERVAL_MS = 60 * 1000;
 const panelShell = 'panel';
@@ -56,6 +57,19 @@ const BountiesPanel = () => {
       unregister?.();
     };
   }, [fetchBounties, loadTargets]);
+
+  // Already polls every 60s, but refresh instantly on a real turn too —
+  // same pattern used elsewhere, so bounty state doesn't lag up to a
+  // minute behind an action the player just took.
+  useGameMutationEvents(
+    useCallback((event) => {
+      if (!event?.reason) return;
+      const reason = String(event.reason);
+      if (reason === 'turn' || reason === 'kingdom-refresh' || reason === 'apply-server-updates') {
+        void fetchBounties();
+      }
+    }, [fetchBounties]),
+  );
 
   const handlePlaceBounty = async () => {
     const parsedAmount = parseInt(amount, 10);

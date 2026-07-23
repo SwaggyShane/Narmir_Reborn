@@ -9,6 +9,7 @@ import { repairMojibake } from '../../utils/repairMojibake.js';
 import { loadKingdom } from './AuthModal.jsx';
 import { useActivePanel } from '../../hooks/useActivePanel.js';
 import { useGold } from '../../stores/index.js';
+import { useGameMutationEvents } from '../../hooks/useGameState';
 import {
   getSocket,
   loadAllianceChatHistory,
@@ -176,6 +177,19 @@ const AlliancesPanel = () => {
   }, [refreshAlliance]);
 
   useAppEvent(AppEvent.ALLIANCE_REFRESH, onAllianceRefresh);
+
+  // Member stats (land, fighters, level) and vault balance only ever
+  // refreshed on mount or the ALLIANCE_REFRESH event — went stale as turns
+  // passed while sitting on this panel.
+  useGameMutationEvents(
+    useCallback((event) => {
+      if (!event?.reason) return;
+      const reason = String(event.reason);
+      if (reason === 'turn' || reason === 'kingdom-refresh' || reason === 'apply-server-updates') {
+        onAllianceRefresh();
+      }
+    }, [onAllianceRefresh]),
+  );
 
   useEffect(() => {
     if (!inAlliance || !alliance?.id) return;
