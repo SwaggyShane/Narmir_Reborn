@@ -215,6 +215,11 @@ const ResourcesPanel = () => {
         reason === 'apply-server-updates'
       ) {
         void syncFromState();
+        // syncFromState only refreshes the kingdom snapshot (build queue,
+        // items) — active node harvests live in their own table/endpoint
+        // and were never included, so turns_left / completions sat stale
+        // on screen until a manual Refresh click or tab switch.
+        void loadHarvests();
       }
     }, [syncFromState]),
   );
