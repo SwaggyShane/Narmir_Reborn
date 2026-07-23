@@ -24,6 +24,7 @@ const { getWorldSeed } = require('../game/world-seed');
 const { getKingdomVisibility } = require('../game/visibility');
 const { safeBitmapHasCell } = require('../game/visibility-cells');
 const { pixelToHex } = require('../game/hex-utils');
+const { structureUpdates } = require('./response-structurer');
 
 const router = express.Router();
 
@@ -139,7 +140,7 @@ module.exports = function (db) {
       res.json({
         ok: true,
         success: true,
-        updates: { discovered_kingdoms: JSON.stringify(myDisc) },
+        updates: structureUpdates({ discovered_kingdoms: JSON.stringify(myDisc) }),
         message: `Thieves stole a location map for ${stolenKingdom?.name || "a kingdom"} from ${target.name}.`,
       });
     } else {
