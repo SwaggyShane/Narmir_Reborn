@@ -41,23 +41,28 @@ const NewsPanel = () => {
   }, [formatText]);
 
   const getNewsPriority = useCallback((item) => {
-    if (!item) return 13;
+    if (!item) return 16;
     if (isAnnouncement(item)) return 0;
     const msg = formatText(item.message).text.toLowerCase();
     const type = item.type || 'system';
     if (msg.includes('season:') || msg.includes('seasonal')) return 1;
     if (type === 'attack' || type === 'spell' || type === 'covert') return 2;
-    if (msg.includes('end of turn') || msg.includes('net gold') || msg.includes('final treasury')) return 12;
-    if (msg.includes('research') || msg.includes('studying') || msg.includes('spellbook')) return 5;
-    if (msg.includes('expedition') || msg.includes('scouts')) return 9;
-    if (msg.includes('completed:') || msg.includes('completed ') || (msg.includes('building') && msg.includes('ready'))) return 4;
-    if (msg.includes('mana')) return 6;
-    if (msg.includes('gold earned') || msg.includes('trade route')) return 10;
-    if (msg.includes('upkeep') || msg.includes('billable')) return 11;
-    if (msg.includes('population') && !msg.includes('happiness')) return 7;
-    if (msg.includes('happiness')) return 8;
-    if (msg.includes('production:') || msg.includes('wood') || msg.includes('stone') || msg.includes('iron') || msg.includes('food') || msg.includes('forester')) return 3;
-    return 13;
+    if (msg.includes('completed:') || msg.includes('completed ') || (msg.includes('building') && msg.includes('ready'))) return 3;
+    if (msg.includes('expedition') || msg.includes('scouts')) return 4;
+    // User-specified order below: Food, resources produced/harvested,
+    // research, mana, scribes, population, happiness, gold earned, troop
+    // upkeep, end-of-turn net gold.
+    if (msg.includes('food')) return 5;
+    if (msg.includes('production:') || msg.includes('wood') || msg.includes('stone') || msg.includes('iron') || msg.includes('forester') || msg.includes('harvest')) return 6;
+    if (msg.includes('research') || msg.includes('studying') || msg.includes('spellbook')) return 7;
+    if (msg.includes('mana')) return 8;
+    if (msg.includes('scribe')) return 9;
+    if (msg.includes('population')) return 10;
+    if (msg.includes('happiness')) return 11;
+    if (msg.includes('gold earned') || msg.includes('trade route')) return 12;
+    if (msg.includes('upkeep') || msg.includes('billable')) return 13;
+    if (msg.includes('end of turn') || msg.includes('net gold') || msg.includes('final treasury')) return 14;
+    return 15;
   }, [formatText, isAnnouncement]);
 
   const summarizeAttackNewsForAll = useCallback((item) => {
