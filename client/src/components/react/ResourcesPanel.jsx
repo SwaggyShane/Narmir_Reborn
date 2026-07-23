@@ -601,12 +601,14 @@ const ResourcesPanel = () => {
                           Bracket locked - advance a level bracket to build more.
                         </div>
                         <div className="mt-1.5 text-[11px] text-[var(--text3)]">
-                          Cost:
-                          {GOLD_COST[bld.key] > 0 && <span> {fmt(GOLD_COST[bld.key])} gold</span>}
-                          {WOOD_COST[bld.key] > 0 && <span> &middot; {fmt(WOOD_COST[bld.key])} wood</span>}
-                          {STONE_COST[bld.key] > 0 && <span> &middot; {fmt(STONE_COST[bld.key])} stone</span>}
-                          {IRON_COST[bld.key] > 0 && <span> &middot; {fmt(IRON_COST[bld.key])} iron</span>}
-                          <span> &middot; {LAND_COST[bld.key]} land</span>
+                          Cost:{' '}
+                          {[
+                            GOLD_COST[bld.key] > 0 && `${fmt(GOLD_COST[bld.key])} gold`,
+                            WOOD_COST[bld.key] > 0 && `${fmt(WOOD_COST[bld.key])} wood`,
+                            STONE_COST[bld.key] > 0 && `${fmt(STONE_COST[bld.key])} stone`,
+                            IRON_COST[bld.key] > 0 && `${fmt(IRON_COST[bld.key])} iron`,
+                            LAND_COST[bld.key] > 0 && `${LAND_COST[bld.key]} land`,
+                          ].filter(Boolean).join(' · ')}
                           <span className='text-[var(--text2)]'> &middot; {fmt(BUILDING_COST[bld.key])} effort ({turnsToComplete(bld)} turns)</span>
                         </div>
 
@@ -617,7 +619,7 @@ const ResourcesPanel = () => {
                             </div>
                             <div className="text-[11px] text-[var(--text3)] mt-[3px]">
                               {fmt(getBuildProgress(bld.key))} / {fmt(BUILDING_COST[bld.key])} effort ({getBuildPct(bld.key)}%)
-                              &nbsp;&middot;&nbsp; ~{getBuildRemaining(bld.key)} turns remaining
+                              &nbsp;&middot;&nbsp; {getBuildEngineers(bld.key) > 0 ? `~${getBuildRemaining(bld.key)} turns remaining` : 'no engineers assigned'}
                             </div>
                           </React.Fragment>
                         )}

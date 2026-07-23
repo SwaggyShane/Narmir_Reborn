@@ -756,8 +756,8 @@ const BuildPanel = () => {
                 XP: <span id="engineer-xp" className="text-text">{fmt(engineerXp)}</span>/<span id="engineer-xp-needed" className="text-text3">{fmt(engineerXpNeeded)}</span>
               </div>
               <div className="text-[12px] text-text3">
-                Engineers: <span id="b-engineers-available" className="text-text">{fmt(totalEngineers)}</span> available |
-                <span id="b-total-assigned" className="text-gold mx-1">{fmt(allocatedEngineers)}</span> assigned |
+                Engineers: <span id="b-engineers-available" className="text-text">{fmt(totalEngineers)}</span> available |{' '}
+                <span id="b-total-assigned" className="text-gold mx-1">{fmt(allocatedEngineers)}</span> assigned |{' '}
                 <span id="b-total-unassigned" className={`mx-1 ${remainingEngineers > 0 ? 'text-green' : 'text-red'}`}>{fmt(remainingEngineers)}</span> unassigned
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-text3">
