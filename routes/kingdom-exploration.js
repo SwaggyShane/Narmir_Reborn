@@ -15,6 +15,7 @@ const { getKingdomMapCoords } = require('../game/world-map-coords');
 const { pixelToHex } = require('../game/hex-utils');
 const { structureUpdates } = require('./response-structurer');
 const { applyUpdates, bulkInsertNews } = require('./lib/kingdom-turn-helpers');
+const { dedupNewsEvents } = require('./kingdom-turn');
 
 const MOJIBAKE_SIGNATURE = /[ÃÂâïðÅ�]/;
 
@@ -399,12 +400,16 @@ module.exports = function (db) {
           // The instant reward itself is already surfaced via the response
           // message/toast — only the full turn's own events (build
           // completions, etc.) need a news entry, not a redundant one for
-          // the instant action itself.
-          await bulkInsertNews(db, events.map((ev) => ({
+          // the instant action itself. dedupNewsEvents (turn_num-scoped, not
+          // a raw insert) prevents duplicate rows if several instant actions
+          // land on the same turn_num.
+          const huntingTurnNum = finalUpdates.turn || k.turn;
+          const huntingFilteredEvents = await dedupNewsEvents(db, k.id, huntingTurnNum, events);
+          await bulkInsertNews(db, huntingFilteredEvents.map((ev) => ({
             kingdom_id: k.id,
             type: ev.type || 'system',
             message: ev.message,
-            turn_num: finalUpdates.turn || k.turn,
+            turn_num: huntingTurnNum,
           })));
 
           return { finalUpdates, reward };
@@ -555,12 +560,16 @@ module.exports = function (db) {
           // The instant reward itself is already surfaced via the response
           // message/toast — only the full turn's own events (build
           // completions, etc.) need a news entry, not a redundant one for
-          // the instant action itself.
-          await bulkInsertNews(db, events.map((ev) => ({
+          // the instant action itself. dedupNewsEvents (turn_num-scoped, not
+          // a raw insert) prevents duplicate rows if several instant actions
+          // land on the same turn_num.
+          const prospectingTurnNum = finalUpdates.turn || k.turn;
+          const prospectingFilteredEvents = await dedupNewsEvents(db, k.id, prospectingTurnNum, events);
+          await bulkInsertNews(db, prospectingFilteredEvents.map((ev) => ({
             kingdom_id: k.id,
             type: ev.type || 'system',
             message: ev.message,
-            turn_num: finalUpdates.turn || k.turn,
+            turn_num: prospectingTurnNum,
           })));
 
           return { finalUpdates, reward };
@@ -778,12 +787,16 @@ module.exports = function (db) {
         // The land-expansion reward itself is already surfaced via the
         // response message/toast — only the full turn's own events (build
         // completions, etc.) need a news entry, not a redundant one for the
-        // instant action itself.
-        await bulkInsertNews(db, events.map((ev) => ({
+        // instant action itself. dedupNewsEvents (turn_num-scoped, not a raw
+        // insert) prevents duplicate rows if several instant actions land
+        // on the same turn_num.
+        const landExpansionTurnNum = finalUpdates.turn || k.turn;
+        const landExpansionFilteredEvents = await dedupNewsEvents(db, k.id, landExpansionTurnNum, events);
+        await bulkInsertNews(db, landExpansionFilteredEvents.map((ev) => ({
           kingdom_id: k.id,
           type: ev.type || 'system',
           message: ev.message,
-          turn_num: finalUpdates.turn || k.turn,
+          turn_num: landExpansionTurnNum,
         })));
 
         return { finalUpdates, reward };

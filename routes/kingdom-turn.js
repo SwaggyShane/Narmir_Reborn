@@ -16,7 +16,6 @@ const { initProfiler, runWithProfiler } = require("../game/profiling");
 const { requireAuth, requireCsrfToken } = require("./middleware");
 const { convertNumericFields } = require('../db/numeric-fields');
 const { structureUpdates } = require('./response-structurer');
-const { EPOCH_NOW } = require("../lib/db-sql");
 const { pgInList } = require("../lib/pg-placeholders");
 const {
   repairMojibake,
@@ -127,6 +126,38 @@ async function loadTurnContext(db, k) {
   return { heroes };
 }
 
+// —— News dedup ———————————————————————————————————————————————————————
+// Scoped by turn_num, not a time window: a genuinely new turn can produce
+// byte-identical text to the previous one (e.g. unchanged troop upkeep),
+// and that's real information the player should still see, so it must not
+// be hidden just because it looks the same. What must never happen is the
+// SAME turn_num getting the same message inserted more than once — that's
+// always a duplicate-processing symptom (a race, a retry, several instant
+// actions landing on one turn), never legitimate new information. Used by
+// every route that writes turn news: the /turn handler below, runTurn
+// (kingdom-gameplay.js's /search and /smithy/forge-tools), and the instant
+// expedition routes in kingdom-exploration.js.
+async function dedupNewsEvents(db, kingdomId, turnNum, cleanEvents) {
+  const filteredEvents = [];
+  const existingMessages = {};
+  const uniqueMessages = [...new Set(cleanEvents.map(e => e && e.message).filter(msg => typeof msg === 'string'))];
+  if (uniqueMessages.length > 0) {
+    const existingNews = await db.all(
+      `SELECT DISTINCT message FROM news WHERE kingdom_id = $1 AND turn_num = $2 AND message IN (${pgInList(uniqueMessages.length, 3)})`,
+      [kingdomId, turnNum, ...uniqueMessages],
+    );
+    existingNews.forEach(row => {
+      existingMessages[row.message] = true;
+    });
+  }
+  for (const ev of cleanEvents) {
+    if (ev.skipNews) continue;
+    if (existingMessages[ev.message]) continue; // already sent this turn — skip
+    filteredEvents.push(ev);
+  }
+  return filteredEvents;
+}
+
 // —— Commit turn side-effects (applies, hero XP, news, expeditions, resources) ————
 // These are the DB writes that benefit from being inside a short transaction.
 // Called from both legacy runTurn and the optimized /turn path.
@@ -143,39 +174,8 @@ async function commitTurnResults(db, k, updates, incomingEvents) {
 
   updates.turns_stored = k.turns_stored - 1;
 
-  // Dedup news - only insert if we haven't already sent this EXACT message recently
-  const filteredEvents = [];
-  // Batch check for duplicate news instead of N+1 queries
-  const existingMessages = {};
-  if (events.length > 0) {
-    // Deduplicate and filter for valid string messages to prevent TypeError and reduce DB load
-    const uniqueMessages = [...new Set(cleanEvents.map(e => e && e.message).filter(msg => typeof msg === 'string'))];
-    if (uniqueMessages.length > 0) {
-      const existingNews = await db.all(
-        `SELECT DISTINCT message FROM news WHERE kingdom_id = $1 AND message IN (${pgInList(uniqueMessages.length, 2)}) AND created_at > (${EPOCH_NOW} - 60)`,
-        [k.id, ...uniqueMessages]
-      );
-      existingNews.forEach(row => {
-        existingMessages[row.message] = true;
-      });
-    }
-  }
-
-  for (const ev of cleanEvents) {
-    // Skip messages marked to not go to news
-    if (ev.skipNews) continue;
-
-    const existing = existingMessages[ev.message];
-    if (
-      existing &&
-      !ev.message.includes("Troop upkeep") &&
-      !ev.message.includes("Under construction") &&
-      !ev.message.includes("Library Est:") &&
-      !ev.message.includes("Construction complete:")
-    )
-      continue; // already sent — skip
-    filteredEvents.push(ev);
-  }
+  const turnNum = updates.turn || k.turn;
+  const filteredEvents = await dedupNewsEvents(db, k.id, turnNum, cleanEvents);
 
   // Resolve kingdom-discovery flags BEFORE applyUpdates so discovered_kingdoms
   // persists with the turn write. Flags are not DB columns (stripped below).
@@ -266,7 +266,6 @@ async function commitTurnResults(db, k, updates, incomingEvents) {
       );
     }
 
-    const turnNum = updates.turn || k.turn;
     if (filteredEvents.length > 0) {
       await bulkInsertNews(
         db,
@@ -296,7 +295,6 @@ async function commitTurnResults(db, k, updates, incomingEvents) {
     console.timeEnd(`[turn-${k.id}] resolveExpeditions`);
     expeditionEvents = expeditionEvents.map(normalizeNewsRow);
     if (expeditionEvents.length > 0) {
-      const turnNum = updates.turn || k.turn;
       await bulkInsertNews(
         db,
         expeditionEvents.map((ev) => ({
@@ -519,3 +517,4 @@ module.exports.runTurn = runTurn;
 module.exports.loadTurnContext = loadTurnContext;
 module.exports.commitTurnResults = commitTurnResults;
 module.exports.withTurnLock = withTurnLock;
+module.exports.dedupNewsEvents = dedupNewsEvents;
