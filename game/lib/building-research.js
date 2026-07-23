@@ -576,7 +576,16 @@ function processBuildQueue(k, events, xpSourcesAccum) {
         return resParts.length > 0 ? ` (${resParts.join(", ")})` : "";
       };
 
-      if (workDone >= cost) {
+      if (progress[building] >= cost) {
+        // Effort-complete but not yet applied — for resource-chain buildings
+        // this means it's blocked on lower-tier supply (see the "limited
+        // to 0 — needs N X per unit" warning above), not that it's slow.
+        // Showing "% done"/"turns left" here would read as e.g. "467% done,
+        // ~-4 turns left" since progress keeps accumulating while blocked.
+        updates._build_estimates.push(
+          `${pending || 1} ${label} ready — waiting on resources${buildResStr(pending || 1)}`,
+        );
+      } else if (workDone >= cost) {
         const nextTurn = Math.floor((progress[building] + workDone) / cost);
         const totalCount = pending + (nextTurn > 0 ? nextTurn : 0);
         if (totalCount > 0) {
@@ -588,7 +597,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
         const turnsLeft = Math.ceil(
           (cost - Math.max(0, progress[building])) / workDone,
         );
-        const pct = Math.floor((Math.max(0, progress[building]) / cost) * 100);
+        const pct = Math.min(100, Math.floor((Math.max(0, progress[building]) / cost) * 100));
         const count = pending || 1;
         updates._build_estimates.push(
           `${count} ${label} — ${pct}% done, ~${turnsLeft} turn${turnsLeft === 1 ? "" : "s"} left${buildResStr(count)}`,
