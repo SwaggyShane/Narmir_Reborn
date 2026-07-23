@@ -15,6 +15,10 @@ import {
   useResWarMachines,
   useResSpellbook,
   useSchoolOfMagic,
+  useGold,
+  useWood,
+  useStone,
+  useIron,
 } from '../../stores';
 import { TowerTab } from './StudiesTabs/TowerTab.jsx';
 import { SchoolTab } from './StudiesTabs/SchoolTab.jsx';
@@ -54,6 +58,10 @@ const StudiesPanel = () => {
   const resConstruction = useResConstruction();
   const resWarMachines = useResWarMachines();
   const resSpellbook = useResSpellbook();
+  const gold = useGold();
+  const wood = useWood();
+  const stone = useStone();
+  const iron = useIron();
 
   // Phase 3A: Zustand-driven refetch (dual source - listener is safety net)
   useEffect(() => {
@@ -100,6 +108,15 @@ const StudiesPanel = () => {
     res_war_machines: resWarMachines,
     res_spellbook: resSpellbook,
     school_of_magic: schoolOfMagic,
+    // UpgradesList (Tower/School/Shrine/Library upgrade purchase buttons)
+    // reads state.gold/wood/stone/iron directly for its client-side
+    // affordability check — without these, every upgrade in every Studies
+    // tab looked unaffordable regardless of actual resources ("Need:
+    // 25,000 gold, 15 stone" while holding a fortune of both).
+    gold,
+    wood,
+    stone,
+    iron,
   }), [
     race,
     mages,
@@ -114,6 +131,10 @@ const StudiesPanel = () => {
     resWarMachines,
     resSpellbook,
     schoolOfMagic,
+    gold,
+    wood,
+    stone,
+    iron,
   ]);
 
   return (

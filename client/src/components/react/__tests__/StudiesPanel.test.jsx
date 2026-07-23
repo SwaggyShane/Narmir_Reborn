@@ -24,6 +24,10 @@ vi.mock('../../../stores', () => ({
   useResWarMachines: vi.fn(),
   useResSpellbook: vi.fn(),
   useSchoolOfMagic: vi.fn(),
+  useGold: vi.fn(),
+  useWood: vi.fn(),
+  useStone: vi.fn(),
+  useIron: vi.fn(),
 }));
 
 vi.mock('../StudiesTabs/TowerTab.jsx', () => ({
@@ -59,6 +63,10 @@ import {
   useResWarMachines,
   useResSpellbook,
   useSchoolOfMagic,
+  useGold,
+  useWood,
+  useStone,
+  useIron,
 } from '../../../stores';
 
 describe('StudiesPanel', () => {
@@ -86,6 +94,10 @@ describe('StudiesPanel', () => {
     useResWarMachines.mockReturnValue(1);
     useResSpellbook.mockReturnValue(1);
     useSchoolOfMagic.mockReturnValue('conjuration');
+    useGold.mockReturnValue(0);
+    useWood.mockReturnValue(0);
+    useStone.mockReturnValue(0);
+    useIron.mockReturnValue(0);
   });
 
   it('subscribes to mutation events once', () => {
