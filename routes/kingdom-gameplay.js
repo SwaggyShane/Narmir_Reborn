@@ -1073,7 +1073,15 @@ module.exports = function (db) {
         "SELECT COALESCE(SUM(population_sent), 0) as total FROM resource_harvests WHERE kingdom_id = $1 AND turns_left > 0",
         [k.id],
       );
-      const freePop = Math.max(0, (k.population || 0) - commandHandler.totalHiredUnits(k) - Number(onHarvest.total));
+      // k.population is already net of every hired unit — hireUnits()
+      // decrements population directly at hire time (game/lib/gameplay.js).
+      // Subtracting totalHiredUnits(k) again here double-counts the same
+      // troops a second time, same bug already found and fixed in
+      // farmProduction/minPopulationToStaffFarms (see that comment,
+      // 2026-07-22) but missed here — for any kingdom with substantial
+      // troop counts this zeroed out free population regardless of the
+      // real number.
+      const freePop = Math.max(0, (k.population || 0) - Number(onHarvest.total));
       if (pop > freePop) {
         return res.status(400).json({ error: `Only ${freePop.toLocaleString()} free population available.` });
       }
