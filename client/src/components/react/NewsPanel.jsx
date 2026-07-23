@@ -56,7 +56,7 @@ const NewsPanel = () => {
     if (msg.includes('production:') || msg.includes('wood') || msg.includes('stone') || msg.includes('iron') || msg.includes('forester') || msg.includes('harvest')) return 6;
     if (msg.includes('research') || msg.includes('studying') || msg.includes('spellbook')) return 7;
     if (msg.includes('mana')) return 8;
-    if (msg.includes('scribe')) return 9;
+    if (msg.includes('scribe') || msg.includes('library est:')) return 9;
     if (msg.includes('population')) return 10;
     if (msg.includes('happiness')) return 11;
     if (msg.includes('gold earned') || msg.includes('trade route')) return 12;
