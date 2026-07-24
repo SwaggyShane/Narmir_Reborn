@@ -449,14 +449,19 @@ function processBuildQueue(k, events, xpSourcesAccum) {
 
           const fromQueue = Math.min(canAdd, queue[building] || 0);
           let extraUnits = canAdd - fromQueue;
-          let blockReason = null;
-
+          // Every resource type this building actually costs, and how many
+          // units-worth the kingdom currently has on hand for each — used
+          // both to shrink extraUnits (as before) and, independently of
+          // that sequential shrinkage, to report EVERY resource the
+          // kingdom is short on (not just whichever was checked first),
+          // so "waiting on resources" nags name the real cause instead of
+          // silently reporting only gold/land.
+          const blockedReasons = [];
           if (extraUnits > 0) {
             if (goldPerUnit > 0) {
               const curGold = updates.gold !== undefined ? updates.gold : k.gold;
-              const nextExtraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curGold / goldPerUnit)));
-              if (nextExtraUnits === 0 && extraUnits > 0) blockReason = 'gold';
-              extraUnits = nextExtraUnits;
+              if (Math.floor(curGold / goldPerUnit) < extraUnits) blockedReasons.push('gold');
+              extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curGold / goldPerUnit)));
             }
             if (landPerUnit > 0 && extraUnits > 0) {
               let totalUsedLand = 0;
@@ -466,27 +471,23 @@ function processBuildQueue(k, events, xpSourcesAccum) {
                 totalUsedLand += (queue[bKey] || 0) * bCost;
               }
               const availLand = (updates.land !== undefined ? updates.land : k.land) - totalUsedLand;
-              const nextExtraUnits = Math.max(0, Math.min(extraUnits, Math.floor(availLand / landPerUnit)));
-              if (nextExtraUnits === 0 && extraUnits > 0) blockReason = 'land';
-              extraUnits = nextExtraUnits;
+              if (Math.floor(availLand / landPerUnit) < extraUnits) blockedReasons.push('land');
+              extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(availLand / landPerUnit)));
             }
             if (woodPerUnit > 0 && extraUnits > 0) {
               const curWood = updates.wood !== undefined ? updates.wood : k.wood;
-              const nextExtraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curWood / woodPerUnit)));
-              if (nextExtraUnits === 0 && extraUnits > 0) blockReason = 'wood';
-              extraUnits = nextExtraUnits;
+              if (Math.floor(curWood / woodPerUnit) < extraUnits) blockedReasons.push('wood');
+              extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curWood / woodPerUnit)));
             }
             if (stonePerUnit > 0 && extraUnits > 0) {
               const curStone = updates.stone !== undefined ? updates.stone : k.stone;
-              const nextExtraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curStone / stonePerUnit)));
-              if (nextExtraUnits === 0 && extraUnits > 0) blockReason = 'stone';
-              extraUnits = nextExtraUnits;
+              if (Math.floor(curStone / stonePerUnit) < extraUnits) blockedReasons.push('stone');
+              extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curStone / stonePerUnit)));
             }
             if (ironPerUnit > 0 && extraUnits > 0) {
               const curIron = updates.iron !== undefined ? updates.iron : k.iron;
-              const nextExtraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curIron / ironPerUnit)));
-              if (nextExtraUnits === 0 && extraUnits > 0) blockReason = 'iron';
-              extraUnits = nextExtraUnits;
+              if (Math.floor(curIron / ironPerUnit) < extraUnits) blockedReasons.push('iron');
+              extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curIron / ironPerUnit)));
             }
             if (extraUnits > 0 && goldPerUnit > 0) {
               const curGold = updates.gold !== undefined ? updates.gold : k.gold;
@@ -507,8 +508,8 @@ function processBuildQueue(k, events, xpSourcesAccum) {
           }
 
           const finalCanAdd = fromQueue + extraUnits;
-          if (finalCanAdd < canAdd && finalCanAdd === 0 && blockReason) {
-            constructionNotes.push(`⚠️ ${building.replace(/_/g, ' ')} paused — not enough ${blockReason}.`);
+          if (finalCanAdd < canAdd && finalCanAdd === 0 && blockedReasons.length > 0) {
+            constructionNotes.push(`⚠️ ${building.replace(/_/g, ' ')} paused — not enough ${blockedReasons.join(', ')}.`);
           }
           canAdd = finalCanAdd;
         }
@@ -560,11 +561,17 @@ function processBuildQueue(k, events, xpSourcesAccum) {
 
       const goldPerUnit = BUILDING_GOLD_COST[building] || 0;
       const landPerUnit = BUILDING_LAND_COST[building] || 0;
+      const woodPerUnit = BUILDING_WOOD_COST[building] || 0;
+      const stonePerUnit = BUILDING_STONE_COST[building] || 0;
+      const ironPerUnit = BUILDING_IRON_COST[building] || 0;
 
       const buildResStr = (count) => {
         const resParts = [];
         if (goldPerUnit > 0) resParts.push(`${(goldPerUnit * count).toLocaleString()} gc`);
         if (landPerUnit > 0) resParts.push(`${(landPerUnit * count).toLocaleString()} land`);
+        if (woodPerUnit > 0) resParts.push(`${(woodPerUnit * count).toLocaleString()} wood`);
+        if (stonePerUnit > 0) resParts.push(`${(stonePerUnit * count).toLocaleString()} stone`);
+        if (ironPerUnit > 0) resParts.push(`${(ironPerUnit * count).toLocaleString()} iron`);
         return resParts.length > 0 ? ` (${resParts.join(", ")})` : "";
       };
 
