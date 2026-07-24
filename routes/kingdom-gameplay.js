@@ -1468,10 +1468,18 @@ module.exports = function (db) {
           throw err;
         }
 
-        // Deduct turns and food
+        // Deduct turns, food, AND the sent rangers — every other expedition
+        // type (scout/deep in this same file's sibling route, mountain/
+        // dungeon/hunting/prospecting in kingdom-exploration.js) removes the
+        // sent troops from the kingdom's pool at launch and adds them back
+        // via expedition-resolution.js's _rangers_returned mechanism on
+        // completion. This route never did, so the sent rangers stayed
+        // available (and spendable/fireable) the whole trip, then the full
+        // return got credited again on top when the trek completed —
+        // effectively duplicating the sent rangers on every round trip.
         await db.run(
-          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = GREATEST(0, food - $2) WHERE id = $3',
-          [turnsNeeded, foodNeeded, k.id]
+          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = GREATEST(0, food - $2), rangers = GREATEST(0, rangers - $3) WHERE id = $4',
+          [turnsNeeded, foodNeeded, rangerCount, k.id]
         );
 
         // Create expedition with path stored as JSON
