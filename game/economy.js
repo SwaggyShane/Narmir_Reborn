@@ -303,21 +303,34 @@ function processResourceYield(k, events) {
     const synergyProdMult = getSynergyPassiveBonusMultiplier(k, 'production_speed');
     baseYield *= synergyProdMult;
 
-    // Random events on wood production only
-    if (cfg.type === 'wood') {
+    // Random events on resource production — same odds/structure for
+    // wood/stone/iron, previously wood-only despite RARE_RESOURCE_ITEMS and
+    // RESOURCE_JUNK_MESSAGES both already having stone/iron pools defined
+    // and simply never wired up here.
+    const RESOURCE_FLAVOR = {
+      wood: { emoji: '🌲', worker: 'foresters', gerund: 'logging', yieldNoun: 'wood' },
+      stone: { emoji: '🪨', worker: 'quarry workers', gerund: 'quarrying', yieldNoun: 'stone' },
+      iron: { emoji: '🔗', worker: 'miners', gerund: 'mining', yieldNoun: 'iron' },
+    };
+    const flavor = RESOURCE_FLAVOR[cfg.type];
+    if (flavor) {
       const rareFindMult = raceBonus(k, 'rare_find');
       const roll = Math.random();
 
       if (roll < 0.0025 * rareFindMult) {
-        const rareItems = RARE_RESOURCE_ITEMS.wood;
-        const chosen = rareItems[Math.floor(Math.random() * rareItems.length)];
-        const existing = items.find((i) => i.id === chosen.id);
-        if (!existing || (existing.qty || 0) < 3) {
-          addItemToInventory(items, chosen.id, chosen.name, 1);
-          itemsChanged = true;
-          events.push({ type: 'system', message: `🌲 Your foresters discovered a rare item: ${chosen.name}!` });
+        const rareItems = RARE_RESOURCE_ITEMS[cfg.type] || [];
+        if (rareItems.length > 0) {
+          const chosen = rareItems[Math.floor(Math.random() * rareItems.length)];
+          const existing = items.find((i) => i.id === chosen.id);
+          if (!existing || (existing.qty || 0) < 3) {
+            addItemToInventory(items, chosen.id, chosen.name, 1);
+            itemsChanged = true;
+            events.push({ type: 'system', message: `${flavor.emoji} Your ${flavor.worker} discovered a rare item: ${chosen.name}!` });
+          }
         }
-      } else if (roll < 0.01 * rareFindMult) {
+      } else if (roll < 0.01 * rareFindMult && cfg.type === 'wood') {
+        // Earth Fragment stays wood-only (elemental fragments are a
+        // separate, deliberately scarce system — not part of this fix).
         const earthFrag = items.find((i) => i.id === 'earth_fragment');
         if (!earthFrag || (earthFrag.qty || 0) === 0) {
           addItemToInventory(items, 'earth_fragment', 'Earth Fragment', 1);
@@ -326,10 +339,13 @@ function processResourceYield(k, events) {
         }
       } else if (roll < 0.06) {
         baseYield *= 2;
-        events.push({ type: 'system', message: `🌲 An unusually productive logging session doubled your wood yield!` });
+        events.push({ type: 'system', message: `${flavor.emoji} An unusually productive ${flavor.gerund} session doubled your ${flavor.yieldNoun} yield!` });
       } else if (roll < 0.26) {
-        const msg = RESOURCE_JUNK_MESSAGES[Math.floor(Math.random() * RESOURCE_JUNK_MESSAGES.length)];
-        events.push({ type: 'system', message: `🌲 Foresters report: ${msg}` });
+        const pool = RESOURCE_JUNK_MESSAGES[cfg.type] || [];
+        if (pool.length > 0) {
+          const msg = pool[Math.floor(Math.random() * pool.length)];
+          events.push({ type: 'system', message: `${flavor.emoji} ${flavor.worker.charAt(0).toUpperCase()}${flavor.worker.slice(1)} report: ${msg}` });
+        }
       }
     }
 
