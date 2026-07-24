@@ -1437,8 +1437,18 @@ module.exports = function (db) {
           raceSpeed,
         });
 
-        if (k.turns_stored < turnsNeeded) {
-          const err = new Error(`Epic Trek requires ${turnsNeeded} turns (you have ${k.turns_stored})`);
+        // Matches every sibling expedition type (scout/deep here,
+        // mountain/dungeon/hunting/prospecting in kingdom-exploration.js):
+        // only requires having a turn available to launch, not the entire
+        // trip's duration pre-banked. This used to require turns_stored >=
+        // turnsNeeded and deduct that full amount immediately below — on
+        // top of the natural per-turn cost of the trek's turns_left ticking
+        // down 1-for-1 with every real /turn the player takes anyway, that
+        // charged the full trip twice. It also made any destination whose
+        // turnsNeeded exceeds the turns_stored regen cap (400, lib/boot.js)
+        // permanently unreachable, since it could never be pre-paid.
+        if (k.turns_stored < 1) {
+          const err = new Error('No turns available');
           err.statusCode = 429;
           throw err;
         }
@@ -1468,18 +1478,21 @@ module.exports = function (db) {
           throw err;
         }
 
-        // Deduct turns, food, AND the sent rangers — every other expedition
-        // type (scout/deep in this same file's sibling route, mountain/
-        // dungeon/hunting/prospecting in kingdom-exploration.js) removes the
-        // sent troops from the kingdom's pool at launch and adds them back
-        // via expedition-resolution.js's _rangers_returned mechanism on
+        // Deduct food and the sent rangers (NOT turns_stored — the trip's
+        // duration is paid for naturally as turns_left ticks down 1-per-
+        // real-turn, same as every sibling expedition type). Rangers: every
+        // other expedition type (scout/deep in this same file's sibling
+        // route, mountain/dungeon/hunting/prospecting in
+        // kingdom-exploration.js) removes the sent troops from the
+        // kingdom's pool at launch and adds them back via
+        // expedition-resolution.js's _rangers_returned mechanism on
         // completion. This route never did, so the sent rangers stayed
         // available (and spendable/fireable) the whole trip, then the full
         // return got credited again on top when the trek completed —
         // effectively duplicating the sent rangers on every round trip.
         await db.run(
-          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = GREATEST(0, food - $2), rangers = GREATEST(0, rangers - $3) WHERE id = $4',
-          [turnsNeeded, foodNeeded, rangerCount, k.id]
+          'UPDATE kingdoms SET food = GREATEST(0, food - $1), rangers = GREATEST(0, rangers - $2) WHERE id = $3',
+          [foodNeeded, rangerCount, k.id]
         );
 
         // Create expedition with path stored as JSON
