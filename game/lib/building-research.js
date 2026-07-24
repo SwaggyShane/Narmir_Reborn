@@ -453,14 +453,17 @@ function processBuildQueue(k, events, xpSourcesAccum) {
           // units-worth the kingdom currently has on hand for each — used
           // both to shrink extraUnits (as before) and, independently of
           // that sequential shrinkage, to report EVERY resource the
-          // kingdom is short on (not just whichever was checked first),
-          // so "waiting on resources" nags name the real cause instead of
-          // silently reporting only gold/land.
-          const blockedReasons = [];
+          // kingdom is short on with the exact amount still needed (not
+          // just whichever was checked first, and not just the resource
+          // name), matching the same shortfall the Build panel's per-row
+          // nag shows.
+          const blockedShortfalls = [];
           if (extraUnits > 0) {
             if (goldPerUnit > 0) {
               const curGold = updates.gold !== undefined ? updates.gold : k.gold;
-              if (Math.floor(curGold / goldPerUnit) < extraUnits) blockedReasons.push('gold');
+              if (Math.floor(curGold / goldPerUnit) < extraUnits) {
+                blockedShortfalls.push(`${(goldPerUnit - curGold).toLocaleString()} gold`);
+              }
               extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curGold / goldPerUnit)));
             }
             if (landPerUnit > 0 && extraUnits > 0) {
@@ -471,22 +474,30 @@ function processBuildQueue(k, events, xpSourcesAccum) {
                 totalUsedLand += (queue[bKey] || 0) * bCost;
               }
               const availLand = (updates.land !== undefined ? updates.land : k.land) - totalUsedLand;
-              if (Math.floor(availLand / landPerUnit) < extraUnits) blockedReasons.push('land');
+              if (Math.floor(availLand / landPerUnit) < extraUnits) {
+                blockedShortfalls.push(`${(landPerUnit - availLand).toLocaleString()} land`);
+              }
               extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(availLand / landPerUnit)));
             }
             if (woodPerUnit > 0 && extraUnits > 0) {
               const curWood = updates.wood !== undefined ? updates.wood : k.wood;
-              if (Math.floor(curWood / woodPerUnit) < extraUnits) blockedReasons.push('wood');
+              if (Math.floor(curWood / woodPerUnit) < extraUnits) {
+                blockedShortfalls.push(`${(woodPerUnit - curWood).toLocaleString()} wood`);
+              }
               extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curWood / woodPerUnit)));
             }
             if (stonePerUnit > 0 && extraUnits > 0) {
               const curStone = updates.stone !== undefined ? updates.stone : k.stone;
-              if (Math.floor(curStone / stonePerUnit) < extraUnits) blockedReasons.push('stone');
+              if (Math.floor(curStone / stonePerUnit) < extraUnits) {
+                blockedShortfalls.push(`${(stonePerUnit - curStone).toLocaleString()} stone`);
+              }
               extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curStone / stonePerUnit)));
             }
             if (ironPerUnit > 0 && extraUnits > 0) {
               const curIron = updates.iron !== undefined ? updates.iron : k.iron;
-              if (Math.floor(curIron / ironPerUnit) < extraUnits) blockedReasons.push('iron');
+              if (Math.floor(curIron / ironPerUnit) < extraUnits) {
+                blockedShortfalls.push(`${(ironPerUnit - curIron).toLocaleString()} iron`);
+              }
               extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curIron / ironPerUnit)));
             }
             if (extraUnits > 0 && goldPerUnit > 0) {
@@ -508,8 +519,10 @@ function processBuildQueue(k, events, xpSourcesAccum) {
           }
 
           const finalCanAdd = fromQueue + extraUnits;
-          if (finalCanAdd < canAdd && finalCanAdd === 0 && blockedReasons.length > 0) {
-            constructionNotes.push(`⚠️ ${building.replace(/_/g, ' ')} paused — not enough ${blockedReasons.join(', ')}.`);
+          if (finalCanAdd < canAdd && finalCanAdd === 0 && blockedShortfalls.length > 0) {
+            constructionNotes.push(
+              `⚠️ ${building.replace(/_/g, ' ')} paused. You need ${blockedShortfalls.join(', ')}.`,
+            );
           }
           canAdd = finalCanAdd;
         }

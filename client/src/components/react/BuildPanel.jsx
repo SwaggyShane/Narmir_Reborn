@@ -97,31 +97,35 @@ function resonanceOpacity(count) {
   return 0.45;
 }
 
+// gold matches game/config.js's BUILDING_GOLD_COST — kept in sync manually,
+// same as the wood/stone/iron/land fields already hardcoded here (this
+// panel's established pattern; unlike hire caps, which fetch from the
+// server specifically because those are level-scaled and drift-prone).
 const BUILDINGS = [
-  { id: 'farms', name: 'Farm', tier: 1, wood: 0, stone: 0, iron: 0, time: 10, land: 10 },
-  { id: 'housing', name: 'Housing', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 25 },
-  { id: 'granaries', name: 'Granary', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 15 },
-  { id: 'taverns', name: 'Tavern', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 40 },
-  { id: 'markets', name: 'Market', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 100 },
-  { id: 'barracks', name: 'Barracks', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 100 },
-  { id: 'libraries', name: 'Library', tier: 3, wood: 200, stone: 250, iron: 50, time: 500, land: 25 },
-  { id: 'schools', name: 'School', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 125 },
-  { id: 'shrines', name: 'Shrine', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
-  { id: 'mausoleums', name: 'Mausoleum', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
-  { id: 'guard_towers', name: 'Guard Tower', tier: 4, wood: 2000, stone: 1500, iron: 500, time: 2500, land: 50 },
-  { id: 'walls', name: 'Wall', tier: 5, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 50 },
-  { id: 'outposts', name: 'Outpost', tier: 5, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 25 },
-  { id: 'smithies', name: 'Smithy', tier: 5, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 200 },
-  { id: 'armories', name: 'Armory', tier: 6, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 300 },
-  { id: 'vaults', name: 'Vault', tier: 6, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 300 },
-  { id: 'mage_towers', name: 'Mage Tower', tier: 6, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 250 },
-  { id: 'training', name: 'Training Field', tier: 7, wood: 8500, stone: 17500, iron: 4000, time: 35000, land: 850 },
-  { id: 'castles', name: 'Castle', tier: 8, wood: 10000, stone: 25000, iron: 5000, time: 50000, land: 1000 },
-  { id: 'wm', name: 'War Machine', wood: 200, stone: 0, iron: 50, time: 100, land: 0 },
-  { id: 'ballistae', name: 'Ballistae', wood: 200, stone: 0, iron: 50, time: 100, land: 0 },
-  { id: 'ladders', name: 'Ladder', wood: 20, stone: 0, iron: 2, time: 8, land: 0 },
-  { id: 'weapons', name: 'Weapons', wood: 30, stone: 0, iron: 80, time: 20, land: 0 },
-  { id: 'armor', name: 'Armor', wood: 10, stone: 0, iron: 110, time: 25, land: 0 },
+  { id: 'farms', name: 'Farm', tier: 1, gold: 50, wood: 0, stone: 0, iron: 0, time: 10, land: 10 },
+  { id: 'housing', name: 'Housing', tier: 2, gold: 500, wood: 200, stone: 100, iron: 50, time: 100, land: 25 },
+  { id: 'granaries', name: 'Granary', tier: 2, gold: 250, wood: 200, stone: 100, iron: 50, time: 100, land: 15 },
+  { id: 'taverns', name: 'Tavern', tier: 2, gold: 1000, wood: 200, stone: 100, iron: 50, time: 100, land: 40 },
+  { id: 'markets', name: 'Market', tier: 3, gold: 2000, wood: 800, stone: 500, iron: 200, time: 500, land: 100 },
+  { id: 'barracks', name: 'Barracks', tier: 3, gold: 200, wood: 800, stone: 500, iron: 200, time: 500, land: 100 },
+  { id: 'libraries', name: 'Library', tier: 3, gold: 2000, wood: 200, stone: 250, iron: 50, time: 500, land: 25 },
+  { id: 'schools', name: 'School', tier: 3, gold: 500, wood: 800, stone: 500, iron: 200, time: 500, land: 125 },
+  { id: 'shrines', name: 'Shrine', tier: 3, gold: 1000, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
+  { id: 'mausoleums', name: 'Mausoleum', tier: 3, gold: 2000, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
+  { id: 'guard_towers', name: 'Guard Tower', tier: 4, gold: 150, wood: 2000, stone: 1500, iron: 500, time: 2500, land: 50 },
+  { id: 'walls', name: 'Wall', tier: 5, gold: 300, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 50 },
+  { id: 'outposts', name: 'Outpost', tier: 5, gold: 150, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 25 },
+  { id: 'smithies', name: 'Smithy', tier: 5, gold: 800, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 200 },
+  { id: 'armories', name: 'Armory', tier: 6, gold: 400, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 300 },
+  { id: 'vaults', name: 'Vault', tier: 6, gold: 400, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 300 },
+  { id: 'mage_towers', name: 'Mage Tower', tier: 6, gold: 3000, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 250 },
+  { id: 'training', name: 'Training Field', tier: 7, gold: 10000, wood: 8500, stone: 17500, iron: 4000, time: 35000, land: 850 },
+  { id: 'castles', name: 'Castle', tier: 8, gold: 25000, wood: 10000, stone: 25000, iron: 5000, time: 50000, land: 1000 },
+  { id: 'wm', name: 'War Machine', gold: 100, wood: 200, stone: 0, iron: 50, time: 100, land: 0 },
+  { id: 'ballistae', name: 'Ballistae', gold: 100, wood: 200, stone: 0, iron: 50, time: 100, land: 0 },
+  { id: 'ladders', name: 'Ladder', gold: 20, wood: 20, stone: 0, iron: 2, time: 8, land: 0 },
+  { id: 'weapons', name: 'Weapons', gold: 100, wood: 30, stone: 0, iron: 80, time: 20, land: 0 },
+  { id: 'armor', name: 'Armor', gold: 150, wood: 10, stone: 0, iron: 110, time: 25, land: 0 },
 ];
 
 const BUILDINGS_MAP = BUILDINGS.reduce((acc, b) => {
@@ -513,6 +517,7 @@ const BuildPanel = () => {
     const sc = scaffoldingStored || 0;
 
     const warnings = {};
+    const resourceWarnings = {};
     const estimates = {};
 
     BUILDINGS_DISPLAY_ORDER.forEach((key) => {
@@ -525,6 +530,21 @@ const BuildPanel = () => {
       }
       if (msg.trim()) warnings[key] = msg.trim();
 
+      // Red resource-shortage nag — same wording/shortfall math as the
+      // "X paused. You need Y" news line (game/lib/building-research.js),
+      // so the panel and the news blurb never disagree about what's short.
+      if (engVal > 0) {
+        const b = BUILDINGS_MAP[key];
+        if (b) {
+          const missing = [];
+          if (b.gold > 0 && gold < b.gold) missing.push(`${(b.gold - gold).toLocaleString()} gold`);
+          if (b.wood > 0 && wood < b.wood) missing.push(`${(b.wood - wood).toLocaleString()} wood`);
+          if (b.stone > 0 && stone < b.stone) missing.push(`${(b.stone - stone).toLocaleString()} stone`);
+          if (b.iron > 0 && iron < b.iron) missing.push(`${(b.iron - iron).toLocaleString()} iron`);
+          if (missing.length > 0) resourceWarnings[key] = `You need ${missing.join(', ')}`;
+        }
+      }
+
       const serverKey = getServerKey(key);
       const cost = BUILDING_EFFORT[serverKey] || BUILDINGS_MAP[key]?.time || 100;
       if (engVal > 0) {
@@ -533,8 +553,8 @@ const BuildPanel = () => {
       }
     });
 
-    return { warnings, estimates };
-  }, [blueprintsStored, scaffoldingStored, engineerAllocations, isVampire]);
+    return { warnings, resourceWarnings, estimates };
+  }, [blueprintsStored, scaffoldingStored, engineerAllocations, isVampire, gold, wood, stone, iron]);
   const buildQueueItems = useMemo(() => {
     const items = [];
     BUILDINGS_DISPLAY_ORDER.forEach((buildingId) => {
@@ -694,6 +714,11 @@ const BuildPanel = () => {
             <span className="name">{b.name}</span>
             <span className="bld-qty" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
           </div>
+          {buildDisplay.resourceWarnings[b.id] && (
+            <span className="bld-est">
+              <span className="text-[var(--red)] font-semibold">{buildDisplay.resourceWarnings[b.id]}</span>
+            </span>
+          )}
           {(buildDisplay.warnings[b.id] || buildDisplay.estimates[b.id]) && (
             <span className="bld-est">
               {buildDisplay.warnings[b.id] && <span className="text-amber">{buildDisplay.warnings[b.id]}</span>}

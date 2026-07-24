@@ -108,11 +108,11 @@ function runTurn(k) {
   });
   const { message } = runTurn(k);
   assert.ok(
-    /not enough land/i.test(message),
+    /you need .*land/i.test(message),
     `message should report the real blocker (land), not gold: "${message}"`,
   );
   assert.ok(
-    !/not enough gold/i.test(message),
+    !/you need .*gold/i.test(message),
     `message must not misreport gold as the blocker when land is scarce: "${message}"`,
   );
   console.log('Test 3: land-blocked build reports land, not the wrong "gold" default ✓');
