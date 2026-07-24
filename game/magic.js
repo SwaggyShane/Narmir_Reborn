@@ -2753,9 +2753,19 @@ function processLibrary(k, events) {
           (id) => disc[id].found && !disc[id].mapped,
         );
         if (unmapped.length === 0) {
+          // "Mapped all known locations" is only true if any were ever
+          // known — with zero discovered kingdoms it's really "nothing to
+          // map yet", a different situation that reads as a false claim of
+          // completion (0 known != 0 unmapped). This is expected to
+          // self-resolve as soon as a new kingdom is discovered later the
+          // same turn (scouting runs after this in processTurn) or on a
+          // subsequent turn — not a stuck state, just this turn's snapshot.
+          const totalKnown = Object.keys(disc).filter((id) => disc[id].found).length;
           events.push({
             type: "system",
-            message: `⚠️ Scribes paused location mapping — you have mapped all currently known locations!`,
+            message: totalKnown === 0
+              ? `⚠️ Scribes paused location mapping — no kingdoms discovered yet.`
+              : `⚠️ Scribes paused location mapping — you have mapped all currently known locations!`,
           });
           return;
         }
