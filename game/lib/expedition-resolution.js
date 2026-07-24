@@ -362,10 +362,19 @@ async function resolveExpeditions(db, k, deps = {}) {
     if (!expState || !expState.mustProcess) continue;
 
     try {
-      // Use pre-fetched kingdom state to avoid stale merged values
+      // Use pre-fetched kingdom state to avoid stale merged values.
+      // Prospecting sends engineers, not rangers — the expeditions row
+      // stores the sent count in `engineers` (rangers=0, see
+      // routes/kingdom-exploration.js), but expeditionRewards()'s
+      // attrition/return math (which gameplay.js's "prospecting redirects
+      // returned troops from rangers to engineers" logic depends on) reads
+      // its `rangers` argument. Passing exp.rangers (always 0 here) meant
+      // that redirect always computed 0 returned engineers — the sent
+      // engineers were never credited back on completion.
+      const sentTroops = exp.type === 'prospecting' ? exp.engineers : exp.rangers;
       const { rewards, updates, events } = expeditionRewards(
         exp.type,
-        exp.rangers,
+        sentTroops,
         exp.fighters,
         freshK,
         db,

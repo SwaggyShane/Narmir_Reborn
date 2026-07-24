@@ -494,10 +494,15 @@ module.exports = function (db) {
         const reward = calculateHuntingReward(r, k.ranger_level || 1, t, k.race, d);
 
         if (d === '5' || d === '25') {
-          // 5 or 25: create pending expedition
+          // 5 or 25: create pending expedition — must deduct the sent
+          // rangers here too, same as scout/deep/mountain/dungeon above.
+          // Without this they stay in the kingdom's available (and
+          // fireable) pool for the whole trip, then get credited again on
+          // top when resolveExpeditions() applies their return — the exact
+          // duplication bug found in Epic Trek's launch route.
           await db.run(
-            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1) WHERE id = $2',
-            [totalTurns, k.id],
+            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), rangers = GREATEST(0, rangers - $2) WHERE id = $3',
+            [totalTurns, r, k.id],
           );
 
           await db.run(
@@ -507,7 +512,10 @@ module.exports = function (db) {
         }
 
         return {
-          updates: { turns_stored: Math.max(0, k.turns_stored - totalTurns) },
+          updates: {
+            turns_stored: Math.max(0, k.turns_stored - totalTurns),
+            rangers: d === '5' || d === '25' ? Math.max(0, k.rangers - r) : k.rangers,
+          },
           reward,
         };
       });
@@ -662,10 +670,15 @@ module.exports = function (db) {
         }
 
         if (d === '5' || d === '25') {
-          // 5 or 25: create pending expedition, deduct food cost
+          // 5 or 25: create pending expedition, deduct food cost AND the
+          // sent engineers — must be removed from the kingdom's pool at
+          // launch, same as every multi-turn expedition, otherwise they
+          // stay spendable/fireable for the whole trip and get credited
+          // again on top when resolveExpeditions() applies their return
+          // (the exact duplication bug found in Epic Trek's launch route).
           await db.run(
-            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = GREATEST(0, food - $2) WHERE id = $3',
-            [totalTurns, reward.foodCost, k.id],
+            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = GREATEST(0, food - $2), engineers = GREATEST(0, engineers - $3) WHERE id = $4',
+            [totalTurns, reward.foodCost, e, k.id],
           );
 
           await db.run(
@@ -678,6 +691,7 @@ module.exports = function (db) {
           updates: {
             turns_stored: Math.max(0, k.turns_stored - totalTurns),
             food: d === '5' || d === '25' ? Math.max(0, k.food - reward.foodCost) : k.food,
+            engineers: d === '5' || d === '25' ? Math.max(0, k.engineers - e) : k.engineers,
           },
           reward,
         };

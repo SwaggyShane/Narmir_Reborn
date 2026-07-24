@@ -415,9 +415,15 @@ function expeditionRewards(type, rangers, fighters, k, db, originalRewards) {
     const attritionPct = type === "dungeon" ? rand(0, 3) : rand(0, 2);
     const lost = Math.floor(((rangers * attritionPct) / 100) * attritionMult);
     const returned = rangers - lost;
+    // `rangers` here is actually the engineer count for prospecting (see
+    // expedition-resolution.js's resolveExpeditions, which passes
+    // exp.engineers as this arg for that type so the redirect-to-engineers
+    // logic below gets a real number instead of always 0) — word the loss
+    // line to match the unit that actually left.
+    const unitLabel = type === "prospecting" ? "engineer" : "ranger";
     if (lost > 0)
       rewards.push({
-        text: `${lost} ranger${lost > 1 ? "s" : ""} did not return from the expedition`,
+        text: `${lost} ${unitLabel}${lost > 1 ? "s" : ""} did not return from the expedition`,
       });
     // Rangers returned stored separately so resolveExpeditions can use SQL increment
     updates._rangers_returned = returned;
