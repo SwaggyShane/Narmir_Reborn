@@ -258,13 +258,15 @@ async function commitTurnResults(db, k, updates, incomingEvents) {
         for (const loc of getAllLocations()) {
           await markLocationDiscovered(db, loc.id, k.id);
         }
+        const { revealAllFog } = require('../game/visibility');
+        await revealAllFog(db, k.id);
         discoveryEvents.push({
           type: 'system',
-          message: '🗺️ Every dungeon and mountain on the map has been revealed.',
+          message: '🗺️ All fog of war has been cleared — the entire map is revealed.',
         });
         filteredEvents.push({
           type: 'system',
-          message: '🗺️ Every dungeon and mountain on the map has been revealed.',
+          message: '🗺️ All fog of war has been cleared — the entire map is revealed.',
         });
       } catch (revealErr) {
         console.error('[commitTurnResults] reveal all locations:', revealErr.message);

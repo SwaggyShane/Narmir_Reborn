@@ -363,6 +363,21 @@ async function resetCurrentCellsToHome(db, kingdom) {
   return updated;
 }
 
+/**
+ * Permanently clear all fog of war for a kingdom — every hex the bitmap can
+ * represent gets marked seen. Same maximum bitmap the DISABLE_FOG_OF_WAR
+ * test bypass in getKingdomVisibility() uses (all bits up to index 24575,
+ * i.e. every col/row cellIndex() can encode), just persisted for one
+ * kingdom instead of returned as a live override for everyone.
+ */
+async function revealAllFog(db, kingdomId) {
+  if (!db || !kingdomId) return null;
+  const maxVis = (1n << 24576n) - 1n;
+  const raw = { seen_cells: maxVis.toString(), current_cells: maxVis.toString(), version: DEFAULT_VISIBILITY.version };
+  await db.run('UPDATE kingdoms SET visibility = $1 WHERE id = $2', [JSON.stringify(raw), kingdomId]);
+  return { seenCells: maxVis, currentCells: maxVis, version: DEFAULT_VISIBILITY.version };
+}
+
 module.exports = {
   parseVisibility,
   serializeVisibility,
@@ -371,4 +386,5 @@ module.exports = {
   updateKingdomVisibility,
   revealRingHexes,
   resetCurrentCellsToHome,
+  revealAllFog,
 };
