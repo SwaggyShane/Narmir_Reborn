@@ -20,7 +20,7 @@
 
 const { safeJsonParse } = require('../utils/helpers');
 const { migrateVisibility, DEFAULT_VISIBILITY } = require('./visibility-migration');
-const { encodeCellSet, cellIndex } = require('./visibility-cells');
+const { encodeCellSet, cellIndex, isValidCell } = require('./visibility-cells');
 const { pixelToHex } = require('./hex-utils');
 const { getKingdomMapCoords } = require('./world-map-coords');
 const { getAllLocations, markLocationDiscovered, isPubliclyDiscovered } = require('./world-locations');
@@ -283,13 +283,35 @@ async function revealRingHexes(db, kingdomId, kingdom, ring) {
     }
 
     return updateKingdomVisibility(db, kingdomId, (current) => {
-      const cellIndicesToReveal = ringHexes.map(hexKey => {
-        if (typeof hexKey === 'string') {
-          const [c, r] = hexKey.split(',').map(Number);
-          return cellIndex(c, r);
-        }
-        return cellIndex(hexKey.col, hexKey.row);
-      });
+      // getRingHexes()/getHexesInRadius() do a pure BFS outward from home
+      // with no map-edge clipping, so higher rings (16+, depending on how
+      // close home is to the map edge) legitimately include col/row pairs
+      // that fall outside the visibility bitmap's encodable range (there's
+      // no real hex there — it's off the map). cellIndex() throws on those.
+      // A kingdom near the west edge (home col ~7) starts hitting this at
+      // ring 16; by ring 25 up to half the ring's hexes can be invalid.
+      // Previously this whole .map() ran inside the function's outer
+      // try/catch, so ONE invalid hex in a ring silently discarded the
+      // ENTIRE ring's reveal — not just the off-map hex — permanently
+      // capping visible fog-of-war reveal around ring 15 for any kingdom
+      // whose home isn't dead-center on the map, even though scout_progress
+      // and the ring counter kept advancing correctly past that. Skip only
+      // the individual off-map hexes; still reveal every real one.
+      const cellIndicesToReveal = ringHexes
+        .filter(hexKey => {
+          if (typeof hexKey === 'string') {
+            const [c, r] = hexKey.split(',').map(Number);
+            return isValidCell(c, r);
+          }
+          return isValidCell(hexKey.col, hexKey.row);
+        })
+        .map(hexKey => {
+          if (typeof hexKey === 'string') {
+            const [c, r] = hexKey.split(',').map(Number);
+            return cellIndex(c, r);
+          }
+          return cellIndex(hexKey.col, hexKey.row);
+        });
       let newSeenCells = current.seenCells;
 
       for (const idx of cellIndicesToReveal) {
