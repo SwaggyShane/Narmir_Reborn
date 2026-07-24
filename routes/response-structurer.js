@@ -61,7 +61,7 @@ const economyFields = new Set([
   'build_allocation', 'build_progress', 'build_queue', 'training_allocation',
   'resource_build_allocation', 'hammers_stored', 'hammer_turns_used',
   'scaffolding_stored', 'tools_hammers', 'tools_scaffolding', 'tools_blueprints',
-  'discovered_kingdoms',
+  'discovered_kingdoms', 'location_maps_wip',
   // Building-upgrade JSON blobs — same semantic home as the buildings they upgrade
   'bank_upgrades', 'farm_upgrades', 'granary_upgrades', 'market_upgrades',
   'tavern_upgrades', 'wall_upgrades', 'tower_def_upgrades', 'outpost_upgrades',
