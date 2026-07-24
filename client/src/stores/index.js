@@ -9,10 +9,11 @@
  * - militaryStore: troops, armies, combat, walls
  * - researchStore: research progress, disciplines, mana
  * - populationStore: population, happiness, growth, rebellion
- * - uiStore: panels, modals, UI preferences
+ * - profileStore: kingdom identity, turn, prestige, active_effects
+ * - explorationLogStore: instant expedition log entries
  *
- * All stores use Immer (safe nested updates), DevTools (debugging),
- * and Persist (UI state only) middleware.
+ * Active panel navigation lives in hooks/useActivePanel.js (module listeners),
+ * not a Zustand store. All stores use Immer + DevTools as needed.
  */
 
 export {
@@ -129,17 +130,6 @@ export {
 } from './populationStore';
 
 export {
-  // UI Store
-  useUIStore,
-  useActivePanel,
-  usePanelState,
-  useOpenModals,
-  useModal,
-  useSearchText,
-  getUIState,
-} from './uiStore';
-
-export {
   // Exploration Log Store
   useExplorationLogStore,
   useInstantEntries,
@@ -183,40 +173,3 @@ export {
   useMilestoneTitle,
   useActiveEffects,
 } from './profileStore';
-
-/**
- * SOCKET.IO INTEGRATION
- *
- * Example usage in socket event handlers:
- *
- * socket.on('kingdom-update', (data) => {
- *   useEconomyStore.getState().receiveServerSnapshot(data.economy);
- *   useMilitaryStore.getState().receiveServerSnapshot(data.military);
- *   useResearchStore.getState().receiveServerSnapshot(data.research);
- *   usePopulationStore.getState().receiveServerSnapshot(data.population);
- * });
- *
- * socket.on('turn-tick', (turnData) => {
- *   useEconomyStore.getState().receiveTurnUpdate(turnData);
- *   useMilitaryStore.getState().receiveTurnUpdate(turnData);
- *   useResearchStore.getState().receiveTurnUpdate(turnData);
- *   usePopulationStore.getState().receiveTurnUpdate(turnData);
- * });
- */
-
-/**
- * INTER-STORE COMMUNICATION
- *
- * If one store needs to trigger actions in another:
- *
- * // In economyStore.js action:
- * spendGold: (amount) => set((state) => {
- *   state.gold = Math.max(0, state.gold - amount);
- *   if (state.gold === 0) {
- *     // Trigger modal in UI store
- *     useUIStore.getState().openModal('insufficient-funds');
- *   }
- * })
- *
- * Keep cross-store calls minimal; prefer having each store own its domain.
- */
