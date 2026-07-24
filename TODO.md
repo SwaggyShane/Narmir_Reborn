@@ -44,6 +44,7 @@ npm run test:systems
 |------|------|
 | 2026-07-23 | Injury recovery on `processTurn` + Status/Warfare wounded UI; combat hex terrain; Wood Elf / Ogre specials; volcanic biome loot; full-path elevation trek cost |
 | 2026-07-23 | Worldmap steal-map `structureUpdates`; elevation movement **no** 1.3× on flat/downhill; player Status **Active effects** from `active_effects` |
+| 2026-07-24 | Dead migration cleanup: SVG worldmap `_archive`, unused GSM bridges (`syncKingdom`, `shellBridge`, `hexUtils`, `usePanelState` hook), never-mounted `HexMapProvider`/`createHexContext`, legacy `public/legacy/admin.html` |
 | 2026-07-22 | Engine extract S00–S14 complete (local → later on origin); mutator policy campaign M0–M6 |
 | 2026-07-19 | A1–A5 architecture series (boot, route splits, turn pipeline honesty, client normalizer, CommandHandler boundary) — see ARCHIVAL.md |
 

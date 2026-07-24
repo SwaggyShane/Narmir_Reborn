@@ -186,7 +186,7 @@ export function wasStoreUpdated(normalized, storeName) {
  *
  * A4-7, 2026-07-19: this exact 5-line block was independently duplicated in
  * AuthModal.jsx (loadKingdom), ExplorationPanel.jsx and HeroesPanel.jsx
- * (both as a local `syncKingdomData`), and ResourcesPanel.jsx had its own
+ * (both as a local snapshot fan-out), and ResourcesPanel.jsx had its own
  * *broken* copy that called `normalizeAndRouteResponse` instead — which
  * expects a domain-structured `{updates: {...}}` shape and silently no-ops
  * on a flat `/kingdom/me` response (no `.updates` key). Consolidating here

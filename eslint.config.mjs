@@ -23,24 +23,7 @@ export default [
       "no-empty": "off",
       "no-useless-assignment": "off",
       "no-cond-assign": "off",
-      "no-prototype-builtins": "off",
-      "no-restricted-imports": [
-        "error",
-        {
-          "paths": [
-            {
-              "name": "client/src/utils/gameMutations.js",
-              "message": "applyGameMutation is deprecated. Use normalizeAndRouteResponse from client/src/utils/responseNormalizer.js instead."
-            }
-          ],
-          "patterns": [
-            {
-              "group": ["**/gameMutations"],
-              "message": "applyGameMutation is deprecated. Use normalizeAndRouteResponse from client/src/utils/responseNormalizer.js instead."
-            }
-          ]
-        }
-      ]
+      "no-prototype-builtins": "off"
     },
   },
 ];

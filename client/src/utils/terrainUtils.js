@@ -3,7 +3,7 @@
  *
  * Terrain generation is canonical in worldMapBuilder.js (same path as WebGL
  * worldmap and server-side world-hex-grid). This module re-exports that grid
- * builder so HexSelectionModal / HexMapProvider cannot drift to a second ocean
+ * builder so HexSelectionModal / WorldmapWebGL cannot drift to a second ocean
  * band / race-home map.
  */
 

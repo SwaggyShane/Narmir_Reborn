@@ -271,9 +271,7 @@ Initial admin setup still uses `ADMIN_SECRET` via `/api/setup-admin` (see env ta
 
 **Tabs:** Manage · Kingdoms (editor, AI presets, bulk tools) · Events · Configs · Sounds · Prestige · Lore & Trips · Evolution (wishlist/changelog/notes) · Detailed Lists (fragments + spells) · Goals · Security Audit
 
-**Legacy note:** The vanilla `public/admin.html` has been archived to `public/legacy/admin.html`. React admin is the canonical panel as of Ph6b (2026-06-26).
-
-Admin migration to React + Tailwind panel is complete (see ARCHIVAL.md for history).
+Admin UI is React + Tailwind only (`/admin`). The old vanilla `public/admin.html` was removed after the Ph6b cutover (history in ARCHIVAL.md).
 
 ---
 
