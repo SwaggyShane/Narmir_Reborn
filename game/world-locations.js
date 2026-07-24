@@ -6,7 +6,7 @@
 
 'use strict';
 
-const { isWaterPoint, RACE_HOMES } = require('./world-regions');
+const { isWaterPoint, RACE_HOMES, nearestRaceHome } = require('./world-regions');
 
 // In-memory cache of all world locations
 let locationCache = {};
@@ -67,8 +67,21 @@ function getRegionLocationCoords(worldSeed, regionName, locationType, maxRetries
     const x = Math.max(0, Math.min(1999, home.x + offsetX));
     const y = Math.max(0, Math.min(1379, home.y + offsetY));
 
-    // Validate: not in water, within bounds
-    if (!isWaterPoint(x, y) && x >= 0 && x <= 1999 && y >= 0 && y <= 1379) {
+    // Validate: not in water, within bounds, AND still actually inside this
+    // region (nearestRaceHome(x,y) === regionName). Region homes can sit
+    // close enough together (e.g. dark_elf/orc ~330px apart, human/dire_wolf
+    // ~380px apart — well within this ±250px-per-axis offset's ~354px max
+    // diagonal) that a random offset "for" one region's home lands closer to
+    // a NEIGHBORING region's home instead. Without this check, that
+    // location still gets tagged with the region it was generated for, but
+    // renders inside the neighbor's territory on the map — visually showing
+    // that neighbor with 2 of a type and this region with 0, even though
+    // the DB still has exactly one row per (region, type).
+    if (
+      !isWaterPoint(x, y) &&
+      x >= 0 && x <= 1999 && y >= 0 && y <= 1379 &&
+      nearestRaceHome(x, y) === regionName
+    ) {
       return { x, y };
     }
   }
@@ -127,12 +140,12 @@ async function seedRegionLocations(db, worldSeed) {
           [region, type],
         );
 
-        // Self-heal: a location can only be this far from its OWN region's
-        // home if it was seeded against a RACE_HOMES value that has since
-        // changed (this exact drift happened once already — 2026-07-20,
-        // 14 of 18 locations ended up stranded near stale home positions
-        // after a world-map rework moved RACE_HOMES). Wipe and re-seed
-        // rather than leaving it silently wrong.
+        // Self-heal #1: a location can only be this far from its OWN
+        // region's home if it was seeded against a RACE_HOMES value that
+        // has since changed (this exact drift happened once already —
+        // 2026-07-20, 14 of 18 locations ended up stranded near stale home
+        // positions after a world-map rework moved RACE_HOMES). Wipe and
+        // re-seed rather than leaving it silently wrong.
         if (existing) {
           const home = RACE_HOMES[region];
           const dx = Number(existing.x) - home.x;
@@ -143,6 +156,28 @@ async function seedRegionLocations(db, worldSeed) {
               `[world-locations] ${type} for ${region} is ${dist.toFixed(0)}px from its home ` +
               `(max possible ${MAX_LOCATION_OFFSET_FROM_HOME.toFixed(0)}px) — RACE_HOMES changed ` +
               `since this was seeded; re-seeding.`,
+            );
+            await db.run('DELETE FROM world_locations WHERE id = $1', [existing.id]);
+            existing = null;
+          }
+        }
+
+        // Self-heal #2: getRegionLocationCoords() didn't always check that
+        // its random offset kept the point closer to this region's own home
+        // than any other's (fixed below, but existing rows predate the
+        // fix). Region homes can sit close enough together (dark_elf/orc
+        // ~330px, human/dire_wolf ~380px — within the offset's ~354px max
+        // diagonal) that a location "for" one region visually lands inside
+        // a neighbor's territory: the neighbor appears to have 2 of that
+        // type and this region 0, even though this row is correctly tagged
+        // region_name=this region in the DB. Re-seed if the stored point no
+        // longer resolves to its own region.
+        if (existing) {
+          const actualRegion = nearestRaceHome(Number(existing.x), Number(existing.y));
+          if (actualRegion !== region) {
+            console.warn(
+              `[world-locations] ${type} for ${region} at (${existing.x}, ${existing.y}) ` +
+              `geometrically resolves to ${actualRegion}'s territory instead — re-seeding.`,
             );
             await db.run('DELETE FROM world_locations WHERE id = $1', [existing.id]);
             existing = null;
