@@ -294,10 +294,16 @@ async function commitTurnResults(db, k, updates, incomingEvents) {
     );
     console.timeEnd(`[turn-${k.id}] resolveExpeditions`);
     expeditionEvents = expeditionEvents.map(normalizeNewsRow);
-    if (expeditionEvents.length > 0) {
+    // skipNews events (mid-travel expedition finds — junkPrize()'s "your
+    // crew found X" flavor lines) are meant for the exploration/expedition
+    // log only, not the Kingdom News feed. dedupNewsEvents() below already
+    // strips these for the main turn events; this insert bypassed that
+    // filter entirely and always wrote every expedition event to news.
+    const newsableExpeditionEvents = expeditionEvents.filter((ev) => !ev.skipNews);
+    if (newsableExpeditionEvents.length > 0) {
       await bulkInsertNews(
         db,
-        expeditionEvents.map((ev) => ({
+        newsableExpeditionEvents.map((ev) => ({
           kingdom_id: k.id,
           type: ev.type || "system",
           message: ev.message,
