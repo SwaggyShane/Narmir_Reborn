@@ -2,7 +2,8 @@
  * World initialization system - runs once per fresh world seed.
  * Generates:
  * - Terrain distribution: 75% dominant race terrain + at least 1 of each other type
- * - Resource nodes: 1 of each (wood/stone/iron) per region, 3 of prevalent type
+ * - Resource nodes: 6 per region — 1 of each (wood/stone/iron) baseline,
+ *   +3 extra for the dominant type (4 dominant + 1 + 1)
  * - Dungeons and mountains: Already handled by world-locations.js
  *
  * All placement is deterministic from the world seed.
@@ -65,13 +66,18 @@ function clamp(value, min, max) {
 }
 
 /**
- * Check if world has already been initialized with this seed.
+ * Check if the per-region resource node distribution has already run.
+ *
+ * Deliberately NOT "does resource_nodes have any rows" — game/
+ * first-ring-node.js inserts one row (a random-type node, independent of
+ * region) per kingdom at creation time, so that check tripped permanently
+ * on the very first kingdom ever created and the real regional
+ * distribution below never ran, for any region, ever. world_state.
+ * regions_seeded is a dedicated flag set only by seedRegionResourceNodes.
  */
 async function isWorldInitialized(db) {
-  const check = await db.get(
-    'SELECT COUNT(*) as cnt FROM resource_nodes'
-  );
-  return (check?.cnt || 0) > 0;
+  const row = await db.get('SELECT regions_seeded FROM world_state WHERE id = 1');
+  return !!row?.regions_seeded;
 }
 
 /**
@@ -86,9 +92,10 @@ function generateRegionResources(worldSeed, race) {
   const nodes = [];
   const resourceTypes = ['wood', 'stone', 'iron'];
 
-  // Generate base resources: 1 of each type, 3 of prevalent type
+  // 1 of each type as a baseline, +3 extra for the dominant type (4 total
+  // dominant + 1 + 1 = 6 nodes per region).
   resourceTypes.forEach((type, idx) => {
-    const count = type === dominantResource ? 3 : 1;
+    const count = type === dominantResource ? 4 : 1;
 
     for (let i = 0; i < count; i++) {
       // Deterministic distance (spread across 600-28800 range)
@@ -221,6 +228,9 @@ async function initializeWorld(db) {
         }
       }
     }
+
+    await db.run('UPDATE world_state SET regions_seeded = TRUE WHERE id = 1');
+    console.log('[world-init] Regional resource node distribution seeded for all regions');
 
   } catch (err) {
     console.error('[world-init] World initialization failed:', err.message);

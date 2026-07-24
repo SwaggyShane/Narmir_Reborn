@@ -654,6 +654,7 @@ const coreSchema = `
       id INTEGER PRIMARY KEY DEFAULT 1,
       seed BIGINT NOT NULL,
       generated_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
+      regions_seeded BOOLEAN NOT NULL DEFAULT FALSE,
       CONSTRAINT world_state_singleton CHECK (id = 1)
     );
 

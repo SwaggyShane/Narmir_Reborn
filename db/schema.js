@@ -828,6 +828,30 @@ async function initDb(options = {}) {
     }
   }
 
+  // world_state.regions_seeded — dedicated flag for "has the per-region
+  // resource node distribution (1 of each type + extra dominant, see
+  // game/world-initialization.js) actually run", decoupled from
+  // resource_nodes' row count. Without this, isWorldInitialized() treated
+  // ANY row in resource_nodes as proof the world was seeded — but
+  // game/first-ring-node.js inserts one row (a random-type node) per
+  // kingdom at creation time, completely independent of region seeding.
+  // That first row permanently tripped the count-based gate, so the real
+  // regional distribution never ran once, for any region, ever.
+  const regionsSeededMigration = '007_add_world_state_regions_seeded_flag';
+  const existingRegionsSeededMigration = await _db.get('SELECT id FROM migrations WHERE name = $1', [regionsSeededMigration]);
+  if (!existingRegionsSeededMigration) {
+    try {
+      const worldStateCols = await getTableColumns('world_state');
+      if (!worldStateCols.includes('regions_seeded')) {
+        await _db.run(`ALTER TABLE world_state ADD COLUMN regions_seeded BOOLEAN NOT NULL DEFAULT FALSE`);
+      }
+      await _db.run('INSERT INTO migrations (name) VALUES ($1)', [regionsSeededMigration]);
+      console.log('[db] Migration 007_add_world_state_regions_seeded_flag applied');
+    } catch (err) {
+      console.warn('[db] Migration skipped (column may already exist):', err.message);
+    }
+  }
+
   // Trade offers table
 
   // market prices seeding now in init-data
@@ -836,10 +860,9 @@ async function initDb(options = {}) {
 
   // Initialize fresh world FIRST: ensures world_state seed exists
   // (MUST be before initializeResourceNodes, which checks world_state)
-  let seedJustCreated = false;
   try {
     const { initializeWorld } = require('../game/world-initialization');
-    seedJustCreated = await initializeWorld(_db);
+    await initializeWorld(_db);
   } catch (err) {
     console.error('[db] World initialization failed:', err.message);
   }
@@ -927,14 +950,20 @@ async function initDb(options = {}) {
   const { getWorldSeed } = require('../game/world-seed');
   await require('../game/world-seed').loadWorldSeed(_db);
 
-  // If seed was just created, run full resource initialization
-  if (seedJustCreated) {
-    try {
-      const { initializeWorld } = require('../game/world-initialization');
-      await initializeWorld(_db);
-    } catch (err) {
-      console.error('[db] World resource initialization failed:', err.message);
-    }
+  // Run full resource initialization now that the seed is guaranteed to be
+  // loaded into world-seed.js's in-memory cache. NOT gated on seedJustCreated:
+  // the first initializeWorld() call above (line ~866) runs BEFORE
+  // loadWorldSeed(), so on any world that already had a seed row (i.e. every
+  // boot after the very first), that call always failed on getWorldSeed()
+  // before ever reaching the node-seeding step, and skipping this second
+  // call left regional resource nodes permanently unseeded. initializeWorld()
+  // itself no-ops via isWorldInitialized() if regions are already seeded, so
+  // calling it unconditionally here is safe and idempotent.
+  try {
+    const { initializeWorld } = require('../game/world-initialization');
+    await initializeWorld(_db);
+  } catch (err) {
+    console.error('[db] World resource initialization failed:', err.message);
   }
 
   // Precompute world elevation (Phase 1 of the elevation system) — was
