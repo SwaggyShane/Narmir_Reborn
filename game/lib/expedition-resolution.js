@@ -564,17 +564,13 @@ async function resolveExpeditions(db, k, deps = {}) {
         delete updates._achievement_unlocked;
       }
 
-      // Handle location revelation for Field Collector achievement
-      if (updates._reveal_all_locations) {
-        try {
-          let disc = safeJsonParse(updates.discovered_kingdoms || k.discovered_kingdoms, {}, "reveal_all:discovered_kingdoms");
-          disc._all_revealed = true;
-          updates.discovered_kingdoms = safeJsonStringify(disc);
-        } catch (err) {
-          console.error("[resolveExpeditions] Error revealing all locations:", err);
-        }
-        delete updates._reveal_all_locations;
-      }
+      // Field Collector's _reveal_all_locations flag is handled centrally
+      // in routes/kingdom-turn.js's commitTurnResults — checkAchievements()
+      // (game/lib/achievements.js) only ever runs against the main per-turn
+      // updates object (turn-finalize.js), never this expedition-specific
+      // one, so handling it here was dead code that also targeted the
+      // wrong field (discovered_kingdoms._all_revealed, which nothing else
+      // ever read).
 
       const safeUpdates = Object.fromEntries(
         Object.entries(updates).filter(

@@ -73,6 +73,7 @@ function stripDiscoveryFlags(updates) {
   delete updates._find_kingdom;
   delete updates._find_kingdom_surveyor;
   delete updates._spawn_resource_node;
+  delete updates._reveal_all_locations;
   return updates;
 }
 

@@ -242,6 +242,35 @@ async function commitTurnResults(db, k, updates, incomingEvents) {
       }
     }
 
+    // Field Collector achievement (game/lib/achievements.js's
+    // checkAchievements, run for every turn via turn-finalize.js — not just
+    // expedition completions) sets this flag; it needs handling here, not
+    // in game/lib/expedition-resolution.js (removed — that only ran the
+    // rare turn a junk find happened to land during expedition-reward
+    // processing specifically, which checkAchievements never even runs
+    // against, so it was dead in practice). Also previously wired to the
+    // wrong target (discovered_kingdoms._all_revealed, a flag nothing ever
+    // read) instead of the actual "world locations" (dungeons/mountains,
+    // game/world-locations.js) the achievement's own message promises.
+    if (updates._reveal_all_locations) {
+      try {
+        const { getAllLocations, markLocationDiscovered } = require('../game/world-locations');
+        for (const loc of getAllLocations()) {
+          await markLocationDiscovered(db, loc.id, k.id);
+        }
+        discoveryEvents.push({
+          type: 'system',
+          message: '🗺️ Every dungeon and mountain on the map has been revealed.',
+        });
+        filteredEvents.push({
+          type: 'system',
+          message: '🗺️ Every dungeon and mountain on the map has been revealed.',
+        });
+      } catch (revealErr) {
+        console.error('[commitTurnResults] reveal all locations:', revealErr.message);
+      }
+    }
+
     stripDiscoveryFlags(updates);
     delete updates._spawn_resource_node;
   }
