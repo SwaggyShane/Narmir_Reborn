@@ -46,6 +46,95 @@ module.exports = function (db) {
     } catch {}
     res.json({ discovered: disc, wip });
   });
+  // Enqueue a location map for a discovered-but-unmapped kingdom. Consumes
+  // 1 "maps" resource; scribes finish it over 5 turns (10 scribes/turn,
+  // game/lib/expeditions.js's processLocationMapsWip — that completion path
+  // already existed and was tested, but nothing ever wrote to
+  // location_maps_wip to give it something to complete. Without this route,
+  // "maps" in inventory had no use and the client's "Scribe a Location Map"
+  // text (WorldmapPanel.jsx) had no button behind it.
+  router.post("/locations/scribe-map", requireAuth, requireCsrfToken, async (req, res) => {
+    const { targetId } = req.body;
+    const targetIdNum = Number(targetId);
+    if (!Number.isInteger(targetIdNum) || targetIdNum <= 0) {
+      return res.status(400).json({ error: "Invalid target" });
+    }
+    try {
+      const result = await db.withTransaction(async () => {
+        const k = await db.get(
+          "SELECT id, maps, discovered_kingdoms, location_maps_wip FROM kingdoms WHERE player_id = $1 FOR UPDATE",
+          [req.player.playerId],
+        );
+        if (!k) {
+          const err = new Error("Kingdom not found");
+          err.statusCode = 404;
+          throw err;
+        }
+        if (targetIdNum === k.id) {
+          const err = new Error("You already know where your own kingdom is");
+          err.statusCode = 400;
+          throw err;
+        }
+        if ((k.maps || 0) < 1) {
+          const err = new Error("Need 1 map to scribe a location map");
+          err.statusCode = 400;
+          throw err;
+        }
+
+        const disc = safeJsonParse(k.discovered_kingdoms, {}, "scribe-map:discovered_kingdoms");
+        if (!disc[targetIdNum]?.found) {
+          const err = new Error("You have not discovered this kingdom yet");
+          err.statusCode = 400;
+          throw err;
+        }
+        if (disc[targetIdNum].mapped) {
+          const err = new Error("Already mapped");
+          err.statusCode = 400;
+          throw err;
+        }
+
+        const wip = safeJsonParse(k.location_maps_wip, [], "scribe-map:location_maps_wip");
+        if (wip.some((item) => Number(item.target_id) === targetIdNum)) {
+          const err = new Error("Already scribing a map for this kingdom");
+          err.statusCode = 400;
+          throw err;
+        }
+
+        const target = await db.get("SELECT id, name FROM kingdoms WHERE id = $1", [targetIdNum]);
+        if (!target) {
+          const err = new Error("Target not found");
+          err.statusCode = 404;
+          throw err;
+        }
+
+        wip.push({ target_id: targetIdNum, target_name: target.name, turns_remaining: 5 });
+
+        const updates = {
+          maps: k.maps - 1,
+          location_maps_wip: JSON.stringify(wip),
+        };
+        await db.run("UPDATE kingdoms SET maps = $1, location_maps_wip = $2 WHERE id = $3", [
+          updates.maps,
+          updates.location_maps_wip,
+          k.id,
+        ]);
+        return updates;
+      });
+
+      res.json({
+        ok: true,
+        updates: structureUpdates(result),
+        message: "Scribes are drafting a location map — ready in 5 turns.",
+      });
+    } catch (err) {
+      console.error("[scribe-map] failed:", err.message);
+      if (err.statusCode) {
+        return res.status(err.statusCode).json({ error: err.message });
+      }
+      res.status(500).json({ error: "Failed to start location map" });
+    }
+  });
+
   router.post("/locations/steal-map", requireAuth, requireCsrfToken, async (req, res) => {
     const { targetId } = req.body;
     const k = await db.get("SELECT id, name, thieves, discovered_kingdoms FROM kingdoms WHERE player_id=$1", [

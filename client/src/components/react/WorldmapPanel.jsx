@@ -16,7 +16,7 @@ import { targetFromRankings } from '../../utils/rankingsTarget.js';
 import { toast } from '../../utils/toast.js';
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
-import { useKingdomId, useMarketUpgrades, useDiscoveredKingdoms } from '../../stores';
+import { useKingdomId, useMarketUpgrades, useDiscoveredKingdoms, useMaps } from '../../stores';
 import { switchTab } from '../../utils/panelNav.js';
 import { animateMapPanelCard } from '../../utils/worldMapGsap.js';
 import VolcanicHexCard from './VolcanicHexCard.jsx';
@@ -92,6 +92,27 @@ export async function loadWorldMap({ setLoading, setError, setKingdoms, setTrade
     throw err;
   } finally {
     if (typeof setLoading === 'function') setLoading(false);
+  }
+}
+
+async function scribeLocationMap(targetId, onSuccess) {
+  if (!targetId) return;
+  try {
+    const result = await apiCall('/api/kingdom/locations/scribe-map', {
+      method: 'POST',
+      body: { targetId },
+    });
+    if (result?.error) {
+      toast(result.error, 'error');
+      return;
+    }
+    toast(result?.message || 'Scribes are drafting a location map', 'success');
+    if (typeof onSuccess === 'function') {
+      onSuccess();
+    }
+  } catch (err) {
+    console.error('[worldmap] scribe location map failed:', err);
+    toast('Failed to start location map', 'error');
   }
 }
 
@@ -365,6 +386,7 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
   const currentKingdomId = useKingdomId();
   const marketUpgrades = useMarketUpgrades();
   const discoveredKingdoms = useDiscoveredKingdoms();
+  const mapsAvailable = useMaps();
   const nodeCardRef = useRef(null);
   const kingdomCardRef = useRef(null);
   const locationCardRef = useRef(null);
@@ -686,8 +708,19 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                             </div>
                           </>
                         ) : (
-                          <div className="w-full text-[10px] text-[var(--text3)] mt-1">
-                            Scribe a Location Map for this kingdom to attack, cast spells, or trade with them.
+                          <div className="w-full mt-1">
+                            <button
+                              className="btn text-[11px] px-2 py-1 w-full"
+                              disabled={mapsAvailable < 1}
+                              onClick={() => scribeLocationMap(mapCard.kingdom.id, refreshWorldMap)}
+                            >
+                              🗺️ Scribe a Location Map ({mapsAvailable} map{mapsAvailable === 1 ? '' : 's'})
+                            </button>
+                            <div className="text-[10px] text-[var(--text3)] mt-1">
+                              {mapsAvailable < 1
+                                ? 'Need 1 map — find them exploring.'
+                                : 'Ready in 5 turns. Lets you attack, cast spells, or trade with them.'}
+                            </div>
                           </div>
                         )}
                       </>
